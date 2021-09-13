@@ -39,6 +39,12 @@ enum ObligationType {
     OBLIGATION = 4
 }
 
+enum ObligationElementStatus {
+    UPDATED = 0,
+    DEFINED = 1
+    UNDEFINED = 2
+}
+
 struct Obligation {
     1: optional string id,
     2: optional string revision,
@@ -60,6 +66,7 @@ struct Obligation {
     22: optional ObligationLevel obligationLevel,
     23: optional ObligationType obligationType,
     300: optional map<string, string> additionalData,
+    97: optional string node,
 
 }
 
@@ -69,6 +76,25 @@ struct LicenseType {
     3: optional string type = "licenseType",
 	5: required i32 licenseTypeId,
     6: required string licenseType;
+}
+
+struct ObligationNode {
+    1: optional string id,
+    2: optional string revision,
+    3: optional string type = "obligationNode",
+    4: optional string nodeType,
+    5: optional string nodeText,
+    6: optional string oblElementId
+}
+
+struct ObligationElement {
+    1: optional string id,
+    2: optional string revision,
+    3: optional string type = "obligationElement",
+    4: required string langElement,
+    5: required string action,
+    6: required string object,
+    7: optional ObligationElementStatus status
 }
 
 struct License {
@@ -245,6 +271,8 @@ service LicenseService {
     RequestSummary deleteAllLicenseInformation(1: User user);
 
     RequestSummary importAllSpdxLicenses(1: User user);
+
+    RequestSummary importAllOSADLLicenses(1: User user);
     /**
      * delete obligation from database if user has permissions
      **/
@@ -259,4 +287,50 @@ service LicenseService {
      * Check license type is in using by license
      **/
     int checkLicenseTypeInUse(1: string id);
+
+    /* Add a new Obligation Element object to database, return id
+    **/
+    string addObligationElements(1:ObligationElement obligationElement, 2: User user);
+
+    /**
+     * get complete list of filled obligation elements
+     **/
+    list<ObligationElement> getObligationElements();
+
+    /**
+     * Add a new Obligation Node object to database, return id
+     **/
+    string addObligationNodes(1:ObligationNode obligationNode, 2: User user);
+
+    /**
+     * get complete list of filled obligation nodes
+     **/
+    list<ObligationNode> getObligationNodes();
+
+    /**
+     * get ObligationNode by id
+     **/
+    ObligationNode getObligationNodeById( 1: string id);
+
+    /**
+     * get ObligationElement by id
+     **/
+    ObligationElement getObligationElementById( 1: string id);
+
+    /**
+     * add ObligationNode from jsonString input
+     **/
+    string addNodes(1:string jsonString, 2: User user)
+
+    /**
+     * build obligation text after addNodes
+     **/
+    string buildObligationText(1: string nodes, 2: string level)
+
+    // Search functions
+
+    /**
+     * global search function to list obigation elements which match the text argument
+     */
+    list<ObligationElement> searchObligationElement(1: string text);
 }
