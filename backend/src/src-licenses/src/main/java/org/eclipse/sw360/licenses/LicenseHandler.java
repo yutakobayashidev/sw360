@@ -52,7 +52,6 @@ public class LicenseHandler implements LicenseService.Iface {
 
     LicenseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException, IOException {
         handler = new LicenseDatabaseHandler(httpClient, dbName);
-        searchHandler = new ObligationElementSearchHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), dbName);
     }
 
     /////////////////////
