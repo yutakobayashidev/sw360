@@ -100,17 +100,7 @@
                                     <textarea id="textToParse" style="width: 1000px; height: 250px;"></textarea>
                                     <button id="parse">Parse</button>
                                 </tr>
-                                <tr>
-                                    <td colspan="3">
-                                        <div class="form-group">
-                                            <label for="obligsText"><liferay-ui:message key="text"/></label>
-                                            <div class="invalid-feedback" id="empty-text">
-                                                <liferay-ui:message key="please.enter.a.text" />
-                                            </div>
-                                            <%@ include file="obligationTextTree.jsp" %>
-                                        </div>
-                                    </td>
-                                </tr>
+                                <%@ include file="obligationTextTree.jsp" %>
                             </tbody>
                         </table>
                     </form>
@@ -223,7 +213,7 @@
 
                     const object = actionAndObjectText.substr(actions.length).trim();
 
-                    return ['Obligation', languageElement, actions, object];
+                    return ['<Obligation>', languageElement, actions, object];
                 } else {    // This is Other cases
                     const type = allKeywords[i];
                     const value = text.substr(type.length).trim();
@@ -508,8 +498,12 @@
                 }
             });
 
-            if ($(node).find('.elementType').val() == "Obligation") {
+            if ($(node).find('.elementType').val() == '<Obligation>') {
                 nodeValues.push("UNDEFINED")
+            }
+
+            if (nodeValues.length > 0 && nodeValues[0] == '<Obligation>') {
+                nodeValues[0] = 'Obligation';
             }
 
             return nodeValues;
