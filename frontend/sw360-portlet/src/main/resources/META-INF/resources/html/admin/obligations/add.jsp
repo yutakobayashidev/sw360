@@ -26,6 +26,8 @@
 
 <jsp:useBean id="todo" class="org.eclipse.sw360.datahandler.thrift.licenses.Obligation" scope="request" />
 <jsp:useBean id="obligList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.Obligation>" scope="request"/>
+<jsp:useBean id="obligationEdit" type="org.eclipse.sw360.datahandler.thrift.licenses.Obligation" scope="request"/>
+<jsp:useBean id="obligationAction" class="java.lang.String" scope="request"/>
 
 <portlet:actionURL var="addURL" name="addObligations">
 </portlet:actionURL>
@@ -124,7 +126,8 @@
 <script>
     // -------------- This is for Edit / Clone function -----------------
     // Keywords from OSADL obligation text
-    let keywords = {
+    console.log("111111111111nnnnnnnnnnnnnnnnnn")
+    var keywords = {
         "Obligation": ["YOU MUST", "YOU MUST NOT"],
         "Other": ["USE CASE",
                   "IF",
@@ -257,7 +260,7 @@
         return [type, value];
     }
 
-    let lines = [];
+    var lines = [];
 
     function getLevel(line) {
         let level = 0;
@@ -390,6 +393,72 @@
         })
 
         // ------------------------------------------------------------
+        function buildTreeNodeFromText(text) {
+            console.log(text)
+            lines = text.split('\n');
+
+            lines = setLineLevel(lines);
+
+            lines = setLinePath(lines);
+
+            let tree = buildTreeObject();
+
+            buildNode(tree, '#root');
+        }
+
+        var action = '${obligationAction}'
+        console.log(action)
+        if (action != '') {
+            console.log("edit/duplicate obligation")
+            if (action == 'edit') {
+                $('[data-action="save"]').text("Update Obligation")
+            }
+
+            var oblTitle = "<sw360:out value='${obligationEdit.title}'/>"
+            $('#todoTitle').val(oblTitle)
+
+            var oblType = "<sw360:out value='${obligationEdit.obligationType}'/>"
+            switch (oblType) {
+                case "PERMISSION":
+                    $('#obligationType').val("0")
+                    break
+                case "RISK":
+                    $('#obligationType').val("1")
+                    break
+                case "EXCEPTION":
+                    $('#obligationType').val("2")
+                    break
+                case "RESTRICTION":
+                    $('#obligationType').val("3")
+                    break
+                case "OBLIGATION":
+                    $('#obligationType').val("4")
+                    break
+            }
+
+            var oblLevel = "<sw360:out value='${obligationEdit.obligationLevel}'/>"
+            switch (oblLevel) {
+                case "ORGANISATION_OBLIGATION":
+                    $('#obligationLevel').val("0")
+                    break
+                case "PROJECT_OBLIGATION":
+                    $('#obligationLevel').val("1")
+                    break
+                case "COMPONENT_OBLIGATION":
+                    $('#obligationLevel').val("2")
+                    break
+                case "LICENSE_OBLIGATION":
+                    $('#obligationLevel').val("3")
+                    break
+            }
+
+            var obligationText = "<sw360:out value='${obligationEdit.text}' stripNewlines='false' jsQuoting='true'/>";
+            console.log(obligationText)
+            console.log(obligationText.replaceAll("&#034;","\""))
+            var obltext = obligationText.replaceAll("&#034;","\"")
+            buildTreeNodeFromText(obltext)
+            $('#root').find('input').first().val(oblTitle)
+        }
 
         $('.invalid-feedback').css('display', 'none');
         $('.invalid-feedback').removeClass('d-block');
@@ -454,7 +523,10 @@
             }
             <core_rt:forEach items="${obligList}" var="oblig">
                 var obligationTitle = "<sw360:out value='${oblig.title}'/>"
-                if (obligationTitle == title.trim()) {
+                if (action == 'edit' && obligationTitle == '${obligationEdit.title}') {
+                    check = true
+                }
+                else if (obligationTitle == title.trim()) {
                     $('#duplicate-obl').addClass('d-block')
                     check = false
                 }

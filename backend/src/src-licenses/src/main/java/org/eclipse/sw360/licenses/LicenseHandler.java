@@ -355,4 +355,9 @@ public class LicenseHandler implements LicenseService.Iface {
         return searchHandler.search(text);
     }
 
+    @Override
+    public String updateObligation(Obligation oblig, User user) throws TException {
+        return handler.updateObligation(oblig, user);
+    }
+
 }

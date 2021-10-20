@@ -55,6 +55,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.*;
 public class TodoPortlet extends Sw360Portlet {
 
     private static final Logger log = LogManager.getLogger(TodoPortlet.class);
+    private String obligationEditedId = "";
 
 
     //! Serve resource and helpers
@@ -103,14 +104,15 @@ public class TodoPortlet extends Sw360Portlet {
     @Override
     public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
 
-
         String pageName = request.getParameter(PAGENAME);
-        if (PAGENAME_ADD.equals(pageName)) {
+        obligationEditedId = "";
+        if (PAGENAME_ADD.equals(pageName) || PAGENAME_EDIT.equals(pageName) || PAGENAME_DUPLICATE.equals(pageName)) {
             List<ObligationNode> obligationNodeList;
             List<ObligationElement> obligationElementList;
             List<Obligation> obligationList;
+            LicenseService.Iface licenseClient = null;
             try {
-                LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+                licenseClient = thriftClients.makeLicenseClient();
                 obligationNodeList = licenseClient.getObligationNodes();
                 obligationElementList = licenseClient.getObligationElements();
                 obligationList = licenseClient.getObligations();
@@ -123,6 +125,26 @@ public class TodoPortlet extends Sw360Portlet {
             request.setAttribute(OBLIGATION_NODE_LIST, obligationNodeList);
             request.setAttribute(OBLIGATION_ELEMENT_LIST, obligationElementList);
             request.setAttribute(TODO_LIST, obligationList);
+            request.setAttribute(OBLIGATION_EDIT, new Obligation());
+            request.setAttribute(OBLIGATION_ACTION, "");
+
+            if (PAGENAME_EDIT.equals(pageName) || PAGENAME_DUPLICATE.equals(pageName)) {
+                String obligatonId = request.getParameter(OBLIGATION_ID);
+                final User user = UserCacheHolder.getUserFromRequest(request);
+
+                try {
+                    Obligation obligation = licenseClient.getObligationsById(obligatonId);
+                    request.setAttribute(OBLIGATION_EDIT, obligation);
+                    if (PAGENAME_EDIT.equals(pageName)) {
+                        obligationEditedId = obligatonId;
+                        request.setAttribute(OBLIGATION_ACTION, "edit");
+                    } else {
+                        request.setAttribute(OBLIGATION_ACTION, "duplicate");
+                    }
+                } catch (Exception e) {
+                    log.error("Could not get Obligation from backend ", e);
+                }
+            }
             include("/html/admin/obligations/add.jsp", request, response);
         } else {
             prepareStandardView(request);
@@ -148,20 +170,40 @@ public class TodoPortlet extends Sw360Portlet {
 
     @UsedAsLiferayAction
     public void addObligations(ActionRequest request, ActionResponse response) {
+        if (obligationEditedId == "") {
+            final Obligation oblig = new Obligation();
+            ComponentPortletUtils.updateTodoFromRequest(request, oblig);
+            LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+            final User user = UserCacheHolder.getUserFromRequest(request);
+            String jsonString = request.getParameter(Obligation._Fields.TEXT.toString());
+            try {
+                String obligationNode = licenseClient.addNodes(jsonString, user);
+                String obligationText = licenseClient.buildObligationText(obligationNode, "0");
+                oblig.setText(obligationText);
+                oblig.setNode(obligationNode);
+                licenseClient.addObligations(oblig, user);
+            } catch (TException e) {
+                log.error("Error adding oblig", e);
+            }
+        } else {
+            try {
+                LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+                final User user = UserCacheHolder.getUserFromRequest(request);
+                final Obligation oblig = licenseClient.getObligationsById(obligationEditedId);
 
-        final Obligation oblig = new Obligation();
-        ComponentPortletUtils.updateTodoFromRequest(request, oblig);
-        LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
-        final User user = UserCacheHolder.getUserFromRequest(request);
-        String jsonString = request.getParameter(Obligation._Fields.TEXT.toString());
-        try {
-            String obligationNode = licenseClient.addNodes(jsonString, user);
-            String obligationText = licenseClient.buildObligationText(obligationNode, "0");
-            oblig.setText(obligationText);
-            oblig.setNode(obligationNode);
-            licenseClient.addObligations(oblig, user);
-        } catch (TException e) {
-            log.error("Error adding oblig", e);
+                ComponentPortletUtils.updateTodoFromRequest(request, oblig);
+                String jsonString = request.getParameter(Obligation._Fields.TEXT.toString());
+                String obligationNode = licenseClient.addNodes(jsonString, user);
+                String obligationText = licenseClient.buildObligationText(obligationNode, "0");
+                oblig.setText(obligationText);
+                oblig.setNode(obligationNode);
+
+                licenseClient.updateObligation(oblig, user);
+            } catch (Exception e) {
+                log.error("Error editing oblig", e);
+            }
+
         }
+
     }
 }

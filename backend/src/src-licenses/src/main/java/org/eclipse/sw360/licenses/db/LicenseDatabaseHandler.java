@@ -219,6 +219,21 @@ public class LicenseDatabaseHandler {
     }
 
     /**
+     * Update a existed obligation to the database.
+     *
+     * @return ID of the added obligations.
+     */
+    public String updateObligation(@NotNull Obligation oblig, User user) throws SW360Exception {
+        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
+            return null;
+        }
+        prepareTodo(oblig);
+        obligRepository.update(oblig);
+
+        return oblig.getId();
+    }
+
+    /**
      * Adds a new obligation element to the database.
      *
      * @return ID of the added obligations element.

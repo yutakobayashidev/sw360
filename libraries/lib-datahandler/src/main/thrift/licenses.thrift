@@ -155,6 +155,11 @@ service LicenseService {
     string addObligations(1:Obligation obligations, 2: User user);
 
     /**
+     * Update a existed obligation object to database, return id
+     **/
+    string updateObligation(1:Obligation obligation, 2: User user);
+
+    /**
     * Add an existing obligation to a license or generate moderation request if user has no permission
     **/
     RequestStatus addObligationsToLicense(1: set<Obligation> obligations, 2: License license, 3: User user);
