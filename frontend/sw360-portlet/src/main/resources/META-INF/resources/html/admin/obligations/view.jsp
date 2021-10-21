@@ -146,7 +146,7 @@
                         );
 
                     $deleteAction.append($('<title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
-                    $actions.append($deleteAction, $editAction, $duplicateAction);
+                    $actions.append($editAction, $duplicateAction, $deleteAction);
                     return $actions[0].outerHTML;
                 } else if(type === 'type') {
                     return 'string';

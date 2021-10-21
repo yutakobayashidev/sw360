@@ -96,10 +96,6 @@
                                         </div>
                                     </td>
                                 </tr>
-                                <tr>
-                                    <textarea id="textToParse" style="width: 1000px; height: 250px;"></textarea>
-                                    <button id="parse">Parse</button>
-                                </tr>
                                 <%@ include file="obligationTextTree.jsp" %>
                             </tbody>
                         </table>
@@ -116,7 +112,6 @@
 <script>
     // -------------- This is for Edit / Clone function -----------------
     // Keywords from OSADL obligation text
-    console.log("111111111111nnnnnnnnnnnnnnnnnn")
     var keywords = {
         "Obligation": ["YOU MUST", "YOU MUST NOT"],
         "Other": ["USE CASE",
@@ -339,6 +334,18 @@
         return node;
     }
 
+    function buildTreeNodeFromText(text) {
+        lines = text.split('\n');
+
+        lines = setLineLevel(lines);
+
+        lines = setLinePath(lines);
+
+        let tree = buildTreeObject();
+
+        buildNode(tree, '#root');
+    }
+
     function buildNode(node, liTag) {
         switch (node.val.length) {
             case 1: $(liTag).find('input').first().val(node.val[0]);
@@ -362,176 +369,156 @@
 
             buildNode(node.children[i], $(liTag).find('li').last());
         }
-
     }
 
     require(['jquery', 'modules/dialog', 'modules/validation' ], function($, dialog, validation) {
-        $('#parse').on('click', function(e) {
-            e.preventDefault();
+        $(function () {
+            var action = '${obligationAction}';
 
-            input = $('#textToParse').val();
+            if (action != '') {
+                if (action == 'edit') {
+                    $('[data-action="save"]').text("Update Obligation");
+                }
 
-            lines = input.split('\n');
+                var oblType = "<sw360:out value='${obligationEdit.obligationType}'/>";
 
-            lines = setLineLevel(lines);
+                switch (oblType) {
+                    case "PERMISSION":
+                        $('#obligationType').val("0");
+                        break
+                    case "RISK":
+                        $('#obligationType').val("1");
+                        break
+                    case "EXCEPTION":
+                        $('#obligationType').val("2");
+                        break
+                    case "RESTRICTION":
+                        $('#obligationType').val("3");
+                        break
+                    case "OBLIGATION":
+                        $('#obligationType').val("4");
+                        break
+                    default:
+                        $('#obligationType').val("0");
+                }
 
-            lines = setLinePath(lines);
+                var oblLevel = "<sw360:out value='${obligationEdit.obligationLevel}'/>";
 
-            let tree = buildTreeObject();
-
-            buildNode(tree, '#root');
-        })
-
-        // ------------------------------------------------------------
-        function buildTreeNodeFromText(text) {
-            console.log(text)
-            lines = text.split('\n');
-
-            lines = setLineLevel(lines);
-
-            lines = setLinePath(lines);
-
-            let tree = buildTreeObject();
-
-            buildNode(tree, '#root');
-        }
-
-        var action = '${obligationAction}'
-        console.log(action)
-        if (action != '') {
-            console.log("edit/duplicate obligation")
-            if (action == 'edit') {
-                $('[data-action="save"]').text("Update Obligation")
+                switch (oblLevel) {
+                    case "ORGANISATION_OBLIGATION":
+                        $('#obligationLevel').val("0");
+                        break;
+                    case "PROJECT_OBLIGATION":
+                        $('#obligationLevel').val("1");
+                        break;
+                    case "COMPONENT_OBLIGATION":
+                        $('#obligationLevel').val("2");
+                        break;
+                    case "LICENSE_OBLIGATION":
+                        $('#obligationLevel').val("3");
+                        break;
+                    default:
+                        $('#obligationLevel').val("0");
+                }
             }
 
-            var oblTitle = "<sw360:out value='${obligationEdit.title}'/>"
-            $('#todoTitle').val(oblTitle)
-
-            var oblType = "<sw360:out value='${obligationEdit.obligationType}'/>"
-            switch (oblType) {
-                case "PERMISSION":
-                    $('#obligationType').val("0")
-                    break
-                case "RISK":
-                    $('#obligationType').val("1")
-                    break
-                case "EXCEPTION":
-                    $('#obligationType').val("2")
-                    break
-                case "RESTRICTION":
-                    $('#obligationType').val("3")
-                    break
-                case "OBLIGATION":
-                    $('#obligationType').val("4")
-                    break
-            }
-
-            var oblLevel = "<sw360:out value='${obligationEdit.obligationLevel}'/>"
-            switch (oblLevel) {
-                case "ORGANISATION_OBLIGATION":
-                    $('#obligationLevel').val("0")
-                    break
-                case "PROJECT_OBLIGATION":
-                    $('#obligationLevel').val("1")
-                    break
-                case "COMPONENT_OBLIGATION":
-                    $('#obligationLevel').val("2")
-                    break
-                case "LICENSE_OBLIGATION":
-                    $('#obligationLevel').val("3")
-                    break
-            }
-
-            var obligationText = "<sw360:out value='${obligationEdit.text}' stripNewlines='false' jsQuoting='true'/>";
-            console.log(obligationText)
-            console.log(obligationText.replaceAll("&#034;","\""))
-            var obltext = obligationText.replaceAll("&#034;","\"")
-            buildTreeNodeFromText(obltext)
-            $('#root').find('input').first().val(oblTitle)
-        }
-
-        $('.invalid-feedback').css('display', 'none');
-        $('.invalid-feedback').removeClass('d-block');
-        validation.enableForm('#todoAddForm');
-
-        $('.portlet-toolbar button[data-action="cancel"]').on('click', function() {
-            var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
-            var portletURL = Liferay.PortletURL.createURL( baseUrl )
-                .setParameter('<%=PortalConstants.PAGENAME%>','<%=PortalConstants.PAGENAME_VIEW%>')
-            window.location = portletURL.toString();
-        });
-
-        $('.portlet-toolbar button[data-action="save"]').on('click', function() {
             $('.invalid-feedback').css('display', 'none');
             $('.invalid-feedback').removeClass('d-block');
-            if (checkObligation($("#todoTitle").val())) {
-                const tree = readNode('#root');
-                const jsonTextTree = JSON.stringify(tree);
-                document.getElementById("obligsText").value = jsonTextTree;
-                $('#todoAddForm').submit();
+            validation.enableForm('#todoAddForm');
+
+            $('.portlet-toolbar button[data-action="cancel"]').on('click', function() {
+                var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
+                var portletURL = Liferay.PortletURL.createURL( baseUrl )
+                    .setParameter('<%=PortalConstants.PAGENAME%>','<%=PortalConstants.PAGENAME_VIEW%>')
+                window.location = portletURL.toString();
+            });
+
+            $('.portlet-toolbar button[data-action="save"]').on('click', function() {
+                $('.invalid-feedback').css('display', 'none');
+
+                $('.invalid-feedback').removeClass('d-block');
+
+                if (checkObligation()) {
+                    const tree = readNode('#root');
+
+                    const jsonTextTree = JSON.stringify(tree);
+
+                    document.getElementById("obligsText").value = jsonTextTree;
+
+                    $('#todoAddForm').submit();
+                }
+            });
+
+            function readNode(currentNode) {
+                var nodeData = {val:[], children:[]};
+
+                nodeData.val = getNodeValues(currentNode);
+
+                const childNodes = $(currentNode).children('ul');
+
+                $(childNodes).each(function(key, childNode) {
+                    var tmp = $(childNode).children('.tree-node').first();
+                    nodeData.children.push(readNode(tmp));
+                });
+
+                return nodeData;
+            }
+
+            function getNodeValues(node) {
+                const children = $(node).children();
+
+                var nodeValues = [];
+
+                $.each(children, function(key, child) {
+                    if ($(child).is('input') && $(child).css('display') != 'none') {
+                        nodeValues.push($(child).val());
+                    }
+                });
+
+                if ($(node).find('.elementType').val() == '<Obligation>') {
+                    nodeValues.push("UNDEFINED");
+                }
+
+                if (nodeValues.length > 0 && nodeValues[0] == '<Obligation>') {
+                    nodeValues[0] = 'Obligation';
+                }
+
+                return nodeValues;
+            }
+
+            function checkObligation() {
+                let check = true;
+
+                let title = $("#todoTitle").val();
+
+                if (title.trim().length == 0) {
+                    $('#empty-title').addClass('d-block');
+
+                    check = false;
+                }
+
+                <core_rt:forEach items="${obligList}" var="oblig">
+                    var obligationTitle = "<sw360:out value='${oblig.title}'/>"
+
+                    if (action == 'edit' && obligationTitle == '${obligationEdit.title}') {
+                        check = true;
+                    } else if (obligationTitle == title.trim()) {
+                        $('#duplicate-obl').addClass('d-block');
+
+                        check = false;
+                    }
+                </core_rt:forEach>
+
+                var obligationText = $('#out').text().substring(title.length).replaceAll(" ","").replaceAll("\n","");
+
+                if (obligationText == '') {
+                    $('#empty-text').addClass('d-block');
+
+                    check = false;
+                }
+
+                return check;
             }
         });
-
-        function readNode(currentNode) {
-            var nodeData = {val:[], children:[]};
-
-            nodeData.val = getNodeValues(currentNode);
-
-            const childNodes = $(currentNode).children('ul');
-
-            $(childNodes).each(function(key, childNode) {
-                var tmp = $(childNode).children('.tree-node').first();
-                nodeData.children.push(readNode(tmp));
-            });
-
-            return nodeData;
-        }
-
-        function getNodeValues(node) {
-            const children = $(node).children();
-
-            var nodeValues = [];
-
-            $.each(children, function(key, child) {
-                if ($(child).is('input') && $(child).css('display') != 'none') {
-                    nodeValues.push($(child).val());
-                }
-            });
-
-            if ($(node).find('.elementType').val() == '<Obligation>') {
-                nodeValues.push("UNDEFINED")
-            }
-
-            if (nodeValues.length > 0 && nodeValues[0] == '<Obligation>') {
-                nodeValues[0] = 'Obligation';
-            }
-
-            return nodeValues;
-        }
-
-        function checkObligation(title) {
-            check = true
-            if (title.trim().length == 0){
-                $('#empty-title').addClass('d-block')
-                check = false
-            }
-            <core_rt:forEach items="${obligList}" var="oblig">
-                var obligationTitle = "<sw360:out value='${oblig.title}'/>"
-                if (action == 'edit' && obligationTitle == '${obligationEdit.title}') {
-                    check = true
-                }
-                else if (obligationTitle == title.trim()) {
-                    $('#duplicate-obl').addClass('d-block')
-                    check = false
-                }
-            </core_rt:forEach>
-
-            var obligation_text = $('#out').text().replaceAll(" ","").replaceAll("\n","")
-            if (obligation_text == "") {
-                $('#empty-text').addClass('d-block')
-                check = false
-            }
-            return check
-        }
     });
 </script>

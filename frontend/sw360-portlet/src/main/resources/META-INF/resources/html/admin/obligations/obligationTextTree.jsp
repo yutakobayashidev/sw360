@@ -176,13 +176,15 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard'], fu
                 obj.parent().remove();
             },
             "import": function (obj) {
-                showObligationElementDialog(obj)
+                showObligationElementDialog(obj);
             },
         };
 
         $(document).on("click", "li.tree-node .controls > a", function () {
             action[this.getAttribute("data-func")]($(this).closest("li"));
+
             updatePreview();
+
             return false;
         });
 
@@ -370,7 +372,21 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard'], fu
                 e.stopPropagation();
             });
 
+        let obligationText = "<sw360:out value='${obligationEdit.text}' stripNewlines='false' jsQuoting='true'/>";
+
+        let obltext = obligationText.replaceAll("&#034;","\"");
+
+        buildTreeNodeFromText(obltext);
+
+        let oblTitle = "<sw360:out value='${obligationEdit.title}'/>"
+
+        $('#todoTitle').val(oblTitle);
+
+        $('#root').find('input').first().val(oblTitle);
+
         updatePreview();
+
+        // Processing for Import Obligation dialog
 
         keyboard.bindkeyPressToClick('searchobligationelement', 'searchbuttonobligation');
 
