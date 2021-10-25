@@ -25,6 +25,8 @@ import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.portlets.components.ComponentPortletUtils;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import javax.portlet.*;
 import java.io.IOException;
@@ -127,6 +129,7 @@ public class TodoPortlet extends Sw360Portlet {
             request.setAttribute(TODO_LIST, obligationList);
             request.setAttribute(OBLIGATION_EDIT, new Obligation());
             request.setAttribute(OBLIGATION_ACTION, "");
+            request.setAttribute("obligationJson", "");
 
             if (PAGENAME_EDIT.equals(pageName) || PAGENAME_DUPLICATE.equals(pageName)) {
                 String obligatonId = request.getParameter(OBLIGATION_ID);
@@ -134,6 +137,15 @@ public class TodoPortlet extends Sw360Portlet {
 
                 try {
                     Obligation obligation = licenseClient.getObligationsById(obligatonId);
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    try {
+                        obligation.setNode("");
+                        String obligationJson = objectMapper.writeValueAsString(obligation);
+                        request.setAttribute("obligationJson", obligationJson);
+                    } catch (JsonProcessingException e) {
+                        e.printStackTrace();
+                    }
+
                     request.setAttribute(OBLIGATION_EDIT, obligation);
                     if (PAGENAME_EDIT.equals(pageName)) {
                         obligationEditedId = obligatonId;
@@ -170,40 +182,38 @@ public class TodoPortlet extends Sw360Portlet {
 
     @UsedAsLiferayAction
     public void addObligations(ActionRequest request, ActionResponse response) {
+        LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+        final User user = UserCacheHolder.getUserFromRequest(request);
+
         if (obligationEditedId == "") {
-            final Obligation oblig = new Obligation();
-            ComponentPortletUtils.updateTodoFromRequest(request, oblig);
-            LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
-            final User user = UserCacheHolder.getUserFromRequest(request);
-            String jsonString = request.getParameter(Obligation._Fields.TEXT.toString());
             try {
-                String obligationNode = licenseClient.addNodes(jsonString, user);
-                String obligationText = licenseClient.buildObligationText(obligationNode, "0");
-                oblig.setText(obligationText);
-                oblig.setNode(obligationNode);
+                final Obligation oblig = new Obligation();
+                setObligationValues(request, oblig);
                 licenseClient.addObligations(oblig, user);
             } catch (TException e) {
                 log.error("Error adding oblig", e);
             }
         } else {
             try {
-                LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
-                final User user = UserCacheHolder.getUserFromRequest(request);
                 final Obligation oblig = licenseClient.getObligationsById(obligationEditedId);
-
-                ComponentPortletUtils.updateTodoFromRequest(request, oblig);
-                String jsonString = request.getParameter(Obligation._Fields.TEXT.toString());
-                String obligationNode = licenseClient.addNodes(jsonString, user);
-                String obligationText = licenseClient.buildObligationText(obligationNode, "0");
-                oblig.setText(obligationText);
-                oblig.setNode(obligationNode);
-
+                setObligationValues(request, oblig);
                 licenseClient.updateObligation(oblig, user);
             } catch (Exception e) {
                 log.error("Error editing oblig", e);
             }
-
         }
+    }
 
+    private Obligation setObligationValues(ActionRequest request, Obligation oblig) throws TException {
+        LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+        final User user = UserCacheHolder.getUserFromRequest(request);
+
+        ComponentPortletUtils.updateTodoFromRequest(request, oblig);
+        String jsonString = request.getParameter(Obligation._Fields.TEXT.toString());
+        String obligationNode = licenseClient.addNodes(jsonString, user);
+        String obligationText = licenseClient.buildObligationText(obligationNode, "0");
+        oblig.setText(obligationText);
+        oblig.setNode(obligationNode);
+        return oblig;
     }
 }
