@@ -720,10 +720,11 @@ public class LicenseDatabaseHandler {
             existedObligationElement.retainAll(obligationNodeRepository.searchByObligationNodeOblElementId(oblElementId));
         } else {
             String nodeText = obligationNode.getNodeText();
-            existedObligationElement = obligationNodeRepository.searchByObligationNodeType(nodeType);
-            if (!nodeText.isBlank()) {
+            if (!nodeText.isBlank() && !nodeType.isBlank()) {
+                existedObligationElement = obligationNodeRepository.searchByObligationNodeType(nodeType);
                 existedObligationElement.retainAll(obligationNodeRepository.searchByObligationNodeText(nodeText));
-            } else {
+            } else if (nodeText.isBlank() && !nodeType.isBlank()) {
+                existedObligationElement = obligationNodeRepository.searchByObligationNodeType(nodeType);
                 List<ObligationNode> obligationElementNoText = new ArrayList<>();
                 for (ObligationNode oblE : existedObligationElement) {
                     if (oblE.getNodeText().equals(nodeText)){
@@ -732,6 +733,19 @@ public class LicenseDatabaseHandler {
                 }
                 if (!obligationElementNoText.isEmpty()) {
                     existedObligationElement.retainAll(obligationElementNoText);
+                } else {
+                    return Collections.emptyList();
+                }
+            } else {
+                existedObligationElement = obligationNodeRepository.searchByObligationNodeText(nodeText);
+                List<ObligationNode> obligationElementNoType = new ArrayList<>();
+                for (ObligationNode oblE : existedObligationElement) {
+                    if (oblE.getNodeType().isBlank()){
+                        obligationElementNoType.add(oblE);
+                    }
+                }
+                if (!obligationElementNoType.isEmpty()) {
+                    existedObligationElement.retainAll(obligationElementNoType);
                 } else {
                     return Collections.emptyList();
                 }
