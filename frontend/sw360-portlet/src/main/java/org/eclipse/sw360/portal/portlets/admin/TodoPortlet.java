@@ -35,6 +35,10 @@ import java.util.List;
 import static com.google.common.base.Strings.isNullOrEmpty;
 
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
+import org.eclipse.sw360.portal.common.*;
+import static com.liferay.portal.kernel.json.JSONFactoryUtil.createJSONArray;
+import static com.liferay.portal.kernel.json.JSONFactoryUtil.createJSONObject;
+import com.liferay.portal.kernel.json.*;
 
 @org.osgi.service.component.annotations.Component(
     immediate = true,
@@ -81,6 +85,10 @@ public class TodoPortlet extends Sw360Portlet {
             }
         } else if (VIEW_IMPORT_OBLIGATION_ELEMENTS.equals(action)) {
             serveObligationElementSearchResults(request, response, where);
+        } else if (LOAD_CHANGE_LOGS.equals(action) || VIEW_CHANGE_LOGS.equals(action)) {
+            ChangeLogsPortletUtils changeLogsPortletUtilsPortletUtils = PortletUtils.getChangeLogsPortletUtils(thriftClients);
+            JSONObject dataForChangeLogs = changeLogsPortletUtilsPortletUtils.serveResourceForChangeLogs(request, response, action);
+            writeJSON(request, response, dataForChangeLogs);
         }
     }
 
@@ -108,6 +116,8 @@ public class TodoPortlet extends Sw360Portlet {
 
         String pageName = request.getParameter(PAGENAME);
         obligationEditedId = "";
+        String obligatonId = request.getParameter(DOCUMENT_ID);
+
         if (PAGENAME_ADD.equals(pageName) || PAGENAME_EDIT.equals(pageName) || PAGENAME_DUPLICATE.equals(pageName)) {
             List<ObligationNode> obligationNodeList;
             List<ObligationElement> obligationElementList;
@@ -132,7 +142,7 @@ public class TodoPortlet extends Sw360Portlet {
             request.setAttribute("obligationJson", "");
 
             if (PAGENAME_EDIT.equals(pageName) || PAGENAME_DUPLICATE.equals(pageName)) {
-                String obligatonId = request.getParameter(OBLIGATION_ID);
+                //String obligatonId = request.getParameter(OBLIGATION_ID);
                 final User user = UserCacheHolder.getUserFromRequest(request);
 
                 try {
@@ -158,7 +168,18 @@ public class TodoPortlet extends Sw360Portlet {
                 }
             }
             include("/html/admin/obligations/add.jsp", request, response);
-        } else {
+        } else if ("obligationchangelog".equals(pageName)) {
+            try {
+                //String obligatonId = request.getParameter(OBLIGATION_ID);
+                LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+                Obligation obligation = licenseClient.getObligationsById(obligatonId);
+                request.setAttribute("obligationName", obligation.getTitle());
+                include("/html/admin/obligations/includes/obligationChangelog.jsp", request, response);
+            } catch (Exception e) {
+                //
+            }
+        }
+        else {
             prepareStandardView(request);
             super.doView(request, response);
         }

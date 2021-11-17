@@ -52,6 +52,12 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.*;
 
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONArray;
+import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
+import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
+import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
+import com.google.common.collect.Lists;
+import org.eclipse.sw360.datahandler.common.*;
+
 /**
  * Class for accessing the CouchDB database
  *
@@ -75,6 +81,7 @@ public class LicenseDatabaseHandler {
     private final LicenseModerator moderator;
     private final CustomPropertiesRepository customPropertiesRepository;
     private final DatabaseRepositoryCloudantClient[] repositories;
+    private DatabaseHandlerUtil dbHandlerUtil;
 
     private static boolean IMPORT_STATUS = false;
     private String obligationText;
@@ -83,6 +90,8 @@ public class LicenseDatabaseHandler {
     public LicenseDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
         // Create the connector
         db = new DatabaseConnectorCloudant(httpClient, dbName);
+        DatabaseConnectorCloudant dbChangelogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+        dbHandlerUtil = new DatabaseHandlerUtil(dbChangelogs);
 
         // Create the repository
         licenseRepository = new LicenseRepository(db);
@@ -214,6 +223,7 @@ public class LicenseDatabaseHandler {
         }
         prepareTodo(obligs);
         obligRepository.add(obligs);
+        dbHandlerUtil.addChangeLogs(obligs, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
 
         return obligs.getId();
     }
@@ -227,8 +237,10 @@ public class LicenseDatabaseHandler {
         if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
             return null;
         }
+        Obligation oldObligation = getObligationsById(oblig.getId());
         prepareTodo(oblig);
         obligRepository.update(oblig);
+        dbHandlerUtil.addChangeLogs(oblig, oldObligation, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
 
         return oblig.getId();
     }

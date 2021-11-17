@@ -109,7 +109,7 @@
                         {"title": "<liferay-ui:message key="title" />", data: 'title' },
                         {"title": "<liferay-ui:message key="text" />", data: 'text' },
                         {"title": "<liferay-ui:message key="obligation.level" />", data: 'obligationLevel'},
-                        {"title": "<liferay-ui:message key="actions" />", data: 'id', render: renderActions, className: 'three actions', orderable: false}
+                        {"title": "<liferay-ui:message key="actions" />", data: 'id', render: renderActions, className: 'four actions', orderable: false}
                     ],
                     language: {
                         url: "<liferay-ui:message key="datatables.lang" />",
@@ -143,10 +143,16 @@
                             makeComponentUrl(id, '<%=PortalConstants.PAGENAME_EDIT%>'),
                             "",
                             '<svg class="lexicon-icon"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/><title><liferay-ui:message key="edit" /></title></svg>'
+                        ),
+
+                        $viewChangeLogAction = render.linkTo(
+                            makeComponentUrl(id, 'obligationchangelog'),
+                            "",
+                            '<svg class="lexicon-icon"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#document"/><title><liferay-ui:message key="change.log" /></title></svg>'
                         );
 
                     $deleteAction.append($('<title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
-                    $actions.append($editAction, $duplicateAction, $deleteAction);
+                    $actions.append($editAction, $duplicateAction, $viewChangeLogAction, $deleteAction);
                     return $actions[0].outerHTML;
                 } else if(type === 'type') {
                     return 'string';
@@ -159,7 +165,8 @@
             function makeComponentUrl(obligationId, page) {
                 var portletURL = PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>')
                         .setParameter('<%=PortalConstants.PAGENAME%>', page)
-                        .setParameter('<%=PortalConstants.OBLIGATION_ID%>', obligationId)
+                        // .setParameter('<%=PortalConstants.OBLIGATION_ID%>', obligationId)
+                        .setParameter('<%=PortalConstants.DOCUMENT_ID%>', obligationId)
                 return portletURL.toString();
             }
 
