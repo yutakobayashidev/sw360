@@ -41,6 +41,8 @@ import com.cloudant.client.api.model.Response;
 import com.google.common.collect.Sets;
 
 import java.net.MalformedURLException;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -84,6 +86,8 @@ public class LicenseDatabaseHandler {
     private DatabaseHandlerUtil dbHandlerUtil;
 
     private static boolean IMPORT_STATUS = false;
+    private static long IMPORT_TIME = 0;
+    private static final long TIME_OUT = 1800000; // 30 minutes: 30 * 60 * 1000;
     private String obligationText;
     private final Logger log = LogManager.getLogger(LicenseDatabaseHandler.class);
 
@@ -251,7 +255,7 @@ public class LicenseDatabaseHandler {
      * @return ID of the added obligations element.
      */
     public String addObligationElements(@NotNull ObligationElement obligationElement, User user) throws SW360Exception {
-        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
+        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)) {
             return null;
         }
         prepareObligationElement(obligationElement);
@@ -273,7 +277,7 @@ public class LicenseDatabaseHandler {
      * @return ID of the added obligations node.
      */
     public String addObligationNodes(@NotNull ObligationNode obligationNode, User user) throws SW360Exception {
-        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
+        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)) {
             return null;
         }
         prepareObligationNode(obligationNode);
@@ -739,7 +743,7 @@ public class LicenseDatabaseHandler {
                 existedObligationElement = obligationNodeRepository.searchByObligationNodeType(nodeType);
                 List<ObligationNode> obligationElementNoText = new ArrayList<>();
                 for (ObligationNode oblE : existedObligationElement) {
-                    if (oblE.getNodeText().equals(nodeText)){
+                    if (oblE.getNodeText().equals(nodeText)) {
                         obligationElementNoText.add(oblE);
                     }
                 }
@@ -889,11 +893,14 @@ public class LicenseDatabaseHandler {
 
     public RequestSummary importAllOSADLLicenses(User user) {
         RequestSummary requestSummary = new RequestSummary().setTotalAffectedElements(0).setMessage("");
-        if (IMPORT_STATUS) {
+        Timestamp ts = Timestamp.from(Instant.now());
+        long currentTime = ts.getTime();
+        if (IMPORT_STATUS && ((IMPORT_TIME + TIME_OUT) > currentTime)) {
             return requestSummary.setRequestStatus(RequestStatus.PROCESSING);
         }
 
         IMPORT_STATUS = true;
+        IMPORT_TIME = currentTime;
         final List<License> sw360Licenses = licenseRepository.getAll();
         final List<Obligation> sw360Obligations = obligRepository.getAll();
         JSONObject licensesMissing = new JSONObject();
@@ -1000,10 +1007,10 @@ public class LicenseDatabaseHandler {
             com.liferay.portal.kernel.json.JSONObject jsonObject = JSONFactoryUtil.createJSONObject(jsonString);
             return addNodes(jsonObject, user);
         }
-        catch (Exception e){
-            //TODO: handle exception
+        catch (Exception e) {
+            log.error("Can not add nodes from text: " + jsonString);
+            return null;
         }
-        return null;
     }
 
     private String addNodes(com.liferay.portal.kernel.json.JSONObject jsonObject, User user) throws SW360Exception {
@@ -1017,10 +1024,10 @@ public class LicenseDatabaseHandler {
             }
             return jsonObject.toJSONString();
         }
-        catch (Exception e){
-            //TODO: handle exception
+        catch (Exception e) {
+            log.error("Can not add nodes from json object: " + jsonObject);
+            return null;
         }
-        return null;
     }
 
     // Save node element
@@ -1031,7 +1038,7 @@ public class LicenseDatabaseHandler {
             obligationNode.setNodeText("");
             return addObligationNodes(obligationNode, user);
         }
-        if(jsonArray.getString(0).equals("Obligation")) {
+        if (jsonArray.getString(0).equals("Obligation")) {
             ObligationElement obligationElement = new ObligationElement();
             obligationElement.setLangElement(jsonArray.getString(1));
             obligationElement.setAction(jsonArray.getString(2));
@@ -1061,15 +1068,15 @@ public class LicenseDatabaseHandler {
             obligationText = "";
             return buildObligationText(jsonObject, level);
         }
-        catch (Exception e){
-            //TODO: handle exception
+        catch (Exception e) {
+            log.error("Can not build obligation text from node: " + jsonString);
+            return null;
         }
-        return null;
     }
 
     private String buildObligationText(com.liferay.portal.kernel.json.JSONObject jsonObject, int level) {
         StringBuilder prefix = new StringBuilder("");
-        for(int j = 1; j < level ; j++) {
+        for (int j = 1; j < level; j++) {
             prefix = prefix.append("\t");
 		}
         try {
@@ -1085,7 +1092,8 @@ public class LicenseDatabaseHandler {
                 obligationText = obligationText + "\n" + obligationTextNode;
             }
         } catch (Exception e) {
-            //TODO: handle exception
+            log.error("Can not build obligation text from node json object: " + jsonObject);
+            return null;
         }
         if (jsonObject.getJSONArray("children").length() != 0 ) {
             for (int i = 0; i < jsonObject.getJSONArray("children").length(); i++) {

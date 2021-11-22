@@ -182,9 +182,7 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard'], fu
 
         $(document).on("click", "li.tree-node .controls > a", function () {
             action[this.getAttribute("data-func")]($(this).closest("li"));
-
             updatePreview();
-
             return false;
         });
 
@@ -203,7 +201,7 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard'], fu
         function getJSONObjectKeys(object) {
             var keys = [];
 
-            for(var key in object) {
+            for (var key in object) {
                 keys.push(key);
             }
 
@@ -212,7 +210,6 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard'], fu
 
         function getTypeSuggestions() {
             var suggestions = {};
-
             <core_rt:forEach items="${obligationNodeList}" var="node">
                 var nodeType = "<sw360:out value='${node.nodeType}'/>";
                 if (nodeType != "" && nodeType != "ROOT" && !suggestions.hasOwnProperty(nodeType)) {
@@ -228,8 +225,9 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard'], fu
                 }
             </core_rt:forEach>
 
-            delete suggestions.Obligation;
-            suggestions['<Obligation>'] = new Set();
+            if (Object.keys(suggestions).length === 0) {
+                suggestions['Obligation'] = new Set()
+            }
 
             return suggestions;
         }
@@ -248,7 +246,7 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard'], fu
 
             if (suggestions['LE'].size === 0) {
                 suggestions['LE'].add("YOU MUST")
-                suggestions['LE'].add("YOU NOT MUST")
+                suggestions['LE'].add("YOU MUST NOT")
             }
 
             if (suggestions['Action'].size === 0) {

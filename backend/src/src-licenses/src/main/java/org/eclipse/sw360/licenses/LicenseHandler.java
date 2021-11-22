@@ -315,7 +315,7 @@ public class LicenseHandler implements LicenseService.Iface {
 
     @Override
     public RequestSummary importAllOSADLLicenses(User user) throws TException {
-        if(! PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
+        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)) {
             return new RequestSummary().setRequestStatus(RequestStatus.FAILURE);
         }
         return handler.importAllOSADLLicenses(user);

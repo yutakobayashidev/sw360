@@ -7,6 +7,14 @@
  * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Creative Commons 4.0
+ * which is available at https://creativecommons.org/2014/01/07/plaintext-versions-of-creative-commons-4-0-licenses/
+ *
+ * SPDX-License-Identifier: CC-BY-4.0
+ *
+ * This product depends on software developed by the Open Source Automation Development Lab eG (OSADL) (https://www.osadl.org/).
  */
 
 package org.eclipse.sw360.licenses.tools;
@@ -116,12 +124,8 @@ public class OSADLObligationConnector extends ObligationConnector {
 				JSONObject currentLine = JSONFactoryUtil.createJSONObject(line);
 				int parentLineId = getParentLineId(currentLine, lines);
 				if (parentLineId >= 0) {
-					try {
-						JSONObject parentLine = JSONFactoryUtil.createJSONObject(lines.get(parentLineId));
-						parentLinePath = parentLine.get("path").toString();
-					} catch (Exception e) {
-						//TODO: handle exception
-					}
+					JSONObject parentLine = JSONFactoryUtil.createJSONObject(lines.get(parentLineId));
+					parentLinePath = parentLine.get("path").toString();
 				}
 				currentLine.remove("path");
 				String path = parentLinePath.replace("@", "") + "@" + currentLine.get("id").toString();
@@ -131,7 +135,8 @@ public class OSADLObligationConnector extends ObligationConnector {
 				String jsonLine = "{ 'id': '" + currentLine.get("id") + "', 'text': '" + currentLine.get("text") + "', 'level': '" + currentLine.get("level") + "', 'path': '" +currentLine.get("path")+ "'}";
 				refinedLines.add(jsonLine);
 			} catch (Exception e) {
-				//TODO: handle exception
+				log.error("Can not set line path: " + line);
+				return null;
 			}
 		}
 		return refinedLines;
@@ -146,7 +151,8 @@ public class OSADLObligationConnector extends ObligationConnector {
 					return i;
 				}
 			} catch (Exception e) {
-				//TODO: handle exception
+				log.error("Can not get parent line id from: " + currentLine);
+				return -1;
 			}
 		}
 		return -1;
@@ -158,9 +164,9 @@ public class OSADLObligationConnector extends ObligationConnector {
 			JSONObject rootNode = JSONFactoryUtil.createJSONObject(rootNodeText);
 			return removeField(addNode(rootNode, lines), "path");
 		} catch (Exception e) {
-			//TODO: handle exception
+			log.error("Can not build tree object from: " + lines);
+			return null;
 		}
-		return null;
 	}
 
 	private JSONObject removeField(JSONObject rootNode, String field) {
@@ -187,7 +193,8 @@ public class OSADLObligationConnector extends ObligationConnector {
 					rootNode.getJSONArray("children").put(JSONFactoryUtil.createJSONObject(childNode));
 				}
 			} catch (Exception e) {
-				//TODO: handle exception
+				log.error("Can not add node from: " + lines);
+				return null;
 			}
 		}
 		for (int i = 0; i < rootNode.getJSONArray("children").length(); i++) {
@@ -197,7 +204,7 @@ public class OSADLObligationConnector extends ObligationConnector {
 		return rootNode;
 	}
 
-	private List<List<String>> getProperty(){
+	private List<List<String>> getProperty() {
 		List<List<String>> keywords = new ArrayList<List<String>>();
 		List<String> obligation = new ArrayList<>(Arrays.asList("YOU MUST", "YOU MUST NOT"));
 		List<String> other = new ArrayList<>(Arrays.asList(

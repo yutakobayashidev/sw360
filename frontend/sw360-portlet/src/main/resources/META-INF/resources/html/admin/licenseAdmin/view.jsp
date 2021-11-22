@@ -1,6 +1,8 @@
 <%--
   ~ Copyright Siemens AG, 2013-2017, 2019.
   ~ Copyright Bosch Software Innovations GmbH, 2016.
+  ~ Copyright TOSHIBA CORPORATION, 2021.
+  ~ Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2021.
   ~ Part of the SW360 Portal Project.
   ~
   ~ This program and the accompanying materials are made
@@ -114,7 +116,7 @@ require(['jquery', 'modules/dialog', 'modules/validation'], function($, dialog, 
 
     $('.portlet-toolbar button[data-action="import-spdx"]').on('click', function() {
         var $dialog;
-        if(progress != null) {
+        if (progress != null) {
             progress.abort();
         }
 
@@ -152,7 +154,7 @@ require(['jquery', 'modules/dialog', 'modules/validation'], function($, dialog, 
 
     $('.portlet-toolbar button[data-action="import-OSADL"]').on('click', function() {
         var $dialog;
-        if(progress != null) {
+        if (progress != null) {
             progress.abort();
         }
 
@@ -213,7 +215,7 @@ require(['jquery', 'modules/dialog', 'modules/validation'], function($, dialog, 
 
     $('.portlet-toolbar button[data-action="delete-licenses"]').on('click', function() {
         var $dialog;
-        if(progress != null) {
+        if (progress != null) {
             progress.abort();
         }
 
@@ -267,7 +269,7 @@ require(['jquery', 'modules/dialog', 'modules/validation'], function($, dialog, 
         licenseTable += '<tbody>';
 
         var i = 1;
-        for (var key in licensesJson){
+        for (var key in licensesJson) {
             licenseTable += createRowTable(i, key, licensesJson[key]);
             i++;
         }

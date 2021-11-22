@@ -1,6 +1,8 @@
 /*
  * Copyright Siemens AG, 2014-2017. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
+ * With contributions by TOSHIBA CORPORATION, 2021.
+ * With contributions by Toshiba Software Development (Vietnam) Co., Ltd., 2021.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0

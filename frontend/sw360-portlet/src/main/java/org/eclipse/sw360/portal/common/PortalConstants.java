@@ -177,7 +177,7 @@ public class PortalConstants {
     public static final String RELEASE_SELECTION = "releaseSelection";
     public static final String RELEASE_SOURCE_ID = "releaseSourceId";
     public static final String RELEASE_TARGET_ID = "releaseTargetId";
-    
+    public static final String EVALUATE_CLI_ATTACHMENTS = "evaluateCLIAttachments";
 
     //! Specialized keys for vendors
     public static final String VENDOR_PORTLET_NAME = PORTLET_NAME_PREFIX + "vendors";
@@ -388,7 +388,7 @@ public class PortalConstants {
     public static final String OBLIGATION_NODE_LIST = "obligationNodeList";
 
     //! Specialized keys for obligation element
-        public static final String OBLIGATION_ELEMENT_LIST = "obligationElementList";
+    public static final String OBLIGATION_ELEMENT_LIST = "obligationElementList";
 
     //! Serve resource generic keywords
     public static final String ACTION = "action";
