@@ -210,6 +210,7 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard'], fu
 
         function getTypeSuggestions() {
             var suggestions = {};
+
             <core_rt:forEach items="${obligationNodeList}" var="node">
                 var nodeType = "<sw360:out value='${node.nodeType}'/>";
                 if (nodeType != "" && nodeType != "ROOT" && !suggestions.hasOwnProperty(nodeType)) {
@@ -225,9 +226,8 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard'], fu
                 }
             </core_rt:forEach>
 
-            if (Object.keys(suggestions).length === 0) {
-                suggestions['Obligation'] = new Set()
-            }
+            delete suggestions.Obligation;
+            suggestions['<Obligation>'] = new Set();
 
             return suggestions;
         }

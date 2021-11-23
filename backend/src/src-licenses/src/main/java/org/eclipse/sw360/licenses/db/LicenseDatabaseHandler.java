@@ -227,6 +227,7 @@ public class LicenseDatabaseHandler {
         }
         prepareTodo(obligs);
         obligRepository.add(obligs);
+        obligs.setNode(null);
         dbHandlerUtil.addChangeLogs(obligs, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
 
         return obligs.getId();
@@ -244,6 +245,8 @@ public class LicenseDatabaseHandler {
         Obligation oldObligation = getObligationsById(oblig.getId());
         prepareTodo(oblig);
         obligRepository.update(oblig);
+        oblig.setNode(null);
+        oldObligation.setNode(null);
         dbHandlerUtil.addChangeLogs(oblig, oldObligation, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
 
         return oblig.getId();

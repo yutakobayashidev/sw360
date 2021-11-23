@@ -42,7 +42,12 @@
 				<div class="col-auto">
 					<div class="btn-toolbar" role="toolbar">
                         <div class="btn-group">
-                            <button type="button" class="btn btn-primary" data-action="save"><liferay-ui:message key="create.obligation" /></button>
+                            <core_rt:if test="${obligationAction == 'edit'}">
+                                <button type="button" class="btn btn-primary" data-action="save"><liferay-ui:message key="update.obligation" /></button>
+                            </core_rt:if>
+                            <core_rt:if test="${obligationAction != 'edit'}">
+                                <button type="button" class="btn btn-primary" data-action="save"><liferay-ui:message key="create.obligation" /></button>
+                            </core_rt:if>
                         </div>
                         <div class="btn-group">
                             <button type="button" class="btn btn-light" data-action="cancel"><liferay-ui:message key="cancel" /></button>
@@ -375,14 +380,15 @@
     }
 
     require(['jquery', 'modules/dialog', 'modules/validation' ], function($, dialog, validation) {
+        var action = '${obligationAction}';
+
+        if (action == 'edit') {
+            $('[data-action="save"]').text("Update Obligation");
+        }
+
         $(function () {
-            var action = '${obligationAction}';
 
             if (action != '') {
-                if (action == 'edit') {
-                    $('[data-action="save"]').text("Update Obligation");
-                }
-
                 var oblType = "<sw360:out value='${obligationEdit.obligationType}'/>";
 
                 switch (oblType) {
