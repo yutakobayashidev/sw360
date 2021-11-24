@@ -127,11 +127,8 @@
                     var $actions = $('<div>', {
                             'class': 'actions'
                         }),
-                        $deleteAction = $('<svg>', {
-                            'class': 'delete lexicon-icon',
-                            'data-id': value,
-                            'data-title': row.title
-                        }),
+
+                        $deleteAction = '<a><svg class="delete lexicon-icon" name="delete-annotation" data-id=' + value + ' data-title="' + row.title + '" viewBox="0 0 512 512"><title><liferay-ui:message key="delete" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/></svg></a>',
 
                         $duplicateAction = render.linkTo(
                             makeComponentUrl(id, '<%=PortalConstants.PAGENAME_DUPLICATE%>'),
@@ -151,7 +148,6 @@
                             '<svg class="lexicon-icon"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#document"/><title><liferay-ui:message key="change.log" /></title></svg>'
                         );
 
-                    $deleteAction.append($('<title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
                     $actions.append($editAction, $duplicateAction, $viewChangeLogAction, $deleteAction);
                     return $actions[0].outerHTML;
                 } else if(type === 'type') {
