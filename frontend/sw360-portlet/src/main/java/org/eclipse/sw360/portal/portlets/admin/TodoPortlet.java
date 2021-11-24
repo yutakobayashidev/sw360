@@ -15,6 +15,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
+import org.eclipse.sw360.datahandler.thrift.changelogs.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationNode;
@@ -74,10 +75,12 @@ public class TodoPortlet extends Sw360Portlet {
         final User user = UserCacheHolder.getUserFromRequest(request);
 
         LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+        ChangeLogsService.Iface changeLogsClient = thriftClients.makeChangeLogsClient();
 
         if (REMOVE_TODO.equals(action)) {
             try {
-                RequestStatus status = licenseClient.deleteObligations(id, user);
+                RequestStatus status = changeLogsClient.deleteChangeLogsByDocumentId(id, user);
+                status = licenseClient.deleteObligations(id, user);
                 renderRequestStatus(request,response, status);
             } catch (TException e) {
                 log.error("Error deleting oblig", e);
