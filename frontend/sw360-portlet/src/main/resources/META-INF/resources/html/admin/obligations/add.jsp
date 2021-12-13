@@ -62,7 +62,7 @@
                         <table id="todoAddTable" class="table edit-table three-columns">
                             <thead>
                                 <tr>
-                                    <th colspan="3"><liferay-ui:message key="add.obligation" /></th>
+                                    <th colspan="3"></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -382,6 +382,9 @@
     require(['jquery', 'modules/dialog', 'modules/validation' ], function($, dialog, validation) {
         var action = '${obligationAction}';
 
+        let obligationObj = jQuery.parseJSON(JSON.stringify(${ obligationJson }));
+        let obligationListObj = jQuery.parseJSON(JSON.stringify(${ obligationListJson }));
+
         if (action == 'edit') {
             $('[data-action="save"]').text("Update Obligation");
         }
@@ -389,7 +392,7 @@
         $(function () {
 
             if (action != '') {
-                var oblType = "<sw360:out value='${obligationEdit.obligationType}'/>";
+                var oblType = obligationObj.obligationType;
 
                 switch (oblType) {
                     case "PERMISSION":
@@ -411,7 +414,7 @@
                         $('#obligationType').val("0");
                 }
 
-                var oblLevel = "<sw360:out value='${obligationEdit.obligationLevel}'/>";
+                var oblLevel = obligationObj.obligationLevel;
 
                 switch (oblLevel) {
                     case "ORGANISATION_OBLIGATION":
@@ -496,37 +499,40 @@
             }
 
             function checkObligation() {
-                let check = true;
-
+                let errorList = [];
                 let title = $("#todoTitle").val();
 
                 if (title.trim().length == 0) {
-                    $('#empty-title').addClass('d-block');
-
-                    check = false;
+                    errorList.push('empty-title');
                 }
 
-                <core_rt:forEach items="${obligList}" var="oblig">
-                    var obligationTitle = "<sw360:out value='${oblig.title}'/>"
+                for (let i = 0; i < obligationListObj.length; i++) {
+                    let obligationTitle = obligationListObj[i].title;
 
-                    if (action == 'edit' && obligationTitle == '${obligationEdit.title}') {
-                        check = true;
-                    } else if (obligationTitle == title.trim()) {
-                        $('#duplicate-obl').addClass('d-block');
-
-                        check = false;
+                    if (obligationTitle == title.trim() && obligationTitle != obligationObj.title) {
+                        errorList.push('duplicate-obl');
+                        break;
                     }
-                </core_rt:forEach>
+                }
 
                 var obligationText = $('#out').text().substring(title.length).replaceAll(" ","").replaceAll("\n","");
 
                 if (obligationText == '') {
-                    $('#empty-text').addClass('d-block');
-
-                    check = false;
+                    errorList.push('empty-text');
                 }
 
-                return check;
+                if (errorList.length === 0) {
+                    return true;
+                } else {
+                    showError(errorList);
+                    return false;
+                }
+            }
+
+            function showError(errorList) {
+                errorList.forEach(e => {
+                    $('#' + e).addClass('d-block');
+                });
             }
         });
     });

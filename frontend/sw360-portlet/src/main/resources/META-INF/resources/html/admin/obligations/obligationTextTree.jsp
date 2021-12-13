@@ -149,6 +149,10 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard'], fu
     var $dataTable,
     $dialog;
 
+    let obligationObj = jQuery.parseJSON(JSON.stringify(${ obligationJson }));
+    let obligationNodeListObj = jQuery.parseJSON(JSON.stringify(${ obligationNodeListJson }));
+    let obligationElementListObj = jQuery.parseJSON(JSON.stringify(${ obligationElementListJson }));
+
     $(document).ready(function () {
         const indent = "    ",                  // Use 4 spaces for indentation of previewing
             ul_template = $("#template > ul");
@@ -211,20 +215,15 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard'], fu
         function getTypeSuggestions() {
             var suggestions = {};
 
-            <core_rt:forEach items="${obligationNodeList}" var="node">
-                var nodeType = "<sw360:out value='${node.nodeType}'/>";
+            for (let i = 0; i < obligationNodeListObj.length; i++) {
+                let nodeType = obligationNodeListObj[i].nodeType;
                 if (nodeType != "" && nodeType != "ROOT" && !suggestions.hasOwnProperty(nodeType)) {
                     suggestions[nodeType] = new Set();
                 }
-            </core_rt:forEach>
-
-            <core_rt:forEach items="${obligationNodeList}" var="node">
-                var nodeType = "<sw360:out value='${node.nodeType}'/>";
-
                 if (suggestions.hasOwnProperty(nodeType)) {
-                    suggestions[nodeType].add("<sw360:out value='${node.nodeText}'/>");
+                    suggestions[nodeType].add(obligationNodeListObj[i].nodeText);
                 }
-            </core_rt:forEach>
+            }
 
             delete suggestions.Obligation;
             suggestions['<Obligation>'] = new Set();
@@ -238,11 +237,11 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard'], fu
             suggestions['Action'] = new Set();
             suggestions['Object'] = new Set();
 
-            <core_rt:forEach items="${obligationElementList}" var="obligationElement">
-                suggestions['LE'].add("<sw360:out value='${obligationElement.langElement}'/>");
-                suggestions['Action'].add("<sw360:out value='${obligationElement.action}'/>");
-                suggestions['Object'].add("<sw360:out value='${obligationElement.object}'/>");
-            </core_rt:forEach>
+            for (let i = 0; i < obligationElementListObj.length; i++) {
+                suggestions['LE'].add(obligationElementListObj[i].langElement);
+                suggestions['Action'].add(obligationElementListObj[i].action);
+                suggestions['Object'].add(obligationElementListObj[i].object);
+            }
 
             if (suggestions['LE'].size === 0) {
                 suggestions['LE'].add("YOU MUST")
@@ -370,13 +369,11 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard'], fu
                 e.stopPropagation();
             });
 
-        let obligationText = "<sw360:out value='${obligationEdit.text}' stripNewlines='false' jsQuoting='true'/>";
+        let obligationText = obligationObj.text;
 
-        let obltext = obligationText.replaceAll("&#034;","\"");
+        buildTreeNodeFromText(obligationText);
 
-        buildTreeNodeFromText(obltext);
-
-        let oblTitle = "<sw360:out value='${obligationEdit.title}'/>"
+        let oblTitle = obligationObj.title;
 
         $('#todoTitle').val(oblTitle);
 
