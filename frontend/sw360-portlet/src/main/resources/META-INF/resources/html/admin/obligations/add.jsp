@@ -411,7 +411,7 @@
                         $('#obligationType').val("4");
                         break
                     default:
-                        $('#obligationType').val("0");
+                        $('#obligationType').val($("#obligationType option:first").val());
                 }
 
                 var oblLevel = obligationObj.obligationLevel;
@@ -483,7 +483,7 @@
 
                 $.each(children, function(key, child) {
                     if ($(child).is('input') && $(child).css('display') != 'none') {
-                        nodeValues.push($(child).val());
+                        nodeValues.push($(child).val().trim());
                     }
                 });
 

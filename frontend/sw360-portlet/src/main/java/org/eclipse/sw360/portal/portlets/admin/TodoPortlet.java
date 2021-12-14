@@ -240,10 +240,14 @@ public class TodoPortlet extends Sw360Portlet {
 
         ComponentPortletUtils.updateTodoFromRequest(request, oblig);
         String jsonString = request.getParameter(Obligation._Fields.TEXT.toString());
+        String obligationType = request.getParameter(Obligation._Fields.OBLIGATION_TYPE.toString());
         String obligationNode = licenseClient.addNodes(jsonString, user);
         String obligationText = licenseClient.buildObligationText(obligationNode, "0");
         oblig.setText(obligationText);
         oblig.setNode(obligationNode);
+        if (isNullOrEmpty(obligationType)) {
+            oblig.setObligationType(null);
+        }
         return oblig;
     }
 }
