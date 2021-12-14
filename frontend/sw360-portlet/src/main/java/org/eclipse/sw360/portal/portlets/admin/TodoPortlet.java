@@ -245,6 +245,7 @@ public class TodoPortlet extends Sw360Portlet {
         String obligationText = licenseClient.buildObligationText(obligationNode, "0");
         oblig.setText(obligationText);
         oblig.setNode(obligationNode);
+        oblig.setTitle(oblig.getTitle().trim());
         if (isNullOrEmpty(obligationType)) {
             oblig.setObligationType(null);
         }
