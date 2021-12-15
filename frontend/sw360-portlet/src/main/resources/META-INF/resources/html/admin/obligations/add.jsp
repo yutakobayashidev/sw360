@@ -509,7 +509,8 @@
                 for (let i = 0; i < obligationListObj.length; i++) {
                     let obligationTitle = obligationListObj[i].title;
 
-                    if (obligationTitle == title.trim() && obligationTitle != obligationObj.title) {
+                    if (obligationTitle == title.trim() &&
+                        (obligationTitle != obligationObj.title || action != 'edit')) {
                         errorList.push('duplicate-obl');
                         break;
                     }
