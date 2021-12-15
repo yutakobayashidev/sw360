@@ -34,6 +34,7 @@
 
 <portlet:actionURL var="addURL" name="addObligations">
     <portlet:param name="<%=PortalConstants.OBLIGATION_ID%>" value="${obligationEdit.id}"/>
+    <portlet:param name="<%=PortalConstants.OBLIGATION_ACTION%>" value="${obligationAction}"/>
 </portlet:actionURL>
 
 <div class="container">

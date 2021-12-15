@@ -214,8 +214,10 @@ public class TodoPortlet extends Sw360Portlet {
     public void addObligations(ActionRequest request, ActionResponse response) {
         LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
         final User user = UserCacheHolder.getUserFromRequest(request);
+
+        String action = request.getParameter(PortalConstants.OBLIGATION_ACTION);
         String obligationEditedId = request.getParameter(PortalConstants.OBLIGATION_ID);
-        if (isNullOrEmpty(obligationEditedId)) {
+        if (isNullOrEmpty(obligationEditedId) || action.equals("duplicate")) {
             try {
                 final Obligation oblig = new Obligation();
                 setObligationValues(request, oblig);
@@ -244,11 +246,17 @@ public class TodoPortlet extends Sw360Portlet {
                 log.error("Error editing oblig", e);
             }
         }
-        String portletId = (String) request.getAttribute(WebKeys.PORTLET_ID);
-        ThemeDisplay tD = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
-        long plid = tD.getPlid();
-        LiferayPortletURL redirectUrl = PortletURLFactoryUtil.create(request, portletId, plid, PortletRequest.RENDER_PART);
-        request.setAttribute(WebKeys.REDIRECT, redirectUrl.toString());
+
+        try {
+            String portletId = (String) request.getAttribute(WebKeys.PORTLET_ID);
+            ThemeDisplay tD = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
+            long plid = tD.getPlid();
+            LiferayPortletURL redirectUrl = PortletURLFactoryUtil.create(request, portletId, plid, PortletRequest.RENDER_PART);
+            request.setAttribute(WebKeys.REDIRECT, redirectUrl.toString());
+            response.sendRedirect(redirectUrl.toString());
+        } catch (IOException e) {
+            log.error("Error when send redirect url", e);
+        }
     }
 
     private Obligation setObligationValues(ActionRequest request, Obligation oblig) throws TException {
