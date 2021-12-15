@@ -33,6 +33,7 @@
 <jsp:useBean id="obligationAction" class="java.lang.String" scope="request"/>
 
 <portlet:actionURL var="addURL" name="addObligations">
+    <portlet:param name="<%=PortalConstants.OBLIGATION_ID%>" value="${obligationEdit.id}"/>
 </portlet:actionURL>
 
 <div class="container">

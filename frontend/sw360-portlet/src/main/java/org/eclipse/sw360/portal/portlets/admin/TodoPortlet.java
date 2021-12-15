@@ -62,8 +62,6 @@ import com.liferay.portal.kernel.util.WebKeys;
 public class TodoPortlet extends Sw360Portlet {
 
     private static final Logger log = LogManager.getLogger(TodoPortlet.class);
-    private String obligationEditedId = "";
-
 
     //! Serve resource and helpers
     @Override
@@ -118,7 +116,6 @@ public class TodoPortlet extends Sw360Portlet {
     public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
 
         String pageName = request.getParameter(PAGENAME);
-        obligationEditedId = "";
         String obligatonId = request.getParameter(DOCUMENT_ID);
 
         if (PAGENAME_ADD.equals(pageName) || PAGENAME_EDIT.equals(pageName) || PAGENAME_DUPLICATE.equals(pageName)) {
@@ -161,7 +158,6 @@ public class TodoPortlet extends Sw360Portlet {
 
                     request.setAttribute(OBLIGATION_EDIT, obligation);
                     if (PAGENAME_EDIT.equals(pageName)) {
-                        obligationEditedId = obligatonId;
                         request.setAttribute(OBLIGATION_ACTION, "edit");
                     } else {
                         request.setAttribute(OBLIGATION_ACTION, "duplicate");
@@ -218,21 +214,33 @@ public class TodoPortlet extends Sw360Portlet {
     public void addObligations(ActionRequest request, ActionResponse response) {
         LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
         final User user = UserCacheHolder.getUserFromRequest(request);
-
-        if (obligationEditedId == "") {
+        String obligationEditedId = request.getParameter(PortalConstants.OBLIGATION_ID);
+        if (isNullOrEmpty(obligationEditedId)) {
             try {
                 final Obligation oblig = new Obligation();
                 setObligationValues(request, oblig);
-                licenseClient.addObligations(oblig, user);
-            } catch (TException e) {
+                String obligId = licenseClient.addObligations(oblig, user);
+                if (isNullOrEmpty(obligId)) {
+                    setSW360SessionError(request, ErrorMessages.OBLIGATION_NOT_ADDED);
+                } else {
+                    setSessionMessage(request, RequestStatus.SUCCESS, "Obligation", "adde", oblig.getTitle());
+                }
+            } catch (Exception e) {
+                setSW360SessionError(request, ErrorMessages.OBLIGATION_NOT_ADDED);
                 log.error("Error adding oblig", e);
             }
         } else {
             try {
                 final Obligation oblig = licenseClient.getObligationsById(obligationEditedId);
                 setObligationValues(request, oblig);
-                licenseClient.updateObligation(oblig, user);
+                String obligId = licenseClient.updateObligation(oblig, user);
+                if (isNullOrEmpty(obligId)) {
+                    setSW360SessionError(request, ErrorMessages.OBLIGATION_NOT_UPDATED);
+                } else {
+                    setSessionMessage(request, RequestStatus.SUCCESS, "Obligation", "update", oblig.getTitle());
+                }
             } catch (Exception e) {
+                setSW360SessionError(request, ErrorMessages.OBLIGATION_NOT_UPDATED);
                 log.error("Error editing oblig", e);
             }
         }

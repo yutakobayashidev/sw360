@@ -227,6 +227,12 @@ public class LicenseDatabaseHandler {
             return null;
         }
         prepareTodo(obligs);
+        List<Obligation> obligations = getObligations();
+        for (Obligation obligation : obligations) {
+            if (obligation.getTitle().equals(obligs.getTitle())) {
+                return null;
+            }
+        }
         obligRepository.add(obligs);
         obligs.setNode(null);
         dbHandlerUtil.addChangeLogs(obligs, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
