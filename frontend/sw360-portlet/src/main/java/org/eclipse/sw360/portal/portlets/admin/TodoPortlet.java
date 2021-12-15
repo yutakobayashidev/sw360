@@ -36,6 +36,10 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 import org.eclipse.sw360.portal.common.*;
 import com.liferay.portal.kernel.json.*;
+import com.liferay.portal.kernel.portlet.LiferayPortletURL;
+import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.WebKeys;
 
 @org.osgi.service.component.annotations.Component(
     immediate = true,
@@ -232,6 +236,11 @@ public class TodoPortlet extends Sw360Portlet {
                 log.error("Error editing oblig", e);
             }
         }
+        String portletId = (String) request.getAttribute(WebKeys.PORTLET_ID);
+        ThemeDisplay tD = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
+        long plid = tD.getPlid();
+        LiferayPortletURL redirectUrl = PortletURLFactoryUtil.create(request, portletId, plid, PortletRequest.RENDER_PART);
+        request.setAttribute(WebKeys.REDIRECT, redirectUrl.toString());
     }
 
     private Obligation setObligationValues(ActionRequest request, Obligation oblig) throws TException {
