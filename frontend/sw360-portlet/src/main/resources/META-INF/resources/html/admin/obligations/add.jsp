@@ -344,40 +344,64 @@
         return node;
     }
 
-    function buildTreeNodeFromText(text) {
-        lines = text.split('\n');
+    // function buildTreeNodeFromText(text) {
+    //     lines = text.split('\n');
 
-        lines = setLineLevel(lines);
+    //     lines = setLineLevel(lines);
 
-        lines = setLinePath(lines);
+    //     lines = setLinePath(lines);
 
-        let tree = buildTreeObject();
+    //     let tree = buildTreeObject();
 
-        buildNode(tree, '#root');
-    }
+    //     buildNode(tree, '#root');
+    // }
 
-    function buildNode(node, liTag) {
-        switch (node.val.length) {
-            case 1: $(liTag).find('input').first().val(node.val[0]);
-                break;
-            case 2: $(liTag).find('.elementType').first().val(node.val[0]);
-                $(liTag).find('.other').first().val(node.val[1]);
-                break;
-            case 4: $(liTag).find('.elementType').first().val(node.val[0]);
-                $(liTag).find('.elementType').first().change();
-                $(liTag).find('.obLangElement').first().val(node.val[1]);
-                $(liTag).find('.obAction').first().val(node.val[2]);
-                $(liTag).find('.obObject').first().val(node.val[3]);
-                break;
-            default:
-                break;
-        }
+    // function buildNode(node, liTag) {
+    //     switch (node.val.length) {
+    //         case 1: $(liTag).find('input').first().val(node.val[0]);
+    //             break;
+    //         case 2: $(liTag).find('.elementType').first().val(node.val[0]);
+    //             $(liTag).find('.other').first().val(node.val[1]);
+    //             break;
+    //         case 4: $(liTag).find('.elementType').first().val(node.val[0]);
+    //             $(liTag).find('.elementType').first().change();
+    //             $(liTag).find('.obLangElement').first().val(node.val[1]);
+    //             $(liTag).find('.obAction').first().val(node.val[2]);
+    //             $(liTag).find('.obObject').first().val(node.val[3]);
+    //             break;
+    //         default:
+    //             break;
+    //     }
 
-        // Add child nodes
+    //     // Add child nodes
+    //     for (let i = 0; i < node.children.length; i++) {
+    //         $(liTag).find('[data-func=add-child]').first().click();
+
+    //         buildNode(node.children[i], $(liTag).find('li').last());
+    //     }
+    // }
+
+    function buildNode(node, nodeTag) {
+        // console.log(node.children);
+
         for (let i = 0; i < node.children.length; i++) {
-            $(liTag).find('[data-func=add-child]').first().click();
+            nodeTag.find('[data-func=add-child]').first().click();
 
-            buildNode(node.children[i], $(liTag).find('li').last());
+            let child = node.children[i];
+            let childTag = nodeTag.find('li').last();
+
+            if (child.type == 'obligationElement') {
+                childTag.find('.elementType').first().val('<Obligation>');
+                childTag.find('.elementType').first().change();
+                childTag.find('.obLangElement').first().val(child.langElement);
+                childTag.find('.obAction').first().val(child.action);
+                childTag.find('.obObject').first().val(child.object);
+            } else {
+                childTag.find('.elementType').first().val(child.type);
+                childTag.find('.other').first().val(child.text);
+            }
+
+            buildNode(child, childTag);
         }
     }
 
@@ -386,13 +410,15 @@
 
         let obligationObj = jQuery.parseJSON(JSON.stringify(${ obligationJson }));
         let obligationListObj = jQuery.parseJSON(JSON.stringify(${ obligationListJson }));
+        let obligationTextObj = jQuery.parseJSON(JSON.stringify(${ obligationTextJson }));
+
+        // console.log(obligationTextObj);
 
         if (action == 'edit') {
             $('[data-action="save"]').text("Update Obligation");
         }
 
         $(function () {
-
             if (action != '') {
                 var oblType = obligationObj.obligationType;
 

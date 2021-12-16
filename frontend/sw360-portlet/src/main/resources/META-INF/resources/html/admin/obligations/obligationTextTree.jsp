@@ -152,6 +152,7 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard'], fu
     let obligationObj = jQuery.parseJSON(JSON.stringify(${ obligationJson }));
     let obligationNodeListObj = jQuery.parseJSON(JSON.stringify(${ obligationNodeListJson }));
     let obligationElementListObj = jQuery.parseJSON(JSON.stringify(${ obligationElementListJson }));
+    let obligationTextObj = jQuery.parseJSON(JSON.stringify(${ obligationTextJson }));
 
     $(document).ready(function () {
         const indent = "    ",                  // Use 4 spaces for indentation of previewing
@@ -371,7 +372,8 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard'], fu
 
         let obligationText = obligationObj.text;
 
-        buildTreeNodeFromText(obligationText);
+        // buildTreeNodeFromText(obligationText);
+        buildNode(obligationTextObj, $('#root'));
 
         let oblTitle = obligationObj.title;
 

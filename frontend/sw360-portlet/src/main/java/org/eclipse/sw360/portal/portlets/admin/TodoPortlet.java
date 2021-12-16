@@ -144,11 +144,14 @@ public class TodoPortlet extends Sw360Portlet {
             request.setAttribute(TODO_LIST, obligationList);
             request.setAttribute(OBLIGATION_EDIT, new Obligation());
             request.setAttribute(OBLIGATION_ACTION, "");
+            request.setAttribute("obligationJson", "{}");
+            request.setAttribute("obligationTextJson", "{}");
 
             if (PAGENAME_EDIT.equals(pageName) || PAGENAME_DUPLICATE.equals(pageName)) {
-
                 try {
                     Obligation obligation = licenseClient.getObligationsById(obligatonId);
+                    System.out.println("----------------Text JSON: \n" + generateJsonObligationText(obligation.getNode()));
+                    request.setAttribute("obligationTextJson", generateJsonObligationText(obligation.getNode()));
                     try {
                         obligation.setNode("");
                         obligationJson = objectMapper.writeValueAsString(obligation);
@@ -275,5 +278,49 @@ public class TodoPortlet extends Sw360Portlet {
             oblig.setObligationType(null);
         }
         return oblig;
+    }
+
+    private String generateJsonObligationText(String obligationNode) {
+        try {
+            com.liferay.portal.kernel.json.JSONObject jsonObject = JSONFactoryUtil.createJSONObject(obligationNode);
+            return buildJsonObligationText(jsonObject, 0);
+        }
+        catch (Exception e) {
+            log.error("Can not build obligation text from node: " + obligationNode);
+            return null;
+        }
+    }
+
+    private String buildJsonObligationText(com.liferay.portal.kernel.json.JSONObject jsonObject, int level) {
+        LicenseService.Iface client = thriftClients.makeLicenseClient();
+
+        try {
+            ObligationNode obligationNode = client.getObligationNodeById(jsonObject.get("id").toString());
+
+            if (!obligationNode.getNodeType().equals("ROOT")) {
+                if (obligationNode.getNodeType().equals("Obligation")) {
+                    ObligationElement obligationElement = client.getObligationElementById(obligationNode.getOblElementId());
+                    jsonObject.put("type", obligationElement.getType());
+                    jsonObject.put("langElement", obligationElement.getLangElement());
+                    jsonObject.put("action", obligationElement.getAction());
+                    jsonObject.put("object", obligationElement.getObject());
+                } else {
+                    jsonObject.put("type", obligationNode.getNodeType());
+                    jsonObject.put("text", obligationNode.getNodeText());
+                }
+            }
+        } catch (Exception e) {
+            log.error("Can not build json obligation text" + e);
+            return null;
+        }
+
+        if (jsonObject.getJSONArray("children").length() != 0) {
+            for (int i = 0; i < jsonObject.getJSONArray("children").length(); i++) {
+                com.liferay.portal.kernel.json.JSONObject contactObject = jsonObject.getJSONArray("children").getJSONObject(i);
+                buildJsonObligationText(contactObject, level + 1);
+            }
+        }
+
+        return jsonObject.toJSONString();
     }
 }
