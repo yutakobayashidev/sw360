@@ -28,12 +28,11 @@
 <%@ page import="org.eclipse.sw360.datahandler.thrift.licenses.ObligationNode" %>
 
 <jsp:useBean id="todo" class="org.eclipse.sw360.datahandler.thrift.licenses.Obligation" scope="request" />
-<jsp:useBean id="obligList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.Obligation>" scope="request"/>
-<jsp:useBean id="obligationEdit" type="org.eclipse.sw360.datahandler.thrift.licenses.Obligation" scope="request"/>
+<jsp:useBean id="obligationId" type="java.lang.String" scope="request"/>
 <jsp:useBean id="obligationAction" class="java.lang.String" scope="request"/>
 
 <portlet:actionURL var="addURL" name="addObligations">
-    <portlet:param name="<%=PortalConstants.OBLIGATION_ID%>" value="${obligationEdit.id}"/>
+    <portlet:param name="<%=PortalConstants.OBLIGATION_ID%>" value="${obligationId}"/>
     <portlet:param name="<%=PortalConstants.OBLIGATION_ACTION%>" value="${obligationAction}"/>
 </portlet:actionURL>
 

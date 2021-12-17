@@ -25,7 +25,6 @@ import org.eclipse.sw360.portal.portlets.components.ComponentPortletUtils;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 import javax.portlet.*;
 import java.io.IOException;
@@ -62,6 +61,7 @@ import com.liferay.portal.kernel.util.WebKeys;
 public class TodoPortlet extends Sw360Portlet {
 
     private static final Logger log = LogManager.getLogger(TodoPortlet.class);
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     //! Serve resource and helpers
     @Override
@@ -118,75 +118,26 @@ public class TodoPortlet extends Sw360Portlet {
         String pageName = request.getParameter(PAGENAME);
         String obligatonId = request.getParameter(DOCUMENT_ID);
 
-        if (PAGENAME_ADD.equals(pageName) || PAGENAME_EDIT.equals(pageName) || PAGENAME_DUPLICATE.equals(pageName)) {
-            List<ObligationNode> obligationNodeList;
-            List<ObligationElement> obligationElementList;
-            List<Obligation> obligationList;
-            LicenseService.Iface licenseClient = null;
-            String obligationJson = "{\"text\" : \"\", \"title\": \"\"}";
-            String obligationNodeListJson = "{}";
-            String obligationElementListJson = "{}";
-            String obligationListJson = "{}";
-            ObjectMapper objectMapper = new ObjectMapper();
-            try {
-                licenseClient = thriftClients.makeLicenseClient();
-                obligationNodeList = licenseClient.getObligationNodes();
-                obligationElementList = licenseClient.getObligationElements();
-                obligationList = licenseClient.getObligations();
-            } catch (Exception e) {
-                log.error("Could not get Obligation node from backend ", e);
-                obligationNodeList = Collections.emptyList();
-                obligationElementList = Collections.emptyList();
-                obligationList = Collections.emptyList();
-            }
-            request.setAttribute(OBLIGATION_NODE_LIST, obligationNodeList);
-            request.setAttribute(OBLIGATION_ELEMENT_LIST, obligationElementList);
-            request.setAttribute(TODO_LIST, obligationList);
-            request.setAttribute(OBLIGATION_EDIT, new Obligation());
-            request.setAttribute(OBLIGATION_ACTION, "");
-
-            if (PAGENAME_EDIT.equals(pageName) || PAGENAME_DUPLICATE.equals(pageName)) {
-
-                try {
-                    Obligation obligation = licenseClient.getObligationsById(obligatonId);
-                    try {
-                        obligation.setNode("");
-                        obligationJson = objectMapper.writeValueAsString(obligation);
-                    } catch (JsonProcessingException e) {
-                        e.printStackTrace();
-                    }
-
-                    request.setAttribute(OBLIGATION_EDIT, obligation);
-                    if (PAGENAME_EDIT.equals(pageName)) {
-                        request.setAttribute(OBLIGATION_ACTION, "edit");
-                    } else {
-                        request.setAttribute(OBLIGATION_ACTION, "duplicate");
-                    }
-                } catch (Exception e) {
-                    log.error("Could not get Obligation from backend ", e);
-                }
-            }
-
-            try {
-                obligationNodeListJson = objectMapper.writeValueAsString(obligationNodeList);
-                obligationElementListJson = objectMapper.writeValueAsString(obligationElementList);
-                obligationListJson = objectMapper.writeValueAsString(obligationList);
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
-            }
-            request.setAttribute("obligationJson", obligationJson);
-            request.setAttribute("obligationNodeListJson", obligationNodeListJson);
-            request.setAttribute("obligationElementListJson", obligationElementListJson);
-            request.setAttribute("obligationListJson", obligationListJson);
+        if (PAGENAME_ADD.equals(pageName)) {
+            prepareStandardAdd(request);
+            request.setAttribute(OBLIGATION_ACTION, PAGENAME_ADD);
             include("/html/admin/obligations/add.jsp", request, response);
-        } else if ("obligationchangelog".equals(pageName)) {
+        } else if (PAGENAME_EDIT.equals(pageName)) {
+            prepareStandardEdit(request);
+            request.setAttribute(OBLIGATION_ACTION, PAGENAME_EDIT);
+            include("/html/admin/obligations/add.jsp", request, response);
+        } else if (PAGENAME_DUPLICATE.equals(pageName)) {
+            prepareStandardEdit(request);
+            request.setAttribute(OBLIGATION_ACTION, PAGENAME_DUPLICATE);
+            include("/html/admin/obligations/add.jsp", request, response);
+        } else if (OBLIGATION_CHANGELOG.equals(pageName)) {
             try {
                 LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
                 Obligation obligation = licenseClient.getObligationsById(obligatonId);
                 request.setAttribute("obligationName", obligation.getTitle());
                 include("/html/admin/obligations/includes/obligationChangelog.jsp", request, response);
-            } catch (Exception e) {
-                log.error("Could not get Obligation from backend ", e);
+            } catch (TException e) {
+                log.error("Could not get Obligation from backend", e);
             }
         } else {
             prepareStandardView(request);
@@ -203,11 +154,55 @@ public class TodoPortlet extends Sw360Portlet {
             obligList = licenseClient.getObligations();
 
         } catch (TException e) {
-            log.error("Could not get Obligation from backend ", e);
+            log.error("Could not get Obligation from backend", e);
             obligList = Collections.emptyList();
         }
 
         request.setAttribute(TODO_LIST, obligList);
+    }
+
+    private void prepareStandardAdd(RenderRequest request) {
+        prepareStandardAction(request);
+        request.setAttribute(OBLIGATION_ID, "");
+    }
+
+    private void prepareStandardEdit(RenderRequest request) {
+        prepareStandardAction(request);
+        try {
+            LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+            String obligatonId = request.getParameter(DOCUMENT_ID);
+            Obligation obligation = licenseClient.getObligationsById(obligatonId);
+            String obligationJson = objectMapper.writeValueAsString(obligation);
+            request.setAttribute(OBLIGATION_ID, obligatonId);
+            request.setAttribute("obligationJson", obligationJson);
+        } catch (Exception e) {
+            log.error("Could not get Obligation from backend", e);
+            request.setAttribute(OBLIGATION_ID, null);
+        }
+    }
+
+    private void prepareStandardAction(RenderRequest request) {
+        String obligationJson = "{\"text\" : \"\", \"title\": \"\"}";
+        String obligationNodeListJson = "{}";
+        String obligationElementListJson = "{}";
+        String obligationListJson = "{}";
+
+        try {
+            LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+            List<ObligationNode> obligationNodeList = licenseClient.getObligationNodes();
+            List<ObligationElement> obligationElementList = licenseClient.getObligationElements();
+            List<Obligation> obligationList = licenseClient.getObligations();
+            obligationNodeListJson = objectMapper.writeValueAsString(obligationNodeList);
+            obligationElementListJson = objectMapper.writeValueAsString(obligationElementList);
+            obligationListJson = objectMapper.writeValueAsString(obligationList);
+        } catch (Exception e) {
+            log.error("Could not get Obligation from backend", e);
+        }
+
+        request.setAttribute("obligationJson", obligationJson);
+        request.setAttribute("obligationNodeListJson", obligationNodeListJson);
+        request.setAttribute("obligationElementListJson", obligationElementListJson);
+        request.setAttribute("obligationListJson", obligationListJson);
     }
 
     @UsedAsLiferayAction
@@ -217,7 +212,7 @@ public class TodoPortlet extends Sw360Portlet {
 
         String action = request.getParameter(PortalConstants.OBLIGATION_ACTION);
         String obligationEditedId = request.getParameter(PortalConstants.OBLIGATION_ID);
-        if (isNullOrEmpty(obligationEditedId) || action.equals("duplicate")) {
+        if (isNullOrEmpty(obligationEditedId) || !action.equals(PortalConstants.PAGENAME_EDIT)) {
             try {
                 final Obligation oblig = new Obligation();
                 setObligationValues(request, oblig);
