@@ -121,227 +121,226 @@
 <script>
     // -------------- This is for Edit / Clone function -----------------
     // Keywords from OSADL obligation text
-    var keywords = {
-        "Obligation": ["YOU MUST", "YOU MUST NOT"],
-        "Other": ["USE CASE",
-                  "IF",
-                  "EITHER",
-                  "EITHER IF",
-                  "OR",
-                  "OR IF",
-                  "EXCEPT IF",
-                  "EXCEPT IF NOT",
-                  "ATTRIBUTE",
-                  "ATTRIBUTE NOT",
-                  "COMPATIBILITY",
-                  "DEPENDING COMPATIBILITY",
-                  "INCOMPATIBILITY",
-                  "PATENT HINTS",
-                  "COPYLEFT CLAUSE",
-                  ]
-    };
+    // var keywords = {
+    //     "Obligation": ["YOU MUST", "YOU MUST NOT"],
+    //     "Other": ["USE CASE",
+    //               "IF",
+    //               "EITHER",
+    //               "EITHER IF",
+    //               "OR",
+    //               "OR IF",
+    //               "EXCEPT IF",
+    //               "EXCEPT IF NOT",
+    //               "ATTRIBUTE",
+    //               "ATTRIBUTE NOT",
+    //               "COMPATIBILITY",
+    //               "DEPENDING COMPATIBILITY",
+    //               "INCOMPATIBILITY",
+    //               "PATENT HINTS",
+    //               "COPYLEFT CLAUSE",
+    //               ]
+    // };
 
+    // // Sort array based on item length
+    // function sortArray(arr, type) {
+    //     if (type == 'ASC') {
+    //         return arr.sort(function(a,b) {
+    //             return a.length - b.length;
+    //         })
+    //     } else {
+    //         return arr.sort(function(a,b) {
+    //             return b.length - a.length;
+    //         })
+    //     }
+    // }
 
-    // Sort array based on item length
-    function sortArray(arr, type) {
-        if (type == 'ASC') {
-            return arr.sort(function(a,b) {
-                return a.length - b.length;
-            })
-        } else {
-            return arr.sort(function(a,b) {
-                return b.length - a.length;
-            })
-        }
-    }
+    // // Assume that each action is a single word
+    // // Because there are many actions seperated by OR, need to find the positions of OR and detect all actions
+    // function getActions(text) {
+    //     if (text.includes('OR')) {      // If there is OR
+    //         const words = text.split(' ');
 
-    // Assume that each action is a single word
-    // Because there are many actions seperated by OR, need to find the positions of OR and detect all actions
-    function getActions(text) {
-        if (text.includes('OR')) {      // If there is OR
-            const words = text.split(' ');
+    //         // Because there is the case Object also containts OR, need to check the position of OR
+    //         let ORpos = [];
 
-            // Because there is the case Object also containts OR, need to check the position of OR
-            let ORpos = [];
+    //         for (let i = 0; i < words.length; i++) {
+    //             if (words[i] == 'OR') {
+    //                 ORpos.push(i);
+    //             }
+    //         }
 
-            for (let i = 0; i < words.length; i++) {
-                if (words[i] == 'OR') {
-                    ORpos.push(i);
-                }
-            }
+    //         // The first OR position is not 1, it means that the format is not 'verbA or verbB'
+    //         if (ORpos[0] != 1) {
+    //             return text.split(' ')[0];  // The first word is the verb
+    //         } else {    // There are many ORs, check if they are equidistant
+    //             let lastORPos = ORpos[0];
 
-            // The first OR position is not 1, it means that the format is not 'verbA or verbB'
-            if (ORpos[0] != 1) {
-                return text.split(' ')[0];  // The first word is the verb
-            } else {    // There are many ORs, check if they are equidistant
-                let lastORPos = ORpos[0];
+    //             for (let i = 0; i < ORpos.length - 1; i++) {
+    //                 if (ORpos[i + 1] == ORpos[i] + 2) {
+    //                     lastORPos = ORpos[i + 1];
+    //                 } else {
+    //                     break;
+    //                 }
+    //             }
 
-                for (let i = 0; i < ORpos.length - 1; i++) {
-                    if (ORpos[i + 1] == ORpos[i] + 2) {
-                        lastORPos = ORpos[i + 1];
-                    } else {
-                        break;
-                    }
-                }
+    //             let result = [];
 
-                let result = [];
+    //             for (let i = 0; i < lastORPos + 1; i++) {
+    //                 result.push(words[i]);
+    //             }
 
-                for (let i = 0; i < lastORPos + 1; i++) {
-                    result.push(words[i]);
-                }
+    //             if (lastORPos < words.length - 1) {
+    //                 result.push(words[lastORPos + 1]);
+    //             }
 
-                if (lastORPos < words.length - 1) {
-                    result.push(words[lastORPos + 1]);
-                }
+    //             return result.join(' ');
+    //         }
+    //     } else {                        // If ther is no OR, the first word is the verb
+    //         return text.split(' ')[0];
+    //     }
+    // }
 
-                return result.join(' ');
-            }
-        } else {                        // If ther is no OR, the first word is the verb
-            return text.split(' ')[0];
-        }
-    }
+    // function parse(text) {
+    //     text = text.trim();
 
-    function parse(text) {
-        text = text.trim();
+    //     let allKeywords = sortArray(keywords['Obligation'].concat(keywords['Other']));
 
-        let allKeywords = sortArray(keywords['Obligation'].concat(keywords['Other']));
+    //     for (let i = 0; i < allKeywords.length; i++) {
+    //         if (text.startsWith(allKeywords[i])) {  // Sentence starts with keyword, this is normat format
+    //             if (keywords['Obligation'].includes(allKeywords[i])) {  // This is an obligation statement
+    //                 const languageElement = allKeywords[i];
 
-        for (let i = 0; i < allKeywords.length; i++) {
-            if (text.startsWith(allKeywords[i])) {  // Sentence starts with keyword, this is normat format
-                if (keywords['Obligation'].includes(allKeywords[i])) {  // This is an obligation statement
-                    const languageElement = allKeywords[i];
+    //                 let actionAndObjectText = text.substr(languageElement.length).trim();
 
-                    let actionAndObjectText = text.substr(languageElement.length).trim();
+    //                 const actions = getActions(actionAndObjectText);
 
-                    const actions = getActions(actionAndObjectText);
+    //                 const object = actionAndObjectText.substr(actions.length).trim();
 
-                    const object = actionAndObjectText.substr(actions.length).trim();
+    //                 return ['<Obligation>', languageElement, actions, object];
+    //             } else {    // This is Other cases
+    //                 const type = allKeywords[i];
+    //                 const value = text.substr(type.length).trim();
+    //                 return [type, value];
+    //             }
+    //         }
+    //     }
 
-                    return ['<Obligation>', languageElement, actions, object];
-                } else {    // This is Other cases
-                    const type = allKeywords[i];
-                    const value = text.substr(type.length).trim();
-                    return [type, value];
-                }
-            }
-        }
+    //     // Sentence does not start with keyword
+    //     // The first uppercased word is the Type
+    //     let type = '';
+    //     let value = '';
 
-        // Sentence does not start with keyword
-        // The first uppercased word is the Type
-        let type = '';
-        let value = '';
+    //     let words = text.split(' ');
 
-        let words = text.split(' ');
+    //     for (let i = 0; i < words.length; i++) {
+    //         if (words[i] === words[i].toUpperCase() ) {
+    //             type = type + ' ' + words[i];
+    //         } else {
+    //             break;
+    //         }
+    //     }
 
-        for (let i = 0; i < words.length; i++) {
-            if (words[i] === words[i].toUpperCase() ) {
-                type = type + ' ' + words[i];
-            } else {
-                break;
-            }
-        }
+    //     type = type.trim();
 
-        type = type.trim();
+    //     // If sentence does not start with an uppercases word, the first word is the Type
+    //     if (type.length == 0) {
+    //         type = words[0];
+    //     }
 
-        // If sentence does not start with an uppercases word, the first word is the Type
-        if (type.length == 0) {
-            type = words[0];
-        }
+    //     // The remained is value
+    //     value = text.substr(type.length);
 
-        // The remained is value
-        value = text.substr(type.length);
+    //     return [type, value];
+    // }
 
-        return [type, value];
-    }
+    // var lines = [];
 
-    var lines = [];
+    // function getLevel(line) {
+    //     let level = 0;
 
-    function getLevel(line) {
-        let level = 0;
+    //     for (let i = 0; i < line.length; i++) {
+    //         if (line[i] == '\t') {
+    //             level += 1;
+    //         } else {
+    //             return level;
+    //         }
+    //     }
 
-        for (let i = 0; i < line.length; i++) {
-            if (line[i] == '\t') {
-                level += 1;
-            } else {
-                return level;
-            }
-        }
+    //     return level;
+    // }
 
-        return level;
-    }
+    // function getParentLineId(lineId) {
+    //     let currentLevel = lines[lineId].level;
 
-    function getParentLineId(lineId) {
-        let currentLevel = lines[lineId].level;
+    //     for (let i = lineId; i >= 0; i--) {
+    //         if (lines[i].level == currentLevel - 1) {
+    //             return i;
+    //         }
+    //     }
 
-        for (let i = lineId; i >= 0; i--) {
-            if (lines[i].level == currentLevel - 1) {
-                return i;
-            }
-        }
+    //     return -1;
+    // }
 
-        return -1;
-    }
+    // function setLineLevel(lines) {
+    //     let refinedLines = [];
 
-    function setLineLevel(lines) {
-        let refinedLines = [];
+    //     for (let i = 0; i < lines.length; i++) {
+    //         if (lines[i].length == 0) {
+    //             continue;
+    //         }
 
-        for (let i = 0; i < lines.length; i++) {
-            if (lines[i].length == 0) {
-                continue;
-            }
+    //         let currentLevel = getLevel(lines[i]);
 
-            let currentLevel = getLevel(lines[i]);
+    //         let lineWithLevel = { 'id': i, 'text': lines[i].replace(/^\t+/g,""), 'level': currentLevel, 'path': '-1'};
 
-            let lineWithLevel = { 'id': i, 'text': lines[i].replace(/^\t+/g,""), 'level': currentLevel, 'path': '-1'};
+    //         refinedLines.push(lineWithLevel);
+    //     }
 
-            refinedLines.push(lineWithLevel);
-        }
+    //     return refinedLines;
+    // }
 
-        return refinedLines;
-    }
+    // function setLinePath(lines) {
+    //     let refinedLines = [];
 
-    function setLinePath(lines) {
-        let refinedLines = [];
+    //     for (let i = 0; i < lines.length; i++) {
+    //         let currentLine = lines[i];
 
-        for (let i = 0; i < lines.length; i++) {
-            let currentLine = lines[i];
+    //         let parentLinePath = '-1';
 
-            let parentLinePath = '-1';
+    //         let parentLineId = getParentLineId(currentLine.id);
 
-            let parentLineId = getParentLineId(currentLine.id);
+    //         if (parentLineId >= 0) {
+    //             parentLinePath = lines[parentLineId].path;
+    //         }
 
-            if (parentLineId >= 0) {
-                parentLinePath = lines[parentLineId].path;
-            }
+    //         currentLine.path = (parentLinePath + ' ' + currentLine.id).trim();
 
-            currentLine.path = (parentLinePath + ' ' + currentLine.id).trim();
+    //         refinedLines.push(currentLine);
+    //     }
 
-            refinedLines.push(currentLine);
-        }
+    //     return refinedLines;
+    // }
 
-        return refinedLines;
-    }
+    // function buildTreeObject() {
+    //     let rootNode = {'val': ['ROOT'], 'children': [], 'path': '-1'};
 
-    function buildTreeObject() {
-        let rootNode = {'val': ['ROOT'], 'children': [], 'path': '-1'};
+    //     return addNode(rootNode);
+    // }
 
-        return addNode(rootNode);
-    }
+    // function addNode(node) {
+    //     for (let i = 0; i < lines.length; i++) {
+    //         if (lines[i].path.substr(0, lines[i].path.lastIndexOf(' ')) == node.path) {
+    //             let childNode = {'val': parse(lines[i].text), 'children': [], 'path': lines[i].path};
+    //             node.children.push(childNode);
+    //         }
+    //     }
 
-    function addNode(node) {
-        for (let i = 0; i < lines.length; i++) {
-            if (lines[i].path.substr(0, lines[i].path.lastIndexOf(' ')) == node.path) {
-                let childNode = {'val': parse(lines[i].text), 'children': [], 'path': lines[i].path};
-                node.children.push(childNode);
-            }
-        }
+    //     for (let i = 0; i < node.children.length; i++) {
+    //         addNode(node.children[i]);
+    //     }
 
-        for (let i = 0; i < node.children.length; i++) {
-            addNode(node.children[i]);
-        }
-
-        return node;
-    }
+    //     return node;
+    // }
 
     // function buildTreeNodeFromText(text) {
     //     lines = text.split('\n');
@@ -412,8 +411,6 @@
         let obligationObj = jQuery.parseJSON(JSON.stringify(${ obligationJson }));
         let obligationListObj = jQuery.parseJSON(JSON.stringify(${ obligationListJson }));
         let obligationTextObj = jQuery.parseJSON(JSON.stringify(${ obligationTextJson }));
-
-        // console.log(obligationTextObj);
 
         if (action == 'edit') {
             $('[data-action="save"]').text("Update Obligation");
