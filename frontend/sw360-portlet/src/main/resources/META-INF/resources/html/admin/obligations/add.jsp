@@ -381,7 +381,9 @@
     // }
 
     function buildNode(node, nodeTag) {
-        // console.log(node.children);
+        if (typeof node.children == 'undefined') {
+            return;
+        }
 
         for (let i = 0; i < node.children.length; i++) {
             nodeTag.find('[data-func=add-child]').first().click();
