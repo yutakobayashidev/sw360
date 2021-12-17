@@ -14,8 +14,6 @@
 <%@ page import="org.eclipse.sw360.datahandler.thrift.licenses.Obligation" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.licenses.ObligationNode" %>
-<jsp:useBean id="obligationNodeList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.ObligationNode>" scope="request"/>
-<jsp:useBean id="obligationElementList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement>" scope="request"/>
 
 <style type="text/css">
 .tree-container {

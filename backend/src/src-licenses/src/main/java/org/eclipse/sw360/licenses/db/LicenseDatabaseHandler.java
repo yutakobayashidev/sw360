@@ -230,6 +230,7 @@ public class LicenseDatabaseHandler {
         List<Obligation> obligations = getObligations();
         for (Obligation obligation : obligations) {
             if (obligation.getTitle().equals(obligs.getTitle())) {
+                log.error("An Obligation with the same title already exists.");
                 return null;
             }
         }
