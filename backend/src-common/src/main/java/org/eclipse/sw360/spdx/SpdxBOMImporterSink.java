@@ -122,7 +122,6 @@ public class SpdxBOMImporterSink {
 
     public Response addOrUpdatePackageInformation(PackageInformation packageInfo) throws SW360Exception {
         log.debug("create or update PackageInfomation { name='" + packageInfo.getName() + "' }");
-        // SpdxPackageInfoDatabaseHandler handler = new SpdxPackageInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
         RequestStatus requestStatus;
         String packageInfoId;
         if (packageInfo.isSetId()) {
@@ -133,10 +132,7 @@ public class SpdxBOMImporterSink {
             requestStatus = RequestStatus.findByValue(addDocumentRequestSummary.getRequestStatus().getValue());
             packageInfoId = addDocumentRequestSummary.getId();
         }
-        // final AddDocumentRequestSummary addDocumentRequestSummary = handler.addPackageInformation(packageInfo, user);
-
-        // final String packageInfoId = addDocumentRequestSummary.getId();
-        if(packageInfoId == null || packageInfoId.isEmpty()) {
+        if (packageInfoId == null || packageInfoId.isEmpty()) {
             throw new SW360Exception("Id of added package information should not be empty. " + requestStatus.toString());
         }
         return new Response(packageInfoId, RequestStatus.SUCCESS.equals(requestStatus));

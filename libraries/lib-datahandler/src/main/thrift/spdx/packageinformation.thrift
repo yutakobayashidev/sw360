@@ -59,6 +59,7 @@ struct PackageInformation {
     30: optional DocumentState documentState,
     31: optional map<RequestedAction, bool> permissions,
     32: optional string createdBy,
+    33: optional i32 index,
 }
 
 struct PackageVerificationCode {

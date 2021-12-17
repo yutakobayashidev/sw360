@@ -149,251 +149,260 @@
 		</tr>
 	</tbody>
 </table>
-<core_rt:if test="${not empty spdxPackageInfo}">
+<!-- <core_rt:if test="${not empty spdxPackageInfo}">
 	<core_rt:set var="package" value="${spdxPackageInfo.iterator().next()}" />
-</core_rt:if>
+</core_rt:if> -->
 <table class="table label-value-table spdx-table" id="PackageInformation">
 	<thead class="spdx-thead">
 		<tr>
 			<th>7. Package Information</th>
 		</tr>
 	</thead>
-	<tbody>
+	<tbody class="section" data-size="23">
 		<tr>
 			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.1 Package name</div>
-				<div class="spdx-col-2">
-					<sw360:out value="${package.name}" />
-				</div>
+					<div class="spdx-col-1 spdx-label-index">Index</div>
+					<select id="packageInfoSelect" class="spdx-col-2" onchange="displayIndex(this)"></select>
 			</td>
 		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.2 Package SPDX identifier</div>
-				<div class="spdx-col-2">
-					<sw360:out value="${package.SPDXID}" />
-				</div>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.3 Package version</div>
-				<div class="spdx-col-2">
-					<sw360:out value="${package.versionInfo}" />
-				</div>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.4 Package file name</div>
-				<div class="spdx-col-2">
-					<sw360:out value="${package.packageFileName}" />
-				</div>
-			</td>
-		</tr>
-		<tr class="spdx-full">
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.5 Package supplier</div>
-				<div class="spdx-col-2">
-					<sw360:out value="${package.supplier}" />
-				</div>
-			</td>
-		</tr>
-		<tr class="spdx-full">
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.6 Package originator</div>
-				<div class="spdx-col-2">
-					<sw360:out value="${package.originator}" />
-				</div>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.7 Package download location</div>
-				<div class="spdx-col-2">
-					<sw360:out value="${package.downloadLocation}" />
-				</div>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.8 Files analyzed</div>
-				<div class="spdx-col-2 spdx-uppercase">
-					<sw360:out value="${package.filesAnalyzed}" />
-				</div>
-			</td>
-		</tr>
-		<tr class="spdx-full">
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.9 Package verification code</div>
-				<div class="spdx-col-2 spdx-flex-col">
-					<div class="spdx-flex-row">
-						<div class="spdx-col-1 spdx-key">Value</div>
-						<div class="spdx-col-3">
-							<sw360:out value="${package.packageVerificationCode.value}" />
-						</div>
+
+		<core_rt:forEach items="${spdxPackageInfo}" var="package" varStatus="loop">
+			<tr data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.1 Package name</div>
+					<div class="spdx-col-2">
+						<sw360:out value="${package.name}" />
 					</div>
-					<div class="spdx-flex-row">
-						<div class="spdx-col-1 spdx-key">Excluded files</div>
-						<p class="spdx-col-3 spdx-p" id="excludedFiles">
-							<core_rt:forEach items="${package.packageVerificationCode.excludedFiles}"
-								var="excludedFileData" varStatus="loop">
-								<sw360:out value="${excludedFileData}" /> <br>
-							</core_rt:forEach>
-						</p>
+				</td>
+			</tr>
+			<tr data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.2 Package SPDX identifier</div>
+					<div class="spdx-col-2">
+						<sw360:out value="${package.SPDXID}" />
 					</div>
-				</div>
-				</div>
-			</td>
-		</tr>
-		<tr class="spdx-full">
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.10 Package checksum</div>
-				<div class="spdx-col-2" id="checksums">
-					<core_rt:forEach items="${package.checksums}" var="checksumData" varStatus="loop">
-						<div class="spdx-flex-row checksum" data-index="${checksumData.index}">
-							<div class="spdx-col-1 spdx-key">
-								<sw360:out value="${checksumData.algorithm}" />
-							</div>
-							<div class="spdx-col-3">
-								<sw360:out value="${checksumData.checksumValue}" />
-							</div>
-						</div>
-					</core_rt:forEach>
-				</div>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.11 Package home page</div>
-				<div class="spdx-col-2">
-					<sw360:out value="${package.homepage}" />
-				</div>
-			</td>
-		</tr>
-		<tr class="spdx-full">
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.12 Source information</div>
-				<p class="spdx-col-2 spdx-p" id="sourceInfo">
-					<sw360:out value="${package.sourceInfo}" />
-				</p>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.13 Concluded license</div>
-				<div class="spdx-col-2">
-					<sw360:out value="${package.licenseConcluded}" />
-				</div>
-			</td>
-		</tr>
-		<tr class="spdx-full">
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.14 All licenses information from files</div>
-				<p class="spdx-col-2 spdx-p" id="licenseInfoFromFile">
-					<core_rt:forEach items="${package.licenseInfoFromFiles}" var="licenseInfoFromFileData"
-						varStatus="loop">
-						<sw360:out value="${licenseInfoFromFileData} " /> <br>
-					</core_rt:forEach>
-				</p>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.15 Declared license</div>
-				<div class="spdx-col-2">
-					<sw360:out value="${package.licenseDeclared}" />
-				</div>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.16 Comments on license</div>
-				<p class="spdx-col-2 spdx-p" id="licenseComments">
-					<sw360:out value="${package.licenseComments}" stripNewlines="false" />
-				</p>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.17 Copyright text</div>
-				<p class="spdx-col-2 spdx-p" id="copyrightText">
-					<sw360:out value="${package.copyrightText}" stripNewlines="false" />
-				</p>
-			</td>
-		</tr>
-		<tr class="spdx-full">
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.18 Package summary description</div>
-				<p class="spdx-col-2 spdx-p" id="summary">
-					<sw360:out value="${package.summary}" stripNewlines="false" />
-				</p>
-			</td>
-		</tr>
-		<tr class="spdx-full">
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.19 Package detailed description</div>
-				<p class="spdx-col-2 spdx-p" id="description">
-					<sw360:out value="${package.description}" stripNewlines="false" />
-				</p>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.20 Package comment</div>
-				<p class="spdx-col-2 spdx-p" id="packageComment">
-					<sw360:out value="${package.packageComment}" stripNewlines="false" />
-				</p>
-			</td>
-		</tr>
-		<tr class="spdx-full">
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.21 External references </div>
-				<div class="spdx-col-2 section" data-size="4">
-					<div class="spdx-flex-row">
-						<div class="spdx-col-1 spdx-label-index">Index</div>
-						<select id="externalReferenceSelect" class="spdx-col-3" onchange="displayIndex(this)">
-						</select>
+				</td>
+			</tr>
+			<tr data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.3 Package version</div>
+					<div class="spdx-col-2">
+						<sw360:out value="${package.versionInfo}" />
 					</div>
-					<core_rt:forEach items="${package.externalRefs}" var="externalRefsData" varStatus="loop">
-						<div class="spdx-flex-row" data-index="${externalRefsData.index}">
-							<div class="spdx-col-1 spdx-key">Category</div>
-							<div class="spdx-col-3 spdx-uppercase">
-								<sw360:out value="${externalRefsData.referenceCategory}" />
-							</div>
-						</div>
-						<div class="spdx-flex-row" data-index="${externalRefsData.index}">
-							<div class="spdx-col-1 spdx-key">Type</div>
+				</td>
+			</tr>
+			<tr data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.4 Package file name</div>
+					<div class="spdx-col-2">
+						<sw360:out value="${package.packageFileName}" />
+					</div>
+				</td>
+			</tr>
+			<tr class="spdx-full" data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.5 Package supplier</div>
+					<div class="spdx-col-2">
+						<sw360:out value="${package.supplier}" />
+					</div>
+				</td>
+			</tr>
+			<tr class="spdx-full" data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.6 Package originator</div>
+					<div class="spdx-col-2">
+						<sw360:out value="${package.originator}" />
+					</div>
+				</td>
+			</tr>
+			<tr data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.7 Package download location</div>
+					<div class="spdx-col-2">
+						<sw360:out value="${package.downloadLocation}" />
+					</div>
+				</td>
+			</tr>
+			<tr data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.8 Files analyzed</div>
+					<div class="spdx-col-2 spdx-uppercase">
+						<sw360:out value="${package.filesAnalyzed}" />
+					</div>
+				</td>
+			</tr>
+			<tr class="spdx-full" data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.9 Package verification code</div>
+					<div class="spdx-col-2 spdx-flex-col">
+						<div class="spdx-flex-row">
+							<div class="spdx-col-1 spdx-key">Value</div>
 							<div class="spdx-col-3">
-								<sw360:out value="${externalRefsData.referenceType}" />
+								<sw360:out value="${package.packageVerificationCode.value}" />
 							</div>
 						</div>
-						<div class="spdx-flex-row" data-index="${externalRefsData.index}">
-							<div class="spdx-col-1 spdx-key">Locator</div>
-							<div class="spdx-col-3">
-								<sw360:out value="${externalRefsData.referenceLocator}" />
-							</div>
-						</div>
-						<div class="spdx-flex-row" data-index="${externalRefsData.index}">
-							<div class="spdx-col-1 spdx-key">7.22 Comment</div>
-							<p class="spdx-col-3" id="externalRefComment-${externalRefsData.index}">
-								<sw360:out value="${externalRefsData.comment}" />
+						<div class="spdx-flex-row">
+							<div class="spdx-col-1 spdx-key">Excluded files</div>
+							<p class="spdx-col-3 spdx-p" id="excludedFiles">
+								<core_rt:forEach items="${package.packageVerificationCode.excludedFiles}"
+									var="excludedFileData" varStatus="loop">
+									<sw360:out value="${excludedFileData}" /> <br>
+								</core_rt:forEach>
 							</p>
 						</div>
-					</core_rt:forEach>
-				</div>
-			</td>
-		</tr>
-		<tr class="spdx-full">
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.23 Package attribution text</div>
-				<p class="spdx-col-2 spdx-p" id="attributionText">
-					<core_rt:forEach items="${package.attributionText}" var="attributionTextData" varStatus="loop">
-						<sw360:out value="${attributionTextData}"/><br>
-					</core_rt:forEach>
-				</p>
-			</td>
-		</tr>
+					</div>
+					</div>
+				</td>
+			</tr>
+			<tr class="spdx-full" data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.10 Package checksum</div>
+					<div class="spdx-col-2" id="checksums">
+						<core_rt:forEach items="${package.checksums}" var="checksumData" varStatus="loop">
+							<div class="spdx-flex-row checksum" data-index="${checksumData.index}">
+								<div class="spdx-col-1 spdx-key">
+									<sw360:out value="${checksumData.algorithm}" />
+								</div>
+								<div class="spdx-col-3">
+									<sw360:out value="${checksumData.checksumValue}" />
+								</div>
+							</div>
+						</core_rt:forEach>
+					</div>
+				</td>
+			</tr>
+			<tr data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.11 Package home page</div>
+					<div class="spdx-col-2">
+						<sw360:out value="${package.homepage}" />
+					</div>
+				</td>
+			</tr>
+			<tr class="spdx-full" data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.12 Source information</div>
+					<p class="spdx-col-2 spdx-p" id="sourceInfo">
+						<sw360:out value="${package.sourceInfo}" />
+					</p>
+				</td>
+			</tr>
+			<tr data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.13 Concluded license</div>
+					<div class="spdx-col-2">
+						<sw360:out value="${package.licenseConcluded}" />
+					</div>
+				</td>
+			</tr>
+			<tr class="spdx-full" data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.14 All licenses information from files</div>
+					<p class="spdx-col-2 spdx-p" id="licenseInfoFromFile">
+						<core_rt:forEach items="${package.licenseInfoFromFiles}" var="licenseInfoFromFileData"
+							varStatus="loop">
+							<sw360:out value="${licenseInfoFromFileData} " /> <br>
+						</core_rt:forEach>
+					</p>
+				</td>
+			</tr>
+			<tr data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.15 Declared license</div>
+					<div class="spdx-col-2">
+						<sw360:out value="${package.licenseDeclared}" />
+					</div>
+				</td>
+			</tr>
+			<tr data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.16 Comments on license</div>
+					<p class="spdx-col-2 spdx-p" id="licenseComments">
+						<sw360:out value="${package.licenseComments}" stripNewlines="false" />
+					</p>
+				</td>
+			</tr>
+			<tr data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.17 Copyright text</div>
+					<p class="spdx-col-2 spdx-p" id="copyrightText">
+						<sw360:out value="${package.copyrightText}" stripNewlines="false" />
+					</p>
+				</td>
+			</tr>
+			<tr class="spdx-full" data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.18 Package summary description</div>
+					<p class="spdx-col-2 spdx-p" id="summary">
+						<sw360:out value="${package.summary}" stripNewlines="false" />
+					</p>
+				</td>
+			</tr>
+			<tr class="spdx-full" data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.19 Package detailed description</div>
+					<p class="spdx-col-2 spdx-p" id="description">
+						<sw360:out value="${package.description}" stripNewlines="false" />
+					</p>
+				</td>
+			</tr>
+			<tr data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.20 Package comment</div>
+					<p class="spdx-col-2 spdx-p" id="packageComment">
+						<sw360:out value="${package.packageComment}" stripNewlines="false" />
+					</p>
+				</td>
+			</tr>
+			<tr class="spdx-full" data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.21 External references </div>
+					<div class="spdx-col-2 section" data-size="4">
+						<div class="spdx-flex-row">
+							<div class="spdx-col-1 spdx-label-index">Index</div>
+							<select id="externalReferenceSelect" class="spdx-col-3" onchange="displayIndex(this)">
+							</select>
+						</div>
+						<core_rt:forEach items="${package.externalRefs}" var="externalRefsData" varStatus="loop">
+							<div class="spdx-flex-row" data-index="${externalRefsData.index}">
+								<div class="spdx-col-1 spdx-key">Category</div>
+								<div class="spdx-col-3 spdx-uppercase">
+									<sw360:out value="${externalRefsData.referenceCategory}" />
+								</div>
+							</div>
+							<div class="spdx-flex-row" data-index="${externalRefsData.index}">
+								<div class="spdx-col-1 spdx-key">Type</div>
+								<div class="spdx-col-3">
+									<sw360:out value="${externalRefsData.referenceType}" />
+								</div>
+							</div>
+							<div class="spdx-flex-row" data-index="${externalRefsData.index}">
+								<div class="spdx-col-1 spdx-key">Locator</div>
+								<div class="spdx-col-3">
+									<sw360:out value="${externalRefsData.referenceLocator}" />
+								</div>
+							</div>
+							<div class="spdx-flex-row" data-index="${externalRefsData.index}">
+								<div class="spdx-col-1 spdx-key">7.22 Comment</div>
+								<p class="spdx-col-3" id="externalRefComment-${externalRefsData.index}">
+									<sw360:out value="${externalRefsData.comment}" />
+								</p>
+							</div>
+						</core_rt:forEach>
+					</div>
+				</td>
+			</tr>
+			<tr class="spdx-full" data-index="${package.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.23 Package attribution text</div>
+					<p class="spdx-col-2 spdx-p" id="attributionText">
+						<core_rt:forEach items="${package.attributionText}" var="attributionTextData" varStatus="loop">
+							<sw360:out value="${attributionTextData}"/><br>
+						</core_rt:forEach>
+					</p>
+				</td>
+			</tr>
+		</core_rt:forEach>
 	</tbody>
 </table>
 
@@ -625,9 +634,11 @@
 </table>
 
 <core_rt:set var="documentAnnotations" value="${spdxDocument.annotations}" />
-<core_rt:if test="${not empty spdxPackageInfo}">
-	<core_rt:set var="packageAnnotations" value="${spdxPackageInfo.iterator().next().annotations}" />
-</core_rt:if>
+<core_rt:forEach items="${spdxPackageInfo}" var="spdxPackage" varStatus="loop">
+	<core_rt:if test="${spdxPackage.index eq 0}">
+		<core_rt:set var="packageAnnotations" value="${spdxPackage.annotations}" />
+	</core_rt:if>
+</core_rt:forEach>
 <table class="table label-value-table spdx-table spdx-full" id="Annotations">
 	<thead class="spdx-thead">
 		<tr>
@@ -968,6 +979,7 @@
 	generateSelecterOption('annotationSelect', "${documentAnnotations.size()}");
 	generateSelecterOption('externalReferenceSelect', "${package.externalRefs.size()}");
 	generateSelecterOption('externalDocumentRefs', "${spdxDocumentCreationInfo.externalDocumentRefs.size()}");
+	generateSelecterOption('packageInfoSelect', "${spdxPackageInfo.size()}");
 
 	function displayIndex(el) {
 		var index = $(el).val();

@@ -2264,7 +2264,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
                 return spdxBOMImporter.importSpdxBOMAsRelease(spdxInputStream, attachmentContent, newReleaseVersion, releaseId);
             }
-        } catch (InvalidSPDXAnalysisException | IOException e) {
+        } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
         }
     }
