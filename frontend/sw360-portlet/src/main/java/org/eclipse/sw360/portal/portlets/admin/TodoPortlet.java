@@ -135,6 +135,11 @@ public class TodoPortlet extends Sw360Portlet {
                 LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
                 Obligation obligation = licenseClient.getObligationsById(obligatonId);
                 request.setAttribute("obligationName", obligation.getTitle());
+                String portletId = (String) request.getAttribute(WebKeys.PORTLET_ID);
+                ThemeDisplay tD = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
+                long plid = tD.getPlid();
+                LiferayPortletURL redirectUrl = PortletURLFactoryUtil.create(request, portletId, plid, PortletRequest.RENDER_PART);
+                request.setAttribute("baseUrl", redirectUrl.toString());
                 include("/html/admin/obligations/includes/obligationChangelog.jsp", request, response);
             } catch (TException e) {
                 log.error("Could not get Obligation from backend", e);

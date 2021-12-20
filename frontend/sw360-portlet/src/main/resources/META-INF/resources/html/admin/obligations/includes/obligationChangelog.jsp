@@ -12,30 +12,41 @@
 <%@include file="/html/init.jsp" %>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 
-<jsp:useBean id="obligationName" class="java.lang.String" scope="request"/>
+<jsp:useBean id="obligationName" class="java.lang.String" scope="request" />
 
-
-<h3>${obligationName}</h3>
-<div class="col">
-  <div class="col-auto">
-    <div class="row portlet-toolbar">
-      <div class="btn-toolbar" role="toolbar">
-        <div class="nav nav-pills justify-content-center bg-light font-weight-bold" id="pills-tab" role="tablist">
-            <a class="nav-item nav-link active" id="pills-changelogs-list-tab" data-toggle="pill" href="#pills-changelogslist" role="tab" aria-controls="pills-changeloglist" aria-selected="true">
-            <liferay-ui:message key="change.log" /></a>
-            <a class="nav-item nav-link" id="pills-changelogs-view-tab" href="#pills-changelogsView" role="tab" aria-controls="pills-changelogsView" aria-selected="false">
-            <liferay-ui:message key="changes" /></a>
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <div class="row portlet-toolbar">
+                <div class="col-auto">
+                    <div class="btn-toolbar" role="toolbar">
+                        <div class="nav nav-pills justify-content-center bg-light font-weight-bold" id="pills-tab"
+                            role="tablist">
+                            <a class="nav-item nav-link active" id="pills-changelogs-list-tab" data-toggle="pill"
+                                href="#pills-changelogslist" role="tab" aria-controls="pills-changeloglist" aria-selected="true">
+                                <liferay-ui:message key="change.log" />
+                            </a>
+                            <a class="nav-item nav-link" id="pills-changelogs-view-tab" href="#pills-changelogsView"
+                                role="tab" aria-controls="pills-changelogsView" aria-selected="false">
+                                <liferay-ui:message key="changes" />
+                            </a>
+                        </div>
+                        <div class="btn-group" role="group" style="margin-left:1rem;">
+                            <a type="button" class="btn btn-light" style="width: 90px;" id="obligation-view-page" href="${baseUrl}">
+                                <liferay-ui:message key="back" />
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col portlet-title text-truncate" title="<sw360:out value=" ${obligationName}" />">
+                    <sw360:out value="${obligationName}" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <jsp:include page="/html/changelogs/elementView.jsp" />
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
-  <div class="row">
-    <div class="col">
-      <jsp:include page="/html/changelogs/elementView.jsp" />
-    </div>
-  </div>
 </div>
-
-
-
-
