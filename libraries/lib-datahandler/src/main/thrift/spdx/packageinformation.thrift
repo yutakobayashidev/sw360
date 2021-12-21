@@ -12,6 +12,7 @@ include "sw360.thrift"
 include "users.thrift"
 include "documentcreationinformation.thrift"
 include "annotations.thrift"
+include "relationshipsbetweenspdxelements.thrift"
 
 namespace java org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo
 namespace php sw360.thrift.spdx.spdxpackageinfo
@@ -26,6 +27,7 @@ typedef users.User User
 typedef users.RequestedAction RequestedAction
 typedef documentcreationinformation.CheckSum CheckSum
 typedef annotations.Annotations Annotation
+typedef relationshipsbetweenspdxelements.RelationshipsBetweenSPDXElements RelationshipsBetweenSPDXElements
 
 struct PackageInformation {
     1: optional string id,
@@ -60,6 +62,8 @@ struct PackageInformation {
     31: optional map<RequestedAction, bool> permissions,
     32: optional string createdBy,
     33: optional i32 index,
+    34: optional set<RelationshipsBetweenSPDXElements> relationships,    // 11. Relationships
+
 }
 
 struct PackageVerificationCode {

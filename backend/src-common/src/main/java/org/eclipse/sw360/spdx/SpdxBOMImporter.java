@@ -38,6 +38,7 @@ import org.spdx.rdfparser.SPDXChecksum;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -192,7 +193,7 @@ public class SpdxBOMImporter {
             final ExtractedLicenseInfo[] extractedLicenseInfos = spdxDocument.getExtractedLicenseInfos();
 
             final Set<SnippetInformation> snippetInfos = createSnippetsFromSpdxSnippets(spdxSnippets);
-            final Set<RelationshipsBetweenSPDXElements> relationships = createRelationshipsFromSpdxRelationships(spdxRelationships);
+            final Set<RelationshipsBetweenSPDXElements> relationships = createRelationshipsFromSpdxRelationships(spdxRelationships, spdxDocument.getId());
             final Set<Annotations> annotations = createAnnotationsFromSpdxAnnotations(spdxAnnotations);
             final Set<OtherLicensingInformationDetected> otherLicenses = createOtherLicensesFromSpdxExtractedLicenses(extractedLicenseInfos);
 
@@ -238,7 +239,7 @@ public class SpdxBOMImporter {
         try {
             for (SpdxSnippet spdxSnippet : spdxSnippets) {
                 String id = spdxSnippet.getId();
-                String snippetFromFile = spdxSnippet.getSnippetFromFile().getName();
+                String snippetFromFile = spdxSnippet.getSnippetFromFile().getId();
                 Set<SnippetRange> ranges = createSnippetRangesFromSpdxSnippet(spdxSnippet);
                 String licenseConcluded = spdxSnippet.getLicenseConcluded().toString();
                 Set<String> licenseInfoInFile = Arrays.stream(spdxSnippet.getLicenseInfoFromFiles())
@@ -280,7 +281,7 @@ public class SpdxBOMImporter {
         snippetByteRange.setRangeType("BYTE")
                 .setStartPointer(byteRanges[0])
                 .setEndPointer(byteRanges[1])
-                .setReference(spdxByteRange.getStartPointer().getReference().toString())
+                .setReference(spdxByteRange.getStartPointer().getReference().getId())
                 .setIndex(0);
 
         StartEndPointer spdxLineRange = spdxSnippet.getLineRange();
@@ -289,7 +290,7 @@ public class SpdxBOMImporter {
         snippetLineRange.setRangeType("LINE")
                 .setStartPointer(lineRanges[0])
                 .setEndPointer(lineRanges[1])
-                .setReference(spdxLineRange.getStartPointer().getReference().toString())
+                .setReference(spdxLineRange.getStartPointer().getReference().getId())
                 .setIndex(1);
 
         return new HashSet<SnippetRange>(Arrays.asList(snippetByteRange, snippetLineRange));
@@ -326,27 +327,26 @@ public class SpdxBOMImporter {
         return new String[] { start, end };
     }
 
-    private Set<RelationshipsBetweenSPDXElements> createRelationshipsFromSpdxRelationships(Relationship[] spdxRelationships) {
+    private Set<RelationshipsBetweenSPDXElements> createRelationshipsFromSpdxRelationships(Relationship[] spdxRelationships, String spdxElementId) {
         Set<RelationshipsBetweenSPDXElements> relationships = new HashSet<RelationshipsBetweenSPDXElements>();
         int index = 0;
 
         for (Relationship spdxRelationship : spdxRelationships) {
-            String relatedSpdxElementId = spdxRelationship.getRelatedSpdxElement().getId();
-            String type = spdxRelationship.getRelationshipType().toTag();
+            if (!(spdxRelationship.getRelatedSpdxElement() instanceof SpdxFile)) {
+                String type = spdxRelationship.getRelationshipType().toTag();
+                String relatedSpdxElement = spdxRelationship.getRelatedSpdxElement().getId();
+                String comment = spdxRelationship.getComment();
 
-            /// ?????
-            String relatedSpdxElement = spdxRelationship.getRelatedSpdxElement().toString();
-            String comment = spdxRelationship.getComment();
+                RelationshipsBetweenSPDXElements relationship = new RelationshipsBetweenSPDXElements();
+                relationship.setSpdxElementId(verifyOrSetDefault(spdxElementId))
+                            .setRelationshipType(verifyOrSetDefault(type))
+                            .setRelatedSpdxElement(verifyOrSetDefault(relatedSpdxElement))
+                            .setRelationshipComment(verifyOrSetDefault(comment))
+                            .setIndex(index);
 
-            RelationshipsBetweenSPDXElements relationship = new RelationshipsBetweenSPDXElements();
-            relationship.setSpdxElementId(verifyOrSetDefault(relatedSpdxElementId))
-                        .setRelationshipType(verifyOrSetDefault(type))
-                        .setRelatedSpdxElement(verifyOrSetDefault(relatedSpdxElement))
-                        .setRelationshipComment(verifyOrSetDefault(comment))
-                        .setIndex(index);
-
-            relationships.add(relationship);
-            index++;
+                relationships.add(relationship);
+                index++;
+            }
         }
 
         return relationships;
@@ -790,7 +790,12 @@ public class SpdxBOMImporter {
         for (SpdxPackage packageElement : packages) {
             log.info("Import package: " +packageElement.toString());
             PackageInformation packageInfo = createPackageInfoFromSpdxPackage(spdxDocId, packageElement);
-            if (packageElement.toString().equals(spdxPackage.toString())) {
+            if (ArrayUtils.isNotEmpty(packageElement.getRelationships())) {
+                Set<RelationshipsBetweenSPDXElements> packageReleaseRelationship = createRelationshipsFromSpdxRelationships(packageElement.getRelationships(), packageElement.getId());
+                packageInfo.setRelationships(packageReleaseRelationship);
+            }
+
+            if (packageElement.getName().equals(spdxPackage.getName())) {
                 packageInfo.setIndex(0);
             } else {
                 packageInfo.setIndex(index);

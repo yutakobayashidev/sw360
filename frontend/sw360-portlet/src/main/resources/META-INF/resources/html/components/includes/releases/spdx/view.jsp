@@ -588,21 +588,35 @@
 </table>
 
 <core_rt:set var="relationships" value="${spdxDocument.relationships}" />
+<core_rt:forEach items="${spdxPackageInfo}" var="spdxPackage" varStatus="loop">
+	<core_rt:if test="${spdxPackage.index eq 0}">
+		<core_rt:set var="packageRelationships" value="${spdxPackage.relationships}" />
+	</core_rt:if>
+</core_rt:forEach>
 <table class="table label-value-table spdx-table spdx-full" id="RelationshipsbetweenSPDXElements">
 	<thead class="spdx-thead">
 		<tr>
 			<th>11. Relationship between SPDX Elements Information</th>
 		</tr>
 	</thead>
-	<tbody class="section" data-size="2">
+	<tbody class="section" data-size="3">
+		<tr>
+			<td class="spdx-flex-row">
+				<div class="spdx-col-1 spdx-label-index">Source</div>
+				<select id="relationshipSourceSelect" class="spdx-col-2" onchange="changeRelationshipSource(this)">
+					<option>SPDX Document</option>
+					<option>Package</option>
+				</select>
+			</td>
+		</tr>
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1 spdx-label-index">Index</div>
-				<select id="relationshipSelect" class="spdx-col-2" onchange="displayIndex(this)"></select>
+				<select id="relationshipSelect" class="spdx-col-2" onchange="displayRelationshipIndex(this)"></select>
 			</td>
 		</tr>
 		<core_rt:forEach items="${relationships}" var="relationshipsData" varStatus="loop">
-			<tr data-index="${relationshipsData.index}">
+			<tr class="relationship-document" data-index="${relationshipsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">11.1 Relationship</div>
 					<div class="spdx-col-2 spdx-flex-col">
@@ -621,7 +635,38 @@
 					</div>
 				</td>
 			</tr>
-			<tr data-index="${relationshipsData.index}">
+			<tr class="relationship-document" data-index="${relationshipsData.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">11.2 Relationship comment</div>
+					<p class="spdx-col-2 spdx-p" id="relationshipComment-${relationshipsData.index}">
+						<sw360:out value="${relationshipsData.relationshipComment}" stripNewlines="false" />
+					</p>
+				</td>
+			</tr>
+		</core_rt:forEach>
+
+
+		<core_rt:forEach items="${packageRelationships}" var="relationshipsData" varStatus="loop">
+			<tr class="relationship-package" data-index="${relationshipsData.index}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">11.1 Relationship</div>
+					<div class="spdx-col-2 spdx-flex-col">
+						<div class="spdx-flex-row">
+							<div class="spdx-col-1">
+								<sw360:out value="${relationshipsData.spdxElementId}" />
+							</div>
+							<div class="spdx-col-1 spdx-flex-row">
+								<sw360:out
+									value="${relationshipsData.relationshipType.replace('relationshipType_', '')}" />
+							</div>
+							<div class="spdx-col-3">
+								<sw360:out value="${relationshipsData.relatedSpdxElement}" />
+							</div>
+						</div>
+					</div>
+				</td>
+			</tr>
+			<tr class="relationship-package" data-index="${relationshipsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">11.2 Relationship comment</div>
 					<p class="spdx-col-2 spdx-p" id="relationshipComment-${relationshipsData.index}">
@@ -1052,5 +1097,30 @@
 					+ ':' + date.getSeconds().toString().padStart(2, '0');
 
 		document.getElementById(id).innerHTML = dateTime;
+	}
+
+	function changeRelationshipSource(el) {
+		if ($('#relationshipSourceSelect').val() == 'Package') {
+			generateSelecterOption('relationshipSelect', '${packageRelationships.size()}');
+		} else {
+			generateSelecterOption('relationshipSelect', '${relationships.size()}');
+		}
+		$('#relationshipSelect').change();
+	}
+
+	function displayRelationshipIndex(el) {
+		var index = $(el).val();
+		var section = $(el).closest('.section');
+		var size = section.data()['size'];
+
+		section.children().css('display', 'none');
+		section.children().eq(0).css('display', '');
+		section.children().eq(1).css('display', '');
+
+		if ($('#relationshipSourceSelect').val() == 'SPDX Document') {
+			$('.relationship-document[data-index=' + (index - 1).toString() + ']').css('display', 'table-row');
+		} else {
+			$('.relationship-package[data-index=' + (index - 1).toString() + ']').css('display', 'table-row');
+		}
 	}
 </script>
