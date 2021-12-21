@@ -212,7 +212,14 @@ public class DatabaseMixInForSPDXDocument {
         "setSPDXID",
         "annotationsIterator",
         "externalRefsIterator",
-        "attributionTextIterator"
+        "attributionTextIterator",
+        "index",
+        "setIndex",
+        "relationshipsSize",
+        "spdxid",
+        "setRelationships",
+        "relationshipsIterator",
+        "licenseInfoFromFilesIterator"
     })
     public static abstract class PackageInformationMixin extends PackageInformation {
     }

@@ -793,6 +793,8 @@ public class SpdxBOMImporter {
             if (ArrayUtils.isNotEmpty(packageElement.getRelationships())) {
                 Set<RelationshipsBetweenSPDXElements> packageReleaseRelationship = createRelationshipsFromSpdxRelationships(packageElement.getRelationships(), packageElement.getId());
                 packageInfo.setRelationships(packageReleaseRelationship);
+            } else {
+                packageInfo.setRelationships(Collections.emptySet());
             }
 
             if (packageElement.getName().equals(spdxPackage.getName())) {
