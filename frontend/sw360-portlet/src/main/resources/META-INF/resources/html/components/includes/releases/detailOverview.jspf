@@ -106,10 +106,12 @@
                                     <clay:icon symbol="caret-bottom" />
                                 </button>
                                 <div class="dropdown-menu" aria-labelledby="btnExport">
-                                    <button class="dropdown-item export-sbom" type="button" data-type="SPDX" data-release-id="${release.id}">Tag</button>
+                                    <button class="dropdown-item export-sbom" type="button" data-type="SPDX" data-release-id="${release.id}">TAG</button>
                                     <button class="dropdown-item export-sbom" type="button" data-type="RDF" data-release-id="${release.id}">RDF/XML</button>
                                     <button class="dropdown-item export-sbom" type="button" data-type="JSON" data-release-id="${release.id}">JSON</button>
                                     <button class="dropdown-item export-sbom" type="button" data-type="XLS" data-release-id="${release.id}">XLS</button>
+                                    <button class="dropdown-item export-sbom" type="button" data-type="XLSX" data-release-id="${release.id}">XLSX</button>
+                                    <button class="dropdown-item export-sbom" type="button" data-type="YAML" data-release-id="${release.id}">YAML</button>
                                 </div>
                             </div>
 
@@ -297,8 +299,6 @@
                     null,
                     'question-circle',
                     '<liferay-ui:message key="export.sbom" />',
-                    '<p><liferay-ui:message key="no.warning.error.export.sbom" />' +
-                    '<p style="display: none;"><liferay-ui:message key="export.sbom.have.some.warning" />:' +
                     '<p style="display: none;"><liferay-ui:message key="export.sbom.have.some.error" />:' +
                     '<div style="display: none;" class="alert alert-warning" id="verifySPDX"></div>',
                     '<liferay-ui:message key="export" />',
@@ -308,18 +308,17 @@
                     }
                 );
                 $('#confirmDialog button.btn.btn-primary').prop('disabled', true)
-                var log = data.message.replaceAll('|||','<br/> - ')
+                var log = data.message
                 if (log != null) {
-                    $('#confirmDialog > div > div > div.modal-body > p:nth-child(1)').attr("style","display: none;")
                     $('#verifySPDX').attr("style","overflow: auto; max-height: 20rem;")
-                    $('#verifySPDX').append("<strong> - " +log+ "</strong>")
+                    $('#verifySPDX').append("<strong>" + log + "</strong>")
                 }
                 if (data.result == 'SUCCESS') {
-                    $('#confirmDialog > div > div > div.modal-body > p:nth-child(2)').attr("style","color: red;")
                     $('#confirmDialog button.btn.btn-primary').prop('disabled', false)
                     cancelExport()
                 } else {
-                    $('#confirmDialog > div > div > div.modal-body > p:nth-child(3)').attr("style","color: red;")
+                    $('#confirmDialog > div > div > div.modal-body > p:nth-child(1)').attr("style","color: red;")
+                    cancelExport()
                 }
             });
 
@@ -345,7 +344,7 @@
         });
 
         // Export Spreadsheet action
-        function exportSpreadsheet(type, releaseId){
+        function exportSpreadsheet(type, releaseId) {
             portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
                     .setParameter('<%=PortalConstants.ACTION%>', 'export-spdx')
                     .setParameter('<%=PortalConstants.WHAT%>', type)

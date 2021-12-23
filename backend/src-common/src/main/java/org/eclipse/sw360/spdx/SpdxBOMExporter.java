@@ -31,6 +31,7 @@ import org.spdx.rdfparser.referencetype.ReferenceType;
 import org.spdx.tools.SpdxConverter;
 import org.spdx.tools.SpdxConverterException;
 import org.spdx.tools.TagToRDF;
+import org.spdx.tools.RdfToTag;
 
 import org.spdx.tag.CommonCode;
 import org.spdx.rdfparser.license.ExtractedLicenseInfo;
@@ -70,54 +71,49 @@ public class SpdxBOMExporter {
 
     public RequestSummary exportSPDXFile(String releaseId, String outputFormat) throws SW360Exception, MalformedURLException, InvalidSPDXAnalysisException {
         RequestSummary requestSummary = new RequestSummary();
-        // SpdxDocument doc = null;
-        // List<String> message = new LinkedList<String>();
-        // try {
-        //     log.info("Creating SpdxDocument object from sw360spdx...");
-        //     doc = createSpdxDocumentFromSw360Spdx(releaseId);
-        //     message = doc.verify();
-        //     requestSummary.setMessage(String.join("|||", message));
-        // } catch (Exception e) {
-        //     log.error("Error create SpdxDocument: " + e.getMessage());
-        //     requestSummary.setMessage(e.getMessage());
-        //     return requestSummary.setRequestStatus(RequestStatus.FAILURE);
-        // }
-
+        String verifyMessage = "";
         final String targetFileName = releaseId + "." + outputFormat.toLowerCase();
         log.info("Export to file: " + targetFileName);
         
-        if (outputFormat.equals("JSON")) {
-            creteSPDXJsonFomatFromSW360SPDX(releaseId);
-            requestSummary.setMessage("Message for verifing SPDX file");
-            return requestSummary.setRequestStatus(RequestStatus.SUCCESS);
+        if (creteSPDXJsonFomatFromSW360SPDX(releaseId)) {
+            if (outputFormat.equals("JSON")) {
+                //verifyMessage = convertJSONtoOutputFormat(targetFileName, releaseId + ".RDF");
+                requestSummary.setMessage("Export to JSON format successfully !");
+                return requestSummary.setRequestStatus(RequestStatus.SUCCESS);
+            } else {
+                verifyMessage = convertJSONtoOutputFormat(releaseId + ".json", targetFileName);
+                if (verifyMessage.isEmpty()) {
+                    log.info("Export to " + targetFileName + " sucessfully");
+                    requestSummary.setMessage("Export to " + outputFormat + " format successfully !");
+                    return requestSummary.setRequestStatus(RequestStatus.SUCCESS);
+                } else {
+                    log.error("Export to " + targetFileName + " error");
+                    requestSummary.setMessage(verifyMessage);
+                    return requestSummary.setRequestStatus(RequestStatus.FAILURE);
+                }
+            }
         } else {
-            log.info("No suppprt format" + outputFormat.toLowerCase() + ". It is will be updated");
+            log.error("Export to " + targetFileName + " error !!!");
+            requestSummary.setMessage("Export to " + targetFileName + " error !!!");
+            return requestSummary.setRequestStatus(RequestStatus.FAILURE);
         }
+    }
 
-
-        // if (outputFormat.equals("SPDX")) {
-        //     convertSpdxDocumentToTagFile(doc, targetFileName);
-        //     return requestSummary.setRequestStatus(RequestStatus.SUCCESS);
-        // }
-
-        // String sourceFileName = releaseId + ".spdx";
-        // File sourceFile = convertSpdxDocumentToTagFile(doc, sourceFileName);
-        // if (outputFormat.equals("RDF")) {
-        //     convertTagToRdf(sourceFile, targetFileName);
-        //     return requestSummary.setRequestStatus(RequestStatus.SUCCESS);
-        // } else {
-        //     // todo: can update when no need temporary file .rdf
-        //     try {
-        //         String rdfFileName = releaseId+".rdf";
-        //         convertTagToRdf(sourceFile, rdfFileName);
-        //         SpdxConverter.convert(rdfFileName, targetFileName);
-        //         return requestSummary.setRequestStatus(RequestStatus.SUCCESS);
-        //     } catch (SpdxConverterException e) {
-        //         e.printStackTrace();
-        //     }
-        // }
-
-        return requestSummary.setRequestStatus(RequestStatus.FAILURE);
+    private String convertJSONtoOutputFormat(String jsonFileName, String outputFileName ) {
+        try {
+            log.info("Convert " + jsonFileName + " to " + outputFileName);
+            if (outputFileName.split("\\.")[1].equals("spdx")) {
+                SpdxConverter.convert(jsonFileName, "tmp.rdf");
+                RdfToTag.main(new String[] {"tmp.rdf", outputFileName});
+            } else {
+                SpdxConverter.convert(jsonFileName, outputFileName);
+            }
+        } catch (SpdxConverterException e) {
+            log.error("Convert to " + outputFileName + " file error !!!");
+            e.printStackTrace();
+            return e.getMessage();
+        }
+        return "";
     }
 
     private boolean creteSPDXJsonFomatFromSW360SPDX(String releaseId) throws SW360Exception {
@@ -259,15 +255,14 @@ public class SpdxBOMExporter {
             SPDXJson.put("annotations", (JSONArray) parser.parse(objectMapper.writeValueAsString(sw360SPDXDocument.getAnnotations())));
             SPDXJson.put("hasExtractedLicensingInfos", (JSONArray) parser.parse(objectMapper.writeValueAsString(sw360SPDXDocument.getOtherLicensingInformationDetecteds())));
 
-            PrintWriter pw = new PrintWriter(releaseId+".json");
+            PrintWriter pw = new PrintWriter(releaseId + ".json");
             pw.write(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(SPDXJson));
-            System.out.println("------- SPDX JSON -------:\n"  +objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(SPDXJson));
-
             pw.flush();
             pw.close();
         } catch (ParseException | JsonProcessingException | FileNotFoundException e) {
             log.error("Can not convert SW360 SPDX Document to Json");
             e.printStackTrace();
+            return false;
         }
 
         return true;
