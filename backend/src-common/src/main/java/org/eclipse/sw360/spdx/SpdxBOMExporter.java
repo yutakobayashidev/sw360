@@ -209,6 +209,8 @@ public class SpdxBOMExporter {
                 if (! snippet.getSnippetFromFile().isEmpty()) {
                     JSONObject file = new JSONObject();
                     file.put("SPDXID", snippet.getSnippetFromFile());
+                    file.put("fileName", snippet.getSnippetFromFile());
+                    file.put("comment", "File information is generated from snippet and only SPDXID is correct information");
                     files.add(file);
                 }
             }
