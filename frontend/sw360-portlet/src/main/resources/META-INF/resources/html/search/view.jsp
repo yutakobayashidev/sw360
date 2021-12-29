@@ -16,6 +16,7 @@
 <liferay-theme:defineObjects/>
 
 <%@ page import="static org.eclipse.sw360.portal.common.PortalConstants.KEY_SEARCH_TEXT" %>
+<%@ page import="static org.eclipse.sw360.portal.common.PortalConstants.TYPE_DEPARTMENT" %>
 <%@ page import="org.eclipse.sw360.datahandler.common.SW360Constants" %>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 
@@ -67,6 +68,10 @@
                             <div class="form-check">
                                 <input id="keyword-search-vendors" type="checkbox" class="form-check-input" value="<%=SW360Constants.TYPE_VENDOR%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>"   <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_VENDOR)%>"> checked="" </core_rt:if> >
                                 <label for="keyword-search-vendors" class="form-check-label"><sw360:icon title="vendors" icon="vendor" className="type-icon type-icon-vendor"/> <liferay-ui:message key="vendors" /></label>
+                            </div>
+                            <div class="form-check">
+                                <input id="keyword-search-departments" type="checkbox" class="form-check-input" value="<%=TYPE_DEPARTMENT%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>"   <core_rt:if test="<%=typeMask.contains(TYPE_DEPARTMENT)%>"> checked="" </core_rt:if> >
+                                <label for="keyword-search-departments" class="form-check-label"><sw360:icon title="departments" icon="department" className="type-icon type-icon-department"/> <liferay-ui:message key="departments" /></label>
                             </div>
                             <div class="form-group">
                                 <div class="btn-group btn-group-sm" role="group">
@@ -137,6 +142,8 @@
                     return '<svg class="lexicon-icon type-icon type-icon-user"><title><liferay-ui:message key="user" /></title><use href="<%=request.getContextPath()%>/images/icons.svg#user"/></svg>'
                 } else if (data === '<%=SW360Constants.TYPE_VENDOR%>') {
                     return '<svg class="lexicon-icon type-icon type-icon-vendor"><title><liferay-ui:message key="vendor" /></title><use href="<%=request.getContextPath()%>/images/icons.svg#vendor"/></svg>'
+                } else if (data === '<%=TYPE_DEPARTMENT%>') {
+                    return '<svg class="lexicon-icon type-icon type-icon-department"><title><liferay-ui:message key="department" /></title><use href="<%=request.getContextPath()%>/images/icons.svg#department"/></svg>'
                 } else {
                     return data;
                 }

@@ -11,6 +11,7 @@ package org.eclipse.sw360.portal.portlets.search;
 
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.search.SearchService;
+import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
@@ -21,9 +22,11 @@ import org.apache.thrift.TException;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import javax.portlet.*;
 
@@ -84,6 +87,10 @@ public class SearchPortlet extends Sw360Portlet {
             searchResults = Collections.emptyList();
         }
 
+        if (typeMask.isEmpty() || typeMask.contains(TYPE_DEPARTMENT)) {
+            searchDepartment(searchResults, searchtext);
+        }
+
         // Set the results
         request.setAttribute(KEY_SEARCH_TEXT, searchtext);
         request.setAttribute(KEY_SUMMARY, searchResults);
@@ -91,6 +98,47 @@ public class SearchPortlet extends Sw360Portlet {
 
         // Proceed with page rendering
         super.doView(request, response);
+    }
+
+    private void searchDepartment(List<SearchResult> searchResults, String searchtext) {
+        List<SearchResult> departmentResults = new ArrayList<>();
+        List<String> listSearch = new ArrayList<>();
+
+        if (isNullOrEmpty(searchtext)) {
+            return;
+        } else {
+            String[] searchs = searchtext.split(" ");
+            for (String search : Arrays.asList(searchs)) {
+                if (!isNullOrEmpty(search)) {
+                    listSearch.add(search);
+                }
+            }
+        }
+
+        try {
+            UserService.Iface client = thriftClients.makeUserClient();
+            Set<String> departments = client.getUserDepartments();
+            if (departments != null) {
+                for (String department : departments) {
+                    SearchResult result = new SearchResult();
+                    result.setName(department);
+                    result.setType(TYPE_DEPARTMENT);
+                    departmentResults.add(result);
+                }
+            }
+        } catch (TException e) {
+            log.error("Search could not be performed Departments!", e);
+        }
+
+        if (isNullOrEmpty(searchtext.trim())) {
+            searchResults.addAll(departmentResults);
+        } else {
+            for (SearchResult departmentResult : departmentResults) {
+                if (listSearch.stream().anyMatch(departmentResult.getName()::contains)) {
+                    searchResults.add(departmentResult);
+                }
+            }
+        }
     }
 
 }

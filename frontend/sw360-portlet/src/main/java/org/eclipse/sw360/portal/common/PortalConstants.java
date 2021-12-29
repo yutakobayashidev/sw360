@@ -410,6 +410,7 @@ public class PortalConstants {
     //! Keys for Search
     public static final String TYPE_MASK = "typeMask";
     public static final String SEARCH_PORTLET_NAME = PORTLET_NAME_PREFIX + "search";
+    public static final String TYPE_DEPARTMENT = "department";
 
     //! Keys for Preferences
     public static final String PREFERENCES_PORTLET_NAME = PORTLET_NAME_PREFIX + "preferences";
