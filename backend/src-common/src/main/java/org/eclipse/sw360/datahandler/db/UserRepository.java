@@ -33,8 +33,10 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -81,6 +83,25 @@ public class UserRepository extends SummaryAwareRepository<User> {
             "  }" +
             "}";
 
+    private static final String USERS_ALL_SECONDARY_DEPARTMENT_VIEW = "function(doc) { " +
+            "  if (doc.type == 'user') {" +
+            "    for (var secondaryDepartmentsAndRole in doc.secondaryDepartmentsAndRoles) {" +
+            "      try {" +
+            "            var values = JSON.parse(doc.secondaryDepartmentsAndRoles[secondaryDepartmentsAndRole]);" +
+            "            if(!isNaN(values)) {" +
+            "               emit( secondaryDepartmentsAndRole, doc._id);" +
+            "               continue;" +
+            "            }" +
+            "            for (var idx in values) {" +
+            "              emit( secondaryDepartmentsAndRole, doc._id);" +
+            "            }" +
+            "      } catch(error) {" +
+            "          emit( secondaryDepartmentsAndRole, doc._id);" +
+            "      }" +
+            "    }" +
+            "  }" +
+            "}";
+
     public UserRepository(DatabaseConnectorCloudant databaseConnector) {
         super(User.class, databaseConnector, new UserSummary());
         Map<String, MapReduce> views = new HashMap<String, MapReduce>();
@@ -90,6 +111,7 @@ public class UserRepository extends SummaryAwareRepository<User> {
         views.put("byEmail", createMapReduce(BYEMAIL, null));
         views.put("userDepartments", createMapReduce(USERS_ALL_DEPARTMENT_VIEW, null));
         views.put("userEmails", createMapReduce(USERS_ALL_EMAIL_VIEW, null));
+        views.put("userSecondaryDepartments", createMapReduce(USERS_ALL_SECONDARY_DEPARTMENT_VIEW, null));
         initStandardDesignDocument(views, databaseConnector);
         createIndex("byEmailUser", new String[] {"email"}, databaseConnector);
         createIndex("byDepartment", new String[] {"department"}, databaseConnector);
@@ -132,7 +154,10 @@ public class UserRepository extends SummaryAwareRepository<User> {
     }
 
     public Set<String> getUserDepartments() {
-        return getResultBasedOnQuery("userDepartments");
+        Set<String> userDepartments = new HashSet<>();
+        userDepartments.addAll(getResultBasedOnQuery("userDepartments"));
+        userDepartments.addAll(getResultBasedOnQuery("userSecondaryDepartments"));
+        return userDepartments;
     }
 
     public Set<String> getUserEmails() {
