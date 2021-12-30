@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.portlet.*;
 
@@ -78,13 +79,19 @@ public class SearchPortlet extends Sw360Portlet {
         }
         searchtext = Strings.nullToEmpty(searchtext);
 
-        List<SearchResult> searchResults;
-        try {
-            SearchService.Iface client = thriftClients.makeSearchClient();
-            searchResults = client.searchFiltered(searchtext, user, typeMask);
-        } catch (TException e) {
-            log.error("Search could not be performed!", e);
-            searchResults = Collections.emptyList();
+        List<SearchResult> searchResults = new ArrayList<>();
+
+        if (!(typeMask.contains(TYPE_DEPARTMENT) && typeMask.size() == 1)) {
+            List<String> searchType = typeMask.stream()
+                                            .filter(type -> !type.equals(TYPE_DEPARTMENT))
+                                            .collect(Collectors.toList());
+            try {
+                SearchService.Iface client = thriftClients.makeSearchClient();
+                searchResults = client.searchFiltered(searchtext, user, searchType);
+            } catch (TException e) {
+                log.error("Search could not be performed!", e);
+                searchResults = Collections.emptyList();
+            }
         }
 
         if (typeMask.isEmpty() || typeMask.contains(TYPE_DEPARTMENT)) {
@@ -110,7 +117,7 @@ public class SearchPortlet extends Sw360Portlet {
             String[] searchs = searchtext.split(" ");
             for (String search : Arrays.asList(searchs)) {
                 if (!isNullOrEmpty(search)) {
-                    listSearch.add(search);
+                    listSearch.add(search.toUpperCase());
                 }
             }
         }
@@ -134,7 +141,7 @@ public class SearchPortlet extends Sw360Portlet {
             searchResults.addAll(departmentResults);
         } else {
             for (SearchResult departmentResult : departmentResults) {
-                if (listSearch.stream().anyMatch(departmentResult.getName()::contains)) {
+                if (listSearch.stream().anyMatch(departmentResult.getName().toUpperCase()::contains)) {
                     searchResults.add(departmentResult);
                 }
             }
