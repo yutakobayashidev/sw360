@@ -78,7 +78,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -2287,7 +2286,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 			} catch (IOException e) {
                 log.error("Warning: Unable to close input file on error.");
 			}
-			log.error("Could not write to the new SPDX RDF file "+ spdxRDFFile.getPath() + "due to error " + e1.getMessage());
+			log.error("Could not write to the new SPDX RDF file " + spdxRDFFile.getPath() + "due to error " + e1.getMessage());
         }
 
 		List<String> warnings = new ArrayList<String>();

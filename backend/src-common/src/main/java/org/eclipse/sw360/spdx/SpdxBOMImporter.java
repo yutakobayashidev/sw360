@@ -34,7 +34,6 @@ import org.spdx.rdfparser.model.*;
 import org.spdx.rdfparser.model.pointer.*;
 import org.spdx.rdfparser.license.ExtractedLicenseInfo;
 import org.spdx.rdfparser.SpdxPackageVerificationCode;
-import org.spdx.rdfparser.SPDXChecksum;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -482,7 +481,7 @@ public class SpdxBOMImporter {
             PVC = createPVCFromSpdxPackage(spdxPackage);
         } catch (NullPointerException e) {
             PVC = null;
-            log.error("Can not get PVC " +e);
+            log.error("Can not get PVC " + e);
         }
 
         Set<CheckSum> checksums = new HashSet<>();
@@ -490,21 +489,21 @@ public class SpdxBOMImporter {
             checksums = createCheckSumsFromSpdxChecksums(spdxPackage);
         } catch (NullPointerException e) {
             checksums = null;
-            log.error("Can not get checksums " +e);
+            log.error("Can not get checksums " + e);
         }
 
         String licenseDeclared = "";
         try {
             licenseDeclared = createLicenseDeclaredFromSpdxLicenseDeclared(spdxPackage);
         } catch (NullPointerException e) {
-            log.error("Can not get licenseDeclared " +e);
+            log.error("Can not get licenseDeclared " + e);
         }
 
         Set<ExternalReference> externalRefs = new HashSet<>();
         try {
             externalRefs = createExternalReferenceFromSpdxPackage(spdxPackage);
         } catch (NullPointerException e) {
-            log.error("Can not get externalRefs " +e);
+            log.error("Can not get externalRefs " + e);
             externalRefs = Collections.emptySet();
         }
 
@@ -520,21 +519,17 @@ public class SpdxBOMImporter {
             final String originator = spdxPackage.getOriginator();
             final String downloadLocation = spdxPackage.getDownloadLocation();
             final boolean fileAnalyzed = spdxPackage.isFilesAnalyzed();
-            // final PackageVerificationCode PVC = createPVCFromSpdxPackage(spdxPackage);
-            // final Set<CheckSum> checksums = createCheckSumsFromSpdxChecksums(spdxPackage.getChecksums());
             final String homepage = spdxPackage.getHomepage();
             final String sourceInfo = spdxPackage.getSourceInfo();
             final String licenseConcluded = spdxPackage.getLicenseConcluded().toString();
             final Set<String> licenseInfosFromFiles = Arrays.stream(spdxPackage.getLicenseInfoFromFiles())
                                                         .map(license -> license.toString())
                                                         .collect(Collectors.toSet());
-            // final String licenseDeclared = spdxPackage.getLicenseDeclared().toString();
             final String licenseComment = spdxPackage.getLicenseComment();
             final String copyrightText = spdxPackage.getCopyrightText();
             final String summary = spdxPackage.getSummary();
             final String description = spdxPackage.getDescription();
             final String comment = spdxPackage.getComment();
-            // final Set<ExternalReference> externalRefs = createExternalReferenceFromSpdxPackage(spdxPackage);
             final Set<String> attributionText = new HashSet<String>(Arrays.asList(verifyOrSetDefault(spdxPackage.getAttributionText())));
             final Set<Annotations> annotations = createAnnotationsFromSpdxAnnotations(spdxPackage.getAnnotations());
 
@@ -562,7 +557,7 @@ public class SpdxBOMImporter {
                 .setAttributionText(attributionText)
                 .setAnnotations(annotations);
         } catch (InvalidSPDXAnalysisException e) {
-            log.error("createPackageInfoFromSpdxPackage error" +e);
+            log.error("createPackageInfoFromSpdxPackage error " + e);
         }
 
         return pInfo;
@@ -579,7 +574,7 @@ public class SpdxBOMImporter {
                 .setValue(verifyOrSetDefault(value));
             return PVC;
         } catch (InvalidSPDXAnalysisException e) {
-            log.error("Error get PVC" +e);
+            log.error("Error get PVC " + e);
             return null;
         }
     }
@@ -613,49 +608,6 @@ public class SpdxBOMImporter {
         return refs;
     }
 
-    private Set<FileInformation> createFilesInformationFromSpdxFiles(SpdxFile[] spdxFiles) {
-        Set<FileInformation> files = new HashSet<FileInformation>();
-
-        for (SpdxFile spdxFile : spdxFiles) {
-            String name = spdxFile.getName();
-            String id = spdxFile.getId();
-            Set<String> fileTypes = Arrays.stream(spdxFile.getFileTypes())
-                                        .map(type -> verifyOrSetDefault(type.getTag()))
-                                        .collect(Collectors.toSet());
-            Set<CheckSum> checksums = createCheckSumsFromSpdxChecksums(spdxFile.getChecksums());
-            String licenseConcluded = spdxFile.getLicenseConcluded().toString();
-            Set<String> licenseInfoFromFiles = Arrays.stream(spdxFile.getLicenseInfoFromFiles())
-                                        .map(license -> verifyOrSetDefault(license.toString()))
-                                        .collect(Collectors.toSet());
-            String licenseComment = spdxFile.getLicenseComments();
-            String copyrightText = spdxFile.getCopyrightText();
-            String comment = spdxFile.getComment();
-            String noticeText = spdxFile.getNoticeText();
-            Set<String> fileContributors = new HashSet<String>(Arrays.asList(verifyOrSetDefault(spdxFile.getFileContributors())));
-            Set<String> attributionText = new HashSet<String>(Arrays.asList(verifyOrSetDefault(spdxFile.getAttributionText())));
-            Set<Annotations> annotations = createAnnotationsFromSpdxAnnotations(spdxFile.getAnnotations());
-
-            FileInformation file = new FileInformation();
-            file.setFileName(verifyOrSetDefault(name))
-                .setSPDXID(verifyOrSetDefault(id))
-                .setFileTypes(fileTypes)
-                .setChecksums(checksums)
-                .setLicenseConcluded(verifyOrSetDefault(licenseConcluded))
-                .setLicenseInfoInFiles(licenseInfoFromFiles)
-                .setLicenseComments(verifyOrSetDefault(licenseComment))
-                .setCopyrightText(verifyOrSetDefault(copyrightText))
-                .setFileComment(verifyOrSetDefault(comment))
-                .setNoticeText(verifyOrSetDefault(noticeText))
-                .setFileContributors(attributionText)
-                .setFileAttributionText(attributionText)
-                .setAnnotations(annotations);
-
-            files.add(file);
-        }
-
-        return files;
-    }
-
     private Set<CheckSum> createCheckSumsFromSpdxChecksums(SpdxPackage spdxPackage) {
         Set<CheckSum> checksums = new HashSet<CheckSum>();
         int index = 0;
@@ -681,29 +633,9 @@ public class SpdxBOMImporter {
         try {
             return spdxPackage.getLicenseDeclared().toString();
         } catch (InvalidSPDXAnalysisException e) {
-            log.error("Can not get licenseDeclared " +e);
+            log.error("Can not get licenseDeclared " + e);
         }
         return null;
-    }
-
-    private Set<CheckSum> createCheckSumsFromSpdxChecksums(Checksum[] spdxChecksums) {
-        Set<CheckSum> checksums = new HashSet<CheckSum>();
-        int index = 0;
-
-        for (Checksum spdxChecksum : spdxChecksums) {
-            String algorithm = org.spdx.rdfparser.model.Checksum.CHECKSUM_ALGORITHM_TO_TAG.get(spdxChecksum.getAlgorithm()).replace(":", "");
-            String value = spdxChecksum.getValue();
-
-            CheckSum checksum = new CheckSum();
-            checksum.setAlgorithm(verifyOrSetDefault(algorithm))
-                    .setChecksumValue(verifyOrSetDefault(value))
-                    .setIndex(index);
-
-            checksums.add(checksum);
-            index++;
-        }
-
-        return checksums;
     }
 
     private Attachment makeAttachmentFromContent(AttachmentContent attachmentContent) {
@@ -788,7 +720,7 @@ public class SpdxBOMImporter {
 
         int index = 1;
         for (SpdxPackage packageElement : packages) {
-            log.info("Import package: " +packageElement.toString());
+            log.info("Import package: " + packageElement.toString());
             PackageInformation packageInfo = createPackageInfoFromSpdxPackage(spdxDocId, packageElement);
             if (ArrayUtils.isNotEmpty(packageElement.getRelationships())) {
                 Set<RelationshipsBetweenSPDXElements> packageReleaseRelationship = createRelationshipsFromSpdxRelationships(packageElement.getRelationships(), packageElement.getId());
