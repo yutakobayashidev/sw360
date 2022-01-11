@@ -143,4 +143,6 @@ service UserService {
      * get email of all user
      **/
     set<string> getUserEmails();
+
+    void importFileToDB(1:string pathFolder);
 }

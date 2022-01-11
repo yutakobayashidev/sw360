@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.users;
 
+import com.cloudant.client.api.CloudantClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
@@ -19,8 +20,6 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.users.db.UserDatabaseHandler;
 import org.ektorp.http.HttpClient;
-
-import com.cloudant.client.api.CloudantClient;
 
 import java.io.IOException;
 import java.util.List;
@@ -58,7 +57,7 @@ public class UserHandler implements UserService.Iface {
     @Override
     public User getByEmail(String email) throws TException {
         StackTraceElement stackTraceElement = Thread.currentThread().getStackTrace()[2];
-        assertNotEmpty(email, "Invalid empty email " + stackTraceElement.getFileName() + ": "  + stackTraceElement.getLineNumber());
+        assertNotEmpty(email, "Invalid empty email " + stackTraceElement.getFileName() + ": " + stackTraceElement.getLineNumber());
 
         if (log.isTraceEnabled()) log.trace("getByEmail: " + email);
 
@@ -139,5 +138,10 @@ public class UserHandler implements UserService.Iface {
     @Override
     public Set<String> getUserEmails() throws TException {
         return db.getUserEmails();
+    }
+
+    @Override
+    public void importFileToDB(String pathFolder) {
+        db.importFileToDB(pathFolder);
     }
 }
