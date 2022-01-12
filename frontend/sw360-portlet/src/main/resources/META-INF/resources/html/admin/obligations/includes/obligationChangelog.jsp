@@ -50,3 +50,14 @@
         </div>
     </div>
 </div>
+
+<script>
+require(['jquery'], function($) {
+    if ('${obligationName}' == '') {
+        $('#portlet_sw360_portlet_todos > div > div.portlet-content-container > div').attr('style','display:none')
+        $('#portlet_sw360_portlet_todos').append('<div class=" portlet-content-container"> <div class="portlet-body"><div class="btn-group" role="group">\
+        <a type="button" class="btn btn-light" style="width: 90px;" id="obligation-view-page1" href="${baseUrl}">Back<a/></div>\
+        <div class="alert alert-danger"> Obligations Change Log is unavailable because Obligation is not existed. </div> </div> </div>')
+    }
+});
+</script>
