@@ -159,7 +159,6 @@ public abstract class SpdxPortlet {
         if (jsonData == null) {
             return null;
         }
-        jsonData = "[" + jsonData + "]";
         try {
             JSONArray arrayPackages = JSONFactoryUtil.createJSONArray(jsonData);
             if (arrayPackages == null) {
@@ -226,6 +225,7 @@ public abstract class SpdxPortlet {
             }
         }
         if (!isNullOrEmpty(packageInfoData)) {
+            log.info(packageInfoData);
             Set<PackageInformation> packageInfos = parsePackageInfosFromRequest(packageInfoData);
             if (packageInfos != null) {
                 PackageInformationService.Iface packageClient = new ThriftClients().makeSPDXPackageInfoClient();

@@ -12,13 +12,32 @@
 <core_rt:if test="${not spdxPackageInfo.isEmpty()}">
     <core_rt:set var="package" value="${spdxPackageInfo.iterator().next()}" />
 </core_rt:if>
+<core_rt:if test="${not spdxPackageInfo.isEmpty()}">
+    <core_rt:set var="spdxPackages" value="${spdxPackageInfo}" />
+</core_rt:if>
 <table class="table spdx-table" id="editPackageInformation">
     <thead>
         <tr>
             <th colspan="3">7. Package Information</th>
         </tr>
     </thead>
-    <tbody>
+    <tbody class="section section-package">
+        <tr>
+            <td>
+                <div style="display: flex; flex-direction: column; padding-left: 1rem;">
+                    <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
+                        <label for="selectPackage" style="text-decoration: underline;" class="sub-title">Select Package</label>
+                        <select id="selectPackage" type="text" class="form-control spdx-select"></select>
+                        <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-package" data-row-id="" viewBox="0 0 512 512">
+                            <title><liferay-ui:message key="delete" /></title>
+                            <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
+                        </svg>
+                    </div>
+                    <button class="spdx-add-button-main" name="add-package">Add new Package</button>
+                </div>
+            </td>
+        </tr>
+ 
         <tr>
             <td style="display: flex">
                 <div class="form-group" style="flex: 1">

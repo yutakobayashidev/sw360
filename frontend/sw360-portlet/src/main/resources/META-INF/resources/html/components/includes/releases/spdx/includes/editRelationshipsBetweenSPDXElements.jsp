@@ -18,6 +18,13 @@
     <tbody class="section section-relationship">
         <tr>
             <td>
+                <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem; padding-left: 1rem;">
+                    <label for="selectRelationshipSource" style="text-decoration: underline;" class="sub-title">Select Source</label>
+                    <select id="selectRelationshipSource" type="text" class="form-control spdx-select always-enable" style="margin-right: 4rem;">
+                        <option>SPDX Document</option>
+                        <option>Package</option>
+                    </select>
+                </div>
                 <div style="display: flex; flex-direction: column; padding-left: 1rem;">
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                         <label for="selectRelationship" style="text-decoration: underline;" class="sub-title">Select Relationship</label>

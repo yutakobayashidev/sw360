@@ -128,9 +128,12 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
 
     function addSub(addBtn)  {
         if ($(addBtn).prev().css('display') == 'none') {
+            console.log("addSub1")
             $(addBtn).prev().css('display', 'flex');
 
             $(addBtn).prev().find('[name=delete-snippetRange]').removeClass('hidden');
+
+            $(addBtn).prev().find('[name=checksum-delete]').removeClass('hidden');
 
             clearSection($(addBtn).prev());
 
@@ -146,6 +149,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
                 }
             }
         } else {
+            console.log("addSub2")
             let newItem = $(addBtn).prev().clone();
 
             clearSection(newItem)
@@ -540,14 +544,39 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
 
     // --------------------------------- Package Information ---------------------------------
 
-    function initPackageInfo(packageInformationObj) {
+    function initPackageInfo() {
+        console.log('initPackageInfo')
+        if (packagesInformationObj.length == 0) {
+          enableSection($('.section-package'), false);
+        } else {
+          fillSelectbox('#selectPackage', packagesInformationObj.length);
+
+          fillPackage(0);
+        }
+    }
+
+    function fillPackage(index) {
+        console.log("fillPackage")
+        const packageInformationObj = packagesInformationObj[index]
+        console.log(packageInformationObj)
+
         $('#packageName').val(packageInformationObj['name']);
 
         if (packageInformationObj.SPDXID.startsWith('SPDXRef-')) {
-            $('#packageSPDXId').val(packageInformationObj.SPDXID.substr(8));
+        $('#packageSPDXId').val(packageInformationObj.SPDXID.substr(8));
         } else {
             $('#packageSPDXId').val('Package-' + packageInformationObj['name']);
         }
+
+        $('#versionInfo').val(packageInformationObj['versionInfo']);
+        $('#packageFileName').val(packageInformationObj['packageFileName']);
+        $('#sourceInfo').val(packageInformationObj['sourceInfo']);
+        $('#licenseComments').val(packageInformationObj['licenseComments']);
+        $('#summary').val(packageInformationObj['summary']);
+        $('#description').val(packageInformationObj['description']);
+        $('#spdxPackageComment').val(packageInformationObj['packageComment']);
+
+
 
         fillMultiOptionsField('#supplierType', packageInformationObj.supplier, 'annotator');
 
@@ -569,6 +598,22 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
             $('#excludedFiles').val('');
         }
 
+        if ($('[name=checksum-delete].hidden').length == 0) {
+            const checksumsNum = $('[name=checksumRow]').length;
+
+            for (let i = 0; i < checksumsNum; i++) {
+                if (i == 0) {
+                  $($('[name=checksumRow]')[i]).css('display', 'none');
+
+                  $($('[name=checksumRow]')[i]).find('[name=checksum-delete]').addClass('hidden');
+
+                  clearSection($($('[name=checksumRow]')[i]));
+                } else {
+                  $('[name=checksumRow]').last().remove();
+                }
+            }
+        }
+
         for (let i = 0; i < packageInformationObj.checksums.length; i++) {
             addSub($('.spdx-add-button-sub-checksum').first());
 
@@ -585,6 +630,21 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
             $('.checksum-value').last().val(checksumValue);
         }
 
+        let selectedPackage = $('#selectPackage')[0].selectedIndex;
+        $('.checksum-algorithm, .checksum-value').bind('change keyup', function() {
+            console.log('2222222222222: ' +selectedPackage)
+            if ($(this).is(":focus")) {
+                //storePackageInfo(packageInformationObj.index);
+                storePackageInfo(selectedPackage);
+            }
+        });
+
+        $('.checksum-delete').bind('click', function() {
+            deleteSub($(this));
+            storePackageInfo(selectedPackage);
+            //storePackageInfo(packageInformationObj.index);
+        });
+
         fillMultiOptionsField('#packageHomepageValue', packageInformationObj.homepage);
 
         fillMultiOptionsField('#licenseConcludedValue', packageInformationObj.licenseConcluded);
@@ -597,6 +657,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
 
         if (packageInformationObj.externalRefs.length == 0) {
             enableSection($('.section-external-ref'), false);
+            $('#externalReferences').empty();
         } else {
             fillSelectbox('#externalReferences', packageInformationObj.externalRefs.length);
 
@@ -604,9 +665,14 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         }
 
         fillArray('#spdxPackageAttributionText', packageInformationObj.attributionText);
-    }
 
-    function storePackageInfo(packageInformationObj) {
+    }
+    
+
+    function storePackageInfo(packageIndex) {
+        console.log("storePackageInfo: ")
+        let packageInformationObj = packagesInformationObj[packageIndex];
+        console.log(packageInformationObj);
         packageInformationObj['name'] = $('#packageName').val().trim();
 
         if ($('#packageSPDXId').val().trim() == '') {
@@ -631,11 +697,12 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
             packageInformationObj['packageVerificationCode']['value'] = $('#verificationCodeValue').val().trim();
 
             packageInformationObj['packageVerificationCode']['excludedFiles'] = readArray('#excludedFiles');
-        } else {
-            packageInformationObj['packageVerificationCode']['value'] = '';
+        } 
+        // else {
+        //     packageInformationObj['packageVerificationCode']['value'] = '';
 
-            packageInformationObj['packageVerificationCode']['excludedFiles'] = '';
-        }
+        //     packageInformationObj['packageVerificationCode']['excludedFiles'] = '';
+        // }
 
         packageInformationObj['checksums'] = [];
 
@@ -682,24 +749,36 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
     // --------------------------------- External Reference ---------------------------------
 
     function fillExternalRef(packageInformationObj, index) {
+        console.log('fillExternalRef')
+        console.log(packageInformationObj)
         let obj = packageInformationObj.externalRefs[index];
+        $('#externalReferences').removeAttr('disabled')
 
         $('#referenceCategory').val(obj['referenceCategory']);
 
         $('#referenceCategory').change();
+        $('#referenceCategory').removeAttr('disabled')
 
         if (obj['referenceCategory'] == 'SECURITY' || obj['referenceCategory'] == 'PACKAGE-MANAGER') {
             $('#referenceType-1').val(obj['referenceType']);
+            $('#referenceType-1').removeAttr('disabled')
+
         } else {
             $('#referenceType-2').val(obj['referenceType']);
+            $('#referenceType-2').removeAttr('disabled')
+
         }
 
         $('#externalReferencesLocator').val(obj['referenceLocator']);
+        $('#externalReferencesLocator').removeAttr('disabled')
+
 
         $('#externalReferencesComment').val(obj['comment']);
+        $('#externalReferencesComment').removeAttr('disabled')
     }
 
     function storeExternalRef(packageInformationObj, index) {
+        console.log('store externalRefs')
         if (index < 0 || index > packageInformationObj.externalRefs.length - 1) {
             return;
         }
@@ -810,6 +889,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
     }
 
     function storeSnippet(index) {
+        console.log("storeSnippet")
         if (typeof(index) == 'undefined') {
             index = $('#selectSnippet')[0].selectedIndex;
         }
@@ -928,19 +1008,28 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
     }
 
     // --------------------------------- Relationship ---------------------------------
+    function getRelationshipsSource() {
+        if ($('#selectRelationshipSource').val() == 'Package') {
+            return packagesInformationObj[0].relationships;
+        }
+
+        return spdxDocumentObj.relationships;
+    }
+
 
     function initRelationships() {
-        if (spdxDocumentObj.relationships.length == 0) {
+        let source = getRelationshipsSource();
+        if (source.length == 0) {
             enableSection($('.section-relationship'), false);
         } else {
-            fillSelectbox('#selectRelationship', spdxDocumentObj.relationships.length);
+            fillSelectbox('#selectRelationship', source.length);
 
-            fillRelationship(0);
+            fillRelationship(source, 0);
         }
     }
 
-    function fillRelationship(index) {
-        let obj = spdxDocumentObj.relationships[index];
+    function fillRelationship(sourceRelationship, index) {
+        let obj = sourceRelationship[index];
 
         $('#spdxElement').val(obj.spdxElementId);
 
@@ -952,11 +1041,12 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
     }
 
     function storeRelationship(index) {
-        if (index < 0 || index > spdxDocumentObj.relationships - 1) {
+        let source = getRelationshipsSource()
+        if (index < 0 || index > source - 1) {
             return;
         }
 
-        let obj = spdxDocumentObj.relationships[index];
+        let obj = source[index];
 
         obj['spdxElementId'] = $('#spdxElement').val().trim();
 
@@ -971,7 +1061,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
 
     function getAnnotationsSource() {
         if ($('#selectAnnotationSource').val() == 'Package') {
-            return packageInformationObj.annotations;
+            return packagesInformationObj[0].annotations;
         }
 
         return spdxDocumentObj.annotations;
@@ -1048,6 +1138,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         storeExternalDocRef: storeExternalDocRef,
 
         initPackageInfo: initPackageInfo,
+        fillPackage: fillPackage,
         storePackageInfo: storePackageInfo,
 
         fillExternalRef: fillExternalRef,
@@ -1061,6 +1152,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         fillOtherLicensing: fillOtherLicensing,
         storeOtherLicensing: storeOtherLicensing,
 
+        getRelationshipsSource: getRelationshipsSource,
         initRelationships: initRelationships,
         fillRelationship: fillRelationship,
         storeRelationship: storeRelationship,
