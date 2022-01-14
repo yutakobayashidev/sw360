@@ -480,7 +480,8 @@ public class SpdxBOMImporter {
         try {
             PVC = createPVCFromSpdxPackage(spdxPackage);
         } catch (NullPointerException e) {
-            PVC = null;
+            PVC.setExcludedFiles(Collections.emptySet())
+                .setValue(verifyOrSetDefault(""));
             log.error("Can not get PVC " + e);
         }
 
@@ -488,7 +489,7 @@ public class SpdxBOMImporter {
         try {
             checksums = createCheckSumsFromSpdxChecksums(spdxPackage);
         } catch (NullPointerException e) {
-            checksums = null;
+            Collections.emptySet();
             log.error("Can not get checksums " + e);
         }
 

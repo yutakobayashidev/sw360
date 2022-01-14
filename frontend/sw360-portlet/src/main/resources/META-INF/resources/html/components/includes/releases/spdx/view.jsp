@@ -162,7 +162,8 @@
 		<tr>
 			<td class="spdx-flex-row">
 					<div class="spdx-col-1 spdx-label-index">Index</div>
-					<select id="packageInfoSelect" class="spdx-col-2" onchange="displayIndex(this)"></select>
+					<%-- <select id="packageInfoSelect" class="spdx-col-2" onchange="displayIndex(this)"></select> --%>
+					<select id="packageInfoSelect" class="spdx-col-2" onchange="changePackageIndex(this)"></select>
 			</td>
 		</tr>
 
@@ -357,6 +358,7 @@
 			<tr class="spdx-full" data-index="${package.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">7.21 External references </div>
+					<core_rt:if test="${package.externalRefs.size() gt 0}">
 					<div class="spdx-col-2 section" data-size="4">
 						<div class="spdx-flex-row">
 							<div class="spdx-col-1 spdx-label-index">Index</div>
@@ -389,6 +391,7 @@
 								</p>
 							</div>
 						</core_rt:forEach>
+					</core_rt:if>
 					</div>
 				</td>
 			</tr>
@@ -881,11 +884,38 @@
 		fillArray(tag, readArray(tag));
 	}
 
+	function dynamicSort(property, type) {
+		var sortOrder = 1;
+
+		if(property[0] === "-") {
+			sortOrder = -1;
+
+			property = property.substr(1);
+		}
+
+		return function (a,b) {
+			var result;
+
+			switch (type) {
+				case 'int':
+					result = (parseInt(a[property]) < parseInt(b[property])) ? -1 : (parseInt(a[property]) > (b[property])) ? 1 : 0;
+					break;
+				case 'string':
+				default:
+					result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
+			}
+
+			return  result * sortOrder;
+		}
+	}
+
 	$(function () {
+		console.log('33333333333333')
 		let spdxDocumentObj = jQuery.parseJSON(JSON.stringify(${ spdxDocumentJson }));
 		let documentCreationInformationObj = jQuery.parseJSON(JSON.stringify(${ documentCreationInfoJson }));
-		let packageInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
-
+		let packagesInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
+		packagesInformationObj.sort(dynamicSort('index', 'int'));
+		let packageInformationObj = packagesInformationObj[0];
 		formatArrayParagraph('#excludedFiles');
 		formatArrayParagraph('#licenseInfoFromFile');
 		formatArrayParagraph('#attributionText');
@@ -1017,14 +1047,23 @@
 		} else {
 			$('#' + selectId).removeAttr('disabled', 'disabled');
 		}
+
+		if (selectId == 'externalReferenceSelect') {
+			console.log('length: ' +length)
+			console.log($('#' + selectId))
+		}
 	}
 	generateSelecterOption('snippetInfoSelect', "${snippets.size()}");
 	generateSelecterOption('otherLicensingSelect', "${otherLicensing.size()}");
 	generateSelecterOption('relationshipSelect', "${relationships.size()}");
 	generateSelecterOption('annotationSelect', "${documentAnnotations.size()}");
-	generateSelecterOption('externalReferenceSelect', "${package.externalRefs.size()}");
 	generateSelecterOption('externalDocumentRefs', "${spdxDocumentCreationInfo.externalDocumentRefs.size()}");
 	generateSelecterOption('packageInfoSelect', "${spdxPackageInfo.size()}");
+
+	let packageIndex =  $('#packageInfoSelect')[0].selectedIndex;
+	let packagesInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
+	packagesInformationObj.sort(dynamicSort('index', 'int'));
+	generateSelecterOption('externalReferenceSelect', packagesInformationObj[packageIndex].externalRefs.length);
 
 	function displayIndex(el) {
 		var index = $(el).val();
@@ -1038,6 +1077,27 @@
 
 		if ($(el).attr('id') == 'snippetInfoSelect') {
 			sortElements('#snippetRanges-' + (index - 1), $('.snippetRange-' + (index - 1)).toArray());
+		}
+	}
+
+	function changePackageIndex(el) {
+		if ($(el).attr('id') == 'packageInfoSelect') {
+			var index = $(el).val();
+			var section = $(el).closest('.section');
+			var size = section.data()['size'];
+
+			section.children().css('display', 'none');
+			section.children().eq(0).css('display', '');
+
+			section.find('[data-index=' + (index - 1).toString() + ']').css('display', '');
+
+			let packagesInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
+			packagesInformationObj.sort(dynamicSort('index', 'int'));
+			let packageIndex =  $('#packageInfoSelect')[0].selectedIndex;
+			console.log('change package index to: ' +packageIndex)
+			console.log('External size: ' +packagesInformationObj[packageIndex].externalRefs.length)
+			generateSelecterOption('externalReferenceSelect', packagesInformationObj[packageIndex].externalRefs.length);
+			$('#externalReferenceSelect').change();
 		}
 	}
 

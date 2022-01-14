@@ -630,9 +630,8 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
             $('.checksum-value').last().val(checksumValue);
         }
 
-        let selectedPackage = $('#selectPackage')[0].selectedIndex;
         $('.checksum-algorithm, .checksum-value').bind('change keyup', function() {
-            console.log('2222222222222: ' +selectedPackage)
+            let selectedPackage = $('#selectPackage')[0].selectedIndex;
             if ($(this).is(":focus")) {
                 //storePackageInfo(packageInformationObj.index);
                 storePackageInfo(selectedPackage);
@@ -640,6 +639,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         });
 
         $('.checksum-delete').bind('click', function() {
+            let selectedPackage = $('#selectPackage')[0].selectedIndex;
             deleteSub($(this));
             storePackageInfo(selectedPackage);
             //storePackageInfo(packageInformationObj.index);
@@ -697,12 +697,11 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
             packageInformationObj['packageVerificationCode']['value'] = $('#verificationCodeValue').val().trim();
 
             packageInformationObj['packageVerificationCode']['excludedFiles'] = readArray('#excludedFiles');
-        } 
-        // else {
-        //     packageInformationObj['packageVerificationCode']['value'] = '';
+        } else {
+            packageInformationObj['packageVerificationCode']['value'] = '';
 
-        //     packageInformationObj['packageVerificationCode']['excludedFiles'] = '';
-        // }
+            packageInformationObj['packageVerificationCode']['excludedFiles'] = '';
+        }
 
         packageInformationObj['checksums'] = [];
 

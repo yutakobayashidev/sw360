@@ -1695,11 +1695,12 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 e.printStackTrace();
             }
             try {
-                if (!packageInfo.isSetId()) {
-                    packageInfo = generatePackageInfomation();
+                Set<String> setPackage = new HashSet<>();
+                for (PackageInformation pack : packageInfos) {
+                    String packageInfoJson = objectMapper.writeValueAsString(pack);
+                    setPackage.add(packageInfoJson);
                 }
-                String packageInfoJson = objectMapper.writeValueAsString(packageInfo);
-                request.setAttribute("packageInfoJson", packageInfoJson);
+                request.setAttribute("packageInfoJson", setPackage);
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
             }
