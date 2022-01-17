@@ -19,6 +19,8 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.users.db.UserDatabaseHandler;
+import org.eclipse.sw360.users.dto.RedmineConfigDTO;
+import org.eclipse.sw360.users.redmine.ReadFileRedmineConfig;
 import org.ektorp.http.HttpClient;
 
 import java.io.IOException;
@@ -40,9 +42,11 @@ public class UserHandler implements UserService.Iface {
     private static final Logger log = LogManager.getLogger(UserHandler.class);
 
     private UserDatabaseHandler db;
+    private ReadFileRedmineConfig readFileRedmineConfig;
 
     public UserHandler() throws IOException {
         db = new UserDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_USERS);
+        readFileRedmineConfig = new ReadFileRedmineConfig();
     }
 
     public UserHandler(Supplier<CloudantClient> client, Supplier<HttpClient> httpclient, String userDbName) throws IOException {
@@ -143,5 +147,17 @@ public class UserHandler implements UserService.Iface {
     @Override
     public void importFileToDB(String pathFolder) {
         db.importFileToDB(pathFolder);
+    }
+
+    @Override
+    public RequestStatus importDepartmentSchedule() throws TException {
+        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+        importFileToDB(configDTO.getPathFolder());
+        return RequestStatus.SUCCESS;
+    }
+
+    @Override
+    public Map<String, List<User>> getAllUserByDepartment() throws TException {
+        return db.getAllUserByDepartment();
     }
 }

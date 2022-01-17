@@ -118,6 +118,7 @@ public class UserDTO {
     public User convertToUser() {
         User user = new User();
         user.setEmail(this.getEmail());
+        user.setDepartment(this.getDepartment());
         user.setSecondaryDepartmentsAndRoles(this.getSecondaryDepartmentsAndRoles());
         return user;
     }

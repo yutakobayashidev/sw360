@@ -145,4 +145,8 @@ service UserService {
     set<string> getUserEmails();
 
     void importFileToDB(1:string pathFolder);
+
+    RequestStatus importDepartmentSchedule();
+
+    map<string, list<User>> getAllUserByDepartment();
 }

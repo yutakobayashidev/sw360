@@ -85,6 +85,7 @@ public class ThriftClients {
     // names of services that can be scheduled by the schedule service, i.e. that have an "update" method
     public static final String CVESEARCH_SERVICE = "cvesearchService";
     public static final String DELETE_ATTACHMENT_SERVICE = "deleteattachmentService";
+    public static final String IMPORT_DEPARTMENT_SERVICE = "importdepartmentService";
 
     static {
         Properties props = CommonUtils.loadProperties(ThriftClients.class, PROPERTIES_FILE_PATH);

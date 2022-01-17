@@ -317,6 +317,8 @@ public class PortalConstants {
     public static final String PROJECT_LINK_TABLE_MODE_SOURCE_BUNDLE = "sourceBundle";
     public static final String COUCH_DB_USER_COUNT = "couchDbUserCount";
 
+
+
     //! Specialized keys for database Sanitation
     public static final String DUPLICATE_RELEASES = "duplicateReleases";
     public static final String DUPLICATE_RELEASE_SOURCES = "duplicateReleaseSources";
@@ -376,6 +378,12 @@ public class PortalConstants {
     public static final String DELETE_ATTACHMENT_INTERVAL = "deleteAttachmentInterval";
     public static final String DELETE_ATTACHMENT_NEXT_SYNC = "deleteAttachmentNextSync";
 
+    public static final String DEPARTMENT_IS_SCHEDULED = "departmentIsScheduled";
+    public static final String DEPARTMENT_OFFSET = "departmentOffset";
+    public static final String DEPARTMENT_INTERVAL = "departmentInterval";
+    public static final String DEPARTMENT_NEXT_SYNC = "departmentNextSync";
+    public static final String DEPARTMENT_LIST = "departmentList";
+
     //! Specialized keys for licenseInfo
     public static final String LICENSE_INFO_OUTPUT_FORMATS = "licenseInfoOutputFormats";
     public static final String LICENSE_INFO_SELECTED_OUTPUT_FORMAT = "licenseInfoSelectedOutputFormat";
@@ -426,6 +434,7 @@ public class PortalConstants {
     public static final String TODOS_PORTLET_NAME = PORTLET_NAME_PREFIX + "todos";
     public static final String OAUTH_CLIENT_PORTLET_NAME = PORTLET_NAME_PREFIX + "oauthclient";
     public static final String LICENSE_TYPE_PORTLET_NAME = PORTLET_NAME_PREFIX + "licensetypes";
+    public static final String DEPARTMENT_PORTLET_NAME = PORTLET_NAME_PREFIX + "department";
 
     //! Keys for Home portlets
     public static final String MY_COMPONENTS_PORTLET_NAME = PORTLET_NAME_PREFIX + "mycomponents";

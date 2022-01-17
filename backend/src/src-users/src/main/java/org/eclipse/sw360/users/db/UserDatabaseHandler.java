@@ -59,6 +59,7 @@ public class UserDatabaseHandler {
     private UserSearchHandler userSearchHandler;
     private Map<String, UserDTO> userDTOMap;
     private static final Logger log = LogManager.getLogger(UserDatabaseHandler.class);
+    private static final String  DEPARTMENT = "DEPARTMENT";
 
     public UserDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws IOException {
         // Create the connector
@@ -154,7 +155,7 @@ public class UserDatabaseHandler {
             }
             Set<String> files = listFilesUsingFileWalk(pathFolder);
             for (String file : files) {
-                adapterCsv(pathFolder + "/" + file);
+                checkFileFormat(pathFolder + "/" + file);
             }
             userDTOMap.forEach((key, value) -> {
                 if (value.getId() == null || value.getId().isEmpty() || value.getId().equals("")) {
@@ -178,7 +179,7 @@ public class UserDatabaseHandler {
         }
     }
 
-    private void adapterCsv(String pathFile) {
+    private void checkFileFormat(String pathFile) {
         String extension = FilenameUtils.getExtension(pathFile);
         if (extension.equalsIgnoreCase("xlsx")) {
             readFileExcel(pathFile);
@@ -205,8 +206,9 @@ public class UserDatabaseHandler {
     }
 
     public void readFileExcel(String filePath) {
+        Workbook wb = null;
         try (InputStream inp = new FileInputStream(filePath)) {
-            Workbook wb = WorkbookFactory.create(inp);
+            wb = WorkbookFactory.create(inp);
             Sheet sheet = wb.getSheetAt(0);
             Iterator<Row> rows = sheet.iterator();
             rows.next();
@@ -214,14 +216,18 @@ public class UserDatabaseHandler {
             while (rows.hasNext()) {
                 Row row = rows.next();
                 if (!isRowEmpty(row)) {
-                    if (row.getCell(0) != null) {
-                        mapTemp = row.getCell(0).getStringCellValue();
-                    }
+                    if (row.getCell(0) != null) mapTemp = row.getCell(0).getStringCellValue();
                     checkUser(row.getCell(1).getStringCellValue(), mapTemp);
                 }
             }
         } catch (Exception ex) {
             log.error("Can't read file excel: {}", ex.getMessage());
+        } finally {
+            try {
+                if (wb != null) wb.close();
+            } catch (Exception e) {
+                log.error(e.getMessage());
+            }
         }
     }
 
@@ -244,6 +250,7 @@ public class UserDatabaseHandler {
         if (userDTO == null) {
             UserDTO u = new UserDTO();
             u.setEmail(email);
+            u.setDepartment(DEPARTMENT);
             Set<UserGroup> userGroups = new HashSet<>();
             userGroups.add(UserGroup.USER);
             Map<String, Set<UserGroup>> map = new HashMap<>();
@@ -257,5 +264,23 @@ public class UserDatabaseHandler {
                 userDTO.getSecondaryDepartmentsAndRoles().put(apartment, userGroups);
             }
         }
+    }
+
+    public Map<String, List<User>> getAllUserByDepartment() {
+        List<User> users = repository.getAll();
+        Map<String, List<User>> listMap = new HashMap<>();
+        for (User user : users) {
+            user.getSecondaryDepartmentsAndRoles().forEach((key, value) -> {
+                if (listMap.containsKey(key)) {
+                    List<User> list = listMap.get(key);
+                    list.add(user);
+                } else {
+                    List<User> list = new ArrayList<>();
+                    list.add(user);
+                    listMap.put(key, list);
+                }
+            });
+        }
+        return listMap;
     }
 }

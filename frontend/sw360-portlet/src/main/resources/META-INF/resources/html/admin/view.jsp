@@ -68,6 +68,10 @@
                 <a class="btn btn-secondary" href="${baseUrl}/../oauthclient">
                     <clay:icon symbol="documents-and-media"/> <liferay-ui:message key="oauth.client" />
                 </a>
+
+                <a class="btn btn-secondary" href="${baseUrl}/../departments">
+                    <clay:icon symbol="documents-and-media"/> <liferay-ui:message key="oauth.client" />
+                </a>
             </div>
         </div>
     </div>
