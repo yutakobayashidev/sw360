@@ -59,7 +59,7 @@ public class UserDatabaseHandler {
     private UserSearchHandler userSearchHandler;
     private Map<String, UserDTO> userDTOMap;
     private static final Logger log = LogManager.getLogger(UserDatabaseHandler.class);
-    private static final String  DEPARTMENT = "DEPARTMENT";
+    private static final String DEPARTMENT = "DEPARTMENT";
 
     public UserDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws IOException {
         // Create the connector
@@ -270,16 +270,18 @@ public class UserDatabaseHandler {
         List<User> users = repository.getAll();
         Map<String, List<User>> listMap = new HashMap<>();
         for (User user : users) {
-            user.getSecondaryDepartmentsAndRoles().forEach((key, value) -> {
-                if (listMap.containsKey(key)) {
-                    List<User> list = listMap.get(key);
-                    list.add(user);
-                } else {
-                    List<User> list = new ArrayList<>();
-                    list.add(user);
-                    listMap.put(key, list);
-                }
-            });
+            if (user.getSecondaryDepartmentsAndRoles() != null) {
+                user.getSecondaryDepartmentsAndRoles().forEach((key, value) -> {
+                    if (listMap.containsKey(key)) {
+                        List<User> list = listMap.get(key);
+                        list.add(user);
+                    } else {
+                        List<User> list = new ArrayList<>();
+                        list.add(user);
+                        listMap.put(key, list);
+                    }
+                });
+            }
         }
         return listMap;
     }

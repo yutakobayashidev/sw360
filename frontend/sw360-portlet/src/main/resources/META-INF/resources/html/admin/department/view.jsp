@@ -24,6 +24,7 @@
 </portlet:actionURL>
 <portlet:actionURL var="scheduleDepartmentManuallyURL" name="importDepartmentManually">
 </portlet:actionURL>
+<jsp:useBean id="departmentList" scope="request" class="java.util.HashMap"/>
 <div class="container">
     <div class="row">
         <div class="col">
@@ -45,18 +46,22 @@
                     </table>
                     <form class="form mt-3">
                         <div class="form-group">
-                            <button type="button" class="btn btn-primary" onclick="window.location.href='<%=scheduleDepartmentURL%>'"
-                                <core_rt:if test="${departmentIsScheduled}">disabled</core_rt:if> >
+                            <button type="button" class="btn btn-primary"
+                                    onclick="window.location.href='<%=scheduleDepartmentURL%>'"
+                                    <core_rt:if test="${departmentIsScheduled}">disabled</core_rt:if> >
                                 <liferay-ui:message key="schedule.department.service"/>
                             </button>
-                            <button type="button" class="btn btn-light" onclick="window.location.href='<%=unscheduleDepartmentURL%>'"
-                                <core_rt:if test="${not departmentIsScheduled}">disabled</core_rt:if> >
+                            <button type="button" class="btn btn-light"
+                                    onclick="window.location.href='<%=unscheduleDepartmentURL%>'"
+                                    <core_rt:if test="${not departmentIsScheduled}">disabled</core_rt:if> >
                                 <liferay-ui:message key="cancel.department.service"/>
                             </button>
-                            <button type="button" class="btn btn-info" onclick="window.location.href='<%=scheduleDepartmentManuallyURL%>'">
+                            <button type="button" class="btn btn-info"
+                                    onclick="window.location.href='<%=scheduleDepartmentManuallyURL%>'">
                                 <liferay-ui:message key="manually"/>
                             </button>
-                            <button type="button" class="btn btn-secondary"> <liferay-ui:message key="view.log"/></button>
+                            <button type="button" class="btn btn-secondary"><liferay-ui:message
+                                    key="view.log"/></button>
                         </div>
                     </form>
                 </div>
@@ -80,8 +85,10 @@
                                 <td><sw360:out value="${department.key}"/></td>
                                 <td>
                                     <div style="width:100%; max-height:210px; overflow:auto">
-                                        <core_rt:forEach var="secondDepartment" items="${department.value}" varStatus="loop">
-                                            <span>${loop.index + 1}.</span>          <span><sw360:out value="${secondDepartment.email}"/></span>
+                                        <core_rt:forEach var="secondDepartment" items="${department.value}"
+                                                         varStatus="loop">
+                                            <span>${loop.index + 1}.</span> <span><sw360:out
+                                                value="${secondDepartment.email}"/></span>
                                             </br>
                                         </core_rt:forEach>
                                     </div>
