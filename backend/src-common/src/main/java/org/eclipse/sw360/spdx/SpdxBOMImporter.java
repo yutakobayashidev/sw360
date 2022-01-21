@@ -28,21 +28,29 @@ import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelement
 import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.*;
-import org.spdx.rdfparser.InvalidSPDXAnalysisException;
-import org.spdx.rdfparser.SPDXDocumentFactory;
-import org.spdx.rdfparser.model.*;
-import org.spdx.rdfparser.model.pointer.*;
-import org.spdx.rdfparser.license.ExtractedLicenseInfo;
-import org.spdx.rdfparser.SpdxPackageVerificationCode;
+import org.spdx.library.model.enumerations.RelationshipType;
+import org.spdx.library.model.license.ExtractedLicenseInfo;
+import org.spdx.library.model.pointer.ByteOffsetPointer;
+import org.spdx.library.model.pointer.LineCharPointer;
+import org.spdx.library.model.pointer.SinglePointer;
+import org.spdx.library.model.pointer.StartEndPointer;
+import org.spdx.library.model.*;
+import org.spdx.library.model.SpdxModelFactory;
 
+import org.spdx.library.InvalidSPDXAnalysisException;
+import org.spdx.tools.InvalidFileNameException;
+import org.spdx.tools.SpdxToolsHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.commons.lang3.ArrayUtils;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNotNullEmptyOrWhitespace;
 
@@ -54,129 +62,147 @@ public class SpdxBOMImporter {
         this.sink = sink;
     }
 
-    public ImportBomRequestPreparation prepareImportSpdxBOMAsRelease(InputStream inputStream, AttachmentContent attachmentContent)
-            throws InvalidSPDXAnalysisException, SW360Exception {
+    public ImportBomRequestPreparation prepareImportSpdxBOMAsRelease(File targetFile) {
         final ImportBomRequestPreparation requestPreparation = new ImportBomRequestPreparation();
-        final SpdxDocument spdxDocument = openAsSpdx(inputStream);
-        final List<SpdxItem> describedPackages = Arrays.stream(spdxDocument.getDocumentDescribes())
-                .filter(item -> item instanceof SpdxPackage)
-                .collect(Collectors.toList());
-
-        if (describedPackages.size() == 0) {
-            requestPreparation.setMessage("The provided BOM did not contain any top level packages.");
+        final SpdxDocument spdxDocument = openAsSpdx(targetFile);
+        if (spdxDocument == null) {
             requestPreparation.setRequestStatus(RequestStatus.FAILURE);
-            return requestPreparation;
-        } else if (describedPackages.size() > 1) {
-            requestPreparation.setMessage("The provided BOM file contained multiple described top level packages. This is not allowed here.");
-            requestPreparation.setRequestStatus(RequestStatus.FAILURE);
+            requestPreparation.setMessage("error-read-file");
             return requestPreparation;
         }
 
-        final SpdxItem spdxItem = describedPackages.get(0);
-        if (spdxItem instanceof SpdxPackage) {
-            final SpdxPackage spdxPackage = (SpdxPackage) spdxItem;
+        try {
+            final List<SpdxElement> describedPackages = new ArrayList(spdxDocument.getDocumentDescribes());
+            final List<SpdxElement> packages =  describedPackages.stream()
+            .filter(item -> item instanceof SpdxPackage)
+            .collect(Collectors.toList());
 
-            requestPreparation.setName(spdxPackage.getName());
-            requestPreparation.setVersion(spdxPackage.getVersionInfo());
-            requestPreparation.setRequestStatus(RequestStatus.SUCCESS);
-        } else {
-            requestPreparation.setMessage("Failed to get spdx package from the provided BOM file.");
+            if (packages.isEmpty()) {
+                requestPreparation.setMessage("The provided BOM did not contain any top level packages.");
+                requestPreparation.setRequestStatus(RequestStatus.FAILURE);
+                return requestPreparation;
+            } else if (packages.size() > 1) {
+                requestPreparation.setMessage("The provided BOM file contained multiple described top level packages. This is not allowed here.");
+                requestPreparation.setRequestStatus(RequestStatus.FAILURE);
+                return requestPreparation;
+            }
+
+            final SpdxElement spdxElement = packages.get(0);
+            if (spdxElement instanceof SpdxPackage) {
+                final SpdxPackage spdxPackage = (SpdxPackage) spdxElement;
+                requestPreparation.setName(getValue(spdxPackage.getName()));
+                requestPreparation.setVersion(getValue(spdxPackage.getVersionInfo()));
+                requestPreparation.setRequestStatus(RequestStatus.SUCCESS);
+            } else {
+                requestPreparation.setMessage("Failed to get spdx package from the provided BOM file.");
+                requestPreparation.setRequestStatus(RequestStatus.FAILURE);
+            }
+        } catch (InvalidSPDXAnalysisException e) {
             requestPreparation.setRequestStatus(RequestStatus.FAILURE);
+            e.printStackTrace();
         }
+
         return requestPreparation;
     }
 
-    public RequestSummary importSpdxBOMAsRelease(InputStream inputStream, AttachmentContent attachmentContent, String newReleaseVersion, String releaseId)
+    public RequestSummary importSpdxBOMAsRelease(File file, AttachmentContent attachmentContent, String newReleaseVersion, String releaseId)
             throws SW360Exception {
-        return importSpdxBOM(inputStream, attachmentContent, SW360Constants.TYPE_RELEASE, newReleaseVersion, releaseId);
+        return importSpdxBOM(file, attachmentContent, SW360Constants.TYPE_RELEASE, newReleaseVersion, releaseId);
     }
 
-    public RequestSummary importSpdxBOMAsProject(InputStream inputStream, AttachmentContent attachmentContent)
+    private SpdxDocument openAsSpdx(File file){
+        try {
+            log.info("Read file: " + file.getName());
+            SpdxDocument spdxDocument =  SpdxToolsHelper.deserializeDocument(file);
+            return spdxDocument;
+        } catch (InvalidSPDXAnalysisException | IOException | InvalidFileNameException e) {
+            log.error("Error read file " + file.getName() + " to SpdxDocument");
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public RequestSummary importSpdxBOMAsProject(File file, AttachmentContent attachmentContent)
             throws InvalidSPDXAnalysisException, SW360Exception {
-        return importSpdxBOM(inputStream, attachmentContent, SW360Constants.TYPE_PROJECT);
+        return importSpdxBOM(file, attachmentContent, SW360Constants.TYPE_PROJECT);
     }
 
-    private RequestSummary importSpdxBOM(InputStream inputStream, AttachmentContent attachmentContent, String type)
+    private RequestSummary importSpdxBOM(File file, AttachmentContent attachmentContent, String type)
             throws InvalidSPDXAnalysisException, SW360Exception {
-        return importSpdxBOM(inputStream, attachmentContent, type, null, null);
+        return importSpdxBOM(file, attachmentContent, type, null, null);
     }
 
-    private RequestSummary importSpdxBOM(InputStream inputStream, AttachmentContent attachmentContent, String type, String newReleaseVersion, String releaseId)
+    private RequestSummary importSpdxBOM(File file, AttachmentContent attachmentContent, String type, String newReleaseVersion, String releaseId)
             throws SW360Exception {
         final RequestSummary requestSummary = new RequestSummary();
         SpdxDocument spdxDocument = null;
-        List<SpdxItem> describedPackages = new ArrayList<>();
+        List<SpdxElement> describedPackages = new ArrayList<>();
         try {
-            spdxDocument = openAsSpdx(inputStream);
-            describedPackages =  Arrays.stream(spdxDocument.getDocumentDescribes())
-                    .filter(item -> item instanceof SpdxPackage)
-                    .collect(Collectors.toList());
+            spdxDocument = openAsSpdx(file);
+            describedPackages = new ArrayList(spdxDocument.getDocumentDescribes());
+            List<SpdxElement> packages = describedPackages.stream()
+            .filter(item -> item instanceof SpdxPackage)
+            .collect(Collectors.toList());
+
+            if (packages.size() == 0) {
+                requestSummary.setTotalAffectedElements(0);
+                requestSummary.setTotalElements(0);
+                requestSummary.setMessage("The provided BOM did not contain any top level packages.");
+                requestSummary.setRequestStatus(RequestStatus.FAILURE);
+                return requestSummary;
+            } else if (packages.size() > 1) {
+                requestSummary.setTotalAffectedElements(0);
+                requestSummary.setTotalElements(0);
+                requestSummary.setMessage("The provided BOM file contained multiple described top level packages. This is not allowed here.");
+                requestSummary.setRequestStatus(RequestStatus.FAILURE);
+                return requestSummary;
+            }
+
+            final SpdxPackage spdxElement = (SpdxPackage) packages.get(0);
+            final Optional<SpdxBOMImporterSink.Response> response;
+            if (SW360Constants.TYPE_PROJECT.equals(type)) {
+                response = importAsProject(spdxElement, attachmentContent);
+            } else if (SW360Constants.TYPE_RELEASE.equals(type)) {
+                response = importAsRelease(spdxElement, attachmentContent, spdxDocument, newReleaseVersion, releaseId);
+            } else {
+                throw new SW360Exception("Unsupported type=[" + type + "], can not import BOM");
+            }
+
+            if (response.isPresent()) {
+                requestSummary.setRequestStatus(RequestStatus.SUCCESS);
+                requestSummary.setTotalAffectedElements(response.get().countAffected());
+                requestSummary.setTotalElements(response.get().count());
+                requestSummary.setMessage(response.get().getId());
+            } else {
+                requestSummary.setRequestStatus(RequestStatus.FAILURE);
+                requestSummary.setTotalAffectedElements(-1);
+                requestSummary.setTotalElements(-1);
+                requestSummary.setMessage("Failed to import the BOM as type=[" + type + "].");
+            }
         } catch (InvalidSPDXAnalysisException e) {
             log.error("Can not open file to SpdxDocument " +e);
         }
 
-        if (describedPackages.size() == 0) {
-            requestSummary.setTotalAffectedElements(0);
-            requestSummary.setTotalElements(0);
-            requestSummary.setMessage("The provided BOM did not contain any top level packages.");
-            requestSummary.setRequestStatus(RequestStatus.FAILURE);
-            return requestSummary;
-        } else if (describedPackages.size() > 1) {
-            requestSummary.setTotalAffectedElements(0);
-            requestSummary.setTotalElements(0);
-            requestSummary.setMessage("The provided BOM file contained multiple described top level packages. This is not allowed here.");
-            requestSummary.setRequestStatus(RequestStatus.FAILURE);
-            return requestSummary;
-        }
-
-        final SpdxItem spdxItem = describedPackages.get(0);
-        final Optional<SpdxBOMImporterSink.Response> response;
-        if (SW360Constants.TYPE_PROJECT.equals(type)) {
-            response = importAsProject(spdxItem, attachmentContent);
-        } else if (SW360Constants.TYPE_RELEASE.equals(type)) {
-            response = importAsRelease(spdxItem, attachmentContent, spdxDocument, newReleaseVersion, releaseId);
-        } else {
-            throw new SW360Exception("Unsupported type=[" + type + "], can not import BOM");
-        }
-
-        if (response.isPresent()) {
-            requestSummary.setRequestStatus(RequestStatus.SUCCESS);
-            requestSummary.setTotalAffectedElements(response.get().countAffected());
-            requestSummary.setTotalElements(response.get().count());
-            requestSummary.setMessage(response.get().getId());
-        } else {
-            requestSummary.setRequestStatus(RequestStatus.FAILURE);
-            requestSummary.setTotalAffectedElements(-1);
-            requestSummary.setTotalElements(-1);
-            requestSummary.setMessage("Failed to import the BOM as type=[" + type + "].");
-        }
         return requestSummary;
     }
 
-    private SpdxDocument openAsSpdx(InputStream inputStream) throws InvalidSPDXAnalysisException {
-        String FILETYPE_SPDX_INTERNAL = "RDF/XML";
-        return SPDXDocumentFactory
-                .createSpdxDocument(inputStream,
-                        "http://localhost/",
-                        FILETYPE_SPDX_INTERNAL);
-    }
-
-    private Component createComponentFromSpdxPackage(SpdxPackage spdxPackage) {
+    private Component createComponentFromSpdxPackage(SpdxPackage spdxPackage) throws InvalidSPDXAnalysisException {
         final Component component = new Component();
-        final String name = spdxPackage.getName();
+        String name = "";
+        name = getValue(spdxPackage.getName());
         component.setName(name);
         return component;
     }
 
-    private SpdxBOMImporterSink.Response importAsComponent(SpdxPackage spdxPackage) throws SW360Exception {
+    private SpdxBOMImporterSink.Response importAsComponent(SpdxPackage spdxPackage) throws SW360Exception, InvalidSPDXAnalysisException {
         final Component component = createComponentFromSpdxPackage(spdxPackage);
         return sink.addComponent(component);
     }
 
-    private Release createReleaseFromSpdxPackage(SpdxPackage spdxPackage) {
+    private Release createReleaseFromSpdxPackage(SpdxPackage spdxPackage) throws InvalidSPDXAnalysisException {
         final Release release = new Release();
-        final String name = spdxPackage.getName();
-        final String version = spdxPackage.getVersionInfo();
+        final String name = getValue(spdxPackage.getName());
+        final String version = getValue(spdxPackage.getVersionInfo());
         release.setName(name);
         release.setVersion(version);
         return release;
@@ -186,10 +212,11 @@ public class SpdxBOMImporter {
         final SPDXDocument doc = getSpdxDocumentFromRelease(releaseId);
         doc.setReleaseId(releaseId);
         try {
-            final SpdxSnippet[] spdxSnippets = spdxDocument.getDocumentContainer().findAllSnippets().toArray(new SpdxSnippet[0]);
-            final Relationship[] spdxRelationships = spdxDocument.getRelationships();
-            final Annotation[] spdxAnnotations = spdxDocument.getAnnotations();
-            final ExtractedLicenseInfo[] extractedLicenseInfos = spdxDocument.getExtractedLicenseInfos();
+			Stream<SpdxSnippet> snippetStream = (Stream<SpdxSnippet>)SpdxModelFactory.getElements(spdxDocument.getModelStore(), spdxDocument.getDocumentUri(), null, SpdxSnippet.class);
+            List<SpdxSnippet> spdxSnippets = snippetStream.collect(Collectors.toList());
+            final List<Relationship> spdxRelationships = spdxDocument.getRelationships().stream().collect(Collectors.toList());
+            final List<Annotation> spdxAnnotations = List.copyOf(spdxDocument.getAnnotations());
+            final List<ExtractedLicenseInfo> extractedLicenseInfos = List.copyOf(spdxDocument.getExtractedLicenseInfos());
 
             final Set<SnippetInformation> snippetInfos = createSnippetsFromSpdxSnippets(spdxSnippets);
             final Set<RelationshipsBetweenSPDXElements> relationships = createRelationshipsFromSpdxRelationships(spdxRelationships, spdxDocument.getId());
@@ -207,14 +234,14 @@ public class SpdxBOMImporter {
         return doc;
     }
 
-    private Set<Annotations> createAnnotationsFromSpdxAnnotations(Annotation[] spdxAnnotations) {
+    private Set<Annotations> createAnnotationsFromSpdxAnnotations(List<Annotation> spdxAnnotations) throws InvalidSPDXAnalysisException {
         Set<Annotations> annotations = new HashSet<Annotations>();
         int index = 0;
 
         for(Annotation spdxAnn : spdxAnnotations) {
             String annotator = spdxAnn.getAnnotator();
             String date = spdxAnn.getAnnotationDate();
-            String type = spdxAnn.getAnnotationTypeTag();
+            String type = spdxAnn.getAnnotationType().name();
             String comment = spdxAnn.getComment();
 
             Annotations ann = new Annotations();
@@ -231,7 +258,7 @@ public class SpdxBOMImporter {
         return annotations;
     }
 
-    private Set<SnippetInformation> createSnippetsFromSpdxSnippets(SpdxSnippet[] spdxSnippets) {
+    private Set<SnippetInformation> createSnippetsFromSpdxSnippets(List<SpdxSnippet> spdxSnippets) {
         Set<SnippetInformation> snippets = new HashSet<SnippetInformation>();
         int index = 0;
 
@@ -241,13 +268,13 @@ public class SpdxBOMImporter {
                 String snippetFromFile = spdxSnippet.getSnippetFromFile().getId();
                 Set<SnippetRange> ranges = createSnippetRangesFromSpdxSnippet(spdxSnippet);
                 String licenseConcluded = spdxSnippet.getLicenseConcluded().toString();
-                Set<String> licenseInfoInFile = Arrays.stream(spdxSnippet.getLicenseInfoFromFiles())
-                                            .map(license -> verifyOrSetDefault(license.toString()))
+                Set<String> licenseInfoInFile = spdxSnippet.getLicenseInfoFromFiles().stream()
+                                            .map(license -> verifyOrSetDefault(license.getId()))
                                             .collect(Collectors.toSet());
-                String licenseComment = spdxSnippet.getLicenseComment();
+                String licenseComment = getValue(spdxSnippet.getLicenseComments());
                 String copyrightText = spdxSnippet.getCopyrightText();
-                String comment = spdxSnippet.getComment();
-                String name = spdxSnippet.getName();
+                String comment = getValue(spdxSnippet.getComment());
+                String name = getValue(spdxSnippet.getName());
                 String attributionText = String.join("|", spdxSnippet.getAttributionText());
 
                 SnippetInformation snippet = new SnippetInformation();
@@ -283,7 +310,7 @@ public class SpdxBOMImporter {
                 .setReference(spdxByteRange.getStartPointer().getReference().getId())
                 .setIndex(0);
 
-        StartEndPointer spdxLineRange = spdxSnippet.getLineRange();
+        StartEndPointer spdxLineRange = spdxSnippet.getLineRange().get();
         String[] lineRanges = rangeToStrs(spdxLineRange);
         SnippetRange snippetLineRange = new SnippetRange();
         snippetLineRange.setRangeType("LINE")
@@ -295,7 +322,7 @@ public class SpdxBOMImporter {
         return new HashSet<SnippetRange>(Arrays.asList(snippetByteRange, snippetLineRange));
     }
 
-    // refer to rangeToStr function of spdx-tools
+    // // refer to rangeToStr function of spdx-tools
     private String[] rangeToStrs(StartEndPointer rangePointer) throws InvalidSPDXAnalysisException {
         SinglePointer startPointer = rangePointer.getStartPointer();
         if (startPointer == null) {
@@ -326,15 +353,15 @@ public class SpdxBOMImporter {
         return new String[] { start, end };
     }
 
-    private Set<RelationshipsBetweenSPDXElements> createRelationshipsFromSpdxRelationships(Relationship[] spdxRelationships, String spdxElementId) {
+    private Set<RelationshipsBetweenSPDXElements> createRelationshipsFromSpdxRelationships(List<Relationship> spdxRelationships, String spdxElementId) throws InvalidSPDXAnalysisException {
         Set<RelationshipsBetweenSPDXElements> relationships = new HashSet<RelationshipsBetweenSPDXElements>();
         int index = 0;
 
         for (Relationship spdxRelationship : spdxRelationships) {
-            if (!(spdxRelationship.getRelatedSpdxElement() instanceof SpdxFile)) {
-                String type = spdxRelationship.getRelationshipType().toTag();
-                String relatedSpdxElement = spdxRelationship.getRelatedSpdxElement().getId();
-                String comment = spdxRelationship.getComment();
+            if (!(spdxRelationship.getRelatedSpdxElement().get() instanceof SpdxFile)) {
+                String type = spdxRelationship.getRelationshipType().name();
+                String relatedSpdxElement = spdxRelationship.getRelatedSpdxElement().get().getId();
+                String comment = getValue(spdxRelationship.getComment());
 
                 RelationshipsBetweenSPDXElements relationship = new RelationshipsBetweenSPDXElements();
                 relationship.setSpdxElementId(verifyOrSetDefault(spdxElementId))
@@ -351,7 +378,7 @@ public class SpdxBOMImporter {
         return relationships;
     }
 
-    private Set<OtherLicensingInformationDetected> createOtherLicensesFromSpdxExtractedLicenses(ExtractedLicenseInfo[] spdxExtractedLicenses) {
+    private Set<OtherLicensingInformationDetected> createOtherLicensesFromSpdxExtractedLicenses(List<ExtractedLicenseInfo> spdxExtractedLicenses) throws InvalidSPDXAnalysisException {
         Set<OtherLicensingInformationDetected> otherLicenses = new HashSet<OtherLicensingInformationDetected>();
         int index = 0;
 
@@ -359,7 +386,7 @@ public class SpdxBOMImporter {
             String licenseId = spdxExtractedLicense.getLicenseId();
             String extractedText = spdxExtractedLicense.getExtractedText();
             String name = spdxExtractedLicense.getName();
-            Set<String> crossRef = new HashSet<String>(Arrays.asList(verifyOrSetDefault(spdxExtractedLicense.getCrossRef())));
+            Set<String> crossRef = new HashSet<String>(Arrays.asList(verifyOrSetDefault(spdxExtractedLicense.getCrossRef().toArray(new String[spdxExtractedLicense.getCrossRef().size()]))));
             String comment = spdxExtractedLicense.getComment();
 
             OtherLicensingInformationDetected otherLicense = new OtherLicensingInformationDetected();
@@ -385,14 +412,14 @@ public class SpdxBOMImporter {
             final String spdxVersion = spdxDocument.getSpecVersion();
             final String dataLicense = spdxDocument.getDataLicense().toString();
             final String spdxId = spdxDocument.getId();
-            final String name = spdxDocument.getName();
-            final String documentNamespace = spdxDocument.getDocumentContainer().getDocumentNamespace();
+            final String name = getValue(spdxDocument.getName());
+            final String documentNamespace = spdxDocument.getDocumentUri();
             final Set<ExternalDocumentReferences> refs = createExternalDocumentRefsFromSpdxDocument(spdxDocument);
-            final String licenseListVersion = spdxDocument.getCreationInfo().getLicenseListVersion();
+            final String licenseListVersion = getValue(spdxDocument.getCreationInfo().getLicenseListVersion());
             final Set<Creator> creators = createCreatorFromSpdxDocument(spdxDocument);
             final String createdDate = spdxDocument.getCreationInfo().getCreated();
-            final String creatorComment = spdxDocument.getCreationInfo().getComment();
-            final String documentComment = spdxDocument.getDocumentComment();
+            final String creatorComment = getValue(spdxDocument.getCreationInfo().getComment());
+            final String documentComment = getValue(spdxDocument.getComment());
 
             info.setSpdxVersion(verifyOrSetDefault(spdxVersion))
                 .setDataLicense(verifyOrSetDefault(dataLicense))
@@ -417,15 +444,15 @@ public class SpdxBOMImporter {
         int index = 0;
 
         try {
-            ExternalDocumentRef[] externalDocumentRefs = spdxDocument.getDocumentContainer().getExternalDocumentRefs();
+            List<ExternalDocumentRef> externalDocumentRefs = List.copyOf(spdxDocument.getExternalDocumentRefs());
 
             for (ExternalDocumentRef externalDocumentRef : externalDocumentRefs) {
-                Checksum spdxChecksum = externalDocumentRef.getChecksum();
+                Checksum spdxChecksum = externalDocumentRef.getChecksum().get();
 
-                String externalDocumentId = externalDocumentRef.getExternalDocumentId();
+                String externalDocumentId = externalDocumentRef.getId();
                 String spdxDocumentNamespace = externalDocumentRef.getSpdxDocumentNamespace();
                 CheckSum checksum = new CheckSum();
-                checksum.setAlgorithm(org.spdx.rdfparser.model.Checksum.CHECKSUM_ALGORITHM_TO_TAG.get(spdxChecksum.getAlgorithm()).replace(":", ""))
+                checksum.setAlgorithm(spdxChecksum.getAlgorithm().name())
                         .setChecksumValue(spdxChecksum.getValue());
 
                 ExternalDocumentReferences ref = new ExternalDocumentReferences();
@@ -449,7 +476,7 @@ public class SpdxBOMImporter {
         int index = 0;
 
         try {
-            String[] spdxCreators = spdxDocument.getCreationInfo().getCreators();
+            List<String> spdxCreators = List.copyOf(spdxDocument.getCreationInfo().getCreators());
 
             for (String spdxCreator : spdxCreators) {
                 String[] data = spdxCreator.split(":");
@@ -475,7 +502,7 @@ public class SpdxBOMImporter {
         return creators;
     }
 
-    private PackageInformation createPackageInfoFromSpdxPackage(String spdxDocId, SpdxPackage spdxPackage) throws SW360Exception, MalformedURLException {
+    private PackageInformation createPackageInfoFromSpdxPackage(String spdxDocId, SpdxPackage spdxPackage) throws SW360Exception, MalformedURLException, InvalidSPDXAnalysisException {
         PackageVerificationCode PVC = new PackageVerificationCode();
         try {
             PVC = createPVCFromSpdxPackage(spdxPackage);
@@ -508,31 +535,31 @@ public class SpdxBOMImporter {
             externalRefs = Collections.emptySet();
         }
 
-        PackageInformation pInfo = getPackageInformationFromSpdxDocument(spdxDocId, spdxPackage.getName());
+        PackageInformation pInfo = getPackageInformationFromSpdxDocument(spdxDocId, spdxPackage.getName().get());
         pInfo.setSpdxDocumentId(spdxDocId);
 
         try {
-            final String name = spdxPackage.getName();
+            final String name = getValue(spdxPackage.getName());
             final String spdxId = spdxPackage.getId();
-            final String versionInfo = spdxPackage.getVersionInfo();
-            final String packageFileName = spdxPackage.getPackageFileName();
-            final String supplier = spdxPackage.getSupplier();
-            final String originator = spdxPackage.getOriginator();
-            final String downloadLocation = spdxPackage.getDownloadLocation();
+            final String versionInfo = getValue(spdxPackage.getVersionInfo());
+            final String packageFileName = getValue(spdxPackage.getPackageFileName());
+            final String supplier = getValue(spdxPackage.getSupplier());
+            final String originator = getValue(spdxPackage.getOriginator());
+            final String downloadLocation = getValue(spdxPackage.getDownloadLocation());
             final boolean fileAnalyzed = spdxPackage.isFilesAnalyzed();
-            final String homepage = spdxPackage.getHomepage();
-            final String sourceInfo = spdxPackage.getSourceInfo();
+            final String homepage = getValue(spdxPackage.getHomepage());
+            final String sourceInfo = getValue(spdxPackage.getSourceInfo());
             final String licenseConcluded = spdxPackage.getLicenseConcluded().toString();
-            final Set<String> licenseInfosFromFiles = Arrays.stream(spdxPackage.getLicenseInfoFromFiles())
+            final Set<String> licenseInfosFromFiles = spdxPackage.getLicenseInfoFromFiles().stream()
                                                         .map(license -> license.toString())
                                                         .collect(Collectors.toSet());
-            final String licenseComment = spdxPackage.getLicenseComment();
+            final String licenseComment = getValue(spdxPackage.getLicenseComments());
             final String copyrightText = spdxPackage.getCopyrightText();
-            final String summary = spdxPackage.getSummary();
-            final String description = spdxPackage.getDescription();
-            final String comment = spdxPackage.getComment();
-            final Set<String> attributionText = new HashSet<String>(Arrays.asList(verifyOrSetDefault(spdxPackage.getAttributionText())));
-            final Set<Annotations> annotations = createAnnotationsFromSpdxAnnotations(spdxPackage.getAnnotations());
+            final String summary = getValue(spdxPackage.getSummary());
+            final String description = getValue(spdxPackage.getDescription());
+            final String comment = getValue(spdxPackage.getComment());
+            final Set<String> attributionText = new HashSet<String>(Arrays.asList(verifyOrSetDefault(spdxPackage.getAttributionText().toArray(new String [spdxPackage.getAttributionText().size()]))));
+            final Set<Annotations> annotations = createAnnotationsFromSpdxAnnotations(List.copyOf(spdxPackage.getAnnotations()));
 
             pInfo.setName(verifyOrSetDefault(name))
                 .setSPDXID(verifyOrSetDefault(spdxId))
@@ -567,14 +594,14 @@ public class SpdxBOMImporter {
     private PackageVerificationCode createPVCFromSpdxPackage(SpdxPackage spdxPackage) {
         try {
             PackageVerificationCode PVC = new PackageVerificationCode();
-            SpdxPackageVerificationCode spdxPVC = spdxPackage.getPackageVerificationCode();
-            Set<String> excludedFileNames = new HashSet<String>(Arrays.asList(verifyOrSetDefault(spdxPVC.getExcludedFileNames())));
+            SpdxPackageVerificationCode spdxPVC = spdxPackage.getPackageVerificationCode().orElse(null);
+            Set<String> excludedFileNames = new HashSet<String>(Arrays.asList(verifyOrSetDefault(spdxPVC.getExcludedFileNames().toArray(new String [spdxPVC.getExcludedFileNames().size()]))));
             String value = spdxPVC.getValue();
 
             PVC.setExcludedFiles(excludedFileNames)
                 .setValue(verifyOrSetDefault(value));
             return PVC;
-        } catch (InvalidSPDXAnalysisException e) {
+        } catch (InvalidSPDXAnalysisException | NullPointerException e) {
             log.error("Error get PVC " + e);
             return null;
         }
@@ -585,12 +612,12 @@ public class SpdxBOMImporter {
         int index = 0;
 
         try {
-            ExternalRef[] spdxExternalRefs = spdxPackage.getExternalRefs();
+            List<ExternalRef> spdxExternalRefs = List.copyOf(spdxPackage.getExternalRefs());
             for (ExternalRef spdxRef : spdxExternalRefs) {
-                String category = spdxRef.getReferenceCategory().getTag();
+                String category = spdxRef.getReferenceCategory().name();
                 String locator = spdxRef.getReferenceLocator();
-                String type = spdxRef.getReferenceType().toString();
-                String comment = spdxRef.getComment();
+                String type = spdxRef.getReferenceType().getIndividualURI();
+                String comment = getValue(spdxRef.getComment());
 
                 ExternalReference ref = new ExternalReference();
                 ref.setReferenceCategory(verifyOrSetDefault(category))
@@ -613,9 +640,9 @@ public class SpdxBOMImporter {
         Set<CheckSum> checksums = new HashSet<CheckSum>();
         int index = 0;
         try {
-            Checksum[] spdxChecksums = spdxPackage.getChecksums();
+            List<Checksum> spdxChecksums = List.copyOf(spdxPackage.getChecksums());
             for (Checksum spdxChecksum : spdxChecksums) {
-                String algorithm = org.spdx.rdfparser.model.Checksum.CHECKSUM_ALGORITHM_TO_TAG.get(spdxChecksum.getAlgorithm()).replace(":", "");
+                String algorithm = spdxChecksum.getAlgorithm().name();
                 String value = spdxChecksum.getValue();
                 CheckSum checksum = new CheckSum();
                 checksum.setAlgorithm(verifyOrSetDefault(algorithm))
@@ -624,7 +651,7 @@ public class SpdxBOMImporter {
                 checksums.add(checksum);
                 index++;
             }
-        } catch (InvalidSPDXAnalysisException e) {
+        } catch (InvalidSPDXAnalysisException | NullPointerException e) {
             checksums = Collections.emptySet();
         }
         return checksums;
@@ -650,12 +677,12 @@ public class SpdxBOMImporter {
         return attachment;
     }
 
-    private Optional<SpdxBOMImporterSink.Response> importAsRelease(SpdxElement relatedSpdxElement) throws SW360Exception {
+    private Optional<SpdxBOMImporterSink.Response> importAsRelease(SpdxElement relatedSpdxElement) throws SW360Exception, InvalidSPDXAnalysisException {
         return importAsRelease(relatedSpdxElement, null, null, null, null);
     }
 
     private Optional<SpdxBOMImporterSink.Response> importAsRelease(SpdxElement relatedSpdxElement, AttachmentContent attachmentContent,
-            SpdxDocument spdxDocument, String newReleaseVersion, String releaseId) throws SW360Exception {
+            SpdxDocument spdxDocument, String newReleaseVersion, String releaseId) throws SW360Exception, InvalidSPDXAnalysisException {
         if (relatedSpdxElement instanceof SpdxPackage) {
             final SpdxPackage spdxPackage = (SpdxPackage) relatedSpdxElement;
 
@@ -674,7 +701,7 @@ public class SpdxBOMImporter {
                 release.setComponentId(componentId);
             }
 
-            final Relationship[] relationships = spdxPackage.getRelationships();
+            final Relationship[] relationships = spdxPackage.getRelationships().toArray(new Relationship[spdxPackage.getRelationships().size()]);
             List<SpdxBOMImporterSink.Response> releases = importAsReleases(relationships);
             Map<String, ReleaseRelationship> releaseIdToRelationship = makeReleaseIdToRelationship(releases);
             release.setReleaseIdToRelationship(releaseIdToRelationship);
@@ -683,7 +710,6 @@ public class SpdxBOMImporter {
                 Attachment attachment = makeAttachmentFromContent(attachmentContent);
                 release.setAttachments(Collections.singleton(attachment));
             }
-
 
             final SpdxBOMImporterSink.Response response = sink.addRelease(release);
 
@@ -701,7 +727,7 @@ public class SpdxBOMImporter {
         }
     }
 
-    private void importSpdxDocument(String releaseId, SpdxDocument spdxDocument, SpdxPackage spdxPackage) throws SW360Exception, MalformedURLException {
+    private void importSpdxDocument(String releaseId, SpdxDocument spdxDocument, SpdxPackage spdxPackage) throws SW360Exception, MalformedURLException, InvalidSPDXAnalysisException {
         final SPDXDocument spdxDoc = createSPDXDocumentFromSpdxDocument(releaseId, spdxDocument);
         final SpdxBOMImporterSink.Response spdxDocRes = sink.addOrUpdateSpdxDocument(spdxDoc);
         final String spdxDocId = spdxDocRes.getId();
@@ -710,21 +736,20 @@ public class SpdxBOMImporter {
         final SpdxBOMImporterSink.Response docCreationInfoRes = sink.addOrUpdateDocumentCreationInformation(docCreationInfo);
         final String docCreationInfoId = docCreationInfoRes.getId();
 
-        List<SpdxPackage> packages = new ArrayList<>();
-        try {
-            packages = spdxDocument.getDocumentContainer().findAllPackages();
-        } catch (InvalidSPDXAnalysisException e) {
-            log.error("Can not get list package from SpdxDocument");
-            e.printStackTrace();
-            packages = Collections.emptyList();
+        final List<SpdxPackage> allPackages = new ArrayList<>();
+        try(@SuppressWarnings("unchecked")
+        Stream<SpdxPackage> allPackagesStream = (Stream<SpdxPackage>) SpdxModelFactory.getElements(spdxDocument.getModelStore(), spdxDocument.getDocumentUri(),
+        spdxDocument.getCopyManager(), SpdxPackage.class)) {
+            allPackagesStream.forEach((SpdxPackage pkg) -> allPackages.add(pkg));
         }
 
         int index = 1;
-        for (SpdxPackage packageElement : packages) {
+        for (SpdxPackage packageElement : allPackages) {
             log.info("Import package: " + packageElement.toString());
             PackageInformation packageInfo = createPackageInfoFromSpdxPackage(spdxDocId, packageElement);
-            if (ArrayUtils.isNotEmpty(packageElement.getRelationships())) {
-                Set<RelationshipsBetweenSPDXElements> packageReleaseRelationship = createRelationshipsFromSpdxRelationships(packageElement.getRelationships(), packageElement.getId());
+            List<Relationship> packageRelationship = List.copyOf(packageElement.getRelationships());
+            if (!packageRelationship.isEmpty()) {
+                Set<RelationshipsBetweenSPDXElements> packageReleaseRelationship = createRelationshipsFromSpdxRelationships(packageRelationship, packageElement.getId());
                 packageInfo.setRelationships(packageReleaseRelationship);
             } else {
                 packageInfo.setRelationships(Collections.emptySet());
@@ -783,29 +808,29 @@ public class SpdxBOMImporter {
                 .collect(Collectors.toMap(SpdxBOMImporterSink.Response::getId, SpdxBOMImporterSink.Response::getReleaseRelationship));
     }
 
-    private Project creatProjectFromSpdxPackage(SpdxPackage spdxPackage) {
+    private Project creatProjectFromSpdxPackage(SpdxPackage spdxPackage) throws InvalidSPDXAnalysisException {
         Project project = new Project();
-        final String name = spdxPackage.getName();
-        final String version = spdxPackage.getVersionInfo();
+        final String name = getValue(spdxPackage.getName());
+        final String version = getValue(spdxPackage.getVersionInfo());
         project.setName(name);
         project.setVersion(version);
         return project;
     }
 
-    private List<SpdxBOMImporterSink.Response> importAsReleases(Relationship[] relationships) throws SW360Exception {
+    private List<SpdxBOMImporterSink.Response> importAsReleases(Relationship[] relationships) throws SW360Exception, InvalidSPDXAnalysisException {
         List<SpdxBOMImporterSink.Response> releases = new ArrayList<>();
 
-        Map<Relationship.RelationshipType, ReleaseRelationship> typeToSupplierMap = new HashMap<>();
-        typeToSupplierMap.put(Relationship.RelationshipType.CONTAINS,  ReleaseRelationship.CONTAINED);
+        Map<RelationshipType, ReleaseRelationship> typeToSupplierMap = new HashMap<>();
+        typeToSupplierMap.put(RelationshipType.CONTAINS,  ReleaseRelationship.CONTAINED);
 
         for (Relationship relationship : relationships) {
-            final Relationship.RelationshipType relationshipType = relationship.getRelationshipType();
+            final RelationshipType relationshipType = relationship.getRelationshipType();
             if(! typeToSupplierMap.keySet().contains(relationshipType)) {
                 log.debug("Unsupported RelationshipType: " + relationshipType.toString());
                 continue;
             }
 
-            final SpdxElement relatedSpdxElement = relationship.getRelatedSpdxElement();
+            final SpdxElement relatedSpdxElement = relationship.getRelatedSpdxElement().get();
             final Optional<SpdxBOMImporterSink.Response> releaseId = importAsRelease(relatedSpdxElement);
             releaseId.map(response -> {
                 response.setReleaseRelationship(typeToSupplierMap.get(relationshipType));
@@ -826,13 +851,13 @@ public class SpdxBOMImporter {
     }
 
 
-    private Optional<SpdxBOMImporterSink.Response> importAsProject(SpdxElement spdxElement, AttachmentContent attachmentContent) throws SW360Exception {
+    private Optional<SpdxBOMImporterSink.Response> importAsProject(SpdxElement spdxElement, AttachmentContent attachmentContent) throws SW360Exception, InvalidSPDXAnalysisException {
         if (spdxElement instanceof SpdxPackage) {
             final SpdxPackage spdxPackage = (SpdxPackage) spdxElement;
 
             final Project project = creatProjectFromSpdxPackage(spdxPackage);
 
-            final Relationship[] relationships = spdxPackage.getRelationships();
+            final Relationship[] relationships = spdxPackage.getRelationships().toArray(new Relationship[spdxPackage.getRelationships().size()]);
             List<SpdxBOMImporterSink.Response> releases = importAsReleases(relationships);
             Map<String, ProjectReleaseRelationship> releaseIdToProjectRelationship = makeReleaseIdToProjectRelationship(releases);
             project.setReleaseIdToUsage(releaseIdToProjectRelationship);
@@ -858,5 +883,13 @@ public class SpdxBOMImporter {
 
     private String[] verifyOrSetDefault(String[] values) {
         return (values != null && values.length > 0) ? values : new String[0];
+    }
+
+    private String getValue(Optional<String> value) {
+        if (value.isPresent()) {
+            return value.get();
+        } else {
+            return "";
+        }
     }
 }

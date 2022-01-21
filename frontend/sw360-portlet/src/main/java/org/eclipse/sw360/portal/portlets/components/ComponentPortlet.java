@@ -286,9 +286,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             if (!outputFormat.equals("JSON")) {
                 Files.delete(Paths.get(releaseId + ".json"));
             }
-            if (outputFormat.equals("SPDX")) {
-                Files.delete(Paths.get("tmp.rdf"));
-            }
             if (Files.exists(Paths.get(filename))) {
                 Files.delete(Paths.get(filename));
             }

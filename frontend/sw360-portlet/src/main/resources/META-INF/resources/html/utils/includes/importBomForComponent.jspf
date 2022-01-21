@@ -180,7 +180,7 @@
 
                 console.log("prepareImportsuccess...");
 
-                if (rdfFilePath == 'error-convert') {
+                if (rdfFilePath == 'error-read-file') {
                     console.log("File import is Invalid");
                     $('#importSBOM').hide();
                     $('#importSBOMAsNew').hide();

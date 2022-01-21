@@ -311,7 +311,12 @@
                 var log = data.message
                 if (log != null) {
                     $('#verifySPDX').attr("style","overflow: auto; max-height: 20rem;")
-                    $('#verifySPDX').append("<strong>" + log + "</strong>")
+                    if (log.includes('[')) {
+                        $('#verifySPDX').append("<strong>" + log.split('[')[0] + ". But have some error/warning when verify exported file:" + "</strong>")
+                        $('#verifySPDX').append("<br><strong style='color:red'>" + log.replace(log.split('[')[0], '') + "</strong>")
+                    } else {
+                        $('#verifySPDX').append("<strong>" + log + "</strong>")
+                    }
                 }
                 if (data.result == 'SUCCESS') {
                     $('#confirmDialog button.btn.btn-primary').prop('disabled', false)

@@ -19,11 +19,11 @@ import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelement
 import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.*;
-import org.spdx.rdfparser.InvalidSPDXAnalysisException;
-import org.spdx.rdfparser.license.ExtractedLicenseInfo;
 import org.spdx.tools.SpdxConverter;
 import org.spdx.tools.SpdxConverterException;
-import org.spdx.tools.RdfToTag;
+import org.spdx.tools.SpdxToolsHelper;
+import org.spdx.tools.SpdxVerificationException;
+import org.spdx.tools.Verify;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -43,32 +43,52 @@ import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForSPDXDocument.*;
 public class SpdxBOMExporter {
     private static final Logger log = LogManager.getLogger(SpdxBOMExporter.class);
     private final SpdxBOMExporterSink sink;
-    private Set<ExtractedLicenseInfo> licenses = new HashSet<>();
-
     public SpdxBOMExporter(SpdxBOMExporterSink sink) {
         this.sink = sink;
     }
 
-    public RequestSummary exportSPDXFile(String releaseId, String outputFormat) throws SW360Exception, MalformedURLException, InvalidSPDXAnalysisException {
+    public RequestSummary exportSPDXFile(String releaseId, String outputFormat) throws SW360Exception, MalformedURLException {
         RequestSummary requestSummary = new RequestSummary();
-        String verifyMessage = "";
         final String targetFileName = releaseId + "." + outputFormat.toLowerCase();
         log.info("Export to file: " + targetFileName);
         
         if (createSPDXJsonFomatFromSW360SPDX(releaseId)) {
+            List<String> message = new ArrayList<>();
             if (outputFormat.equals("JSON")) {
-                //verifyMessage = convertJSONtoOutputFormat(targetFileName, releaseId + ".RDF");
-                requestSummary.setMessage("Export to JSON format successfully !");
+                try {
+                    message = Verify.verify(targetFileName, SpdxToolsHelper.SerFileType.JSON);
+                } catch (SpdxVerificationException e) {
+                    message = Collections.emptyList();
+                    e.printStackTrace();
+                }
+                requestSummary.setMessage("Export to JSON format successfully !\n" + message);
                 return requestSummary.setRequestStatus(RequestStatus.SUCCESS);
             } else {
-                verifyMessage = convertJSONtoOutputFormat(releaseId + ".json", targetFileName);
-                if (verifyMessage.isEmpty()) {
+                String convertResult = convertJSONtoOutputFormat(releaseId + ".json", targetFileName);
+                if (convertResult.isEmpty()) {
                     log.info("Export to " + targetFileName + " sucessfully");
-                    requestSummary.setMessage("Export to " + outputFormat + " format successfully !");
+                    try {
+                        if (outputFormat.equals("SPDX")) {
+                            message = Verify.verify(targetFileName, SpdxToolsHelper.SerFileType.valueOf("TAG"));
+                        }else if (outputFormat.equals("RDF")) {
+                            message = Verify.verify(targetFileName, SpdxToolsHelper.SerFileType.valueOf(outputFormat + "XML"));
+                        } else {
+                            message = Verify.verify(targetFileName, SpdxToolsHelper.SerFileType.valueOf(outputFormat));
+                        }
+                    } catch (SpdxVerificationException e) {
+                        message = Collections.emptyList();
+                        e.printStackTrace();
+                    }
+
+                    if (message.isEmpty()) {
+                        requestSummary.setMessage("Export to " + outputFormat + " format successfully !" );
+                    } else {
+                        requestSummary.setMessage("Export to " + outputFormat + " format successfully !\n" + message);
+                    }
                     return requestSummary.setRequestStatus(RequestStatus.SUCCESS);
                 } else {
                     log.error("Export to " + targetFileName + " error");
-                    requestSummary.setMessage(verifyMessage);
+                    requestSummary.setMessage(convertResult);
                     return requestSummary.setRequestStatus(RequestStatus.FAILURE);
                 }
             }
@@ -82,12 +102,7 @@ public class SpdxBOMExporter {
     private String convertJSONtoOutputFormat(String jsonFileName, String outputFileName ) {
         try {
             log.info("Convert " + jsonFileName + " to " + outputFileName);
-            if (outputFileName.split("\\.")[1].equals("spdx")) {
-                SpdxConverter.convert(jsonFileName, "tmp.rdf");
-                RdfToTag.main(new String[] {"tmp.rdf", outputFileName});
-            } else {
-                SpdxConverter.convert(jsonFileName, outputFileName);
-            }
+            SpdxConverter.convert(jsonFileName, outputFileName);
         } catch (SpdxConverterException e) {
             log.error("Convert to " + outputFileName + " file error !!!");
             e.printStackTrace();

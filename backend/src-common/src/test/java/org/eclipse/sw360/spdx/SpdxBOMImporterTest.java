@@ -23,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.InputStream;
+import java.io.File;
 
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
@@ -32,6 +33,7 @@ public class SpdxBOMImporterTest {
 
     private InputStream inputStream;
     private AttachmentContent attachmentContent;
+    private File file;
 
     @Mock
     private SpdxBOMImporterSink spdxBOMImporterSink;
@@ -44,6 +46,7 @@ public class SpdxBOMImporterTest {
 
         inputStream = getClass()
              .getClassLoader().getResourceAsStream("bom.spdx.rdf");
+        file = new File("bom.spdx.rdf");
 
         when(spdxBOMImporterSink.addProject(any(Project.class))).then(i -> {
             Project project = i.getArgumentAt(0, Project.class);
@@ -73,7 +76,7 @@ public class SpdxBOMImporterTest {
 
     @Test
     public void testProject() throws  Exception {
-        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsProject(inputStream, attachmentContent);
+        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsProject(file, attachmentContent);
         assertNotNull(requestSummary);
 
         verify(spdxBOMImporterSink, times(1)).addProject(Matchers.any());
@@ -83,7 +86,7 @@ public class SpdxBOMImporterTest {
 
     @Test
     public void testRelease() throws  Exception {
-        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent, null, null);
+        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsRelease(file, attachmentContent, null, null);
         assertNotNull(requestSummary);
 
         verify(spdxBOMImporterSink, times(4)).addComponent(Matchers.any());
