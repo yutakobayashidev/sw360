@@ -14,11 +14,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.spdx.compare.LicenseCompareHelper;
-import org.spdx.compare.SpdxCompareException;
-import org.spdx.rdfparser.InvalidSPDXAnalysisException;
-import org.spdx.rdfparser.license.LicenseInfoFactory;
-import org.spdx.rdfparser.license.SpdxListedLicense;
+import org.spdx.library.model.license.LicenseInfoFactory;
+import org.spdx.library.model.license.SpdxListedLicense;
+import org.spdx.library.InvalidSPDXAnalysisException;
+import org.spdx.utility.compare.LicenseCompareHelper;
+import org.spdx.utility.compare.SpdxCompareException;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,7 +31,7 @@ public class SpdxConnector {
     private static final Logger log = LogManager.getLogger(SpdxConnector.class);
 
     public static List<String> getAllSpdxLicenseIds() {
-        return Arrays.asList(LicenseInfoFactory.getSpdxListedLicenseIds());
+        return LicenseInfoFactory.getSpdxListedLicenseIds();
     }
 
     protected static Optional<SpdxListedLicense> getSpdxLicense(String licenseId) {
@@ -50,27 +50,34 @@ public class SpdxConnector {
                 .flatMap(SpdxConnector::getSpdxLicenseAsSW360License);
     }
 
-    public static Optional<License> getSpdxLicenseAsSW360License(SpdxListedLicense spdxListedLicense){
-        License license = new License()
-                .setId(spdxListedLicense.getLicenseId())
-                .setShortname(spdxListedLicense.getLicenseId())
-                .setFullname(spdxListedLicense.getName())
-                .setText(spdxListedLicense.getLicenseText())
-                .setExternalLicenseLink("https://spdx.org/licenses/" + spdxListedLicense.getLicenseId()+ ".html")
-                .setExternalIds(Collections.singletonMap("SPDX-License-Identifier", spdxListedLicense.getLicenseId()));
-        return Optional.of(license);
+    public static Optional<License> getSpdxLicenseAsSW360License(SpdxListedLicense spdxListedLicense) {
+        License license;
+        try {
+            license = new License()
+                    .setId(spdxListedLicense.getLicenseId())
+                    .setShortname(spdxListedLicense.getLicenseId())
+                    .setFullname(spdxListedLicense.getName())
+                    .setText(spdxListedLicense.getLicenseText())
+                    .setExternalLicenseLink("https://spdx.org/licenses/" + spdxListedLicense.getLicenseId()+ ".html")
+                    .setExternalIds(Collections.singletonMap("SPDX-License-Identifier", spdxListedLicense.getLicenseId()));
+            return Optional.of(license);
+        } catch (InvalidSPDXAnalysisException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     /**
      * checks whether the given license matches the corresponding SPDX license
      * @param license
      * @return
+     * @throws InvalidSPDXAnalysisException
      */
-    public static boolean matchesSpdxLicenseText(License license) {
+    public static boolean matchesSpdxLicenseText(License license) throws InvalidSPDXAnalysisException {
         return matchesSpdxLicenseText(license, license.getShortname());
     }
 
-    public static boolean matchesSpdxLicenseText(License license, String spdxId) {
+    public static boolean matchesSpdxLicenseText(License license, String spdxId) throws InvalidSPDXAnalysisException {
         final Optional<SpdxListedLicense> spdxLicense = getSpdxLicense(spdxId);
         if(!spdxLicense.isPresent()) {
             // A license, which has no SPDX counterpart, does not not match its SPDX-license
@@ -79,7 +86,7 @@ public class SpdxConnector {
         return matchesSpdxLicenseText(license, spdxLicense.get());
     }
 
-    private static boolean matchesSpdxLicenseText(License license, SpdxListedLicense spdxLicense) {
+    private static boolean matchesSpdxLicenseText(License license, SpdxListedLicense spdxLicense) throws InvalidSPDXAnalysisException {
         return matchesLicenseText(license, spdxLicense.getLicenseText());
     }
 
