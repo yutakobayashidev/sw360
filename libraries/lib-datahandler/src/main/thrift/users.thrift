@@ -149,4 +149,8 @@ service UserService {
     RequestStatus importDepartmentSchedule();
 
     map<string, list<User>> getAllUserByDepartment();
+
+    list<string> getMessageError();
+
+    set<string> getListFileLog();
 }

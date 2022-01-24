@@ -25,6 +25,8 @@
 <portlet:actionURL var="scheduleDepartmentManuallyURL" name="importDepartmentManually">
 </portlet:actionURL>
 <jsp:useBean id="departmentList" scope="request" class="java.util.HashMap"/>
+<portlet:actionURL var="showMessageErrors" name="showMessageErrors">
+</portlet:actionURL>
 <div class="container">
     <div class="row">
         <div class="col">
@@ -60,7 +62,7 @@
                                     onclick="window.location.href='<%=scheduleDepartmentManuallyURL%>'">
                                 <liferay-ui:message key="manually"/>
                             </button>
-                            <button type="button" class="btn btn-secondary"><liferay-ui:message
+                            <button type="button" class="btn btn-secondary" id="view-log"><liferay-ui:message
                                     key="view.log"/></button>
                         </div>
                     </form>
@@ -89,7 +91,7 @@
                                                          varStatus="loop">
                                             <span>${loop.index + 1}.</span> <span><sw360:out
                                                 value="${secondDepartment.email}"/></span>
-                                            </br>
+                                            <hr>
                                         </core_rt:forEach>
                                     </div>
                                 </td>
@@ -118,12 +120,38 @@
         </div>
     </div>
 </div>
+
+<div class="dialogs auto-dialogs">
+    <div id="deleteComponentDialog" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-xl modal-info" role="document">
+            <div class="modal-content" style="width:100%; max-height:800px; overflow:auto">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <liferay-ui:message key="view.log" />
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <core_rt:forEach var="lf" items="${stringList}">
+                        <div>${lf}</div>
+                    </core_rt:forEach>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     AUI().use('liferay-portlet-url', function () {
         require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'modules/dialog'], function ($, datatables, quickfilter, dialog) {
             var usersTable;
+            $('#view-log').on('click', showDialog);
+            function showDialog(){
+                $dialog = dialog.open('#deleteComponentDialog');
+            }
 
             // initializing
             usersTable = createExistingUserTable('#userTable');

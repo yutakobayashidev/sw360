@@ -21,9 +21,12 @@ import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.users.db.UserDatabaseHandler;
 import org.eclipse.sw360.users.dto.RedmineConfigDTO;
 import org.eclipse.sw360.users.redmine.ReadFileRedmineConfig;
+import org.eclipse.sw360.users.util.FileUtil;
 import org.ektorp.http.HttpClient;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -159,5 +162,23 @@ public class UserHandler implements UserService.Iface {
     @Override
     public Map<String, List<User>> getAllUserByDepartment() throws TException {
         return db.getAllUserByDepartment();
+    }
+
+    @Override
+    public List<String> getMessageError() throws TException {
+        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+        File file = FileUtil.getFileLastModified(configDTO.getPathFolder());
+        return FileUtil.readFileError(file.getPath());
+    }
+
+    @Override
+    public Set<String> getListFileLog() {
+        try {
+            RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+            return FileUtil.listFilesUsingFileWalk(configDTO.getPathFolder() + "/logs");
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return Collections.emptySet();
     }
 }

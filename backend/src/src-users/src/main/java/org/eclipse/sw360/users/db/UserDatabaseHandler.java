@@ -29,17 +29,15 @@ import org.eclipse.sw360.datahandler.thrift.ThriftValidate;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.users.dto.RedmineConfigDTO;
 import org.eclipse.sw360.users.dto.UserDTO;
+import org.eclipse.sw360.users.redmine.ReadFileRedmineConfig;
+import org.eclipse.sw360.users.util.FileUtil;
 import org.ektorp.http.HttpClient;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 
@@ -60,12 +58,14 @@ public class UserDatabaseHandler {
     private Map<String, UserDTO> userDTOMap;
     private static final Logger log = LogManager.getLogger(UserDatabaseHandler.class);
     private static final String DEPARTMENT = "DEPARTMENT";
+    private ReadFileRedmineConfig readFileRedmineConfig;
 
     public UserDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws IOException {
         // Create the connector
         db = new DatabaseConnectorCloudant(httpClient, dbName);
         dbConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
         repository = new UserRepository(db);
+        readFileRedmineConfig = new ReadFileRedmineConfig();
         userSearchHandler = new UserSearchHandler(dbConnector, httpClient);
     }
 
@@ -153,7 +153,7 @@ public class UserDatabaseHandler {
                 UserDTO userDTO = UserDTO.convertToUserDTO(user);
                 userDTOMap.put(user.getEmail(), userDTO);
             }
-            Set<String> files = listFilesUsingFileWalk(pathFolder);
+            Set<String> files = FileUtil.listFilesUsingFileWalk(pathFolder);
             for (String file : files) {
                 checkFileFormat(pathFolder + "/" + file);
             }
@@ -166,16 +166,8 @@ public class UserDatabaseHandler {
             });
         } catch (IOException e) {
             log.error("Can't read file: {}", e.getMessage());
-        }
-    }
-
-    private static Set<String> listFilesUsingFileWalk(String dir) throws IOException {
-        try (Stream<Path> stream = Files.walk(Paths.get(dir), 1)) {
-            return stream
-                    .filter(file -> !Files.isDirectory(file))
-                    .map(Path::getFileName)
-                    .map(Path::toString)
-                    .collect(Collectors.toSet());
+            RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+            FileUtil.writeErrorToFile(e.getMessage(), configDTO.getPathFolder());
         }
     }
 
@@ -202,6 +194,8 @@ public class UserDatabaseHandler {
             }
         } catch (IOException | CsvException e) {
             log.error("Can't read file csv: {}", e.getMessage());
+            RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+            FileUtil.writeErrorToFile(e.getMessage(), configDTO.getPathFolder());
         }
     }
 
@@ -222,6 +216,8 @@ public class UserDatabaseHandler {
             }
         } catch (Exception ex) {
             log.error("Can't read file excel: {}", ex.getMessage());
+            RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+            FileUtil.writeErrorToFile(ex.getMessage(), configDTO.getPathFolder());
         } finally {
             try {
                 if (wb != null) wb.close();
@@ -285,4 +281,15 @@ public class UserDatabaseHandler {
         }
         return listMap;
     }
+
+//    public List<String> getMessageError() {
+//        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+//        File file = FileUtil.getFileLastModified(configDTO.getPathFolder());
+//        return FileUtil.readFileError(file.getPath());
+//    }
+//
+//    public Set<String> getListFileLog() throws IOException {
+//        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+//        return FileUtil.listFilesUsingFileWalk(configDTO.getPathFolder() + "/logs");
+//    }
 }
