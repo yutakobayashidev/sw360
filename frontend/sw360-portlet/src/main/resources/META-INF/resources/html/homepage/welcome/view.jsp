@@ -37,8 +37,30 @@
 	<core_rt:if test="${not themeDisplay.signedIn}">
 		<h3><liferay-ui:message key="in.order.to.go.ahead.please.sign.in.or.create.a.new.account" /></h3>
 		<div class="buttons">
-			<span class="sign-in"><a class="btn btn-primary btn-lg" href="${ themeDisplay.getURLSignIn() }" role="button"><liferay-ui:message key="sign.in" /></a></span>
-			<a class="btn btn-outline-primary btn-lg" href="/web/guest/sign-up" role="button"><liferay-ui:message key="create.account" /></a>
+
+			<portlet:actionURL name="signIn" var="signInURL">
+				<portlet:param name="mvcRenderCommandName" value="/login/login" />
+			</portlet:actionURL>
+
+			<aui:form action="<%= signInURL %>" autocomplete='on' cssClass="sign-in-form" method="post" name="SignInForm">
+				<div class="form-group">
+					<aui:input name="saveLastPath" type="hidden" value="<%= false %>" />
+					<aui:input name="redirect" type="hidden" value="" />
+
+					<aui:input autoFocus="true" cssClass="clearable" label="email-address" name="login"
+						showRequiredLabel="<%= false %>" type="text" value="">
+						<aui:validator name="required" />
+					</aui:input>
+
+					<aui:input name="password" showRequiredLabel="<%= false %>" type="password">
+						<aui:validator name="required" />
+					</aui:input>
+
+					<button class="btn btn-primary btn-lg" type="submit" value="sign-in" role="button"><liferay-ui:message key="sign.in" /></button>
+					<a class="btn btn-outline-primary btn-lg" href="/web/guest/sign-up" role="button"><liferay-ui:message key="create.account" /></a>
+				</div>
+			</aui:form>
+
 		</div>
 	</core_rt:if>
 </div>
