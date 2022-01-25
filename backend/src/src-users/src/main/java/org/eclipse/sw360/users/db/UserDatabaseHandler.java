@@ -281,15 +281,4 @@ public class UserDatabaseHandler {
         }
         return listMap;
     }
-
-//    public List<String> getMessageError() {
-//        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
-//        File file = FileUtil.getFileLastModified(configDTO.getPathFolder());
-//        return FileUtil.readFileError(file.getPath());
-//    }
-//
-//    public Set<String> getListFileLog() throws IOException {
-//        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
-//        return FileUtil.listFilesUsingFileWalk(configDTO.getPathFolder() + "/logs");
-//    }
 }

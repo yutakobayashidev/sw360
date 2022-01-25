@@ -10,9 +10,7 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -97,6 +95,15 @@ public class FileUtil {
                     .map(Path::toString)
                     .collect(Collectors.toSet());
         }
+    }
+
+    public static Map<String, List<String>> getAllLog(String pathFolder) throws IOException {
+        Set<String> fileNames = listFilesUsingFileWalk(pathFolder + FOLDER_LOG);
+        Map<String, List<String>> data = new HashMap<>();
+        for (String fileName : fileNames) {
+            data.put(fileName.replace(EXTENSION, ""), readFileError(pathFolder + FOLDER_LOG + fileName));
+        }
+        return data;
     }
 
 }

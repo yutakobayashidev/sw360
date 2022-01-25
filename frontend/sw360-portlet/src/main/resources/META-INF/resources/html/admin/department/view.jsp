@@ -127,16 +127,23 @@
             <div class="modal-content" style="width:100%; max-height:800px; overflow:auto">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <liferay-ui:message key="view.log" />
+                        <liferay-ui:message key="view.log"/>
                     </h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
-                    <core_rt:forEach var="lf" items="${stringList}">
-                        <div>${lf}</div>
-                    </core_rt:forEach>
+                    <div id="header-log-error">
+                        <core_rt:forEach var="lf" items="${allMessageError}">
+                            <div onclick="showFileError('${lf.key}')">${lf.key}</div>
+                        </core_rt:forEach>
+                    </div>
+                    <div id="content-log-error">
+                        <core_rt:forEach var="lf" items="${allMessageError}">
+                            <div id="content-${lf.key}" class="content-errors d-xl-none">${lf.value}</div>
+                        </core_rt:forEach>
+                    </div>
                 </div>
             </div>
         </div>
@@ -149,7 +156,7 @@
         require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'modules/dialog'], function ($, datatables, quickfilter, dialog) {
             var usersTable;
             $('#view-log').on('click', showDialog);
-            function showDialog(){
+            function showDialog() {
                 $dialog = dialog.open('#deleteComponentDialog');
             }
 
@@ -178,5 +185,11 @@
             }
         });
     });
+
+    function showFileError(key) {
+        console.log(key);
+        $('.content-errors').hide();
+        $('#content-' + key).show();
+    }
 </script>
 

@@ -54,10 +54,8 @@ public class DepartmentPortlet extends Sw360Portlet {
             UserService.Iface userClient = thriftClients.makeUserClient();
             Map<String, List<User>> listMap = userClient.getAllUserByDepartment();
             request.setAttribute(PortalConstants.DEPARTMENT_LIST, listMap);
-            List<String> stringList = userClient.getMessageError();
-            request.setAttribute("stringList",stringList);
-            Set<String> listFileLogs = userClient.getListFileLog();
-            request.setAttribute("listFileLogs",listFileLogs);
+            Map<String,List<String>> allMessageError = userClient.getAllMessageError();
+            request.setAttribute("allMessageError",allMessageError);
             User user = UserCacheHolder.getUserFromRequest(request);
             ScheduleService.Iface scheduleClient = new ThriftClients().makeScheduleClient();
             boolean isDepartmentScheduled = isDepartmentScheduled(scheduleClient, user);
@@ -113,17 +111,6 @@ public class DepartmentPortlet extends Sw360Portlet {
             setSessionMessage(request, requestStatus, "User", "Success");
         } catch (TException e) {
             log.error("Cancel Schedule import department: {}", e.getMessage());
-        }
-    }
-
-    @UsedAsLiferayAction
-    public void showMessageErrors(ActionRequest request, ActionResponse response) throws PortletException {
-        try {
-            UserService.Iface userClient = thriftClients.makeUserClient();
-            List<String> stringList = userClient.getMessageError();
-            request.setAttribute("stringList",stringList);
-        } catch (TException e) {
-            log.error("Error: {}", e.getMessage());
         }
     }
 

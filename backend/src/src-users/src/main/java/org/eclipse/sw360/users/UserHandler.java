@@ -181,4 +181,15 @@ public class UserHandler implements UserService.Iface {
         }
         return Collections.emptySet();
     }
+
+    @Override
+    public Map<String,List<String>> getAllMessageError() {
+       try {
+           RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+           return FileUtil.getAllLog(configDTO.getPathFolder());
+       }catch (Exception e){
+           e.printStackTrace();
+       }
+       return Collections.emptyMap();
+    }
 }

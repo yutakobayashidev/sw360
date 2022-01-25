@@ -153,4 +153,6 @@ service UserService {
     list<string> getMessageError();
 
     set<string> getListFileLog();
+
+    map<string, list<string>> getAllMessageError()
 }
