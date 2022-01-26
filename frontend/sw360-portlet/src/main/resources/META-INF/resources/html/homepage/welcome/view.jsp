@@ -64,3 +64,13 @@
 		</div>
 	</core_rt:if>
 </div>
+
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+<script>
+	require(['jquery'], function($){
+		let signedIn = "${themeDisplay.signedIn}";
+		if (signedIn == 'false') {
+			$('#p_p_id_com_liferay_product_navigation_user_personal_bar_web_portlet_ProductNavigationUserPersonalBarPortlet_').hide();
+		}
+	});
+</script>
