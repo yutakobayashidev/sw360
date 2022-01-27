@@ -150,9 +150,9 @@ service UserService {
 
     map<string, list<User>> getAllUserByDepartment();
 
-    list<string> getMessageError();
-
     set<string> getListFileLog();
 
-    map<string, list<string>> getAllMessageError()
+    map<string, list<string>> getAllMessageError();
+
+    string getLastModifiedFileName();
 }

@@ -17,9 +17,10 @@ import org.osgi.service.component.annotations.ConfigurationPolicy;
 
 import javax.portlet.*;
 import java.io.IOException;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static org.eclipse.sw360.portal.common.PortalConstants.DEPARTMENT_PORTLET_NAME;
 
@@ -54,8 +55,12 @@ public class DepartmentPortlet extends Sw360Portlet {
             UserService.Iface userClient = thriftClients.makeUserClient();
             Map<String, List<User>> listMap = userClient.getAllUserByDepartment();
             request.setAttribute(PortalConstants.DEPARTMENT_LIST, listMap);
-            Map<String,List<String>> allMessageError = userClient.getAllMessageError();
-            request.setAttribute("allMessageError",allMessageError);
+            Map<String, List<String>> allMessageError = userClient.getAllMessageError();
+            LinkedHashMap<String, List<String>> sortedMap = new LinkedHashMap<>();
+            allMessageError.entrySet().stream().sorted(Map.Entry.comparingByKey(Comparator.reverseOrder()))
+                    .forEachOrdered(x -> sortedMap.put(x.getKey(), x.getValue()));
+            request.setAttribute("allMessageError", sortedMap);
+            request.setAttribute("lastFileName", userClient.getLastModifiedFileName());
             User user = UserCacheHolder.getUserFromRequest(request);
             ScheduleService.Iface scheduleClient = new ThriftClients().makeScheduleClient();
             boolean isDepartmentScheduled = isDepartmentScheduled(scheduleClient, user);

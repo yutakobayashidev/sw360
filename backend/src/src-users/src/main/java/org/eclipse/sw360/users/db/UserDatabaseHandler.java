@@ -59,6 +59,7 @@ public class UserDatabaseHandler {
     private static final Logger log = LogManager.getLogger(UserDatabaseHandler.class);
     private static final String DEPARTMENT = "DEPARTMENT";
     private ReadFileRedmineConfig readFileRedmineConfig;
+    StringBuilder message = new StringBuilder();
 
     public UserDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws IOException {
         // Create the connector
@@ -147,6 +148,7 @@ public class UserDatabaseHandler {
 
     public void importFileToDB(String pathFolder) {
         try {
+            message.append("INFO Begin import file \n");
             List<User> users = repository.getAll();
             userDTOMap = new HashMap<>();
             for (User user : users) {
@@ -164,11 +166,13 @@ public class UserDatabaseHandler {
                     repository.update(value.convertToUserUpdate());
                 }
             });
+            message.append("INFO End import file \n");
         } catch (IOException e) {
             log.error("Can't read file: {}", e.getMessage());
-            RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
-            FileUtil.writeErrorToFile(e.getMessage(), configDTO.getPathFolder());
+            message.append("ERROR ").append(e.getMessage()).append("\n");
         }
+        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+        FileUtil.message(message.toString(), configDTO.getPathFolderLog());
     }
 
     private void checkFileFormat(String pathFile) {
@@ -182,7 +186,9 @@ public class UserDatabaseHandler {
 
     public void readFileCsv(String filePath) {
         try {
+            message.append("INFO Begin read file csv \n");
             File file = new File(filePath);
+            message.append("INFO Read file csv: ").append(file.getName()).append("\n");
             CSVReader reader = new CSVReaderBuilder(new FileReader(file)).withSkipLines(1).build();
             List<String[]> rows = reader.readAll();
             String mapTemp = "";
@@ -192,15 +198,18 @@ public class UserDatabaseHandler {
                     checkUser(row[1], mapTemp);
                 }
             }
+            message.append("INFO End read file csv: ").append(file.getName()).append("\n");
         } catch (IOException | CsvException e) {
             log.error("Can't read file csv: {}", e.getMessage());
-            RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
-            FileUtil.writeErrorToFile(e.getMessage(), configDTO.getPathFolder());
+            message.append("ERROR ").append(e.getMessage());
         }
+        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+        FileUtil.message(message.toString(), configDTO.getPathFolderLog());
     }
 
     public void readFileExcel(String filePath) {
         Workbook wb = null;
+        message.append("INFO Begin read file excel \n");
         try (InputStream inp = new FileInputStream(filePath)) {
             wb = WorkbookFactory.create(inp);
             Sheet sheet = wb.getSheetAt(0);
@@ -216,8 +225,7 @@ public class UserDatabaseHandler {
             }
         } catch (Exception ex) {
             log.error("Can't read file excel: {}", ex.getMessage());
-            RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
-            FileUtil.writeErrorToFile(ex.getMessage(), configDTO.getPathFolder());
+            message.append("ERROR ").append(ex.getMessage());
         } finally {
             try {
                 if (wb != null) wb.close();
@@ -225,6 +233,8 @@ public class UserDatabaseHandler {
                 log.error(e.getMessage());
             }
         }
+        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+        FileUtil.writeErrorToFile(message.toString(), configDTO.getPathFolderLog());
     }
 
     public static boolean isRowEmpty(Row row) {
@@ -281,4 +291,5 @@ public class UserDatabaseHandler {
         }
         return listMap;
     }
+
 }

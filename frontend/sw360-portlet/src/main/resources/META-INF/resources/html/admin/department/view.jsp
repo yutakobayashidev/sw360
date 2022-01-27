@@ -25,8 +25,16 @@
 <portlet:actionURL var="scheduleDepartmentManuallyURL" name="importDepartmentManually">
 </portlet:actionURL>
 <jsp:useBean id="departmentList" scope="request" class="java.util.HashMap"/>
-<portlet:actionURL var="showMessageErrors" name="showMessageErrors">
-</portlet:actionURL>
+<jsp:useBean id="allMessageError" scope="request" class="java.util.HashMap"/>
+<jsp:useBean id="lastFileName" scope="request" class="java.lang.String"/>
+<style>
+    .error-none{
+        display: none;
+    }
+    #content-${lastFileName}{
+        display: block;
+    }
+</style>
 <div class="container">
     <div class="row">
         <div class="col">
@@ -135,13 +143,21 @@
                 </div>
                 <div class="modal-body">
                     <div id="header-log-error">
-                        <core_rt:forEach var="lf" items="${allMessageError}">
-                            <div onclick="showFileError('${lf.key}')">${lf.key}</div>
-                        </core_rt:forEach>
+                        <label for="file-log">File log</label>
+                        <select class="form-control" id="file-log">
+                            <core_rt:forEach var="errorMessage" items="${allMessageError}">
+                                <option value="${errorMessage.key}" ${errorMessage.key == lastFileName ? 'selected' : ''}>${errorMessage.key}</option>
+                            </core_rt:forEach>
+                        </select>
                     </div>
+                    <hr>
                     <div id="content-log-error">
-                        <core_rt:forEach var="lf" items="${allMessageError}">
-                            <div id="content-${lf.key}" class="content-errors d-xl-none">${lf.value}</div>
+                        <core_rt:forEach var="errorMessage" items="${allMessageError}">
+                            <div id="content-${errorMessage.key}" class="content-errors error-none">
+                                <core_rt:forEach var="error" items="${errorMessage.value}">
+                                    <p>${error}</p>
+                                </core_rt:forEach>
+                            </div>
                         </core_rt:forEach>
                     </div>
                 </div>
@@ -156,6 +172,7 @@
         require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'modules/dialog'], function ($, datatables, quickfilter, dialog) {
             var usersTable;
             $('#view-log').on('click', showDialog);
+
             function showDialog() {
                 $dialog = dialog.open('#deleteComponentDialog');
             }
@@ -185,11 +202,10 @@
             }
         });
     });
-
-    function showFileError(key) {
-        console.log(key);
+    $('#file-log').on('change', function() {
         $('.content-errors').hide();
-        $('#content-' + key).show();
-    }
+        $('#content-' + this.value).show();
+    });
+
 </script>
 

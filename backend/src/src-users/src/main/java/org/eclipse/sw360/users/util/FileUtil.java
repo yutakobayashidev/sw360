@@ -10,13 +10,15 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class FileUtil {
     private static final String EXTENSION = ".log";
-    private static final String FOLDER_LOG = "/logs/";
     private static final DateTimeFormatter format = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
 
     private FileUtil() {
@@ -25,10 +27,9 @@ public class FileUtil {
     public static void writeErrorToFile(String messageError, String folder) {
         BufferedWriter writer = null;
         FileWriter fileWriter = null;
-        String error = LocalDateTime.now().format(format) + " ERROR: " + messageError;
         try {
-            LocalDate now = LocalDate.now();
-            String path = folder + FOLDER_LOG + now + EXTENSION;
+            String error = LocalDateTime.now().format(format) + " " + messageError;
+            String path = folder + LocalDate.now() + EXTENSION;
             File file = new File(path);
             if (file.exists()) {
                 fileWriter = new FileWriter(file, true);
@@ -61,7 +62,7 @@ public class FileUtil {
     }
 
     public static File getFileLastModified(String directoryFilePath) {
-        File directory = new File(directoryFilePath + FOLDER_LOG);
+        File directory = new File(directoryFilePath);
         File[] files = directory.listFiles(File::isFile);
         long lastModifiedTime = Long.MIN_VALUE;
         File chosenFile = null;
@@ -97,13 +98,9 @@ public class FileUtil {
         }
     }
 
-    public static Map<String, List<String>> getAllLog(String pathFolder) throws IOException {
-        Set<String> fileNames = listFilesUsingFileWalk(pathFolder + FOLDER_LOG);
-        Map<String, List<String>> data = new HashMap<>();
-        for (String fileName : fileNames) {
-            data.put(fileName.replace(EXTENSION, ""), readFileError(pathFolder + FOLDER_LOG + fileName));
-        }
-        return data;
+    public static void message(String message, String pathFolder) {
+        List<String> strings = Arrays.asList(message.split("\n"));
+        strings.forEach(s -> FileUtil.writeErrorToFile(s, pathFolder));
     }
 
 }
