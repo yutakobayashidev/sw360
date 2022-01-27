@@ -1387,7 +1387,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(user, inputStream, attachmentContentId, ext);
                 return spdxBOMImporter.importSpdxBOMAsProject(sourceFile, attachmentContent);
             }
-        } catch (InvalidSPDXAnalysisException | IOException e) {
+        } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
         }
     }

@@ -22,7 +22,6 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.spdx.annotations.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
-import org.eclipse.sw360.datahandler.thrift.spdx.fileinformation.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.*;
@@ -42,11 +41,9 @@ import org.spdx.tools.InvalidFileNameException;
 import org.spdx.tools.SpdxToolsHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -72,7 +69,7 @@ public class SpdxBOMImporter {
         }
 
         try {
-            final List<SpdxElement> describedPackages = new ArrayList(spdxDocument.getDocumentDescribes());
+            final List<SpdxElement> describedPackages = spdxDocument.getDocumentDescribes().stream().collect(Collectors.toList());
             final List<SpdxElement> packages =  describedPackages.stream()
             .filter(item -> item instanceof SpdxPackage)
             .collect(Collectors.toList());
@@ -113,8 +110,7 @@ public class SpdxBOMImporter {
     private SpdxDocument openAsSpdx(File file){
         try {
             log.info("Read file: " + file.getName());
-            SpdxDocument spdxDocument =  SpdxToolsHelper.deserializeDocument(file);
-            return spdxDocument;
+            return SpdxToolsHelper.deserializeDocument(file);
         } catch (InvalidSPDXAnalysisException | IOException | InvalidFileNameException e) {
             log.error("Error read file " + file.getName() + " to SpdxDocument");
             e.printStackTrace();
@@ -123,23 +119,22 @@ public class SpdxBOMImporter {
     }
 
     public RequestSummary importSpdxBOMAsProject(File file, AttachmentContent attachmentContent)
-            throws InvalidSPDXAnalysisException, SW360Exception {
+            throws SW360Exception {
         return importSpdxBOM(file, attachmentContent, SW360Constants.TYPE_PROJECT);
     }
 
     private RequestSummary importSpdxBOM(File file, AttachmentContent attachmentContent, String type)
-            throws InvalidSPDXAnalysisException, SW360Exception {
+            throws SW360Exception {
         return importSpdxBOM(file, attachmentContent, type, null, null);
     }
 
     private RequestSummary importSpdxBOM(File file, AttachmentContent attachmentContent, String type, String newReleaseVersion, String releaseId)
             throws SW360Exception {
         final RequestSummary requestSummary = new RequestSummary();
-        SpdxDocument spdxDocument = null;
         List<SpdxElement> describedPackages = new ArrayList<>();
         try {
-            spdxDocument = openAsSpdx(file);
-            describedPackages = new ArrayList(spdxDocument.getDocumentDescribes());
+            SpdxDocument spdxDocument = openAsSpdx(file);
+            describedPackages = spdxDocument.getDocumentDescribes().stream().collect(Collectors.toList());
             List<SpdxElement> packages = describedPackages.stream()
             .filter(item -> item instanceof SpdxPackage)
             .collect(Collectors.toList());
@@ -179,7 +174,7 @@ public class SpdxBOMImporter {
                 requestSummary.setTotalElements(-1);
                 requestSummary.setMessage("Failed to import the BOM as type=[" + type + "].");
             }
-        } catch (InvalidSPDXAnalysisException e) {
+        } catch (InvalidSPDXAnalysisException | NullPointerException e) {
             log.error("Can not open file to SpdxDocument " +e);
         }
 
@@ -235,7 +230,7 @@ public class SpdxBOMImporter {
     }
 
     private Set<Annotations> createAnnotationsFromSpdxAnnotations(List<Annotation> spdxAnnotations) throws InvalidSPDXAnalysisException {
-        Set<Annotations> annotations = new HashSet<Annotations>();
+        Set<Annotations> annotations = new HashSet<>();
         int index = 0;
 
         for(Annotation spdxAnn : spdxAnnotations) {
@@ -259,7 +254,7 @@ public class SpdxBOMImporter {
     }
 
     private Set<SnippetInformation> createSnippetsFromSpdxSnippets(List<SpdxSnippet> spdxSnippets) {
-        Set<SnippetInformation> snippets = new HashSet<SnippetInformation>();
+        Set<SnippetInformation> snippets = new HashSet<>();
         int index = 0;
 
         try {
@@ -319,7 +314,7 @@ public class SpdxBOMImporter {
                 .setReference(spdxLineRange.getStartPointer().getReference().getId())
                 .setIndex(1);
 
-        return new HashSet<SnippetRange>(Arrays.asList(snippetByteRange, snippetLineRange));
+        return new HashSet<>(Arrays.asList(snippetByteRange, snippetLineRange));
     }
 
     // // refer to rangeToStr function of spdx-tools
@@ -354,7 +349,7 @@ public class SpdxBOMImporter {
     }
 
     private Set<RelationshipsBetweenSPDXElements> createRelationshipsFromSpdxRelationships(List<Relationship> spdxRelationships, String spdxElementId) throws InvalidSPDXAnalysisException {
-        Set<RelationshipsBetweenSPDXElements> relationships = new HashSet<RelationshipsBetweenSPDXElements>();
+        Set<RelationshipsBetweenSPDXElements> relationships = new HashSet<>();
         int index = 0;
 
         for (Relationship spdxRelationship : spdxRelationships) {
@@ -379,14 +374,14 @@ public class SpdxBOMImporter {
     }
 
     private Set<OtherLicensingInformationDetected> createOtherLicensesFromSpdxExtractedLicenses(List<ExtractedLicenseInfo> spdxExtractedLicenses) throws InvalidSPDXAnalysisException {
-        Set<OtherLicensingInformationDetected> otherLicenses = new HashSet<OtherLicensingInformationDetected>();
+        Set<OtherLicensingInformationDetected> otherLicenses = new HashSet<>();
         int index = 0;
 
         for (ExtractedLicenseInfo spdxExtractedLicense : spdxExtractedLicenses) {
             String licenseId = spdxExtractedLicense.getLicenseId();
             String extractedText = spdxExtractedLicense.getExtractedText();
             String name = spdxExtractedLicense.getName();
-            Set<String> crossRef = new HashSet<String>(Arrays.asList(verifyOrSetDefault(spdxExtractedLicense.getCrossRef().toArray(new String[spdxExtractedLicense.getCrossRef().size()]))));
+            Set<String> crossRef = new HashSet<>(Arrays.asList(verifyOrSetDefault(spdxExtractedLicense.getCrossRef().toArray(new String[spdxExtractedLicense.getCrossRef().size()]))));
             String comment = spdxExtractedLicense.getComment();
 
             OtherLicensingInformationDetected otherLicense = new OtherLicensingInformationDetected();
@@ -440,7 +435,7 @@ public class SpdxBOMImporter {
     }
 
     private Set<ExternalDocumentReferences> createExternalDocumentRefsFromSpdxDocument(SpdxDocument spdxDocument) {
-        Set<ExternalDocumentReferences> refs = new HashSet<ExternalDocumentReferences>();
+        Set<ExternalDocumentReferences> refs = new HashSet<>();
         int index = 0;
 
         try {
@@ -472,7 +467,7 @@ public class SpdxBOMImporter {
     }
 
     private Set<Creator> createCreatorFromSpdxDocument(SpdxDocument spdxDocument) {
-        Set<Creator> creators = new HashSet<Creator>();
+        Set<Creator> creators = new HashSet<>();
         int index = 0;
 
         try {
@@ -558,7 +553,7 @@ public class SpdxBOMImporter {
             final String summary = getValue(spdxPackage.getSummary());
             final String description = getValue(spdxPackage.getDescription());
             final String comment = getValue(spdxPackage.getComment());
-            final Set<String> attributionText = new HashSet<String>(Arrays.asList(verifyOrSetDefault(spdxPackage.getAttributionText().toArray(new String [spdxPackage.getAttributionText().size()]))));
+            final Set<String> attributionText = new HashSet<>(Arrays.asList(verifyOrSetDefault(spdxPackage.getAttributionText().toArray(new String [spdxPackage.getAttributionText().size()]))));
             final Set<Annotations> annotations = createAnnotationsFromSpdxAnnotations(List.copyOf(spdxPackage.getAnnotations()));
 
             pInfo.setName(verifyOrSetDefault(name))
@@ -595,7 +590,7 @@ public class SpdxBOMImporter {
         try {
             PackageVerificationCode PVC = new PackageVerificationCode();
             SpdxPackageVerificationCode spdxPVC = spdxPackage.getPackageVerificationCode().orElse(null);
-            Set<String> excludedFileNames = new HashSet<String>(Arrays.asList(verifyOrSetDefault(spdxPVC.getExcludedFileNames().toArray(new String [spdxPVC.getExcludedFileNames().size()]))));
+            Set<String> excludedFileNames = new HashSet<>(Arrays.asList(verifyOrSetDefault(spdxPVC.getExcludedFileNames().toArray(new String [spdxPVC.getExcludedFileNames().size()]))));
             String value = spdxPVC.getValue();
 
             PVC.setExcludedFiles(excludedFileNames)
@@ -608,7 +603,7 @@ public class SpdxBOMImporter {
     }
 
     private Set<ExternalReference> createExternalReferenceFromSpdxPackage(SpdxPackage spdxPackage) {
-        Set<ExternalReference> refs = new HashSet<ExternalReference>();
+        Set<ExternalReference> refs = new HashSet<>();
         int index = 0;
 
         try {
@@ -637,7 +632,7 @@ public class SpdxBOMImporter {
     }
 
     private Set<CheckSum> createCheckSumsFromSpdxChecksums(SpdxPackage spdxPackage) {
-        Set<CheckSum> checksums = new HashSet<CheckSum>();
+        Set<CheckSum> checksums = new HashSet<>();
         int index = 0;
         try {
             List<Checksum> spdxChecksums = List.copyOf(spdxPackage.getChecksums());
@@ -733,8 +728,7 @@ public class SpdxBOMImporter {
         final String spdxDocId = spdxDocRes.getId();
 
         final DocumentCreationInformation docCreationInfo = createDocumentCreationInfoFromSpdxDocument(spdxDocId, spdxDocument);
-        final SpdxBOMImporterSink.Response docCreationInfoRes = sink.addOrUpdateDocumentCreationInformation(docCreationInfo);
-        final String docCreationInfoId = docCreationInfoRes.getId();
+        sink.addOrUpdateDocumentCreationInformation(docCreationInfo);
 
         final List<SpdxPackage> allPackages = new ArrayList<>();
         try(@SuppressWarnings("unchecked")
@@ -761,11 +755,11 @@ public class SpdxBOMImporter {
                 packageInfo.setIndex(index);
                 index ++;
             }
-            SpdxBOMImporterSink.Response packageInfoRes = sink.addOrUpdatePackageInformation(packageInfo);
+            sink.addOrUpdatePackageInformation(packageInfo);
         }
     }
 
-    private SPDXDocument getSpdxDocumentFromRelease(String releaseId) throws SW360Exception, MalformedURLException {
+    private SPDXDocument getSpdxDocumentFromRelease(String releaseId) throws SW360Exception {
         SPDXDocument spdxDoc;
         final Release release = sink.getRelease(releaseId);
         if (release.isSetSpdxId()) {
@@ -776,7 +770,7 @@ public class SpdxBOMImporter {
         return spdxDoc;
     }
 
-    private DocumentCreationInformation getDocCreationInfoFromSpdxDocument(String spdxDocId) throws SW360Exception, MalformedURLException {
+    private DocumentCreationInformation getDocCreationInfoFromSpdxDocument(String spdxDocId) throws SW360Exception {
         DocumentCreationInformation info;
         final SPDXDocument spdxDoc = sink.getSPDXDocument(spdxDocId);
         if (spdxDoc.isSetSpdxDocumentCreationInfoId()) {
@@ -787,7 +781,7 @@ public class SpdxBOMImporter {
         return info;
     }
 
-    private PackageInformation getPackageInformationFromSpdxDocument(String spdxDocId, String packageName) throws SW360Exception, MalformedURLException {
+    private PackageInformation getPackageInformationFromSpdxDocument(String spdxDocId, String packageName) throws SW360Exception {
         PackageInformation info;
         final SPDXDocument spdxDoc = sink.getSPDXDocument(spdxDocId);
         if (spdxDoc.getSpdxPackageInfoIdsSize() > 0) {

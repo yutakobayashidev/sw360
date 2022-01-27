@@ -64,20 +64,14 @@ import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.eclipse.sw360.spdx.SpdxBOMExporter;
 import org.eclipse.sw360.spdx.SpdxBOMExporterSink;
 import org.jetbrains.annotations.NotNull;
-import org.spdx.tools.SpdxConverter;
-import org.spdx.tools.SpdxConverterException;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -2171,15 +2165,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public ImportBomRequestPreparation prepareImportBom(User user, String attachmentContentId) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
         final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
-        String sourceFilePath = null;
-        String targetFilePath = null;
+
         try {
             final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
             try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
                 final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
                 final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
 
-                InputStream spdxInputStream = null;
                 String fileType = getFileType(attachmentContent.getFilename());
                 final String ext = "." + fileType;
                 final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(user, inputStream, attachmentContentId, ext);
@@ -2205,14 +2197,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
-        }
-    }
-
-    public static void printResults(Process process) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        String line = "";
-        while ((line = reader.readLine()) != null) {
-            log.info(line);
         }
     }
 

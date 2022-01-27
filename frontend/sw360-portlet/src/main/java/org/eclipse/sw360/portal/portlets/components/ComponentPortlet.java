@@ -106,8 +106,6 @@ import static org.eclipse.sw360.portal.common.PortalConstants.*;
 import static org.eclipse.sw360.portal.common.PortletUtils.getVerificationState;
 
 import org.apache.thrift.protocol.TType;
-import org.apache.xmlbeans.impl.common.SniffedXmlInputStream;
-
 @org.osgi.service.component.annotations.Component(
     immediate = true,
     properties = {
