@@ -92,7 +92,9 @@
                 deleteVendor(data.vendorId, data.vendorName);
             });
             $('#vendorsTable').on('click', 'svg.edit', function (event) {
+
                 var data = $(event.currentTarget).data();
+				console.log(data)
                 window.location.href = createDetailURLfromVendorId(data.vendorId);
             });
             $('#vendorsTable').on('click', 'svg.merge', function (event) {

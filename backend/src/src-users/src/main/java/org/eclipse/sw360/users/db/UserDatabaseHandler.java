@@ -17,6 +17,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.xmlbeans.impl.xb.xsdschema.Attribute;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
@@ -59,7 +60,7 @@ public class UserDatabaseHandler {
     private UserSearchHandler userSearchHandler;
     private Map<String, UserDTO> userDTOMap;
     private static final Logger log = LogManager.getLogger(UserDatabaseHandler.class);
-    private static final String  DEPARTMENT = "DEPARTMENT";
+    private static final String DEPARTMENT = "DEPARTMENT";
 
     public UserDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws IOException {
         // Create the connector
@@ -270,17 +271,125 @@ public class UserDatabaseHandler {
         List<User> users = repository.getAll();
         Map<String, List<User>> listMap = new HashMap<>();
         for (User user : users) {
-            user.getSecondaryDepartmentsAndRoles().forEach((key, value) -> {
-                if (listMap.containsKey(key)) {
-                    List<User> list = listMap.get(key);
-                    list.add(user);
-                } else {
-                    List<User> list = new ArrayList<>();
-                    list.add(user);
-                    listMap.put(key, list);
-                }
-            });
+            if (user.getSecondaryDepartmentsAndRoles() != null) {
+                user.getSecondaryDepartmentsAndRoles().forEach((key, value) -> {
+                    if (listMap.containsKey(key)) {
+                        List<User> list = listMap.get(key);
+                        list.add(user);
+                    } else {
+                        List<User> list = new ArrayList<>();
+                        list.add(user);
+                        listMap.put(key, list);
+                    }
+                });
+            }
         }
         return listMap;
+    }
+
+    public Map<String, List<User>> searchUsersByDepartment(String departmentKey) {
+        Map<String, List<User>> listMap = getAllUserByDepartment();
+        Map<String, List<User>> mapByDepartment = new HashMap<>();
+        List<User> users = new ArrayList<>();
+
+        for (Map.Entry<String, List<User>> entry : listMap.entrySet()) {
+            if (entry.getKey().equals(departmentKey)) {
+                users = entry.getValue();
+                mapByDepartment.put(entry.getKey(), users);
+            }
+        }
+        return mapByDepartment;
+    }
+
+    public List<String> getAllDepartment() {
+        Map<String, List<User>> listMap = getAllUserByDepartment();
+        List<String> departments = new ArrayList<>();
+        for (Map.Entry<String, List<User>> entry : listMap.entrySet()) {
+            departments.add(entry.getKey());
+        }
+        return departments;
+    }
+
+    public List<String> getAllEmailByDepartment(String departmentKey) {
+        Map<String, List<User>> listMap = getAllUserByDepartment();
+        List<String> emails = new ArrayList<>();
+        List<User> users = new ArrayList<>();
+
+        for (Map.Entry<String, List<User>> entry : listMap.entrySet()) {
+            if (entry.getKey().equals(departmentKey)) {
+                users = entry.getValue();
+            }
+        }
+        for (User user : users) {
+            emails.add(user.getEmail());
+        }
+        return emails;
+    }
+
+    public List<String> getAllEmailOtherDepartment(String departmentKey) {
+
+        List<String> emailsbyDepartment = getAllEmailByDepartment(departmentKey);
+        List<String> emailByListUser = new ArrayList<>();
+        List<User> users = repository.getAll();
+        for (User user : users) {
+            emailByListUser.add(user.getEmail());
+        }
+        List<String> emailOtherDepartment = new ArrayList<>(emailByListUser);
+        emailOtherDepartment.removeAll(emailsbyDepartment);
+        return emailOtherDepartment;
+    }
+
+    public void updateDepartmentToUser(String email, String department) {
+        log.info("===========UpdateDepartmentToUser=========" + email + department);
+        List<User> users = repository.getAll();
+        User user = checkEmail(email);
+        Map<String, Set<UserGroup>> map = new HashMap<>();
+        map = user.getSecondaryDepartmentsAndRoles();
+        Set<UserGroup> userGroups = new HashSet<>();
+        for (Map.Entry<String, Set<UserGroup>> entry : map.entrySet()) {
+            if (entry.getKey().equals(department)) {
+                userGroups = entry.getValue();
+            }
+        }
+        userGroups.add(UserGroup.USER);
+        map.put(department, userGroups);
+        user.setSecondaryDepartmentsAndRoles(map);
+        repository.update(user);
+    }
+
+    private User checkEmail(String email) {
+        List<User> users = repository.getAll();
+        User user = new User();
+        try {
+            for (User userCheck : users) {
+                if (userCheck.getEmail().equals(email)) {
+                    return userCheck;
+                }
+            }
+        } catch (NullPointerException ex) {
+            log.error("Error Not foud User from Email!", ex);
+        }
+        return user;
+    }
+
+    public void updateDepartmentToListUser(List<String> emails, String department) {
+        for (String email : emails) {
+            updateDepartmentToUser(email, department);
+        }
+    }
+
+    public void deleteDepartmentByEmail(String email, String departmentKey) {
+        User user = checkEmail(email);
+        Map<String, Set<UserGroup>> map = new HashMap<>();
+        map = user.getSecondaryDepartmentsAndRoles();
+        Set<UserGroup> userGroups = new HashSet<>();
+        for (Map.Entry<String, Set<UserGroup>> entry : map.entrySet()) {
+            if (entry.getKey().equals(departmentKey)) {
+                userGroups = entry.getValue();
+            }
+        }
+        map.remove(departmentKey, userGroups);
+        user.setSecondaryDepartmentsAndRoles(map);
+        repository.update(user);
     }
 }

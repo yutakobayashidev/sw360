@@ -160,4 +160,41 @@ public class UserHandler implements UserService.Iface {
     public Map<String, List<User>> getAllUserByDepartment() throws TException {
         return db.getAllUserByDepartment();
     }
+
+    @Override
+    public Map<String, List<User>> searchUsersByDepartment(String departmentKey) throws TException {
+        return db.searchUsersByDepartment(departmentKey);
+    }
+
+    @Override
+    public List<String> getAllDepartment() throws TException {
+        return db.getAllDepartment();
+    }
+
+    @Override
+    public List<String> getAllEmailByDepartment(String departmentKey) throws TException {
+        return db.getAllEmailByDepartment(departmentKey);
+    }
+
+    @Override
+    public List<String> getAllEmailOtherDepartment(String departmentKey) throws TException {
+        return db.getAllEmailOtherDepartment(departmentKey);
+    }
+
+    @Override
+    public void updateDepartmentToUser(String email, String department) throws TException {
+        db.updateDepartmentToUser(email,department);
+    }
+
+    @Override
+    public void updateDepartmentToListUser(List<String> emails, String department) throws TException {
+        db.updateDepartmentToListUser(emails,department);
+    }
+
+    @Override
+    public void deleteDepartmentByEmail(String email, String department) throws TException {
+        db.deleteDepartmentByEmail(email,department);
+    }
+
+
 }

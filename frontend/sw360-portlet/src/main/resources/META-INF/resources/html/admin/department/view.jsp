@@ -7,7 +7,9 @@
   ~
   ~ SPDX-License-Identifier: EPL-2.0
   --%>
-
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
+<%@ page import="javax.portlet.PortletRequest" %>
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
 <%@ include file="/html/init.jsp" %>
 <%--&lt;%&ndash; the following is needed by liferay to display error messages&ndash;%&gt;--%>
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf" %>
@@ -24,6 +26,9 @@
 </portlet:actionURL>
 <portlet:actionURL var="scheduleDepartmentManuallyURL" name="importDepartmentManually">
 </portlet:actionURL>
+
+
+
 <div class="container">
     <div class="row">
         <div class="col">
@@ -81,14 +86,14 @@
                                 <td>
                                     <div style="width:100%; max-height:210px; overflow:auto">
                                         <core_rt:forEach var="secondDepartment" items="${department.value}" varStatus="loop">
-                                            <span>${loop.index + 1}.</span>          <span><sw360:out value="${secondDepartment.email}"/></span>
+                                            <span>${loop.index + 1}.</span><span><sw360:out value="${secondDepartment.email}"/></span>
                                             </br>
                                         </core_rt:forEach>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="actions">
-                                        <svg class="editDepartment lexicon-icon">
+                                        <svg class="editDepartment lexicon-icon" data-map="${department.key}">
                                             <title><liferay-ui:message key="edit"/></title>
                                             <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/>
                                         </svg>
@@ -115,11 +120,25 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     AUI().use('liferay-portlet-url', function () {
+        var PortletURL = Liferay.PortletURL;
         require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'modules/dialog'], function ($, datatables, quickfilter, dialog) {
-            var usersTable;
-
+            var usersTable,
+            departmentKeyInURL ='<%=PortalConstants.DEPARTMENT_KEY%>',
+            pageName = '<%=PortalConstants.PAGENAME%>';
+            pageEdit = '<%=PortalConstants.PAGENAME_EDIT%>';
+            baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
             // initializing
             usersTable = createExistingUserTable('#userTable');
+
+
+            $('#userTable').on('click', 'svg.editDepartment', function (event) {
+                 var data= $(event.currentTarget).data();
+                 window.location.href = createDetailURLfromDepartmentKey(data.map);
+            });
+            function createDetailURLfromDepartmentKey (paramVal) {
+                var portletURL = PortletURL.createURL( baseUrl ).setParameter(pageName, pageEdit).setParameter(departmentKeyInURL, paramVal);
+                return portletURL.toString();
+            }
 
             function createExistingUserTable(tableSelector) {
                 return datatables.create(tableSelector, {

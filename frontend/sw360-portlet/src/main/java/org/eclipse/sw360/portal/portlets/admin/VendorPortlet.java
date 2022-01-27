@@ -217,6 +217,7 @@ public class VendorPortlet extends Sw360Portlet {
 
     @UsedAsLiferayAction
     public void removeVendor(ActionRequest request, ActionResponse response) throws IOException, PortletException {
+        log.info("UsedAsLiferayAction--------------------removeVendor");
         final RequestStatus requestStatus = ComponentPortletUtils.deleteVendor(request, log);
         setSessionMessage(request, requestStatus, "Vendor", "delete");
         response.setRenderParameter(PAGENAME, PAGENAME_VIEW);

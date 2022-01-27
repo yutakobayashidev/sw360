@@ -18,12 +18,14 @@ import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.PortletUtils;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
+import org.graalvm.compiler.lir.LIRInstruction;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.ResourceRequest;
@@ -164,6 +166,17 @@ public abstract class ComponentPortletUtils {
         setFieldValue(request, vendor, Vendor._Fields.URL);
     }
 
+    public static List<String> updateUserFromRequest(PortletRequest request) {
+        List<String> emails=new ArrayList<>();
+        System.out.println("---------------------email-ADD_LIST_EMAIL---------------");
+            String  [] emailsRequest=request.getParameterValues(PortalConstants.ADD_LIST_EMAIL);
+            for (int i = 0; i <emailsRequest.length ; i++) {
+                emails.add(emailsRequest[i]);
+            }
+            return emails;
+
+    }
+
     public static void updateTodoFromRequest(PortletRequest request, Obligation oblig) {
         setFieldValue(request, oblig, Obligation._Fields.TITLE);
         setFieldValue(request, oblig, Obligation._Fields.TEXT);
@@ -213,6 +226,10 @@ public abstract class ComponentPortletUtils {
         PortletUtils.setFieldValue(request, vendor, field, Vendor.metaDataMap.get(field), "");
     }
 
+    private static void setFieldValue(PortletRequest request, User user, User._Fields field) {
+        PortletUtils.setFieldValue(request, user, field, User.metaDataMap.get(field), "");
+    }
+
     private static void setFieldValue(PortletRequest request, Obligation oblig, Obligation._Fields field) {
         PortletUtils.setFieldValue(request, oblig, field, Obligation.metaDataMap.get(field), "");
     }
@@ -239,6 +256,31 @@ public abstract class ComponentPortletUtils {
             }
         }
         return RequestStatus.FAILURE;
+    }
+    public static RequestStatus deleteDepartment(PortletRequest request, Logger log) {
+
+        String email=request.getParameter("email");
+        String departmentKey = request.getParameter(PortalConstants.DEPARTMENT_KEY);
+        log.info("------------departmentKey key-------------"+departmentKey);
+        log.info("------------email key-------------"+email);
+        if (departmentKey != null) {
+            try {
+                User user = UserCacheHolder.getUserFromRequest(request);
+                ThriftClients thriftClients = new ThriftClients();
+                ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+                UserService.Iface client = thriftClients.makeUserClient();
+
+                RequestStatus global_status = RequestStatus.SUCCESS;
+                if (global_status == RequestStatus.SUCCESS) {
+                     client.deleteDepartmentByEmail(email, departmentKey);
+                } else {
+                    return global_status;
+                }
+            } catch (TException e) {
+                log.error("Could not delete department from DB", e);
+            }
+        }
+        return RequestStatus.SUCCESS;
     }
 
     public static RequestStatus deleteVendor(PortletRequest request, Logger log) {

@@ -149,4 +149,16 @@ service UserService {
     RequestStatus importDepartmentSchedule();
 
     map<string, list<User>> getAllUserByDepartment();
+
+    map<string, list<User>> searchUsersByDepartment(1:string departmentKey);
+
+    list<string> getAllDepartment();
+
+    list<string>  getAllEmailByDepartment(string departmentKey);
+
+    list<string>  getAllEmailOtherDepartment(string departmentKey);
+    void updateDepartmentToUser(1: string email, 2: string department)
+    void updateDepartmentToListUser(1: list<string> emails, 2: string department)
+    void deleteDepartmentByEmail(1: string email, 2: string department)
+
 }

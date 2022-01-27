@@ -383,6 +383,19 @@ public class PortalConstants {
     public static final String DEPARTMENT_INTERVAL = "departmentInterval";
     public static final String DEPARTMENT_NEXT_SYNC = "departmentNextSync";
     public static final String DEPARTMENT_LIST = "departmentList";
+    public static final String DEPARTMENT_KEY = "departmentKey";
+    public static final String DEPARTMENT_NAME = "departmentName";
+    public static final String LIST_EMAIL_BY_DEPARTMENT = "departmentEmail";
+    public static final String LIST_EMAIL_OTHER_DEPARTMENT = "emails";
+    public static final String ADD_LIST_EMAIL = "listEmail";
+    public static final String EMAIL_FAKE = "fakeEmail";
+
+    public static final String EMAIL_OTHER_DEPARTMENT = "email";
+    public static final String EMAIL_TO_DELETE = "emailDelete";
+
+
+
+    public static final String REMOVE_DEPARTMENT_BY_EMAIL = "remove_department";
 
     //! Specialized keys for licenseInfo
     public static final String LICENSE_INFO_OUTPUT_FORMATS = "licenseInfoOutputFormats";
