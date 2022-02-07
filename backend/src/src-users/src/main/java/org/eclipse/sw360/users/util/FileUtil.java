@@ -11,7 +11,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -19,16 +18,16 @@ import java.util.stream.Stream;
 
 public class FileUtil {
     private static final String EXTENSION = ".log";
-    private static final DateTimeFormatter format = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+    private static final DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private FileUtil() {
     }
 
-    public static void writeErrorToFile(String messageError, String folder) {
+    public static void writeErrorToFile(String typeLog, String method, String messageError, String folder) {
         BufferedWriter writer = null;
         FileWriter fileWriter = null;
         try {
-            String error = LocalDateTime.now().format(format) + " " + messageError;
+            String error = LocalDateTime.now().format(format) + " " + typeLog + " " + " " + method + " - " + messageError;
             String path = folder + LocalDate.now() + EXTENSION;
             File file = new File(path);
             if (file.exists()) {
@@ -96,11 +95,6 @@ public class FileUtil {
                     .map(Path::toString)
                     .collect(Collectors.toSet());
         }
-    }
-
-    public static void message(String message, String pathFolder) {
-        List<String> strings = Arrays.asList(message.split("\n"));
-        strings.forEach(s -> FileUtil.writeErrorToFile(s, pathFolder));
     }
 
 }

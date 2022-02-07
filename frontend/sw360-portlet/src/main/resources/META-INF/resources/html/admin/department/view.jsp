@@ -28,10 +28,10 @@
 <jsp:useBean id="allMessageError" scope="request" class="java.util.HashMap"/>
 <jsp:useBean id="lastFileName" scope="request" class="java.lang.String"/>
 <style>
-    .error-none{
+    .error-none {
         display: none;
     }
-    #content-${lastFileName}{
+    #content-${lastFileName} {
         display: block;
     }
 </style>
@@ -92,9 +92,9 @@
                         <tbody>
                         <core_rt:forEach var="department" items="${departmentList}">
                             <tr>
-                                <td><sw360:out value="${department.key}"/></td>
+                                <td style="text-align: center"><sw360:out value="${department.key}"/></td>
                                 <td>
-                                    <div style="width:100%; max-height:210px; overflow:auto">
+                                    <div style="width:100%; max-height:515px; overflow:auto">
                                         <core_rt:forEach var="secondDepartment" items="${department.value}"
                                                          varStatus="loop">
                                             <span>${loop.index + 1}.</span> <span><sw360:out
@@ -144,11 +144,13 @@
                 <div class="modal-body">
                     <div id="header-log-error">
                         <label for="file-log">File log</label>
-                        <select class="form-control" id="file-log">
+                        <input list="file-logs" name="file-log" id="file-log"
+                               class="col-sm-12 custom-select custom-select-sm"/>
+                        <datalist id="file-logs">
                             <core_rt:forEach var="errorMessage" items="${allMessageError}">
                                 <option value="${errorMessage.key}" ${errorMessage.key == lastFileName ? 'selected' : ''}>${errorMessage.key}</option>
                             </core_rt:forEach>
-                        </select>
+                        </datalist>
                     </div>
                     <hr>
                     <div id="content-log-error">
@@ -190,7 +192,7 @@
                         {
                             "targets": 0,
                             "createdCell": function (td, cellData, rowData, row, col) {
-                                $(td).attr('title', 'click the icon to toggle obligation text');
+                                $(td).attr('title', 'click the icon to toggle department text');
                             }
                         },
                         {
@@ -202,7 +204,7 @@
             }
         });
     });
-    $('#file-log').on('change', function() {
+    $('#file-log').on('change', function () {
         $('.content-errors').hide();
         $('#content-' + this.value).show();
     });

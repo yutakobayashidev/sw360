@@ -59,7 +59,8 @@ public class UserDatabaseHandler {
     private static final Logger log = LogManager.getLogger(UserDatabaseHandler.class);
     private static final String DEPARTMENT = "DEPARTMENT";
     private ReadFileRedmineConfig readFileRedmineConfig;
-    StringBuilder message = new StringBuilder();
+    private static final String INFO = "INFO";
+    private static final String ERROR = "ERROR";
 
     public UserDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws IOException {
         // Create the connector
@@ -147,8 +148,11 @@ public class UserDatabaseHandler {
     }
 
     public void importFileToDB(String pathFolder) {
+        String functionName = new Object() {
+        }.getClass().getEnclosingMethod().getName();
+        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
         try {
-            message.append("INFO Begin import file \n");
+            FileUtil.writeErrorToFile(INFO, functionName, "START", configDTO.getPathFolderLog());
             List<User> users = repository.getAll();
             userDTOMap = new HashMap<>();
             for (User user : users) {
@@ -166,18 +170,16 @@ public class UserDatabaseHandler {
                     repository.update(value.convertToUserUpdate());
                 }
             });
-            message.append("INFO End import file \n");
+            FileUtil.writeErrorToFile(INFO, functionName, "END", configDTO.getPathFolderLog());
         } catch (IOException e) {
             log.error("Can't read file: {}", e.getMessage());
-            message.append("ERROR ").append(e.getMessage()).append("\n");
+            FileUtil.writeErrorToFile(ERROR, functionName, e.getMessage(), configDTO.getPathFolderLog());
         }
-        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
-        FileUtil.message(message.toString(), configDTO.getPathFolderLog());
     }
 
     private void checkFileFormat(String pathFile) {
         String extension = FilenameUtils.getExtension(pathFile);
-        if (extension.equalsIgnoreCase("xlsx")) {
+        if (extension.equalsIgnoreCase("xlsx") || extension.equalsIgnoreCase("xls")) {
             readFileExcel(pathFile);
         } else {
             readFileCsv(pathFile);
@@ -185,10 +187,13 @@ public class UserDatabaseHandler {
     }
 
     public void readFileCsv(String filePath) {
+        String functionName = new Object() {
+        }.getClass().getEnclosingMethod().getName();
+        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+        FileUtil.writeErrorToFile(INFO, functionName, "START", configDTO.getPathFolderLog());
         try {
-            message.append("INFO Begin read file csv \n");
             File file = new File(filePath);
-            message.append("INFO Read file csv: ").append(file.getName()).append("\n");
+            FileUtil.writeErrorToFile(INFO, functionName, file.getName(), configDTO.getPathFolderLog());
             CSVReader reader = new CSVReaderBuilder(new FileReader(file)).withSkipLines(1).build();
             List<String[]> rows = reader.readAll();
             String mapTemp = "";
@@ -198,19 +203,21 @@ public class UserDatabaseHandler {
                     checkUser(row[1], mapTemp);
                 }
             }
-            message.append("INFO End read file csv: ").append(file.getName()).append("\n");
+            FileUtil.writeErrorToFile(INFO, functionName, "END", configDTO.getPathFolderLog());
         } catch (IOException | CsvException e) {
             log.error("Can't read file csv: {}", e.getMessage());
-            message.append("ERROR ").append(e.getMessage());
+            FileUtil.writeErrorToFile(ERROR, functionName, e.getMessage(), configDTO.getPathFolderLog());
         }
-        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
-        FileUtil.message(message.toString(), configDTO.getPathFolderLog());
     }
 
     public void readFileExcel(String filePath) {
+        String functionName = new Object() {
+        }.getClass().getEnclosingMethod().getName();
+        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
         Workbook wb = null;
-        message.append("INFO Begin read file excel \n");
+        FileUtil.writeErrorToFile(INFO, functionName, "START", configDTO.getPathFolderLog());
         try (InputStream inp = new FileInputStream(filePath)) {
+            FileUtil.writeErrorToFile(INFO, functionName, FilenameUtils.getName(filePath), configDTO.getPathFolderLog());
             wb = WorkbookFactory.create(inp);
             Sheet sheet = wb.getSheetAt(0);
             Iterator<Row> rows = sheet.iterator();
@@ -223,9 +230,10 @@ public class UserDatabaseHandler {
                     checkUser(row.getCell(1).getStringCellValue(), mapTemp);
                 }
             }
+            FileUtil.writeErrorToFile(INFO, functionName, "END", configDTO.getPathFolderLog());
         } catch (Exception ex) {
             log.error("Can't read file excel: {}", ex.getMessage());
-            message.append("ERROR ").append(ex.getMessage());
+            FileUtil.writeErrorToFile(ERROR, functionName, ex.getMessage(), configDTO.getPathFolderLog());
         } finally {
             try {
                 if (wb != null) wb.close();
@@ -233,8 +241,6 @@ public class UserDatabaseHandler {
                 log.error(e.getMessage());
             }
         }
-        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
-        FileUtil.writeErrorToFile(message.toString(), configDTO.getPathFolderLog());
     }
 
     public static boolean isRowEmpty(Row row) {
