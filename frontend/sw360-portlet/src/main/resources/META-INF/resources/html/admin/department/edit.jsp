@@ -65,14 +65,13 @@
                 <div class="col">
                     <form id="departmentEditForm" name="departmentEditForm" action="<%=updateURL%>" method="post"
                           class="form needs-validation" novalidate>
-                        <table id="departmentEdit" class="table edit-table three-columns" >
-                            <thead>
-                            <tr>
-                                <%--                                <th><liferay-ui:message key="Edit Department"/></th>--%>
-                                <th><liferay-ui:message key="department"/></th>
-                                <th><liferay-ui:message key="member.emails"/></th>
-                            </tr>
-                            </thead>
+                        <table id="departmentEdit" class="table edit-table three-columns" style="text-align: center">
+<%--                            <thead>--%>
+<%--                            <tr>--%>
+<%--                                <th><liferay-ui:message key="department"/></th>--%>
+<%--                                <th><liferay-ui:message key="member.emails"/></th>--%>
+<%--                            </tr>--%>
+<%--                            </thead>--%>
                             <tbody>
 <%--                           <label > <b>Department</b></label><br><br>--%>
 <%--                            <tr >--%>
@@ -113,34 +112,46 @@
 
 
 <%--                            code clean--%>
-                            <tr>
+<%--                            <tr>--%>
                                 <input style="display: none;" type="text" id="emailFake"
                                        name="<portlet:namespace/><%=PortalConstants.EMAIL_FAKE%>" value=""/>
-                                <td><sw360:out value="${departmentKey}"/></td>
-                                <td id="nameEmailDiv">
-                                    <core_rt:forEach var="department" items="${departmentList}">
-                                        <core_rt:forEach var="secondDepartment" items="${department.value}"
-                                                         varStatus="loop">
-                                            <div id="${loop.index}">
-                                                <span>${loop.index + 1}.</span><span> <sw360:out
-                                                    value="${secondDepartment.email}"/></span>
+                                <tr ><sw360:out value="${departmentKey}"/></tr>
+                                <br/>
+                                <br/>
+                                <label>Email </label>
+                                <tr >
+                                    <table id="nameEmailDiv" cellspacing="0" cellpadding="0" >
+                                        <core_rt:forEach var="department" items="${departmentList}">
+                                            <div style="width:100%; max-height:210px; overflow:auto">
+                                        <core_rt:forEach var="secondDepartment" items="${department.value}" varStatus="loop">
+                                        <tr id="${loop.index}">
+                                            <td >
 
-                                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                                        <span>${loop.index + 1}.</span><span> <sw360:out
+                                                            value="${secondDepartment.email}"/></span>
+
+                                            </td>
+                                            <td>
                                                 <svg class="delete lexicon-icon"
                                                      data-map="${secondDepartment.email}"
                                                      data-id="${loop.index}" >
                                                     <title><liferay-ui:message key="delete"/></title>
                                                     <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
                                                 </svg>
+                                            </td>
+                                        </tr>
+                                        </core_rt:forEach>
                                             </div>
                                         </core_rt:forEach>
-                                    </core_rt:forEach>
+                                    </table>
                                     </br>
                                     <div>
                                         <%@include file="/html/utils/includes/addUser.jsp" %>
                                     </div>
-                                </td>
-                            </tr>
+                                </tr>
+<%--                 </td>--%>
+<%--                            </tr>--%>
+
 
                             </tbody>
                         </table>
@@ -160,13 +171,10 @@
 <%--<script>--%>
 <script >
     AUI().use('liferay-portlet-url', function () {
+
         require(['jquery', 'modules/dialog', 'modules/validation'], function ($, dialog, validation) {
             pageName = '<%=PortalConstants.PAGENAME%>';
             pageEdit = '<%=PortalConstants.PAGENAME_EDIT%>';
-            function createDetailURLfromDepartmentKey (paramVal) {
-                var portletURL = PortletURL.createURL( baseUrl ).setParameter(pageName, pageEdit).setParameter('<%=PortalConstants.DEPARTMENT_KEY%>', paramVal);
-                return portletURL.toString();
-            }
 
             validation.enableForm('#departmentEditForm');
 
@@ -188,15 +196,14 @@
                 $('#departmentEditForm').submit();
             });
 
-            $('#nameEmailDiv ').on('click', 'svg.delete', function (event) {
+            $('#nameEmailDiv').on('click', 'svg.delete', function (event) {
                 var data = $(event.currentTarget).data();
-                var department = "${departmentKey}";
                 var id = data.id;
-                deleteDepartment(data.map, department, id);
-                window.location.href = createDetailURLfromDepartmentKey("${departmentKey}");
+                deleteDepartment(data.map, id);
+
             });
 
-            function deleteDepartment(email, departmentKey, id) {
+            function deleteDepartment(email, id) {
                 var $dialog;
                 function deleteDepartmentInternal(callback) {
                     jQuery.ajax({
@@ -212,6 +219,7 @@
                             if (data.result == 'SUCCESS') {
                                 console.log(data);
                                 $('#nameEmailDiv #' + id).remove();
+
                                 $dialog.close();
                             } else if (data.result == 'ACCESS_DENIED') {
                                 $dialog.alert('<liferay-ui:message key="do.you.really.want.to.delete.user.x" />');
@@ -219,6 +227,7 @@
                                 $dialog.alert("<liferay-ui:message key="i.could.not.delete.user" />");
 
                             }
+                            setInterval('location.reload()', 100);
                         },
                         error: function () {
                             callback();
@@ -243,6 +252,7 @@
 
                     }
                 );
+                // window.location.reload();
             }
         });
     });

@@ -89,6 +89,7 @@
                 '<option value="${email}">${email}</option>--%> '+
                  '</core_rt:forEach> '+
                 '</datalist>'+
+                '<p id="result"></p>'+
                  prepareKeyDatalist() +
                  '</td>' +
                 '<td class="content-middle">' +
@@ -119,26 +120,24 @@
             $("#addEmail").after(prepareKeyDatalist()).attr("list","grpsKeyList")
         })
 
-        const validateEmail = (email) => {
-            return email.match(
-                /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-            );
-        };
+
 
         const validate = () => {
             const $result = $('#result');
-            const email = $('#email').val();
+            const email = $('#myInput').val();
             $result.text('');
 
-            if (validateEmail(email)) {
-                $result.text(email + ' is valid :)');
-                $result.css('color', 'green');
-            } else {
+            if (!validateEmail(email)) {
                 $result.text(email + ' is not valid :(');
                 $result.css('color', 'red');
             }
             return false;
         }
+        const validateEmail = (email) => {
+            return email.match(
+                /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+            );
+        };
 
         $('#myInput').on('input', validate);
 
