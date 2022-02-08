@@ -34,8 +34,6 @@ import org.spdx.library.model.pointer.LineCharPointer;
 import org.spdx.library.model.pointer.SinglePointer;
 import org.spdx.library.model.pointer.StartEndPointer;
 import org.spdx.library.model.*;
-import org.spdx.library.model.SpdxModelFactory;
-
 import org.spdx.library.InvalidSPDXAnalysisException;
 import org.spdx.tools.InvalidFileNameException;
 import org.spdx.tools.SpdxToolsHelper;
@@ -71,7 +69,7 @@ public class SpdxBOMImporter {
         try {
             final List<SpdxElement> describedPackages = spdxDocument.getDocumentDescribes().stream().collect(Collectors.toList());
             final List<SpdxElement> packages =  describedPackages.stream()
-            .filter(item -> item instanceof SpdxPackage)
+            .filter(SpdxPackage.class::isInstance)
             .collect(Collectors.toList());
 
             if (packages.isEmpty()) {
@@ -134,12 +132,16 @@ public class SpdxBOMImporter {
         List<SpdxElement> describedPackages = new ArrayList<>();
         try {
             SpdxDocument spdxDocument = openAsSpdx(file);
+            if (spdxDocument == null) {
+                requestSummary.setRequestStatus(RequestStatus.FAILURE);
+                return requestSummary;
+            }
             describedPackages = spdxDocument.getDocumentDescribes().stream().collect(Collectors.toList());
             List<SpdxElement> packages = describedPackages.stream()
-            .filter(item -> item instanceof SpdxPackage)
+            .filter(SpdxPackage.class::isInstance)
             .collect(Collectors.toList());
 
-            if (packages.size() == 0) {
+            if (packages.isEmpty()) {
                 requestSummary.setTotalAffectedElements(0);
                 requestSummary.setTotalElements(0);
                 requestSummary.setMessage("The provided BOM did not contain any top level packages.");
@@ -305,16 +307,18 @@ public class SpdxBOMImporter {
                 .setReference(spdxByteRange.getStartPointer().getReference().getId())
                 .setIndex(0);
 
-        StartEndPointer spdxLineRange = spdxSnippet.getLineRange().get();
-        String[] lineRanges = rangeToStrs(spdxLineRange);
-        SnippetRange snippetLineRange = new SnippetRange();
-        snippetLineRange.setRangeType("LINE")
-                .setStartPointer(lineRanges[0])
-                .setEndPointer(lineRanges[1])
-                .setReference(spdxLineRange.getStartPointer().getReference().getId())
-                .setIndex(1);
-
-        return new HashSet<>(Arrays.asList(snippetByteRange, snippetLineRange));
+        Optional<StartEndPointer> spdxLineRange = spdxSnippet.getLineRange();
+        if (spdxLineRange.isPresent()) {
+            String[] lineRanges = rangeToStrs(spdxLineRange.get());
+            SnippetRange snippetLineRange = new SnippetRange();
+            snippetLineRange.setRangeType("LINE")
+                    .setStartPointer(lineRanges[0])
+                    .setEndPointer(lineRanges[1])
+                    .setReference(spdxLineRange.get().getStartPointer().getReference().getId())
+                    .setIndex(1);
+            return new HashSet<>(Arrays.asList(snippetByteRange, snippetLineRange));
+        }
+        return new HashSet<>(Arrays.asList(snippetByteRange));
     }
 
     // // refer to rangeToStr function of spdx-tools
@@ -353,15 +357,16 @@ public class SpdxBOMImporter {
         int index = 0;
 
         for (Relationship spdxRelationship : spdxRelationships) {
-            if (!(spdxRelationship.getRelatedSpdxElement().get() instanceof SpdxFile)) {
+            Optional<SpdxElement> relatedSpdxElement = spdxRelationship.getRelatedSpdxElement();
+            if (relatedSpdxElement.isPresent() && !(relatedSpdxElement.get() instanceof SpdxFile)) {
                 String type = spdxRelationship.getRelationshipType().name();
-                String relatedSpdxElement = spdxRelationship.getRelatedSpdxElement().get().getId();
+                String relatedSpdxElementId = relatedSpdxElement.get().getId();
                 String comment = getValue(spdxRelationship.getComment());
 
                 RelationshipsBetweenSPDXElements relationship = new RelationshipsBetweenSPDXElements();
                 relationship.setSpdxElementId(verifyOrSetDefault(spdxElementId))
                             .setRelationshipType(verifyOrSetDefault(type))
-                            .setRelatedSpdxElement(verifyOrSetDefault(relatedSpdxElement))
+                            .setRelatedSpdxElement(verifyOrSetDefault(relatedSpdxElementId))
                             .setRelationshipComment(verifyOrSetDefault(comment))
                             .setIndex(index);
 
@@ -442,22 +447,23 @@ public class SpdxBOMImporter {
             List<ExternalDocumentRef> externalDocumentRefs = List.copyOf(spdxDocument.getExternalDocumentRefs());
 
             for (ExternalDocumentRef externalDocumentRef : externalDocumentRefs) {
-                Checksum spdxChecksum = externalDocumentRef.getChecksum().get();
+                Optional<Checksum> spdxChecksum = externalDocumentRef.getChecksum();
+                if (spdxChecksum.isPresent()) {
+                    String externalDocumentId = externalDocumentRef.getId();
+                    String spdxDocumentNamespace = externalDocumentRef.getSpdxDocumentNamespace();
+                    CheckSum checksum = new CheckSum();
+                    checksum.setAlgorithm(spdxChecksum.get().getAlgorithm().name())
+                            .setChecksumValue(spdxChecksum.get().getValue());
 
-                String externalDocumentId = externalDocumentRef.getId();
-                String spdxDocumentNamespace = externalDocumentRef.getSpdxDocumentNamespace();
-                CheckSum checksum = new CheckSum();
-                checksum.setAlgorithm(spdxChecksum.getAlgorithm().name())
-                        .setChecksumValue(spdxChecksum.getValue());
+                    ExternalDocumentReferences ref = new ExternalDocumentReferences();
+                    ref.setExternalDocumentId(verifyOrSetDefault(externalDocumentId))
+                        .setChecksum(checksum)
+                        .setSpdxDocument(verifyOrSetDefault(spdxDocumentNamespace))
+                        .setIndex(index);
 
-                ExternalDocumentReferences ref = new ExternalDocumentReferences();
-                ref.setExternalDocumentId(verifyOrSetDefault(externalDocumentId))
-                    .setChecksum(checksum)
-                    .setSpdxDocument(verifyOrSetDefault(spdxDocumentNamespace))
-                    .setIndex(index);
-
-                refs.add(ref);
-                index++;
+                    refs.add(ref);
+                    index++;
+                }
             }
         } catch (InvalidSPDXAnalysisException e) {
             log.error(e);
@@ -498,6 +504,11 @@ public class SpdxBOMImporter {
     }
 
     private PackageInformation createPackageInfoFromSpdxPackage(String spdxDocId, SpdxPackage spdxPackage) throws SW360Exception, MalformedURLException, InvalidSPDXAnalysisException {
+        Optional<String> packageName = spdxPackage.getName();
+        if (!packageName.isPresent()) {
+            return null;
+        }
+
         PackageVerificationCode PVC = new PackageVerificationCode();
         try {
             PVC = createPVCFromSpdxPackage(spdxPackage);
@@ -530,7 +541,7 @@ public class SpdxBOMImporter {
             externalRefs = Collections.emptySet();
         }
 
-        PackageInformation pInfo = getPackageInformationFromSpdxDocument(spdxDocId, spdxPackage.getName().get());
+        PackageInformation pInfo = getPackageInformationFromSpdxDocument(spdxDocId, packageName.get());
         pInfo.setSpdxDocumentId(spdxDocId);
 
         try {
@@ -580,7 +591,7 @@ public class SpdxBOMImporter {
                 .setAttributionText(attributionText)
                 .setAnnotations(annotations);
         } catch (InvalidSPDXAnalysisException e) {
-            log.error("createPackageInfoFromSpdxPackage error " + e);
+            log.error("Create Package Info From SpdxPackage error " + e);
         }
 
         return pInfo;
@@ -741,6 +752,9 @@ public class SpdxBOMImporter {
         for (SpdxPackage packageElement : allPackages) {
             log.info("Import package: " + packageElement.toString());
             PackageInformation packageInfo = createPackageInfoFromSpdxPackage(spdxDocId, packageElement);
+            if (packageInfo == null) {
+                continue;
+            }
             List<Relationship> packageRelationship = List.copyOf(packageElement.getRelationships());
             if (!packageRelationship.isEmpty()) {
                 Set<RelationshipsBetweenSPDXElements> packageReleaseRelationship = createRelationshipsFromSpdxRelationships(packageRelationship, packageElement.getId());

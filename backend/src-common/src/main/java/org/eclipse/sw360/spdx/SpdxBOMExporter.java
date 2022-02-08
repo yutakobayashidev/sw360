@@ -66,7 +66,7 @@ public class SpdxBOMExporter {
             } else {
                 String convertResult = convertJSONtoOutputFormat(releaseId + ".json", targetFileName);
                 if (convertResult.isEmpty()) {
-                    log.info("Export to " + targetFileName + " sucessfully");
+                    log.info("Export to " + targetFileName + " successfully");
                     try {
                         if (outputFormat.equals("SPDX")) {
                             message = Verify.verify(targetFileName, SpdxToolsHelper.SerFileType.valueOf("TAG"));
