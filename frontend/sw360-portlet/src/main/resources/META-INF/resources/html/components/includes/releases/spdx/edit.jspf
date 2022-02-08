@@ -533,7 +533,7 @@
             let newObj = { 'annotator': '',
                            'annotationDate': '',
                            'annotationType': '',
-                           'annotationComment': '',
+                           'comment': '',
                            'spdxIdRef': '',
                            'index': index };
             source.push(newObj);

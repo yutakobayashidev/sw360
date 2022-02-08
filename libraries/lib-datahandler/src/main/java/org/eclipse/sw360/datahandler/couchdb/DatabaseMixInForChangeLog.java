@@ -252,7 +252,7 @@ public class DatabaseMixInForChangeLog {
         "setAnnotationDate",
         "setAnnotationType",
         "setSpdxIdRef",
-        "setAnnotationComment",
+        "setComment",
         "setIndex"
     })
     public static abstract class AnnotationsMixin extends Annotations {

@@ -245,7 +245,7 @@ public class SpdxBOMImporter {
             ann.setAnnotator(verifyOrSetDefault(annotator))
                 .setAnnotationDate(verifyOrSetDefault(date))
                 .setAnnotationType(verifyOrSetDefault(type))
-                .setAnnotationComment(verifyOrSetDefault(comment))
+                .setComment(verifyOrSetDefault(comment))
                 .setIndex(index);
 
             annotations.add(ann);
