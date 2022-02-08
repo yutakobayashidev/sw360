@@ -10,6 +10,7 @@
 package org.eclipse.sw360.datahandler.db;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -44,6 +45,7 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.Level;
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -74,6 +76,7 @@ import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.Obligatio
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ProjectReleaseRelationshipMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.RepositoryMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.VendorMixin;
+import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.*;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -97,6 +100,19 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.CheckSum;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.Creator;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.ExternalDocumentReferences;
+import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.OtherLicensingInformationDetected;
+import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.RelationshipsBetweenSPDXElements;
+import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetRange;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReference;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageVerificationCode;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -121,6 +137,7 @@ public class DatabaseHandlerUtil {
     private static final boolean IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED;
     private static final String ATTACHMENT_STORE_FILE_SYSTEM_LOCATION;
     private static final String ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION;
+    // private static final String TEMPLE_FILE_LOCATION;
     private static ExecutorService ATTACHMENT_FILE_SYSTEM_STORE_THREAD_POOL = Executors.newFixedThreadPool(5);
     private static final String ATTACHMENT_DELETE_NO_OF_DAYS;
     private static final boolean IS_SW360CHANGELOG_ENABLED;
@@ -135,6 +152,7 @@ public class DatabaseHandlerUtil {
                 "/opt/sw360tempattachments");
         ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION = props.getProperty("attachment.store.file.system.permission",
                 "rwx------");
+                // TEMPLE_FILE_LOCATION = props.getProperty("temp.dir", "../temp")
         IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED = Boolean.parseBoolean(props.getProperty("enable.attachment.store.to.file.system", "false"));
         ATTACHMENT_DELETE_NO_OF_DAYS = props.getProperty("attachemnt.delete.no.of.days",
                 "30");
@@ -392,6 +410,21 @@ public class DatabaseHandlerUtil {
             changeLog.setDocumentId(newProjVer.getId());
             changeLog.setDocumentType(newProjVer.getType());
             changeLog.setDbName(DatabaseSettings.COUCH_DB_DATABASE);
+        } else if (newDocVersion instanceof SPDXDocument) {
+            SPDXDocument newProjVer = (SPDXDocument) newDocVersion;
+            changeLog.setDocumentId(newProjVer.getId());
+            changeLog.setDocumentType(newProjVer.getType());
+            changeLog.setDbName(DatabaseSettings.COUCH_DB_SPDX);
+        } else if (newDocVersion instanceof DocumentCreationInformation) {
+            DocumentCreationInformation newProjVer = (DocumentCreationInformation) newDocVersion;
+            changeLog.setDocumentId(newProjVer.getId());
+            changeLog.setDocumentType(newProjVer.getType());
+            changeLog.setDbName(DatabaseSettings.COUCH_DB_SPDX);
+        } else if (newDocVersion instanceof PackageInformation) {
+            PackageInformation newProjVer = (PackageInformation) newDocVersion;
+            changeLog.setDocumentId(newProjVer.getId());
+            changeLog.setDocumentType(newProjVer.getType());
+            changeLog.setDbName(DatabaseSettings.COUCH_DB_SPDX);
         }
 
         log.info("Initialize ChangeLogs for Document Id : " + changeLog.getDocumentId());
@@ -564,6 +597,12 @@ public class DatabaseHandlerUtil {
             fields = Release._Fields.values();
         } else if (neworDeletedVersion instanceof ModerationRequest) {
             fields = ModerationRequest._Fields.values();
+        } else if (neworDeletedVersion instanceof SPDXDocument) {
+            fields = SPDXDocument._Fields.values();
+        } else if (neworDeletedVersion instanceof DocumentCreationInformation) {
+            fields = DocumentCreationInformation._Fields.values();
+        } else if (neworDeletedVersion instanceof PackageInformation) {
+            fields = PackageInformation._Fields.values();
         } else {
             return;
         }
@@ -588,6 +627,12 @@ public class DatabaseHandlerUtil {
             fields = Release._Fields.values();
         } else if (newVersion instanceof ModerationRequest) {
             fields = ModerationRequest._Fields.values();
+        } else if (newVersion instanceof SPDXDocument) {
+            fields = SPDXDocument._Fields.values();
+        } else if (newVersion instanceof DocumentCreationInformation) {
+            fields = DocumentCreationInformation._Fields.values();
+        } else if (newVersion instanceof PackageInformation) {
+            fields = PackageInformation._Fields.values();
         } else {
             return;
         }
@@ -669,7 +714,7 @@ public class DatabaseHandlerUtil {
     }
 
     private static String getTimeStamp() {
-        SimpleDateFormat timestampPattern = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat timestampPattern = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSSSS");
         Date timeNow = new Date(System.currentTimeMillis());
         return timestampPattern.format(timeNow);
     }
@@ -802,6 +847,16 @@ public class DatabaseHandlerUtil {
             mapper.addMixInAnnotations(Repository.class, RepositoryMixin.class);
             mapper.addMixInAnnotations(ProjectProjectRelationship.class, ProjectProjectRelationshipMixin.class);
             mapper.addMixInAnnotations(ProjectReleaseRelationship.class, ProjectReleaseRelationshipMixin.class);
+            mapper.addMixInAnnotations(CheckSum.class, CheckSumMixin.class);
+            mapper.addMixInAnnotations(Annotations.class, AnnotationsMixin.class);
+            mapper.addMixInAnnotations(ExternalDocumentReferences.class, ExternalDocumentReferencesMixin.class);
+            mapper.addMixInAnnotations(Creator.class, CreatorMixin.class);
+            mapper.addMixInAnnotations(OtherLicensingInformationDetected.class, OtherLicensingInformationDetectedMixin.class);
+            mapper.addMixInAnnotations(PackageVerificationCode.class, PackageVerificationCodeMixin.class);
+            mapper.addMixInAnnotations(ExternalReference.class, ExternalReferenceMixin.class);
+            mapper.addMixInAnnotations(RelationshipsBetweenSPDXElements.class, RelationshipsBetweenSPDXElementsMixin.class);
+            mapper.addMixInAnnotations(SnippetInformation.class, SnippetInformationMixin.class);
+            mapper.addMixInAnnotations(SnippetRange.class, SnippetRangeMixin.class);
         }
         return mapper;
     }
@@ -957,5 +1012,15 @@ public class DatabaseHandlerUtil {
 	       .add( builder.newAppenderRef("ChangeLogFile")));
 	       Configurator.reconfigure(builder.build());
        }
+
+    public static File saveAsTempFile(User user, InputStream inputStream, String prefix, String suffix) throws IOException {
+        final File tempFile = File.createTempFile(prefix, suffix);
+        tempFile.deleteOnExit();
+        // Set append to false, overwrite if file existed
+        try (FileOutputStream outputStream = new FileOutputStream(tempFile, false)) {
+            IOUtils.copy(inputStream, outputStream);
+        }
+        return tempFile;
+    }
 }
 

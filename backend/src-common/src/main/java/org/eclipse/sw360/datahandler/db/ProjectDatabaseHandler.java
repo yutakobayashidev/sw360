@@ -44,7 +44,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
-import org.spdx.rdfparser.InvalidSPDXAnalysisException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,6 +56,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.io.File;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertId;
@@ -68,6 +68,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 
+import org.spdx.library.InvalidSPDXAnalysisException;
 /**
  * Class for accessing the CouchDB database
  *
@@ -1365,6 +1366,20 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         relUsageRepository.update(usedReleaseRelations);
     }
 
+    private String getFileType(String fileName) {
+        if (isNullEmptyOrWhitespace(fileName) || !fileName.contains(".")) {
+            log.error("Can not get file type from file name - no file extension");
+            return null;
+		}
+		String ext = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+		if ("xml".equals(ext)) {
+			if (fileName.endsWith("rdf.xml")) {
+				ext = "rdf";
+			}
+		}
+		return ext;
+    }
+
     public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
         final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
@@ -1373,9 +1388,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
                 final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, this, componentDatabaseHandler);
                 final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
-                return spdxBOMImporter.importSpdxBOMAsProject(inputStream, attachmentContent);
+                String fileType = getFileType(attachmentContent.getFilename());
+                final String ext = "." + fileType;
+                final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(user, inputStream, attachmentContentId, ext);
+                return spdxBOMImporter.importSpdxBOMAsProject(sourceFile, attachmentContent);
             }
-        } catch (InvalidSPDXAnalysisException | IOException e) {
+        } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
         }
     }

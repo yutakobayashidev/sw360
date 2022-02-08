@@ -35,6 +35,7 @@ import org.apache.logging.log4j.Logger;
 import org.ektorp.DocumentOperationResult;
 import org.jetbrains.annotations.NotNull;
 import org.json.simple.JSONObject;
+import org.spdx.library.InvalidSPDXAnalysisException;
 
 import com.cloudant.client.api.CloudantClient;
 import com.cloudant.client.api.model.Response;
@@ -836,13 +837,19 @@ public class LicenseDatabaseHandler {
                     log.error("Failed to find SpdxListedLicense with id=" + spdxId);
                 }
             }else{
-                boolean matches = SpdxConnector.matchesSpdxLicenseText(sw360license,spdxId);
-                if (matches) {
-                    log.info("The SPDX license with id=" + spdxId + " is already in the DB");
-                }else {
-                    log.warn("There is a license with id=" + spdxId + " which does not match the SPDX license");
-                    mismatchedLicenses.add(spdxId);
+                boolean matches;
+                try {
+                    matches = SpdxConnector.matchesSpdxLicenseText(sw360license,spdxId);
+                    if (matches) {
+                        log.info("The SPDX license with id=" + spdxId + " is already in the DB");
+                    }else {
+
+                    }
+                } catch (InvalidSPDXAnalysisException e) {
+                    log.error("Can not check matching license text with license id: " + spdxId);
+                    e.printStackTrace();
                 }
+
             }
         }
 
