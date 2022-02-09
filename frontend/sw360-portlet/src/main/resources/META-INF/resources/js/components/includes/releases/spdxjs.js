@@ -1092,7 +1092,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
 
         $('#spdxIdRef').val(obj['spdxIdRef']);
 
-        $('#annotationComment').val(obj['annotationComment']);
+        $('#annotationComment').val(obj['comment']);
     }
 
     function storeAnnotation(index) {
@@ -1116,7 +1116,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
 
         obj['spdxIdRef'] = $('#spdxIdRef').val().trim();
 
-        obj['annotationComment'] = $('#annotationComment').val().trim();
+        obj['comment'] = $('#annotationComment').val().trim();
     }
 
     return {

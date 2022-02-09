@@ -48,7 +48,7 @@ public class DatabaseMixInForSPDXDocument {
         "setAnnotationDate",
         "setAnnotationType",
         "setSpdxIdRef",
-        "setAnnotationComment",
+        "setComment",
         "setIndex",
         "index"
     })
