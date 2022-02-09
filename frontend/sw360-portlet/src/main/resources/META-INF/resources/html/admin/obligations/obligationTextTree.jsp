@@ -242,10 +242,8 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard'], fu
                 suggestions['Object'].add(obligationElementListObj[i].object);
             }
 
-            if (suggestions['LE'].size === 0) {
-                suggestions['LE'].add("YOU MUST")
-                suggestions['LE'].add("YOU MUST NOT")
-            }
+            suggestions['LE'].add("YOU MUST")
+            suggestions['LE'].add("YOU MUST NOT")
 
             if (suggestions['Action'].size === 0) {
                 suggestions['Action'].add("Provide")
