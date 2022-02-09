@@ -797,6 +797,9 @@ public class LicenseDatabaseHandler {
 
         if (existedObligationElement.isEmpty()) {
             return Collections.emptyList();
+        } else if (existedObligationElement.size() > 1) {
+            log.info("Existed Obligation Element > 1");
+            return existedObligationElement.stream().filter(el -> lang.equals(el.getLangElement()) && action.equals(el.getAction()) && object.equals(el.getObject())).collect(Collectors.toList());
         }
         return existedObligationElement;
     }
