@@ -155,4 +155,8 @@ service UserService {
     map<string, list<string>> getAllMessageError();
 
     string getLastModifiedFileName();
+
+    string getPathConfigDepartment();
+
+    void writePathFolderConfig(1:string pathFolder);
 }

@@ -11,7 +11,7 @@
 <%@ include file="/html/init.jsp" %>
 <%--&lt;%&ndash; the following is needed by liferay to display error messages&ndash;%&gt;--%>
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf" %>
-
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 <jsp:useBean id='departmentIsScheduled' type="java.lang.Boolean" scope="request"/>
 <jsp:useBean id='departmentOffset' type="java.lang.String" scope="request"/>
 <jsp:useBean id='departmentInterval' type="java.lang.String" scope="request"/>
@@ -24,13 +24,18 @@
 </portlet:actionURL>
 <portlet:actionURL var="scheduleDepartmentManuallyURL" name="importDepartmentManually">
 </portlet:actionURL>
+<portlet:actionURL var="editPathFolder" name="writePathFolder">
+</portlet:actionURL>
 <jsp:useBean id="departmentList" scope="request" class="java.util.HashMap"/>
 <jsp:useBean id="allMessageError" scope="request" class="java.util.HashMap"/>
 <jsp:useBean id="lastFileName" scope="request" class="java.lang.String"/>
+<jsp:useBean id="pathConfigFolderDepartment" scope="request" class="java.lang.String"/>
+<jsp:useBean id="lastRunningTime" scope="request" type="java.lang.String"/>
 <style>
     .error-none {
         display: none;
     }
+
     #content-${lastFileName} {
         display: block;
     }
@@ -39,19 +44,42 @@
     <div class="row">
         <div class="col">
             <div class="row">
-                <div class="col-6">
+                <div class="col-6 portlet-toolbar">
                     <table class="table bordered-table">
                         <tr>
-                            <th><liferay-ui:message key="schedule.offset"/></th>
-                            <td>${departmentOffset} (hh:mm:ss)</td>
+                            <th><liferay-ui:message key="registration.folder.path"/></th>
+                            <td>
+                                <form id="editPathFolder" name="editPathFolder needs-validation"
+                                      action="<%=editPathFolder%>" method="post" novalidate>
+                                    <input id="pathFolderDepartment" style="margin-top: 0" required type="text"
+                                           class="form-control"
+                                           name="<portlet:namespace/><%=PortalConstants.DEPARTMENT_URL%>" value=""
+                                           placeholder="${pathConfigFolderDepartment}"/>
+                                    <div class="invalid-feedback" id="error-empty">
+                                        <liferay-ui:message key="please.enter.the.url"/>
+                                    </div>
+                                </form>
+                            </td>
+                            <td width="3%">
+                                <button type="button" class="btn btn-primary" data-action="save"><liferay-ui:message
+                                        key="update"/></button>
+                            </td>
+
                         </tr>
                         <tr>
                             <th><liferay-ui:message key="interval"/></th>
                             <td>${departmentInterval} (hh:mm:ss)</td>
+                            <td></td>
                         </tr>
                         <tr>
-                            <th><liferay-ui:message key="next.synchronization"/></th>
+                            <th><liferay-ui:message key="last.running.time.department"/></th>
+                            <td>${lastRunningTime}</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <th><liferay-ui:message key="next.running.time.department"/></th>
                             <td>${departmentNextSync}</td>
+                            <td></td>
                         </tr>
                     </table>
                     <form class="form mt-3">
@@ -86,7 +114,7 @@
                         <tr>
                             <th><liferay-ui:message key="department"/></th>
                             <th><liferay-ui:message key="member.emails"/></th>
-                            <th><liferay-ui:message key="actions"/></th>
+                            <th width="5%"><liferay-ui:message key="actions"/></th>
                         </tr>
                         </thead>
                         <tbody>
@@ -94,17 +122,17 @@
                             <tr>
                                 <td style="text-align: center"><sw360:out value="${department.key}"/></td>
                                 <td>
-                                    <div style="width:100%; max-height:515px; overflow:auto">
+                                    <div style="width:100%; max-height:210px; overflow:auto">
                                         <core_rt:forEach var="secondDepartment" items="${department.value}"
                                                          varStatus="loop">
                                             <span>${loop.index + 1}.</span> <span><sw360:out
                                                 value="${secondDepartment.email}"/></span>
-                                            <hr>
+                                            <br/>
                                         </core_rt:forEach>
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="actions">
+                                    <div class="actions" style="justify-content: center;">
                                         <svg class="editDepartment lexicon-icon">
                                             <title><liferay-ui:message key="edit"/></title>
                                             <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/>
@@ -202,6 +230,47 @@
                     ],
                 });
             }
+
+            // Check on input type change
+            $('#pathFolderDepartment').on('input', function () {
+                if ($('#addLicenseTypeForm').hasClass('was-validated')) {
+                    validateInput();
+                }
+            });
+
+            // Check on enter key press
+            $('#pathFolderDepartment').keypress(function (event) {
+                var keycode = (event.keyCode ? event.keyCode : event.which);
+                if (keycode == '13' && !validateInput()) {
+                    event.preventDefault();
+                }
+            });
+
+            $('.portlet-toolbar button[data-action="save"]').on('click', function (event) {
+                event.preventDefault();
+                if (validateInput()) {
+                    $('#editPathFolder').submit();
+                }
+            });
+
+            function validateInput() {
+                $('#editPathFolder').removeClass('needs-validation');
+                $('#pathFolderDepartment')[0].setCustomValidity('');
+                $('.invalid-feedback').css('display', 'none');
+                $('.invalid-feedback').removeClass('d-block');
+
+                var pathFolderDepartment = $('#pathFolderDepartment').val();
+
+                if (pathFolderDepartment.length === 0 || $.trim(pathFolderDepartment).length === 0) {
+                    $('#editPathFolder').addClass('was-validated');
+                    $('#pathFolderDepartment')[0].setCustomValidity('error');
+                    $('#error-empty').addClass('d-block');
+                    return false;
+                }
+                ;
+                return true;
+            }
+
         });
     });
     $('#file-log').on('change', function () {

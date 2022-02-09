@@ -6,11 +6,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.users.dto.RedmineConfigDTO;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ReadFileRedmineConfig {
 
@@ -18,12 +21,12 @@ public class ReadFileRedmineConfig {
     private static final String FOLDER_LOG = "/logs/";
 
     protected String getPathConfig() throws IOException {
-        String path = "/";
+        StringBuilder path = new StringBuilder("/");
         File file = File.createTempFile("check", "text");
         String pathFile = file.getPath();
         String[] parts = pathFile.split("/");
         for (int i = 0; i < parts.length; i++) {
-            path += parts[i + 1] + "/";
+            path.append(parts[i + 1]).append("/");
             if (i == 3) return (path + "config.json");
         }
         return (path + "config.json");
@@ -49,5 +52,36 @@ public class ReadFileRedmineConfig {
             log.error("An I/O error occurred: {}", e.getMessage());
         }
         return null;
+    }
+
+    public void writePathFolderConfig(String pathFolder) {
+        RedmineConfigDTO redmineConfigDTO = readFileJson();
+        BufferedWriter writer = null;
+        try {
+            writer = Files.newBufferedWriter(Paths.get(getPathConfig()));
+            Map<String, Object> configRedmine = new HashMap<>();
+            Map<String, Object> map = new HashMap<>();
+            map.put("username", redmineConfigDTO.getUsername());
+            map.put("password", redmineConfigDTO.getPassword());
+            map.put("url", redmineConfigDTO.getUrl());
+            map.put("projectId", redmineConfigDTO.getProjectId());
+            map.put("trackerId", redmineConfigDTO.getTrackerId());
+            map.put("statusNameOpenId", redmineConfigDTO.getStatusNameOpenId());
+            map.put("statusNameClosedId", redmineConfigDTO.getStatusNameClosedId());
+            map.put("pathFolder", pathFolder);
+            configRedmine.put("configRedmine", map);
+            ObjectMapper mapper = new ObjectMapper();
+            writer.write(mapper.writeValueAsString(configRedmine));
+        } catch (IOException e) {
+            log.error("An I/O error occurred: {}", e.getMessage());
+        } finally {
+            try {
+                if (writer != null) {
+                    writer.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

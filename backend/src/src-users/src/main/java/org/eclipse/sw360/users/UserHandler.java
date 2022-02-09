@@ -165,7 +165,10 @@ public class UserHandler implements UserService.Iface {
     @Override
     public Set<String> getListFileLog() {
         try {
+
             RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+            File folder = new File(configDTO.getPathFolderLog());
+            if (!folder.exists()) folder.mkdirs();
             return FileUtil.listFilesUsingFileWalk(configDTO.getPathFolderLog());
         } catch (Exception e) {
             e.printStackTrace();
@@ -178,6 +181,8 @@ public class UserHandler implements UserService.Iface {
         Map<String, List<String>> listMap = new HashMap<>();
         try {
             RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+            File folder = new File(configDTO.getPathFolderLog());
+            if (!folder.exists()) folder.mkdirs();
             Set<String> fileNames = FileUtil.listFilesUsingFileWalk(configDTO.getPathFolderLog());
             for (String fileName : fileNames) {
                 listMap.put(fileName.replace(EXTENSION, ""), FileUtil.readFileError(configDTO.getPathFolderLog() + fileName));
@@ -191,7 +196,28 @@ public class UserHandler implements UserService.Iface {
     @Override
     public String getLastModifiedFileName() throws TException {
         RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
-        File file = FileUtil.getFileLastModified(configDTO.getPathFolderLog());
-        return file.getName().replace(EXTENSION, "");
+        File folder = new File(configDTO.getPathFolderLog());
+        if (!folder.exists()) folder.mkdirs();
+        try {
+            Set<String> strings = FileUtil.listFilesUsingFileWalk(configDTO.getPathFolderLog());
+            if (!strings.isEmpty()) {
+                File file = FileUtil.getFileLastModified(configDTO.getPathFolderLog());
+                return file.getName().replace(EXTENSION, "");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    @Override
+    public String getPathConfigDepartment() throws TException {
+        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+        return configDTO.getPathFolder();
+    }
+
+    @Override
+    public void writePathFolderConfig(String pathFolder) throws TException {
+        readFileRedmineConfig.writePathFolderConfig(pathFolder);
     }
 }
