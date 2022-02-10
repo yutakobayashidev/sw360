@@ -58,6 +58,22 @@ public class DepartmentPortlet extends Sw360Portlet {
 
     private void prepareStandardView(RenderRequest request) {
         try {
+            User user = UserCacheHolder.getUserFromRequest(request);
+            ScheduleService.Iface scheduleClient = new ThriftClients().makeScheduleClient();
+            boolean isDepartmentScheduled = isDepartmentScheduled(scheduleClient, user);
+            request.setAttribute(PortalConstants.DEPARTMENT_IS_SCHEDULED, isDepartmentScheduled);
+            int offsetInSeconds = scheduleClient.getFirstRunOffset(ThriftClients.IMPORT_DEPARTMENT_SERVICE);
+            request.setAttribute(PortalConstants.DEPARTMENT_OFFSET, CommonUtils.formatTime(offsetInSeconds));
+            int intervalInSeconds = scheduleClient.getInterval(ThriftClients.IMPORT_DEPARTMENT_SERVICE);
+            request.setAttribute(PortalConstants.DEPARTMENT_INTERVAL, CommonUtils.formatTime(intervalInSeconds));
+            String nextSync = scheduleClient.getNextSync(ThriftClients.IMPORT_DEPARTMENT_SERVICE);
+            request.setAttribute(PortalConstants.DEPARTMENT_NEXT_SYNC, nextSync);
+            dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+            Date nextSyncDate = dateFormat.parse(nextSync);
+            long seconds = nextSyncDate.getTime() / 1000 - intervalInSeconds;
+            String lastRunningTime = dateFormat.format(new Date(seconds * 1000));
+            request.setAttribute(PortalConstants.LAST_RUNNING_TIME, lastRunningTime);
+
             UserService.Iface userClient = thriftClients.makeUserClient();
             Map<String, List<User>> listMap = userClient.getAllUserByDepartment();
             request.setAttribute(PortalConstants.DEPARTMENT_LIST, listMap);
@@ -65,25 +81,10 @@ public class DepartmentPortlet extends Sw360Portlet {
             LinkedHashMap<String, List<String>> sortedMap = new LinkedHashMap<>();
             allMessageError.entrySet().stream().sorted(Map.Entry.comparingByKey(Comparator.reverseOrder()))
                     .forEachOrdered(x -> sortedMap.put(x.getKey(), x.getValue()));
-            String pathConfigFolderDepartment = userClient.getPathConfigDepartment();
-            User user = UserCacheHolder.getUserFromRequest(request);
-            ScheduleService.Iface scheduleClient = new ThriftClients().makeScheduleClient();
-            boolean isDepartmentScheduled = isDepartmentScheduled(scheduleClient, user);
-            int offsetInSeconds = scheduleClient.getFirstRunOffset(ThriftClients.IMPORT_DEPARTMENT_SERVICE);
-            int intervalInSeconds = scheduleClient.getInterval(ThriftClients.IMPORT_DEPARTMENT_SERVICE);
-            String nextSync = scheduleClient.getNextSync(ThriftClients.IMPORT_DEPARTMENT_SERVICE);
-            dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-            Date nextSyncDate = dateFormat.parse(nextSync);
-            long seconds = nextSyncDate.getTime() / 1000 - intervalInSeconds;
-            String lastRunningTime = dateFormat.format(new Date(seconds * 1000));
-            request.setAttribute(PortalConstants.LAST_RUNNING_TIME, lastRunningTime);
-            request.setAttribute(PortalConstants.PATH_CONFIG_FOLDER_DEPARTMENT, pathConfigFolderDepartment);
             request.setAttribute(PortalConstants.ALL_MESSAGE_ERROR, sortedMap);
+            String pathConfigFolderDepartment = userClient.getPathConfigDepartment();
+            request.setAttribute(PortalConstants.PATH_CONFIG_FOLDER_DEPARTMENT, pathConfigFolderDepartment);
             request.setAttribute(PortalConstants.LAST_FILE_NAME, userClient.getLastModifiedFileName());
-            request.setAttribute(PortalConstants.DEPARTMENT_INTERVAL, CommonUtils.formatTime(intervalInSeconds));
-            request.setAttribute(PortalConstants.DEPARTMENT_NEXT_SYNC, nextSync);
-            request.setAttribute(PortalConstants.DEPARTMENT_OFFSET, CommonUtils.formatTime(offsetInSeconds));
-            request.setAttribute(PortalConstants.DEPARTMENT_IS_SCHEDULED, isDepartmentScheduled);
         } catch (TException | ParseException e) {
             log.error("Error: {}", e.getMessage());
         }

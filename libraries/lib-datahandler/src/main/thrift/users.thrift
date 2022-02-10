@@ -13,6 +13,7 @@ namespace java org.eclipse.sw360.datahandler.thrift.users
 namespace php sw360.thrift.users
 
 typedef sw360.RequestStatus RequestStatus
+typedef sw360.RequestSummary RequestSummary
 typedef sw360.PaginationData PaginationData
 
 enum UserGroup {
@@ -144,7 +145,7 @@ service UserService {
      **/
     set<string> getUserEmails();
 
-    void importFileToDB(1:string pathFolder);
+    RequestSummary importFileToDB(1:string pathFolder);
 
     RequestStatus importDepartmentSchedule();
 

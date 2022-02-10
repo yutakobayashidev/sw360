@@ -22,10 +22,7 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.UserRepository;
 import org.eclipse.sw360.datahandler.db.UserSearchHandler;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftValidate;
+import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
@@ -61,6 +58,7 @@ public class UserDatabaseHandler {
     private ReadFileRedmineConfig readFileRedmineConfig;
     private static final String INFO = "INFO";
     private static final String ERROR = "ERROR";
+    private static boolean IMPORT_STATUS = false;
 
     public UserDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws IOException {
         // Create the connector
@@ -147,10 +145,15 @@ public class UserDatabaseHandler {
         return repository.getUsersWithPagination(pageData);
     }
 
-    public void importFileToDB(String pathFolder) {
+    public RequestSummary importFileToDB(String pathFolder) {
         String functionName = new Object() {
         }.getClass().getEnclosingMethod().getName();
+        RequestSummary requestSummary = new RequestSummary().setTotalAffectedElements(0).setMessage("");
         RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+        if (IMPORT_STATUS) {
+            return requestSummary.setRequestStatus(RequestStatus.PROCESSING);
+        }
+        IMPORT_STATUS = true;
         try {
             FileUtil.writeErrorToFile(INFO, functionName, "START", configDTO.getPathFolderLog());
             List<User> users = repository.getAll();
@@ -170,11 +173,18 @@ public class UserDatabaseHandler {
                     repository.update(value.convertToUserUpdate());
                 }
             });
+            requestSummary.setRequestStatus(RequestStatus.SUCCESS);
+            IMPORT_STATUS = false;
             FileUtil.writeErrorToFile(INFO, functionName, "END", configDTO.getPathFolderLog());
         } catch (IOException e) {
-            log.error("Can't read file: {}", e.getMessage());
+            IMPORT_STATUS = false;
             FileUtil.writeErrorToFile(ERROR, functionName, e.getMessage(), configDTO.getPathFolderLog());
+            String msg = "Failed to import department";
+            log.error("Can't read file: {}", e.getMessage());
+            requestSummary.setMessage(msg);
+            requestSummary.setRequestStatus(RequestStatus.FAILURE);
         }
+        return requestSummary;
     }
 
     private void checkFileFormat(String pathFile) {

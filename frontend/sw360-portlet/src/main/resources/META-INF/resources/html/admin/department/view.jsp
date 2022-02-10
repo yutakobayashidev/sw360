@@ -47,14 +47,14 @@
                 <div class="col-6 portlet-toolbar">
                     <table class="table bordered-table">
                         <tr>
-                            <th><liferay-ui:message key="registration.folder.path"/></th>
+                            <th style="line-height: 40px"><liferay-ui:message key="registration.folder.path"/></th>
                             <td>
                                 <form id="editPathFolder" name="editPathFolder needs-validation"
                                       action="<%=editPathFolder%>" method="post" novalidate>
                                     <input id="pathFolderDepartment" style="margin-top: 0" required type="text"
                                            class="form-control"
                                            name="<portlet:namespace/><%=PortalConstants.DEPARTMENT_URL%>" value=""
-                                           placeholder="${pathConfigFolderDepartment}"/>
+                                           placeholder="${pathConfigFolderDepartment == "" ? "Enter the directory path" : pathConfigFolderDepartment}"/>
                                     <div class="invalid-feedback" id="error-empty">
                                         <liferay-ui:message key="please.enter.the.url"/>
                                     </div>
@@ -270,7 +270,8 @@
                 ;
                 return true;
             }
-
+            <%--if (${pathConfigFolderDepartment})--%>
+            <%--$("#pathFolderDepartment").attr('placeholder', ${pathConfigFolderDepartment});--%>
         });
     });
     $('#file-log').on('change', function () {

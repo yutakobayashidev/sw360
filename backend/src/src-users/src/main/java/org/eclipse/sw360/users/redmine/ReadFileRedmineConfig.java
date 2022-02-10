@@ -27,9 +27,9 @@ public class ReadFileRedmineConfig {
         String[] parts = pathFile.split("/");
         for (int i = 0; i < parts.length; i++) {
             path.append(parts[i + 1]).append("/");
-            if (i == 3) return (path + "config.json");
+            if (i == 3) return (path + "path-folder-config.json");
         }
-        return (path + "config.json");
+        return (path + "path-folder-config.json");
     }
 
     public RedmineConfigDTO readFileJson() {
@@ -38,16 +38,9 @@ public class ReadFileRedmineConfig {
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jsonNode = objectMapper.readTree(reader);
             JsonNode configRedmine = jsonNode.path("configRedmine");
-            String username = configRedmine.path("username").asText();
-            String password = configRedmine.path("password").asText();
-            String url = configRedmine.path("url").asText();
-            Long projectId = configRedmine.path("projectId").asLong();
-            Long trackerId = configRedmine.path("trackerId").asLong();
-            Long statusNameOpenId = configRedmine.path("statusNameOpenId").asLong();
-            Long statusNameClosedId = configRedmine.path("statusNameClosedId").asLong();
             String pathFolder = configRedmine.path("pathFolder").asText();
             String pathFolderLog = pathFolder + FOLDER_LOG;
-            return new RedmineConfigDTO(username, password, url, projectId, trackerId, statusNameOpenId, statusNameClosedId, pathFolder, pathFolderLog);
+            return new RedmineConfigDTO(pathFolder, pathFolderLog);
         } catch (IOException e) {
             log.error("An I/O error occurred: {}", e.getMessage());
         }
@@ -55,19 +48,11 @@ public class ReadFileRedmineConfig {
     }
 
     public void writePathFolderConfig(String pathFolder) {
-        RedmineConfigDTO redmineConfigDTO = readFileJson();
         BufferedWriter writer = null;
         try {
             writer = Files.newBufferedWriter(Paths.get(getPathConfig()));
             Map<String, Object> configRedmine = new HashMap<>();
             Map<String, Object> map = new HashMap<>();
-            map.put("username", redmineConfigDTO.getUsername());
-            map.put("password", redmineConfigDTO.getPassword());
-            map.put("url", redmineConfigDTO.getUrl());
-            map.put("projectId", redmineConfigDTO.getProjectId());
-            map.put("trackerId", redmineConfigDTO.getTrackerId());
-            map.put("statusNameOpenId", redmineConfigDTO.getStatusNameOpenId());
-            map.put("statusNameClosedId", redmineConfigDTO.getStatusNameClosedId());
             map.put("pathFolder", pathFolder);
             configRedmine.put("configRedmine", map);
             ObjectMapper mapper = new ObjectMapper();
