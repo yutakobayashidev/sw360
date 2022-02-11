@@ -128,8 +128,9 @@ public class DepartmentPortlet extends Sw360Portlet {
     public void importDepartmentManually(ActionRequest request, ActionResponse response) throws PortletException {
         try {
             UserService.Iface userClient = thriftClients.makeUserClient();
-            RequestStatus requestStatus = userClient.importDepartmentSchedule();
-            setSessionMessage(request, requestStatus, "Department", "Success");
+            RequestSummary requestSummary = userClient.importFileToDB();
+            renderRequestSummary(request, response, requestSummary);
+//            setSessionMessage(request, requestStatus, "Department", "Success");
             removeParamUrl(request, response);
         } catch (TException e) {
             log.error("Cancel Schedule import department: {}", e.getMessage());

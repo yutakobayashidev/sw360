@@ -34,13 +34,16 @@ public class ReadFileRedmineConfig {
 
     public RedmineConfigDTO readFileJson() {
         try {
-            Reader reader = Files.newBufferedReader(Paths.get(getPathConfig()));
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode jsonNode = objectMapper.readTree(reader);
-            JsonNode configRedmine = jsonNode.path("configRedmine");
-            String pathFolder = configRedmine.path("pathFolder").asText();
-            String pathFolderLog = pathFolder + FOLDER_LOG;
-            return new RedmineConfigDTO(pathFolder, pathFolderLog);
+            File file = new File(getPathConfig());
+            if (file.exists()) {
+                Reader reader = Files.newBufferedReader(Paths.get(getPathConfig()));
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode jsonNode = objectMapper.readTree(reader);
+                JsonNode configRedmine = jsonNode.path("configRedmine");
+                String pathFolder = configRedmine.path("pathFolder").asText();
+                String pathFolderLog = pathFolder + FOLDER_LOG;
+                return new RedmineConfigDTO(pathFolder, pathFolderLog);
+            }
         } catch (IOException e) {
             log.error("An I/O error occurred: {}", e.getMessage());
         }

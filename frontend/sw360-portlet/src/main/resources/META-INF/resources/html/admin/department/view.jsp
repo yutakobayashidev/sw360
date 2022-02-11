@@ -12,10 +12,10 @@
 <%--&lt;%&ndash; the following is needed by liferay to display error messages&ndash;%&gt;--%>
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf" %>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
-<jsp:useBean id='departmentIsScheduled' type="java.lang.Boolean" scope="request"/>
-<jsp:useBean id='departmentOffset' type="java.lang.String" scope="request"/>
-<jsp:useBean id='departmentInterval' type="java.lang.String" scope="request"/>
-<jsp:useBean id='departmentNextSync' type="java.lang.String" scope="request"/>
+<%--<jsp:useBean id='departmentIsScheduled' type="java.lang.Boolean" scope="request"/>--%>
+<%--<jsp:useBean id='departmentOffset' type="java.lang.String" scope="request"/>--%>
+<%--<jsp:useBean id='departmentInterval' type="java.lang.String" scope="request"/>--%>
+<%--<jsp:useBean id='departmentNextSync' type="java.lang.String" scope="request"/>--%>
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
 <portlet:actionURL var="scheduleDepartmentURL" name="scheduleImportDepartment">
@@ -26,11 +26,11 @@
 </portlet:actionURL>
 <portlet:actionURL var="editPathFolder" name="writePathFolder">
 </portlet:actionURL>
-<jsp:useBean id="departmentList" scope="request" class="java.util.HashMap"/>
-<jsp:useBean id="allMessageError" scope="request" class="java.util.HashMap"/>
-<jsp:useBean id="lastFileName" scope="request" class="java.lang.String"/>
-<jsp:useBean id="pathConfigFolderDepartment" scope="request" class="java.lang.String"/>
-<jsp:useBean id="lastRunningTime" scope="request" type="java.lang.String"/>
+<%--<jsp:useBean id="departmentList" scope="request" class="java.util.HashMap"/>--%>
+<%--<jsp:useBean id="allMessageError" scope="request" class="java.util.HashMap"/>--%>
+<%--<jsp:useBean id="lastFileName" scope="request" class="java.lang.String"/>--%>
+<%--<jsp:useBean id="pathConfigFolderDepartment" scope="request" class="java.lang.String"/>--%>
+<%--<jsp:useBean id="lastRunningTime" scope="request" type="java.lang.String"/>--%>
 <style>
     .error-none {
         display: none;
@@ -57,6 +57,9 @@
                                            placeholder="${pathConfigFolderDepartment == "" ? "Enter the directory path" : pathConfigFolderDepartment}"/>
                                     <div class="invalid-feedback" id="error-empty">
                                         <liferay-ui:message key="please.enter.the.url"/>
+                                    </div>
+                                    <div class="invalid-feedback" id="error-invalid-char">
+                                        <liferay-ui:message key="please.fill.a.z.A.Z.0.9.-...+.only" />
                                     </div>
                                 </form>
                             </td>
@@ -233,7 +236,7 @@
 
             // Check on input type change
             $('#pathFolderDepartment').on('input', function () {
-                if ($('#addLicenseTypeForm').hasClass('was-validated')) {
+                if ($('#editPathFolder').hasClass('was-validated')) {
                     validateInput();
                 }
             });
@@ -259,15 +262,23 @@
                 $('.invalid-feedback').css('display', 'none');
                 $('.invalid-feedback').removeClass('d-block');
 
-                var pathFolderDepartment = $('#pathFolderDepartment').val();
+                let pathFolderDepartment = $('#pathFolderDepartment').val();
 
                 if (pathFolderDepartment.length === 0 || $.trim(pathFolderDepartment).length === 0) {
                     $('#editPathFolder').addClass('was-validated');
                     $('#pathFolderDepartment')[0].setCustomValidity('error');
                     $('#error-empty').addClass('d-block');
                     return false;
-                }
-                ;
+                };
+
+                const valid=/^[a-zA-Z]:\\(\w+\\)*\w*$/;
+                if(!pathFolderDepartment.match(valid)){
+                    $('#editPathFolder').addClass('was-validated');
+                    $('#pathFolderDepartment')[0].setCustomValidity('error');
+                    $('#error-invalid-char').addClass('d-block');
+                    return false;
+                };
+
                 return true;
             }
             <%--if (${pathConfigFolderDepartment})--%>

@@ -145,7 +145,7 @@ service UserService {
      **/
     set<string> getUserEmails();
 
-    RequestSummary importFileToDB(1:string pathFolder);
+    RequestSummary importFileToDB();
 
     RequestStatus importDepartmentSchedule();
 

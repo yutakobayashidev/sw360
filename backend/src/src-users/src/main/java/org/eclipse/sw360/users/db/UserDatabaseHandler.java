@@ -10,6 +10,7 @@
 package org.eclipse.sw360.users.db;
 
 import com.cloudant.client.api.CloudantClient;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.exceptions.CsvException;
@@ -26,6 +27,8 @@ import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.users.dto.ApiResponse;
+import org.eclipse.sw360.users.dto.Issue;
 import org.eclipse.sw360.users.dto.RedmineConfigDTO;
 import org.eclipse.sw360.users.dto.UserDTO;
 import org.eclipse.sw360.users.redmine.ReadFileRedmineConfig;
@@ -33,6 +36,8 @@ import org.eclipse.sw360.users.util.FileUtil;
 import org.ektorp.http.HttpClient;
 
 import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -148,12 +153,16 @@ public class UserDatabaseHandler {
     public RequestSummary importFileToDB(String pathFolder) {
         String functionName = new Object() {
         }.getClass().getEnclosingMethod().getName();
+//        responseData();
         RequestSummary requestSummary = new RequestSummary().setTotalAffectedElements(0).setMessage("");
         RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
         if (IMPORT_STATUS) {
             return requestSummary.setRequestStatus(RequestStatus.PROCESSING);
         }
+        log.info("*********IMPORT_STATUS false**********" + IMPORT_STATUS);
         IMPORT_STATUS = true;
+        log.info("*********IMPORT_STATUS true**********" + IMPORT_STATUS);
+
         try {
             FileUtil.writeErrorToFile(INFO, functionName, "START", configDTO.getPathFolderLog());
             List<User> users = repository.getAll();
@@ -175,6 +184,7 @@ public class UserDatabaseHandler {
             });
             requestSummary.setRequestStatus(RequestStatus.SUCCESS);
             IMPORT_STATUS = false;
+            log.info("*********IMPORT_STATUS false end**********" + IMPORT_STATUS);
             FileUtil.writeErrorToFile(INFO, functionName, "END", configDTO.getPathFolderLog());
         } catch (IOException e) {
             IMPORT_STATUS = false;
@@ -191,7 +201,7 @@ public class UserDatabaseHandler {
         String extension = FilenameUtils.getExtension(pathFile);
         if (extension.equalsIgnoreCase("xlsx") || extension.equalsIgnoreCase("xls")) {
             readFileExcel(pathFile);
-        } else {
+        } else if (extension.equalsIgnoreCase("csv")){
             readFileCsv(pathFile);
         }
     }
@@ -212,6 +222,7 @@ public class UserDatabaseHandler {
                     if (!Objects.equals(row[0], "")) mapTemp = row[0];
                     checkUser(row[1], mapTemp);
                 }
+//                log.info("********mapTemp*************"+mapTemp);
             }
             FileUtil.writeErrorToFile(INFO, functionName, "END", configDTO.getPathFolderLog());
         } catch (IOException | CsvException e) {
@@ -307,5 +318,50 @@ public class UserDatabaseHandler {
         }
         return listMap;
     }
+
+//    public void responseData() {
+//        try {
+//            URL url = new URL("http://10.116.41.47:3000/redmine");
+//            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+//            conn.setDoOutput(true);
+//            conn.setRequestMethod("POST");
+//            conn.setRequestProperty("Content-Type", "application/json");
+//            Issue issue = new Issue();
+//            issue.setIssue_id("27");
+//            issue.setDescription("description_27");
+//            Issue issue1 = new Issue();
+//            issue1.setIssue_id("28");
+//            issue1.setDescription("description_28");
+//            Issue issue2 = new Issue();
+//            issue2.setIssue_id("29");
+//            issue2.setDescription("description_29");
+//            Issue issue3 = new Issue();
+//            issue3.setIssue_id("30");
+//            issue3.setDescription("description_30");
+//            List<Object> issues = new ArrayList<>();
+//            List<Object> issuesFail = new ArrayList<>();
+//            issuesFail.add(issue3);
+//            issues.add(issue);
+//            issues.add(issue1);
+//            issues.add(issue2);
+//            ObjectMapper mapper = new ObjectMapper();
+//            ApiResponse responseIssue = new ApiResponse();
+//            responseIssue.setSuccess(issues);
+//            responseIssue.setFail(issuesFail);
+//            String arrayToJson = mapper.writeValueAsString(responseIssue);
+//            OutputStream os = conn.getOutputStream();
+//            os.write(arrayToJson.getBytes());
+//            os.flush();
+//            new BufferedReader(new InputStreamReader((conn.getInputStream())));
+//
+//            if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
+//                throw new RuntimeException("Failed : HTTP error code : "
+//                        + conn.getResponseCode());
+//            }
+//            conn.disconnect();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 
 }

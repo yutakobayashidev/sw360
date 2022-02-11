@@ -4,7 +4,7 @@ import java.util.List;
 
 public class ApiResponse {
     private List<Object> success;
-    private List<Object> fails;
+    private List<Object> fail;
 
     public List<Object> getSuccess() {
         return success;
@@ -14,11 +14,11 @@ public class ApiResponse {
         this.success = success;
     }
 
-    public List<Object> getFails() {
-        return fails;
+    public List<Object> getFail() {
+        return fail;
     }
 
-    public void setFails(List<Object> fails) {
-        this.fails = fails;
+    public void setFail(List<Object> fail) {
+        this.fail = fail;
     }
 }
