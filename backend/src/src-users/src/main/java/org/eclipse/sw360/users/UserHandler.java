@@ -149,6 +149,7 @@ public class UserHandler implements UserService.Iface {
     @Override
     public RequestSummary importFileToDB() {
         RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+        log.info("****************importFileToDB***********");
         return db.importFileToDB(configDTO.getPathFolder());
     }
 

@@ -388,6 +388,7 @@ public class PortalConstants {
     public static final String LAST_FILE_NAME = "lastFileName";
     public static final String LAST_RUNNING_TIME = "lastRunningTime";
     public static final String PATH_CONFIG_FOLDER_DEPARTMENT = "pathConfigFolderDepartment";
+    public static final String IMPORT_DEPARTMENT_MANUALLY = "importdepartmentmanually";
 
 
     //! Specialized keys for licenseInfo

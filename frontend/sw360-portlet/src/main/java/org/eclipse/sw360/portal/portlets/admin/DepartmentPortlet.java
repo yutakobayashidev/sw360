@@ -124,18 +124,18 @@ public class DepartmentPortlet extends Sw360Portlet {
         }
     }
 
-    @UsedAsLiferayAction
-    public void importDepartmentManually(ActionRequest request, ActionResponse response) throws PortletException {
-        try {
-            UserService.Iface userClient = thriftClients.makeUserClient();
-            RequestSummary requestSummary = userClient.importFileToDB();
-            renderRequestSummary(request, response, requestSummary);
-//            setSessionMessage(request, requestStatus, "Department", "Success");
-            removeParamUrl(request, response);
-        } catch (TException e) {
-            log.error("Cancel Schedule import department: {}", e.getMessage());
-        }
-    }
+//    @UsedAsLiferayAction
+//    public void importDepartmentManually(ActionRequest request, ActionResponse response) throws PortletException {
+//        try {
+//            UserService.Iface userClient = thriftClients.makeUserClient();
+//            RequestSummary requestSummary = userClient.importFileToDB();
+//            renderRequestSummary(request, response, requestSummary);
+////            setSessionMessage(request, requestStatus, "Department", "Success");
+//            removeParamUrl(request, response);
+//        } catch (TException e) {
+//            log.error("Cancel Schedule import department: {}", e.getMessage());
+//        }
+//    }
 
     @UsedAsLiferayAction
     public void writePathFolder(ActionRequest request, ActionResponse response) throws PortletException {
@@ -162,6 +162,33 @@ public class DepartmentPortlet extends Sw360Portlet {
         } catch (IOException e) {
             log.info("Error: {}", e.getMessage());
         }
+    }
+
+    @Override
+    public void serveResource(ResourceRequest request, ResourceResponse response) throws PortletException {
+        String action = request.getParameter(PortalConstants.ACTION);
+        if (action == null) {
+            log.error("Invalid action 'null'");
+            return;
+        }
+        switch (action) {
+            case PortalConstants.IMPORT_DEPARTMENT_MANUALLY:
+                try {
+                    importDepartmentManually(request, response);
+                } catch (TException e) {
+                    log.error("Something went wrong with the department", e);
+                }
+                break;
+            default:
+                log.warn("The LicenseAdminPortlet was called with unsupported action=[" + action + "]");
+        }
+    }
+
+    private void importDepartmentManually(ResourceRequest request, ResourceResponse response) throws TException {
+        UserService.Iface userClient = thriftClients.makeUserClient();
+        RequestSummary requestSummary = userClient.importFileToDB();
+        log.info("****************importDepartmentManually***********"+requestSummary);
+        renderRequestSummary(request, response, requestSummary);
     }
 
 }

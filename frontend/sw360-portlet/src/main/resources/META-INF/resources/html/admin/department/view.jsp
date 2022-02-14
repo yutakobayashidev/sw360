@@ -26,6 +26,10 @@
 </portlet:actionURL>
 <portlet:actionURL var="editPathFolder" name="writePathFolder">
 </portlet:actionURL>
+<portlet:resourceURL var="importDepartmentManually">
+    <portlet:param name="<%=PortalConstants.ACTION%>"
+                   value='<%=PortalConstants.IMPORT_DEPARTMENT_MANUALLY%>'/>
+</portlet:resourceURL>
 <%--<jsp:useBean id="departmentList" scope="request" class="java.util.HashMap"/>--%>
 <%--<jsp:useBean id="allMessageError" scope="request" class="java.util.HashMap"/>--%>
 <%--<jsp:useBean id="lastFileName" scope="request" class="java.lang.String"/>--%>
@@ -58,9 +62,9 @@
                                     <div class="invalid-feedback" id="error-empty">
                                         <liferay-ui:message key="please.enter.the.url"/>
                                     </div>
-                                    <div class="invalid-feedback" id="error-invalid-char">
-                                        <liferay-ui:message key="please.fill.a.z.A.Z.0.9.-...+.only" />
-                                    </div>
+<%--                                    <div class="invalid-feedback" id="error-invalid-char">--%>
+<%--                                        <liferay-ui:message key="please.fill.a.z.A.Z.0.9.-...+.only" />--%>
+<%--                                    </div>--%>
                                 </form>
                             </td>
                             <td width="3%">
@@ -97,8 +101,7 @@
                                     <core_rt:if test="${not departmentIsScheduled}">disabled</core_rt:if> >
                                 <liferay-ui:message key="cancel.department.service"/>
                             </button>
-                            <button type="button" class="btn btn-info"
-                                    onclick="window.location.href='<%=scheduleDepartmentManuallyURL%>'">
+                            <button type="button" class="btn btn-info" data-action="import-department-manually">
                                 <liferay-ui:message key="manually"/>
                             </button>
                             <button type="button" class="btn btn-secondary" id="view-log"><liferay-ui:message
@@ -233,6 +236,50 @@
                     ],
                 });
             }
+            let progress = null;
+            $('.portlet-toolbar button[data-action="import-department-manually"]').on('click', function() {
+                var $dialog;
+                if (progress != null) {
+                    progress.abort();
+                }
+
+                function importDepartmentManually(callback) {
+                    progress = $.ajax({
+                        type: 'POST',
+                        url: '<%=importDepartmentManually%>',
+                        cache: false,
+                        dataType: 'json'
+                    }).always(function() {
+                        callback();
+                    }).done(function (data) {
+                        $('.alert.alert-dialog').hide();
+                        if (data.result === 'SUCCESS') {
+                            $dialog.success(`<liferay-ui:message key="i.imported.x.out.of.y.osadl.license.obliations" />`);
+                        } else if (data.result === 'PROCESSING') {
+                            $dialog.info('<liferay-ui:message key="importing.process.is.already.running.please.try.again.later" />');
+                        } else {
+                            $dialog.alert('<liferay-ui:message key="error.happened.during.license.obligation.importing.some.license.obliations.may.not.be.imported" />');
+                        }
+                    }).fail(function(){
+                        $('.alert.alert-dialog').hide();
+                        $dialog.alert('<liferay-ui:message key="something.went.wrong" />');
+                    });
+                }
+                $dialog = dialog.confirm(
+                    null,
+                    'question-circle',
+                    '<liferay-ui:message key="import.department" />?',
+                    '<p id="OSADLConfirmMessage"><liferay-ui:message key="do.you.really.want.to.import.all.osadl.license.obligations" />',
+                    '<liferay-ui:message key="import.osadl.license.obligations" />',
+                    {},
+                    function(submit, callback) {
+                        $('#OSADLConfirmMessage').hide();
+                        $dialog.info('<liferay-ui:message key="importing.process.is.running.it.may.takes.a.few.minutes" />', true);
+                        $('.modal-header > button').prop('disabled', false);
+                        importDepartmentManually(callback);
+                    }
+                );
+            });
 
             // Check on input type change
             $('#pathFolderDepartment').on('input', function () {
@@ -271,18 +318,16 @@
                     return false;
                 };
 
-                const valid=/^[a-zA-Z]:\\(\w+\\)*\w*$/;
-                if(!pathFolderDepartment.match(valid)){
-                    $('#editPathFolder').addClass('was-validated');
-                    $('#pathFolderDepartment')[0].setCustomValidity('error');
-                    $('#error-invalid-char').addClass('d-block');
-                    return false;
-                };
+                // const valid=/^[a-zA-Z]:\\(\w+\\)*\w*$/;
+                // if(!pathFolderDepartment.match(valid)){
+                //     $('#editPathFolder').addClass('was-validated');
+                //     $('#pathFolderDepartment')[0].setCustomValidity('error');
+                //     $('#error-invalid-char').addClass('d-block');
+                //     return false;
+                // };
 
                 return true;
             }
-            <%--if (${pathConfigFolderDepartment})--%>
-            <%--$("#pathFolderDepartment").attr('placeholder', ${pathConfigFolderDepartment});--%>
         });
     });
     $('#file-log').on('change', function () {

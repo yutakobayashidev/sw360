@@ -40,6 +40,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 
@@ -64,6 +65,8 @@ public class UserDatabaseHandler {
     private static final String INFO = "INFO";
     private static final String ERROR = "ERROR";
     private static boolean IMPORT_STATUS = false;
+    private List<Object> listIssueSuccess = new ArrayList<>();
+    private List<Object> listIssueFail = new ArrayList<>();
 
     public UserDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws IOException {
         // Create the connector
@@ -83,7 +86,8 @@ public class UserDatabaseHandler {
     }
 
     public User getByEmail(String email) {
-        return repository.getByEmail(email);
+        return repository.getByEmail(email)
+                ;
     }
 
     public User getUser(String id) {
@@ -153,38 +157,22 @@ public class UserDatabaseHandler {
     public RequestSummary importFileToDB(String pathFolder) {
         String functionName = new Object() {
         }.getClass().getEnclosingMethod().getName();
-//        responseData();
         RequestSummary requestSummary = new RequestSummary().setTotalAffectedElements(0).setMessage("");
         RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
         if (IMPORT_STATUS) {
             return requestSummary.setRequestStatus(RequestStatus.PROCESSING);
         }
-        log.info("*********IMPORT_STATUS false**********" + IMPORT_STATUS);
+        log.info("****************1. RequestSummary***********"+IMPORT_STATUS);
         IMPORT_STATUS = true;
-        log.info("*********IMPORT_STATUS true**********" + IMPORT_STATUS);
-
+        log.info("****************2. RequestSummary***********"+IMPORT_STATUS);
         try {
             FileUtil.writeErrorToFile(INFO, functionName, "START", configDTO.getPathFolderLog());
-            List<User> users = repository.getAll();
-            userDTOMap = new HashMap<>();
-            for (User user : users) {
-                UserDTO userDTO = UserDTO.convertToUserDTO(user);
-                userDTOMap.put(user.getEmail(), userDTO);
-            }
             Set<String> files = FileUtil.listFilesUsingFileWalk(pathFolder);
             for (String file : files) {
                 checkFileFormat(pathFolder + "/" + file);
             }
-            userDTOMap.forEach((key, value) -> {
-                if (value.getId() == null || value.getId().isEmpty() || value.getId().equals("")) {
-                    repository.add(value.convertToUser());
-                } else {
-                    repository.update(value.convertToUserUpdate());
-                }
-            });
             requestSummary.setRequestStatus(RequestStatus.SUCCESS);
             IMPORT_STATUS = false;
-            log.info("*********IMPORT_STATUS false end**********" + IMPORT_STATUS);
             FileUtil.writeErrorToFile(INFO, functionName, "END", configDTO.getPathFolderLog());
         } catch (IOException e) {
             IMPORT_STATUS = false;
@@ -194,15 +182,78 @@ public class UserDatabaseHandler {
             requestSummary.setMessage(msg);
             requestSummary.setRequestStatus(RequestStatus.FAILURE);
         }
+        log.info("****************3. RequestSummary***********"+IMPORT_STATUS);
+        responseData(listIssueSuccess, listIssueFail);
         return requestSummary;
     }
 
     private void checkFileFormat(String pathFile) {
         String extension = FilenameUtils.getExtension(pathFile);
         if (extension.equalsIgnoreCase("xlsx") || extension.equalsIgnoreCase("xls")) {
+            userDTOMap = new HashMap<>();
+            listIssueSuccess = new ArrayList<>();
+            listIssueFail = new ArrayList<>();
+            File file = new File(pathFile);
+            List<User> users = repository.getAll();
+            userDTOMap = new HashMap<>();
+            for (User user : users) {
+                UserDTO userDTO = UserDTO.convertToUserDTO(user);
+                userDTOMap.put(user.getEmail(), userDTO);
+            }
             readFileExcel(pathFile);
-        } else if (extension.equalsIgnoreCase("csv")){
+            HashMap<String, Boolean> resMap = new HashMap<>();
+            userDTOMap.forEach((key, value) -> {
+                if (value.getId() == null || value.getId().isEmpty() || value.getId().equals("")) {
+                    User user = value.convertToUser();
+                    boolean res = repository.add(user);
+                    user.getSecondaryDepartmentsAndRoles().forEach((keyD, valueD) -> {
+                        if (res) {
+                            if (!resMap.containsKey(keyD)) {
+                                resMap.put(keyD, true);
+                            }
+                        } else {
+                            resMap.put(keyD, false);
+                        }
+                    });
+                } else {
+                    try {
+                        User user = value.convertToUserUpdate();
+                        repository.update(user);
+                        user.getSecondaryDepartmentsAndRoles().forEach((keyD, valueD) -> {
+                            if (!resMap.containsKey(keyD)) {
+                                resMap.put(keyD, true);
+                            }
+                        });
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            Issue issueSuccess = new Issue();
+            Issue issueFail = new Issue();
+            String descriptionSuccess = resMap.entrySet().stream()
+                    .filter(x -> Boolean.TRUE.equals(x.getValue()))
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.joining(", "));
+            String issueId = pathFile.substring(pathFile.lastIndexOf("_") + 1, pathFile.lastIndexOf("."));
+            String fileName = file.getName().replace(pathFile.substring(pathFile.lastIndexOf("_"), pathFile.lastIndexOf(".")), "");
+            if (!issueSuccess.equals("") && !descriptionSuccess.isEmpty()) {
+                issueSuccess.setIssue_id(issueId);
+                issueSuccess.setDescription("Department [" + descriptionSuccess + "] added successfully - File name [" + fileName + "]");
+                listIssueSuccess.add(issueSuccess);
+            }
+            String descriptionFail = resMap.entrySet().stream()
+                    .filter(x -> !Boolean.TRUE.equals(x.getValue()))
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.joining(", "));
+            if (!issueFail.equals("") && !descriptionFail.isEmpty()) {
+                issueFail.setIssue_id(issueId);
+                issueFail.setDescription("Department [" + descriptionFail + "] - File name [" + fileName + "]");
+                listIssueFail.add(issueFail);
+            }
+        } else if (extension.equalsIgnoreCase("csv")) {
             readFileCsv(pathFile);
+
         }
     }
 
@@ -222,7 +273,6 @@ public class UserDatabaseHandler {
                     if (!Objects.equals(row[0], "")) mapTemp = row[0];
                     checkUser(row[1], mapTemp);
                 }
-//                log.info("********mapTemp*************"+mapTemp);
             }
             FileUtil.writeErrorToFile(INFO, functionName, "END", configDTO.getPathFolderLog());
         } catch (IOException | CsvException e) {
@@ -282,7 +332,8 @@ public class UserDatabaseHandler {
         UserDTO userDTO = userDTOMap.get(email);
         if (userDTO == null) {
             UserDTO u = new UserDTO();
-            u.setEmail(email);
+            u.setEmail(email)
+            ;
             u.setDepartment(DEPARTMENT);
             Set<UserGroup> userGroups = new HashSet<>();
             userGroups.add(UserGroup.USER);
@@ -319,49 +370,31 @@ public class UserDatabaseHandler {
         return listMap;
     }
 
-//    public void responseData() {
-//        try {
-//            URL url = new URL("http://10.116.41.47:3000/redmine");
-//            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-//            conn.setDoOutput(true);
-//            conn.setRequestMethod("POST");
-//            conn.setRequestProperty("Content-Type", "application/json");
-//            Issue issue = new Issue();
-//            issue.setIssue_id("27");
-//            issue.setDescription("description_27");
-//            Issue issue1 = new Issue();
-//            issue1.setIssue_id("28");
-//            issue1.setDescription("description_28");
-//            Issue issue2 = new Issue();
-//            issue2.setIssue_id("29");
-//            issue2.setDescription("description_29");
-//            Issue issue3 = new Issue();
-//            issue3.setIssue_id("30");
-//            issue3.setDescription("description_30");
-//            List<Object> issues = new ArrayList<>();
-//            List<Object> issuesFail = new ArrayList<>();
-//            issuesFail.add(issue3);
-//            issues.add(issue);
-//            issues.add(issue1);
-//            issues.add(issue2);
-//            ObjectMapper mapper = new ObjectMapper();
-//            ApiResponse responseIssue = new ApiResponse();
-//            responseIssue.setSuccess(issues);
-//            responseIssue.setFail(issuesFail);
-//            String arrayToJson = mapper.writeValueAsString(responseIssue);
-//            OutputStream os = conn.getOutputStream();
-//            os.write(arrayToJson.getBytes());
-//            os.flush();
-//            new BufferedReader(new InputStreamReader((conn.getInputStream())));
-//
-//            if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
-//                throw new RuntimeException("Failed : HTTP error code : "
-//                        + conn.getResponseCode());
-//            }
-//            conn.disconnect();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
+    public void responseData(List<Object> success, List<Object> fails) {
+        try {
+            ApiResponse response = new ApiResponse();
+            URL url = new URL("http://10.116.41.47:3000/redmine");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setDoOutput(true);
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            response.setSuccess(success);
+            response.setFail(fails);
+            ObjectMapper mapper = new ObjectMapper();
+            String arrayToJson = mapper.writeValueAsString(response);
+            OutputStream os = conn.getOutputStream();
+            os.write(arrayToJson.getBytes());
+            os.flush();
+            new BufferedReader(new InputStreamReader((conn.getInputStream())));
+
+            if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                throw new RuntimeException("Failed : HTTP error code : "
+                        + conn.getResponseCode());
+            }
+            conn.disconnect();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
 }
