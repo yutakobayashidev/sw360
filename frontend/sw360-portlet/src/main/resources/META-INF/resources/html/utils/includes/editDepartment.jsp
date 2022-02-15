@@ -7,20 +7,19 @@
   ~
   ~ SPDX-License-Identifier: EPL-2.0
 --%>
-<%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
-<%@ page import="org.eclipse.sw360.datahandler.thrift.users.User" %>
-
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants"%>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.users.UserGroup"%>
 
 <table class="table edit-table two-columns-with-actions" id="secDepartmentRolesTable">
     <thead>
     <tr>
-        <th colspan="1" class="headlabel"><liferay-ui:message key="Add Email" /></th>
+        <th colspan="3" class="headlabel"><liferay-ui:message key="secondary.departments.and.roles" /></th>
     </tr>
     </thead>
 </table>
 
 <button type="button" class="btn btn-secondary" id="add-sec-grp-roles-id">
-    <liferay-ui:message key="Add" />
+    <liferay-ui:message key="click.to.add.secondary.department.and.roles" />
 </button>
 
 <div class="dialogs">
@@ -53,13 +52,12 @@
     </div>
 </div>
 
-
 <script>
     require(['jquery', 'modules/dialog'], function($, dialog) {
-        addRowToSecDepartmentRolesTable();
+
+        createSecDepartmentRolesTable();
         $('#add-sec-grp-roles-id').on('click', function() {
             addRowToSecDepartmentRolesTable();
-
         });
         $('#secDepartmentRolesTable').on('click', 'svg[data-row-id]', function(event) {
             var rowId = $(event.currentTarget).data().rowId;
@@ -72,6 +70,18 @@
             });
         });
 
+        function addRowsToSecDepartmentRolesTable(key, values, rowId) {
+            try {
+                var valueArray = JSON.parse($('<div />').html(values).text()).sort()
+                for (var i = 0, length = valueArray.length; i < length; i++) {
+                    var value = valueArray[i];
+                    addRowToSecDepartmentRolesTable(key, value, rowId + i)
+                }
+            } catch(error) {
+                addRowToSecDepartmentRolesTable(key, values, rowId)
+            }
+        }
+
         function addRowToSecDepartmentRolesTable(key, value, rowId) {
             if (!rowId) {
                 rowId = "secDepartmentRolesTableRow" + Date.now();
@@ -80,18 +90,16 @@
                 key = "";
                 value = "";
             }
+
             var newRowAsString =
                 '<tr id="' + rowId + '" class="bodyRow">' +
                 '<td>' +
-                '<input list="grpsKeyList" class="form-control" id="myInput" name="<portlet:namespace/><%=PortalConstants.ADD_LIST_EMAIL%>"  required="" minlength="1"  placeholder="<liferay-ui:message key="Search User" />" title="<liferay-ui:message key="select.secondary.department.role" />"  value="" />'+
-                ' <datalist id="grpsKeyList">'+
-                '<core_rt:forEach var="email" items="${emails}" varStatus="loop"> '+
-                '<option value="${email}">${email}</option>--%> '+
-                 '</core_rt:forEach> '+
-                '</datalist>'+
-                '<p id="result"></p>'+
-                 prepareKeyDatalist() +
-                 '</td>' +
+                '<input list="grpsKeyList" class="form-control" id="secGrp' + rowId + '" name="<portlet:namespace/><%=PortalConstants.USER_SECONDARY_GROUP_KEY%>' + rowId + '" required="" minlength="1" placeholder="<liferay-ui:message key="enter.secondary.department" />" title="<liferay-ui:message key="enter.secondary.department" />" value="' + key + '"/>' +
+                prepareKeyDatalist() +
+                '</td>' +
+                '<td>' +
+                '<input type="text" id="emailFake" name="<portlet:namespace/><%=PortalConstants.DEPARTMENT_ROLE%>" value="User"/>'+
+                '</td>' +
                 '<td class="content-middle">' +
                 '<svg class="action lexicon-icon" data-row-id="' + rowId + '">' +
                 '<title>Delete</title>' +
@@ -100,14 +108,14 @@
                 '</td>' +
                 '</tr>';
             $('#secDepartmentRolesTable tr:last').after(newRowAsString);
-            $("#myInput" + rowId + " option").each(function() {
+            $("#secGrpRole" + rowId + " option").each(function() {
                 if ($(this).val() === value) {
                     $(this).attr('selected', 'selected');
                     return false;
                 }
             });
-
         }
+
         function prepareKeyDatalist() {
             var datalist = '<datalist id="grpsKeyList">';
             <core_rt:forEach items="${grpsKeys}" var="grpsKey">
@@ -116,31 +124,23 @@
             return datalist + '</datalist>';
         }
 
-        $(document).ready(function(){
-            $("#addEmail").after(prepareKeyDatalist()).attr("list","grpsKeyList")
-        })
-
-
-
-        const validate = () => {
-            const $result = $('#result');
-            const email = $('#myInput').val();
-            $result.text('');
-
-            if (!validateEmail(email)) {
-                $result.text(email + ' is not valid :(');
-                $result.css('color', 'red');
-            }
-            return false;
+        function createSecDepartmentRolesTable() {
+            <core_rt:forEach items="${departmentRoleUser}" var="tableEntry" varStatus="loop">
+            <core_rt:forEach items="${tableEntry.value}" var="group" varStatus="innerloop">
+            addRowsToSecDepartmentRolesTable('<sw360:out value="${tableEntry.key}"/>', '<sw360:out value="${group}"/>', 'secDepartmentRolesTableRow${loop.count}${innerloop.count}');
+            </core_rt:forEach>
+            </core_rt:forEach>
         }
-        const validateEmail = (email) => {
-            return email.match(
-                /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-            );
-        };
 
-        $('#myInput').on('input', validate);
+        function decodeHTMLentities(str) {
+            return str.replace(/&#(\d+);/g, function(match, dec) {
+                return String.fromCharCode(dec);
+            });
+        }
 
+        $(document).ready(function(){
+            $("#user_department").after(prepareKeyDatalist()).attr("list","grpsKeyList")
+        })
     });
 
 </script>

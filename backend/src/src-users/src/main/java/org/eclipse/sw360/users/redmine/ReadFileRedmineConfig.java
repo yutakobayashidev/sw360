@@ -15,6 +15,7 @@ import java.nio.file.Paths;
 public class ReadFileRedmineConfig {
 
     private static final Logger log = LogManager.getLogger(ReadFileRedmineConfig.class);
+    private static final String FOLDER_LOG = "/logs/";
 
     protected String getPathConfig() throws IOException {
         String path = "/";
@@ -42,7 +43,8 @@ public class ReadFileRedmineConfig {
             Long statusNameOpenId = configRedmine.path("statusNameOpenId").asLong();
             Long statusNameClosedId = configRedmine.path("statusNameClosedId").asLong();
             String pathFolder = configRedmine.path("pathFolder").asText();
-            return new RedmineConfigDTO(username, password, url, projectId, trackerId, statusNameOpenId, statusNameClosedId, pathFolder);
+            String pathFolderLog = pathFolder + FOLDER_LOG;
+            return new RedmineConfigDTO(username, password, url, projectId, trackerId, statusNameOpenId, statusNameClosedId, pathFolder, pathFolderLog);
         } catch (IOException e) {
             log.error("An I/O error occurred: {}", e.getMessage());
         }

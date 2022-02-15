@@ -29,6 +29,7 @@ import org.graalvm.compiler.lir.LIRInstruction;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.ResourceRequest;
+import java.io.UnsupportedEncodingException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -166,14 +167,16 @@ public abstract class ComponentPortletUtils {
         setFieldValue(request, vendor, Vendor._Fields.URL);
     }
 
-    public static List<String> updateUserFromRequest(PortletRequest request) {
+    public static List<String> updateUserFromRequest(PortletRequest request,Logger log) {
+
         List<String> emails=new ArrayList<>();
-        System.out.println("---------------------email-ADD_LIST_EMAIL---------------");
-            String  [] emailsRequest=request.getParameterValues(PortalConstants.ADD_LIST_EMAIL);
-            for (int i = 0; i <emailsRequest.length ; i++) {
-                emails.add(emailsRequest[i]);
-            }
-            return emails;
+        String emailsRequest=request.getParameter(PortalConstants.ADD_LIST_EMAIL);
+        String replaceEmail = emailsRequest.replace("[","").replace("]", "");
+        String[] parts = replaceEmail.split(",");
+        for (String email: parts) {
+            emails.add(handlerEmails(email));
+        }
+        return emails;
 
     }
 
@@ -260,9 +263,7 @@ public abstract class ComponentPortletUtils {
     public static RequestStatus deleteDepartment(PortletRequest request, Logger log) {
 
         String email=request.getParameter("email");
-        String departmentKey = request.getParameter(PortalConstants.DEPARTMENT_KEY);
-        log.info("------------departmentKey key-------------"+departmentKey);
-        log.info("------------email key-------------"+email);
+        String departmentKey = request.getParameter("departmentKey");
         if (departmentKey != null) {
             try {
                 User user = UserCacheHolder.getUserFromRequest(request);
@@ -272,7 +273,7 @@ public abstract class ComponentPortletUtils {
 
                 RequestStatus global_status = RequestStatus.SUCCESS;
                 if (global_status == RequestStatus.SUCCESS) {
-                     client.deleteDepartmentByEmail(email, departmentKey);
+                    client.deleteDepartmentByEmail(email, departmentKey);
                 } else {
                     return global_status;
                 }
@@ -431,5 +432,12 @@ public abstract class ComponentPortletUtils {
         verificationStateHistory.add(resultInfo);
 
         return dbRelation;
+    }
+    public static String handlerEmails(String email){
+        String value="";
+        for (int i = 1; i <email.length() -1; i++) {
+            value+= email.charAt(i);
+        }
+        return value;
     }
 }

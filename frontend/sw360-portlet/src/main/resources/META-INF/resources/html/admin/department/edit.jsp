@@ -24,13 +24,17 @@
 <%@ page import="org.eclipse.sw360.datahandler.thrift.users.User" %>
 <jsp:useBean id="departmentKey" type="java.lang.String" scope="request"/>
 
-<jsp:useBean id="departmentEmail" type="java.util.List<java.lang.String>" scope="request"/>
-<jsp:useBean id="emails" type="java.util.List<java.lang.String>" scope="request"/>
-<jsp:useBean id="departmentName" type="java.util.List<java.lang.String>" scope="request"/>
-<jsp:useBean id="departmentList"
-             type="java.util.HashMap<java.lang.String,org.eclipse.sw360.datahandler.thrift.users.User>"
-             scope="request"/>
-<core_rt:set var="addMode" value="${empty departmentKey}"/>
+<jsp:useBean id="departmentEncode" type="java.lang.String" scope="request"/>
+<jsp:useBean id="departmentRoleUser" type="java.lang.String" scope="request"/>
+<jsp:useBean id="emailOtherDepartment" type="java.lang.String" scope="request"/>
+<%--<jsp:useBean id="departmentEmail" type="java.util.List<java.lang.String>" scope="request"/>--%>
+<%--<jsp:useBean id="emails" type="java.util.List<java.lang.String>" scope="request"/>--%>
+<%--<jsp:useBean id="departmentName" type="java.util.List<java.lang.String>" scope="request"/>--%>
+<%--<jsp:useBean id="departmentList"--%>
+<%--             type="java.util.HashMap<java.lang.String,org.eclipse.sw360.datahandler.thrift.users.User>"--%>
+<%--             scope="request"/>--%>
+
+<%--<core_rt:set var="addMode" value="${empty departmentKey}"/>--%>
 
 <portlet:resourceURL var="deleteDepartmentURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.REMOVE_DEPARTMENT_BY_EMAIL%>'/>
@@ -51,120 +55,82 @@
                     <div class="btn-toolbar" role="toolbar">
                         <div class="btn-group">
                             <button type="button" class="btn btn-primary" data-action="save"><liferay-ui:message
-                                    key="update"/></button>
+                                    key="Update Department"/></button>
                         </div>
                         <div class="btn-group">
                             <button type="button" class="btn btn-light" data-action="cancel"><liferay-ui:message
-                                    key="cancel"/></button>
+                                    key="Cancel"/></button>
                         </div>
                     </div>
                 </div>
             </div>
-
             <div class="row">
                 <div class="col">
-                    <form id="departmentEditForm" name="departmentEditForm" action="<%=updateURL%>" method="post"
-                          class="form needs-validation" novalidate>
-                        <table id="departmentEdit" class="table edit-table three-columns" style="text-align: center">
-<%--                            <thead>--%>
-<%--                            <tr>--%>
-<%--                                <th><liferay-ui:message key="department"/></th>--%>
-<%--                                <th><liferay-ui:message key="member.emails"/></th>--%>
-<%--                            </tr>--%>
-<%--                            </thead>--%>
+                    <form id="departmentEditForm" name="departmentEditForm" action="<%=updateURL%>" method="post" class="form needs-validation" novalidate>
+                        <table class="table edit-table two-columns-with-actions" id="secDepartmentRolesTable">
+                            <thead>
+                            <input style="display: none;" type="text" id="listEmail" name="<portlet:namespace/><%=PortalConstants.ADD_LIST_EMAIL%>" value="" />
+                            <tr>
+                                <th colspan="3" class="headlabel" ><liferay-ui:message key="Edit Department"/>   ${departmentEncode}</th>
+                            </tr>
+                            </thead>
                             <tbody>
-<%--                           <label > <b>Department</b></label><br><br>--%>
-<%--                            <tr >--%>
-<%--                                <sw360:out value="${departmentKey}"/>--%>
-<%--                            </tr>--%>
-<%--                            <br>--%>
-<%--                            <br>--%>
-<%--                            <br>--%>
-<%--                            <label ><b>Member</b>Member</label><br>--%>
-<%--                           <tr id="nameEmailDiv" >--%>
-<%--                                <input style="display: none;" type="text" id="emailFake"--%>
-<%--                                       name="<portlet:namespace/><%=PortalConstants.EMAIL_FAKE%>" value=""/>--%>
-<%--&lt;%&ndash;                                <td><sw360:out value="${departmentKey}"/></td>&ndash;%&gt;--%>
-<%--&lt;%&ndash;                                <td id="nameEmailDiv">&ndash;%&gt;--%>
-<%--                                    <core_rt:forEach var="department" items="${departmentList}">--%>
-<%--                                        <core_rt:forEach var="secondDepartment" items="${department.value}"--%>
-<%--                                                         varStatus="loop">--%>
-<%--                                            <div id="${loop.index}">--%>
-<%--                                                <span>${loop.index + 1}.</span><span> <sw360:out--%>
-<%--                                                    value="${secondDepartment.email}"/></span>--%>
-
-<%--                                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--%>
-<%--                                                <svg class="delete lexicon-icon"--%>
-<%--                                                     data-map="${secondDepartment.email}"--%>
-<%--                                                     data-id="${loop.index}">--%>
-<%--                                                    <title><liferay-ui:message key="delete"/></title>--%>
-<%--                                                    <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>--%>
-<%--                                                </svg>--%>
-<%--                                            </div>--%>
-<%--                                        </core_rt:forEach>--%>
-<%--                                    </core_rt:forEach>--%>
-<%--                                    </br>--%>
-<%--                                    <div>--%>
-<%--                                        <%@include file="/html/utils/includes/addUser.jsp" %>--%>
-<%--                                    </div>--%>
-<%--&lt;%&ndash;                                </td>&ndash;%&gt;--%>
-<%--                            </tr>--%>
-
-
-<%--                            code clean--%>
-<%--                            <tr>--%>
-                                <input style="display: none;" type="text" id="emailFake"
-                                       name="<portlet:namespace/><%=PortalConstants.EMAIL_FAKE%>" value=""/>
-                                <tr ><sw360:out value="${departmentKey}"/></tr>
-                                <br/>
-                                <br/>
-                                <label>Email </label>
-                                <tr >
-                                    <table id="nameEmailDiv" cellspacing="0" cellpadding="0" >
-                                        <core_rt:forEach var="department" items="${departmentList}">
-                                            <div style="width:100%; max-height:210px; overflow:auto">
-                                        <core_rt:forEach var="secondDepartment" items="${department.value}" varStatus="loop">
-                                        <tr id="${loop.index}">
-                                            <td >
-
-                                                        <span>${loop.index + 1}.</span><span> <sw360:out
-                                                            value="${secondDepartment.email}"/></span>
-
-                                            </td>
-                                            <td>
-                                                <svg class="delete lexicon-icon"
-                                                     data-map="${secondDepartment.email}"
-                                                     data-id="${loop.index}" >
-                                                    <title><liferay-ui:message key="delete"/></title>
-                                                    <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
-                                                </svg>
-                                            </td>
-                                        </tr>
-                                        </core_rt:forEach>
-                                            </div>
-                                        </core_rt:forEach>
-                                    </table>
-                                    </br>
-                                    <div>
-                                        <%@include file="/html/utils/includes/addUser.jsp" %>
-                                    </div>
+                                <tr id="" class="bodyRow" display="none">
+                                    <td>
+                                        <input list="suggestionsList" class="form-control secGrp" name="email" placeholder="<liferay-ui:message key="Search User" />" title="<liferay-ui:message key="select.secondary.department.role" />"   />
+                                        <datalist class="suggestion" id="suggestionsList">
+                                        </datalist>
+                                    </td>
+                                    <td>
+                                        <input  class="form-control" disabled class="secGrp" minlength="1" placeholder="<liferay-ui:message key="role" />" title="<liferay-ui:message key="role" />" value="User"/>
+                                    </td>
+                                    <td class="content-middle">
+                                        <svg class="action lexicon-icon delete-btn" data-value="" data-row-id="" onclick="">
+                                            <title>Delete</title>
+                                            <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
+                                        </svg>
+                                    </td>
                                 </tr>
-<%--                 </td>--%>
-<%--                            </tr>--%>
-
-
                             </tbody>
                         </table>
+                        <button type="button" class="btn btn-secondary" id="add-sec-grp-roles-id">
+                            <liferay-ui:message key="Add User" />
+                        </button>
                     </form>
                 </div>
             </div>
-
-
         </div>
     </div>
 </div>
-
-
+<div class="dialogs">
+    <div id="deleteSecGrpRolesDialog" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-danger" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <clay:icon symbol="question-circle" />
+                        <liferay-ui:message key="delete.item" />
+                        ?
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p data-name="text"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">
+                        <liferay-ui:message key="cancel" />
+                    </button>
+                    <button type="button" class="btn btn-danger">
+                        <liferay-ui:message key="delete.item" />
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="dialogs auto-dialogs"></div>
 
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
@@ -173,89 +139,112 @@
     AUI().use('liferay-portlet-url', function () {
 
         require(['jquery', 'modules/dialog', 'modules/validation'], function ($, dialog, validation) {
+            let index=0;
+            let emailsAdd=[];
+            let emailJSON = jQuery.parseJSON(JSON.stringify(${ departmentRoleUser }));
+            let emailOtherDepartment= jQuery.parseJSON(JSON.stringify(${emailOtherDepartment}));
+            createSecDepartmentRolesTable();
             pageName = '<%=PortalConstants.PAGENAME%>';
             pageEdit = '<%=PortalConstants.PAGENAME_EDIT%>';
-
             validation.enableForm('#departmentEditForm');
 
             $('.portlet-toolbar button[data-action="cancel"]').on('click', function () {
                 var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
-                var portletURL = Liferay.PortletURL.createURL(baseUrl)
-                <core_rt:if test="${not addMode}" >
-                    .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_DETAIL%>')
-                    </core_rt:if>
-                    <core_rt:if test="${addMode}" >
-                    .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_VIEW%>')
-                    </core_rt:if>
-                    .setParameter('<%=PortalConstants.DEPARTMENT_KEY%>', '${departmentKey}');
-
+                var portletURL = Liferay.PortletURL.createURL(baseUrl).setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_VIEW%>');
                 window.location = portletURL.toString();
             });
 
             $('.portlet-toolbar button[data-action="save"]').on('click', function () {
+                $('.secGrp').each(function() {
+                    emailsAdd.push($(this).val())
+                });
+                var jsonArrayEmail = JSON.parse(JSON.stringify(emailsAdd));
+                console.log("--------------"+jsonArrayEmail);
+                $('#listEmail').val(JSON.stringify(jsonArrayEmail));
                 $('#departmentEditForm').submit();
             });
 
-            $('#nameEmailDiv').on('click', 'svg.delete', function (event) {
-                var data = $(event.currentTarget).data();
-                var id = data.id;
-                deleteDepartment(data.map, id);
+            function createSecDepartmentRolesTable() {
+                $('.delete-btn').first().bind('click', deleteRow);
 
-            });
-
-            function deleteDepartment(email, id) {
-                var $dialog;
-                function deleteDepartmentInternal(callback) {
-                    jQuery.ajax({
-                        type: 'POST',
-                        url: '<%=deleteDepartmentURL%>',
-                        cache: false,
-                        data: {
-                            <portlet:namespace/>email: email,
-                        },
-                        success: function (data) {
-                            callback();
-                            console.log(data);
-                            if (data.result == 'SUCCESS') {
-                                console.log(data);
-                                $('#nameEmailDiv #' + id).remove();
-
-                                $dialog.close();
-                            } else if (data.result == 'ACCESS_DENIED') {
-                                $dialog.alert('<liferay-ui:message key="do.you.really.want.to.delete.user.x" />');
-                            } else {
-                                $dialog.alert("<liferay-ui:message key="i.could.not.delete.user" />");
-
-                            }
-                            setInterval('location.reload()', 100);
-                        },
-                        error: function () {
-                            callback();
-                            $dialog.alert('<liferay-ui:message key="i.could.not.delete.the.vendor" />');
-                        }
-
-                    });
+                if (emailJSON.length == 0) {
+                    return;                    
                 }
 
-                $dialog = dialog.confirm(
+                for (let i = 0; i < emailJSON.length - 1; i++) {
+                    addNewRow();
+                }
 
-                    'danger',
-                    'question-circle',
-                    '<liferay-ui:message key="delete.vendor" /> ?',
-                    '<p><liferay-ui:message key="do.you.really.want.to.delete.the.vendor.x" />?</p>',
-                    '<liferay-ui:message key="delete.vendor" />',
-                    {
-                        email: email,
-                    },
-                    function (submit, callback) {
-                        deleteDepartmentInternal(callback);
+                for (let i = 0; i < emailJSON.length; i++) {
+                    $('.secGrp').eq(i).val(emailJSON[i].Email);
+                }
 
+                fillSuggestion();
+            }
+
+            $('#add-sec-grp-roles-id').on('click', function() {
+                addNewRow();
+            });
+
+            function addNewRow() {
+                if ($('.bodyRow').first().css('display') == 'none') {
+                    $('.bodyRow').last().css('display', 'table-row');
+                    return;
+                }
+
+                let newRow = $('.bodyRow').last().clone();
+
+                $('#secDepartmentRolesTable').find('tbody').append(newRow);
+
+                $('.secGrp').last().val('');
+
+                $('.delete-btn').last().bind('click', deleteRow);
+            }
+
+            function deleteRow() {
+                let email = $(this).parent().parent().children('td').first().children('input').val();
+    
+                let emailObject = { Email: email };
+    
+                emailOtherDepartment.push(emailObject);
+                emailOtherDepartment = Array.from(new Set(emailOtherDepartment));
+    
+                if ($('.delete-btn').length > 1) {
+                    $(this).closest('tr').remove();
+                } else {
+                    $('.secGrp').val('');
+                    $(this).closest('tr').css('display', 'none');
+                }
+    
+                fillSuggestion();
+            }
+
+            function fillSuggestion() {
+                let suggestionsList = '';
+
+                for(let email of emailOtherDepartment) {
+                    suggestionsList += '<option value="'+email.Email+'">' + email.Email + '</option>';
+                }
+
+                $('.suggestion').empty();
+
+                $('.suggestion').each(function() {
+                    $(this).html(suggestionsList);
+                });
+            }
+
+            function handleFocusOut(element) {
+                let value = element.val();
+                for (let i = 0; i < emailOtherDepartment.length; i++) {
+                    if (emailOtherDepartment[i].Email == value) {
+                        $(element).val(emailOtherDepartment[i].Email);
+                        break;
+                    } else {
+                        $(element).val("");
+                        continue;
                     }
-                );
-                // window.location.reload();
+                }
             }
         });
     });
-
-
 </script>

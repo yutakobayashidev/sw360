@@ -9,11 +9,12 @@ public class RedmineConfigDTO {
     private Long statusNameOpenId;
     private Long statusNameClosedId;
     private String pathFolder;
+    private String pathFolderLog;
 
     public RedmineConfigDTO() {
     }
 
-    public RedmineConfigDTO(String username, String password, String url, Long projectId, Long trackerId, Long statusNameOpenId, Long statusNameClosedId, String pathFolder) {
+    public RedmineConfigDTO(String username, String password, String url, Long projectId, Long trackerId, Long statusNameOpenId, Long statusNameClosedId, String pathFolder, String pathFolderLog) {
         this.username = username;
         this.password = password;
         this.url = url;
@@ -22,6 +23,7 @@ public class RedmineConfigDTO {
         this.statusNameOpenId = statusNameOpenId;
         this.statusNameClosedId = statusNameClosedId;
         this.pathFolder = pathFolder;
+        this.pathFolderLog = pathFolderLog;
     }
 
     public String getUsername() {
@@ -86,5 +88,13 @@ public class RedmineConfigDTO {
 
     public void setPathFolder(String pathFolder) {
         this.pathFolder = pathFolder;
+    }
+
+    public String getPathFolderLog() {
+        return pathFolderLog;
+    }
+
+    public void setPathFolderLog(String pathFolderLog) {
+        this.pathFolderLog = pathFolderLog;
     }
 }

@@ -21,5 +21,6 @@ JAVA_OPTS="$JAVA_OPTS -XX:+UseParNewGC"
 JAVA_OPTS="$JAVA_OPTS -XX:+UseConcMarkSweepGC"
 JAVA_OPTS="$JAVA_OPTS -XX:+CMSParallelRemarkEnabled"
 JAVA_OPTS="$JAVA_OPTS -XX:SurvivorRatio=20"
+JAVA_OPTS="$JAVA_OPTS -Djdk.http.auth.tunneling.disabledSchemes"
 
 export JAVA_OPTS

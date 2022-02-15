@@ -157,8 +157,25 @@ service UserService {
     list<string>  getAllEmailByDepartment(string departmentKey);
 
     list<string>  getAllEmailOtherDepartment(string departmentKey);
+
     void updateDepartmentToUser(1: string email, 2: string department)
+
     void updateDepartmentToListUser(1: list<string> emails, 2: string department)
+
     void deleteDepartmentByEmail(1: string email, 2: string department)
+
+    void deleteDepartmentByListEmail(1: list<string> emails,2: string department)
+
+    string searchUsersByDepartmentToJson(1: string department)
+
+     string getAllEmailOtherDepartmentToJson(1: string department)
+
+    set<string> getListFileLog();
+
+    map<string, list<string>> getAllMessageError();
+
+    string getLastModifiedFileName();
+
+
 
 }

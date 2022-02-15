@@ -10,6 +10,8 @@
 package org.eclipse.sw360.users.db;
 
 import com.cloudant.client.api.CloudantClient;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.exceptions.CsvException;
@@ -17,7 +19,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.xmlbeans.impl.xb.xsdschema.Attribute;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
@@ -30,17 +31,15 @@ import org.eclipse.sw360.datahandler.thrift.ThriftValidate;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.users.dto.RedmineConfigDTO;
 import org.eclipse.sw360.users.dto.UserDTO;
+import org.eclipse.sw360.users.redmine.ReadFileRedmineConfig;
+import org.eclipse.sw360.users.util.FileUtil;
 import org.ektorp.http.HttpClient;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 
@@ -61,12 +60,16 @@ public class UserDatabaseHandler {
     private Map<String, UserDTO> userDTOMap;
     private static final Logger log = LogManager.getLogger(UserDatabaseHandler.class);
     private static final String DEPARTMENT = "DEPARTMENT";
+    private ReadFileRedmineConfig readFileRedmineConfig;
+    private static final String INFO = "INFO";
+    private static final String ERROR = "ERROR";
 
     public UserDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws IOException {
         // Create the connector
         db = new DatabaseConnectorCloudant(httpClient, dbName);
         dbConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
         repository = new UserRepository(db);
+        readFileRedmineConfig = new ReadFileRedmineConfig();
         userSearchHandler = new UserSearchHandler(dbConnector, httpClient);
     }
 
@@ -147,14 +150,18 @@ public class UserDatabaseHandler {
     }
 
     public void importFileToDB(String pathFolder) {
+        String functionName = new Object() {
+        }.getClass().getEnclosingMethod().getName();
+        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
         try {
+            FileUtil.writeErrorToFile(INFO, functionName, "START", configDTO.getPathFolderLog());
             List<User> users = repository.getAll();
             userDTOMap = new HashMap<>();
             for (User user : users) {
                 UserDTO userDTO = UserDTO.convertToUserDTO(user);
                 userDTOMap.put(user.getEmail(), userDTO);
             }
-            Set<String> files = listFilesUsingFileWalk(pathFolder);
+            Set<String> files = FileUtil.listFilesUsingFileWalk(pathFolder);
             for (String file : files) {
                 checkFileFormat(pathFolder + "/" + file);
             }
@@ -165,24 +172,16 @@ public class UserDatabaseHandler {
                     repository.update(value.convertToUserUpdate());
                 }
             });
+            FileUtil.writeErrorToFile(INFO, functionName, "END", configDTO.getPathFolderLog());
         } catch (IOException e) {
             log.error("Can't read file: {}", e.getMessage());
-        }
-    }
-
-    private static Set<String> listFilesUsingFileWalk(String dir) throws IOException {
-        try (Stream<Path> stream = Files.walk(Paths.get(dir), 1)) {
-            return stream
-                    .filter(file -> !Files.isDirectory(file))
-                    .map(Path::getFileName)
-                    .map(Path::toString)
-                    .collect(Collectors.toSet());
+            FileUtil.writeErrorToFile(ERROR, functionName, e.getMessage(), configDTO.getPathFolderLog());
         }
     }
 
     private void checkFileFormat(String pathFile) {
         String extension = FilenameUtils.getExtension(pathFile);
-        if (extension.equalsIgnoreCase("xlsx")) {
+        if (extension.equalsIgnoreCase("xlsx") || extension.equalsIgnoreCase("xls")) {
             readFileExcel(pathFile);
         } else {
             readFileCsv(pathFile);
@@ -190,8 +189,13 @@ public class UserDatabaseHandler {
     }
 
     public void readFileCsv(String filePath) {
+        String functionName = new Object() {
+        }.getClass().getEnclosingMethod().getName();
+        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+        FileUtil.writeErrorToFile(INFO, functionName, "START", configDTO.getPathFolderLog());
         try {
             File file = new File(filePath);
+            FileUtil.writeErrorToFile(INFO, functionName, file.getName(), configDTO.getPathFolderLog());
             CSVReader reader = new CSVReaderBuilder(new FileReader(file)).withSkipLines(1).build();
             List<String[]> rows = reader.readAll();
             String mapTemp = "";
@@ -201,14 +205,21 @@ public class UserDatabaseHandler {
                     checkUser(row[1], mapTemp);
                 }
             }
+            FileUtil.writeErrorToFile(INFO, functionName, "END", configDTO.getPathFolderLog());
         } catch (IOException | CsvException e) {
             log.error("Can't read file csv: {}", e.getMessage());
+            FileUtil.writeErrorToFile(ERROR, functionName, e.getMessage(), configDTO.getPathFolderLog());
         }
     }
 
     public void readFileExcel(String filePath) {
+        String functionName = new Object() {
+        }.getClass().getEnclosingMethod().getName();
+        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
         Workbook wb = null;
+        FileUtil.writeErrorToFile(INFO, functionName, "START", configDTO.getPathFolderLog());
         try (InputStream inp = new FileInputStream(filePath)) {
+            FileUtil.writeErrorToFile(INFO, functionName, FilenameUtils.getName(filePath), configDTO.getPathFolderLog());
             wb = WorkbookFactory.create(inp);
             Sheet sheet = wb.getSheetAt(0);
             Iterator<Row> rows = sheet.iterator();
@@ -221,8 +232,10 @@ public class UserDatabaseHandler {
                     checkUser(row.getCell(1).getStringCellValue(), mapTemp);
                 }
             }
+            FileUtil.writeErrorToFile(INFO, functionName, "END", configDTO.getPathFolderLog());
         } catch (Exception ex) {
             log.error("Can't read file excel: {}", ex.getMessage());
+            FileUtil.writeErrorToFile(ERROR, functionName, ex.getMessage(), configDTO.getPathFolderLog());
         } finally {
             try {
                 if (wb != null) wb.close();
@@ -301,6 +314,23 @@ public class UserDatabaseHandler {
         return mapByDepartment;
     }
 
+    public String searchUsersByDepartmentToJson(String departmentKey) {
+        Map<String, List<User>> listMap = searchUsersByDepartment(departmentKey);
+        JsonArray departmentJsonArray = new JsonArray();
+        List<User> userList = new ArrayList<>();
+        for (Map.Entry<String, List<User>> entry : listMap.entrySet()) {
+            if (entry.getKey().equals(departmentKey)) {
+                userList = entry.getValue();
+            }
+        }
+        for (User user : userList) {
+            JsonObject object = new JsonObject();
+            object.addProperty("Email", user.getEmail());
+            departmentJsonArray.add(object);
+        }
+        return departmentJsonArray.toString().replace("\\","");
+    }
+
     public List<String> getAllDepartment() {
         Map<String, List<User>> listMap = getAllUserByDepartment();
         List<String> departments = new ArrayList<>();
@@ -314,7 +344,6 @@ public class UserDatabaseHandler {
         Map<String, List<User>> listMap = getAllUserByDepartment();
         List<String> emails = new ArrayList<>();
         List<User> users = new ArrayList<>();
-
         for (Map.Entry<String, List<User>> entry : listMap.entrySet()) {
             if (entry.getKey().equals(departmentKey)) {
                 users = entry.getValue();
@@ -327,7 +356,6 @@ public class UserDatabaseHandler {
     }
 
     public List<String> getAllEmailOtherDepartment(String departmentKey) {
-
         List<String> emailsbyDepartment = getAllEmailByDepartment(departmentKey);
         List<String> emailByListUser = new ArrayList<>();
         List<User> users = repository.getAll();
@@ -339,57 +367,75 @@ public class UserDatabaseHandler {
         return emailOtherDepartment;
     }
 
-    public void updateDepartmentToUser(String email, String department) {
-        log.info("===========UpdateDepartmentToUser=========" + email + department);
-        List<User> users = repository.getAll();
-        User user = checkEmail(email);
-        Map<String, Set<UserGroup>> map = new HashMap<>();
-        map = user.getSecondaryDepartmentsAndRoles();
-        Set<UserGroup> userGroups = new HashSet<>();
-        for (Map.Entry<String, Set<UserGroup>> entry : map.entrySet()) {
-            if (entry.getKey().equals(department)) {
-                userGroups = entry.getValue();
-            }
+    public String getAllEmailOtherDepartmentToJson(String departmentKey) {
+        JsonArray emailJsonArray = new JsonArray();
+        List<String> emailOtherDepartment=getAllEmailOtherDepartment(departmentKey);
+
+        for (String email : emailOtherDepartment) {
+            JsonObject object = new JsonObject();
+            object.addProperty("Email", email);
+            emailJsonArray.add(object);
         }
-        userGroups.add(UserGroup.USER);
-        map.put(department, userGroups);
-        user.setSecondaryDepartmentsAndRoles(map);
-        repository.update(user);
+        return emailJsonArray.toString().replace("\\","");
+
     }
 
-    private User checkEmail(String email) {
-        List<User> users = repository.getAll();
-        User user = new User();
-        try {
-            for (User userCheck : users) {
-                if (userCheck.getEmail().equals(email)) {
-                    return userCheck;
+    public boolean updateDepartmentToUser(String email, String department) {
+        User user = getByEmail(email);
+        if(user==null){
+            return false;
+        } else{
+            Map<String, Set<UserGroup>> map;
+            Set<UserGroup> userGroups = new HashSet<>();
+            if (user.getSecondaryDepartmentsAndRoles() != null){
+                map = user.getSecondaryDepartmentsAndRoles();
+                for (Map.Entry<String, Set<UserGroup>> entry : map.entrySet()) {
+                    if (entry.getKey().equals(department)) {
+                        userGroups = entry.getValue();
+                    }
                 }
+            }else {
+                map = new HashMap<>();
             }
-        } catch (NullPointerException ex) {
-            log.error("Error Not foud User from Email!", ex);
+            userGroups.add(UserGroup.USER);
+            map.put(department, userGroups);
+            user.setSecondaryDepartmentsAndRoles(map);
+            repository.update(user);
+            return true;
         }
-        return user;
     }
 
     public void updateDepartmentToListUser(List<String> emails, String department) {
+        List<String> emailsByDepartment = getAllEmailByDepartment(department);
+        deleteDepartmentByListEmail(emailsByDepartment,department);
         for (String email : emails) {
             updateDepartmentToUser(email, department);
         }
     }
 
-    public void deleteDepartmentByEmail(String email, String departmentKey) {
-        User user = checkEmail(email);
-        Map<String, Set<UserGroup>> map = new HashMap<>();
-        map = user.getSecondaryDepartmentsAndRoles();
-        Set<UserGroup> userGroups = new HashSet<>();
-        for (Map.Entry<String, Set<UserGroup>> entry : map.entrySet()) {
-            if (entry.getKey().equals(departmentKey)) {
-                userGroups = entry.getValue();
+    public boolean deleteDepartmentByEmail(String email, String departmentKey) {
+        User user = getByEmail(email);
+        if(user==null){
+            return false;
+        } else {
+            Map<String, Set<UserGroup>> map = user.getSecondaryDepartmentsAndRoles();
+            Set<UserGroup> userGroups = new HashSet<>();
+            for (Map.Entry<String, Set<UserGroup>> entry : map.entrySet()) {
+                if (entry.getKey().equals(departmentKey)) {
+                    userGroups = entry.getValue();
+                }
             }
+            map.remove(departmentKey, userGroups);
+            user.setSecondaryDepartmentsAndRoles(map);
+            repository.update(user);
+            return true;
         }
-        map.remove(departmentKey, userGroups);
-        user.setSecondaryDepartmentsAndRoles(map);
-        repository.update(user);
     }
+
+    public void deleteDepartmentByListEmail(List<String> emails, String departmentKey) {
+        for (String email:emails) {
+            deleteDepartmentByEmail(email,departmentKey);
+        }
+    }
+
 }

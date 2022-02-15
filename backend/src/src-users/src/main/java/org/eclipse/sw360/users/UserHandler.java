@@ -21,12 +21,12 @@ import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.users.db.UserDatabaseHandler;
 import org.eclipse.sw360.users.dto.RedmineConfigDTO;
 import org.eclipse.sw360.users.redmine.ReadFileRedmineConfig;
+import org.eclipse.sw360.users.util.FileUtil;
 import org.ektorp.http.HttpClient;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
@@ -40,6 +40,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 public class UserHandler implements UserService.Iface {
 
     private static final Logger log = LogManager.getLogger(UserHandler.class);
+    private static final String EXTENSION = ".log";
 
     private UserDatabaseHandler db;
     private ReadFileRedmineConfig readFileRedmineConfig;
@@ -196,5 +197,49 @@ public class UserHandler implements UserService.Iface {
         db.deleteDepartmentByEmail(email,department);
     }
 
+    @Override
+    public void deleteDepartmentByListEmail(List<String> emails,String department){
+        db.deleteDepartmentByListEmail(emails,department);
+    }
+    @Override
+    public String searchUsersByDepartmentToJson(String department) throws TException {
+       return db.searchUsersByDepartmentToJson(department);
+    }
 
+    @Override
+    public String getAllEmailOtherDepartmentToJson(String department) throws TException {
+        return db.getAllEmailOtherDepartmentToJson(department);
+    }
+
+    public Set<String> getListFileLog() {
+        try {
+            RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+            return FileUtil.listFilesUsingFileWalk(configDTO.getPathFolderLog());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return Collections.emptySet();
+    }
+
+    @Override
+    public Map<String, List<String>> getAllMessageError() {
+        Map<String, List<String>> listMap = new HashMap<>();
+        try {
+            RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+            Set<String> fileNames = FileUtil.listFilesUsingFileWalk(configDTO.getPathFolderLog());
+            for (String fileName : fileNames) {
+                listMap.put(fileName.replace(EXTENSION, ""), FileUtil.readFileError(configDTO.getPathFolderLog() + fileName));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return listMap;
+    }
+
+    @Override
+    public String getLastModifiedFileName() throws TException {
+        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+        File file = FileUtil.getFileLastModified(configDTO.getPathFolderLog());
+        return file.getName().replace(EXTENSION, "");
+    }
 }

@@ -26,8 +26,14 @@
 </portlet:actionURL>
 <portlet:actionURL var="scheduleDepartmentManuallyURL" name="importDepartmentManually">
 </portlet:actionURL>
-
-
+<style>
+    .error-none {
+        display: none;
+    }
+    #content-${lastFileName} {
+        display: block;
+    }
+</style>
 
 <div class="container">
     <div class="row">
@@ -51,17 +57,17 @@
                     <form class="form mt-3">
                         <div class="form-group">
                             <button type="button" class="btn btn-primary" onclick="window.location.href='<%=scheduleDepartmentURL%>'"
-                                <core_rt:if test="${departmentIsScheduled}">disabled</core_rt:if> >
+                                    <core_rt:if test="${departmentIsScheduled}">disabled</core_rt:if> >
                                 <liferay-ui:message key="schedule.department.service"/>
                             </button>
                             <button type="button" class="btn btn-light" onclick="window.location.href='<%=unscheduleDepartmentURL%>'"
-                                <core_rt:if test="${not departmentIsScheduled}">disabled</core_rt:if> >
+                                    <core_rt:if test="${not departmentIsScheduled}">disabled</core_rt:if> >
                                 <liferay-ui:message key="cancel.department.service"/>
                             </button>
                             <button type="button" class="btn btn-info" onclick="window.location.href='<%=scheduleDepartmentManuallyURL%>'">
                                 <liferay-ui:message key="manually"/>
                             </button>
-                            <button type="button" class="btn btn-secondary"> <liferay-ui:message key="view.log"/></button>
+                            <button type="button" class="btn btn-secondary" id="view-log"><liferay-ui:message  key="view.log"/></button>
                         </div>
                     </form>
                 </div>
@@ -76,31 +82,25 @@
                         <tr>
                             <th><liferay-ui:message key="department"/></th>
                             <th><liferay-ui:message key="member.emails"/></th>
-                            <th><liferay-ui:message key="actions"/></th>
+                            <th width="5%"><liferay-ui:message key="actions"/></th>
                         </tr>
                         </thead>
                         <tbody>
                         <core_rt:forEach var="department" items="${departmentList}">
                             <tr>
-                                <td><sw360:out value="${department.key}"/></td>
+                                <td style="text-align: center"><sw360:out value="${department.key}"/></td>
                                 <td>
-                                    <div style="width:100%; max-height:210px; overflow:auto">
+                                    <div style="width:100%; max-height:515px; overflow:auto">
                                         <core_rt:forEach var="secondDepartment" items="${department.value}" varStatus="loop">
-                                            <span>${loop.index + 1}.</span><span><sw360:out value="${secondDepartment.email}"/></span>
-                                            </br>
+                                            <span>${loop.index + 1}.</span> <span><sw360:out value="${secondDepartment.email}"/></span>
+                                            <br/>
                                         </core_rt:forEach>
+                                        <br/>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="actions">
-                                        <svg class="editDepartment lexicon-icon" data-map="${department.key}">
-                                            <title><liferay-ui:message key="edit"/></title>
-                                            <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/>
-                                        </svg>
-                                        <svg class="lexicon-icon">
-                                            <title><liferay-ui:message key="duplicate"/></title>
-                                            <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#paste"/>
-                                        </svg>
+                                        <svg class="editDepartment lexicon-icon" data-map="${department.key}"><title><liferay-ui:message key="edit"/></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>
                                         <svg class="delete lexicon-icon">
                                             <title><liferay-ui:message key="delete"/></title>
                                             <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
@@ -116,6 +116,45 @@
         </div>
     </div>
 </div>
+
+<div class="dialogs auto-dialogs">
+    <div id="deleteComponentDialog" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-xl modal-info" role="document">
+            <div class="modal-content" style="width:100%; max-height:800px; overflow:auto">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <liferay-ui:message key="view.log"/>
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="header-log-error">
+                        <label for="file-log">File log</label>
+                        <input list="file-logs" name="file-log" id="file-log"
+                               class="col-sm-12 custom-select custom-select-sm"/>
+                        <datalist id="file-logs">
+                            <core_rt:forEach var="errorMessage" items="${allMessageError}">
+                                <option value="${errorMessage.key}" ${errorMessage.key == lastFileName ? 'selected' : ''}>${errorMessage.key}</option>
+                            </core_rt:forEach>
+                        </datalist>
+                    </div>
+                    <hr>
+                    <div id="content-log-error">
+                        <core_rt:forEach var="errorMessage" items="${allMessageError}">
+                            <div id="content-${errorMessage.key}" class="content-errors error-none">
+                                <core_rt:forEach var="error" items="${errorMessage.value}">
+                                    <p>${error}</p>
+                                </core_rt:forEach>
+                            </div>
+                        </core_rt:forEach>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
@@ -123,17 +162,23 @@
         var PortletURL = Liferay.PortletURL;
         require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'modules/dialog'], function ($, datatables, quickfilter, dialog) {
             var usersTable,
-            departmentKeyInURL ='<%=PortalConstants.DEPARTMENT_KEY%>',
-            pageName = '<%=PortalConstants.PAGENAME%>';
+                <%--list.filter(<%=PortalConstants.DEPARTMENT_KEY%>)--%>
+                departmentKeyInURL ='<%=PortalConstants.DEPARTMENT_KEY%>',
+                pageName = '<%=PortalConstants.PAGENAME%>';
             pageEdit = '<%=PortalConstants.PAGENAME_EDIT%>';
             baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
+            $('#view-log').on('click', showDialog);
+
+            function showDialog() {
+                $dialog = dialog.open('#deleteComponentDialog');
+            }
             // initializing
             usersTable = createExistingUserTable('#userTable');
 
 
             $('#userTable').on('click', 'svg.editDepartment', function (event) {
-                 var data= $(event.currentTarget).data();
-                 window.location.href = createDetailURLfromDepartmentKey(data.map);
+                var data= $(event.currentTarget).data();
+                window.location.href = createDetailURLfromDepartmentKey(data.map);
             });
             function createDetailURLfromDepartmentKey (paramVal) {
                 var portletURL = PortletURL.createURL( baseUrl ).setParameter(pageName, pageEdit).setParameter(departmentKeyInURL, paramVal);
@@ -161,6 +206,10 @@
                 });
             }
         });
+    });
+    $('#file-log').on('change', function () {
+        $('.content-errors').hide();
+        $('#content-' + this.value).show();
     });
 </script>
 
