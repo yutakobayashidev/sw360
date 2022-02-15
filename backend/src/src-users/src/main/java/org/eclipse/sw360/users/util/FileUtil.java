@@ -23,7 +23,7 @@ public class FileUtil {
     private FileUtil() {
     }
 
-    public static void writeErrorToFile(String typeLog, String method, String messageError, String folder) {
+    public static void writeLogToFile(String typeLog, String method, String messageError, String folder) {
         BufferedWriter writer = null;
         FileWriter fileWriter = null;
         try {
