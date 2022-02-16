@@ -194,6 +194,7 @@ public class UserDatabaseHandler {
                         issueFail.setDescription("Department [" + joined + "] is duplicate - File: [" + fileName + "]");
                         listIssueFail.add(issueFail);
                         FileUtil.writeLogToFile(ERROR, functionName, "Department [" + joined + "] is duplicate - File: [" + fileName + "]", configDTO.getPathFolderLog());
+                        departmentDuplicate = new ArrayList<>();
                     }
                     if (!emailDoNotExist.isEmpty()) {
                         Issue issueFail = new Issue();
@@ -201,7 +202,8 @@ public class UserDatabaseHandler {
                         String joined = String.join(", ", emailDoNotExist);
                         issueFail.setDescription("User [" + joined + "] does not exist - File: [" + fileName + "]");
                         listIssueFail.add(issueFail);
-                        FileUtil.writeLogToFile(ERROR, functionName, "Department [" + joined + "] does not exist - File: [" + fileName + "]", configDTO.getPathFolderLog());
+                        FileUtil.writeLogToFile(ERROR, functionName, "User [" + joined + "] does not exist - File: [" + fileName + "]", configDTO.getPathFolderLog());
+                        emailDoNotExist = new ArrayList<>();
                     }
                     requestSummary.setRequestStatus(RequestStatus.FAILURE);
                 }
