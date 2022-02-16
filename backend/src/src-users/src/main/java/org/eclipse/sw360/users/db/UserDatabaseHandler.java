@@ -231,7 +231,6 @@ public class UserDatabaseHandler {
             String mapTemp = "";
             for (String[] row : rows) {
                 if (row.length > 1) {
-                    if (!Objects.equals(row[0], "")) mapTemp = row[0];
                     if (!Objects.equals(row[0], "")) {
                         if (!mapTemp.isEmpty()) {
                             if (listMap.containsKey(mapTemp)) {
