@@ -124,19 +124,6 @@ public class DepartmentPortlet extends Sw360Portlet {
         }
     }
 
-//    @UsedAsLiferayAction
-//    public void importDepartmentManually(ActionRequest request, ActionResponse response) throws PortletException {
-//        try {
-//            UserService.Iface userClient = thriftClients.makeUserClient();
-//            RequestSummary requestSummary = userClient.importFileToDB();
-//            renderRequestSummary(request, response, requestSummary);
-////            setSessionMessage(request, requestStatus, "Department", "Success");
-//            removeParamUrl(request, response);
-//        } catch (TException e) {
-//            log.error("Cancel Schedule import department: {}", e.getMessage());
-//        }
-//    }
-
     @UsedAsLiferayAction
     public void writePathFolder(ActionRequest request, ActionResponse response) throws PortletException {
         String path = request.getParameter(PortalConstants.DEPARTMENT_URL);
@@ -180,14 +167,13 @@ public class DepartmentPortlet extends Sw360Portlet {
                 }
                 break;
             default:
-                log.warn("The LicenseAdminPortlet was called with unsupported action=[" + action + "]");
+                log.warn("The DepartmentPortlet was called with unsupported action=[" + action + "]");
         }
     }
 
     private void importDepartmentManually(ResourceRequest request, ResourceResponse response) throws TException {
         UserService.Iface userClient = thriftClients.makeUserClient();
         RequestSummary requestSummary = userClient.importFileToDB();
-        log.info("****************importDepartmentManually***********"+requestSummary);
         renderRequestSummary(request, response, requestSummary);
     }
 

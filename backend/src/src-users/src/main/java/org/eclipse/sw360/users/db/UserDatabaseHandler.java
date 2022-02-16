@@ -10,6 +10,7 @@
 package org.eclipse.sw360.users.db;
 
 import com.cloudant.client.api.CloudantClient;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.exceptions.CsvException;
@@ -26,6 +27,7 @@ import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.users.dto.APIResponseRedmine;
 import org.eclipse.sw360.users.dto.Issue;
 import org.eclipse.sw360.users.dto.RedmineConfigDTO;
 import org.eclipse.sw360.users.redmine.ReadFileRedmineConfig;
@@ -33,9 +35,10 @@ import org.eclipse.sw360.users.util.FileUtil;
 import org.ektorp.http.HttpClient;
 
 import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.*;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 
@@ -57,10 +60,9 @@ public class UserDatabaseHandler {
     private ReadFileRedmineConfig readFileRedmineConfig;
     private static final String INFO = "INFO";
     private static final String ERROR = "ERROR";
-    private static boolean IMPORT_STATUS = false;
-    private List<Issue> listIssueSuccess = new ArrayList<>();
-    private List<Issue> listIssueFail = new ArrayList<>();
-    private List<String> listString = new ArrayList<>();
+    private static boolean IMPORT_DEPARTMENT_STATUS = false;
+    private List<String> departmentDuplicate;
+    private List<String> emailDoNotExist;
 
     public UserDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws IOException {
         // Create the connector
@@ -151,14 +153,17 @@ public class UserDatabaseHandler {
     public RequestSummary importFileToDB(String pathFolder) {
         String functionName = new Object() {
         }.getClass().getEnclosingMethod().getName();
-        RequestSummary requestSummary = new RequestSummary().setTotalAffectedElements(0).setMessage("").setRequestStatus(RequestStatus.SUCCESS);
+        departmentDuplicate = new ArrayList<>();
+        emailDoNotExist = new ArrayList<>();
+        List<Issue> listIssueSuccess = new ArrayList<>();
+        List<Issue> listIssueFail = new ArrayList<>();
+        RequestSummary requestSummary = new RequestSummary().setTotalAffectedElements(0).setMessage("Import Department Success").setRequestStatus(RequestStatus.SUCCESS);
         RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
-        List<Map<String, List<String>>> mapArrayList = new ArrayList<>();
-        if (IMPORT_STATUS) {
+        Map<String, List<String>> mapArrayList = new HashMap<>();
+        if (IMPORT_DEPARTMENT_STATUS) {
             return requestSummary.setRequestStatus(RequestStatus.PROCESSING);
         }
-        IMPORT_STATUS = true;
-        log.info("***********1.IMPORT_STATUS**********" + IMPORT_STATUS);
+        IMPORT_DEPARTMENT_STATUS = true;
         try {
             FileUtil.writeLogToFile(INFO, functionName, "START", configDTO.getPathFolderLog());
             Set<String> files = FileUtil.listFilesUsingFileWalk(pathFolder);
@@ -170,48 +175,52 @@ public class UserDatabaseHandler {
                 } else if (extension.equalsIgnoreCase("csv")) {
                     mapArrayList = readFileCsv(pathFile);
                 }
-                List<String> strings = validateListEmailExistDB(mapArrayList);
-                List<String> departmentDuplicate = validateListDepartmentDuplicate(mapArrayList);
-                if (!departmentDuplicate.isEmpty()) {
-                    mapArrayList.forEach(ma -> {
-                        ma.forEach(this::updateDepartmentToUser);
-                    });
-                    Issue issueSuccess = new Issue();
+                validateListEmailExistDB(mapArrayList);
+                String issueId = pathFile.substring(pathFile.lastIndexOf("_") + 1, pathFile.lastIndexOf("."));
+                String fileName = file.replace(pathFile.substring(pathFile.lastIndexOf("_"), pathFile.lastIndexOf(".")), "");
+                if (departmentDuplicate.isEmpty() && emailDoNotExist.isEmpty()) {
+                    mapArrayList.forEach(this::updateDepartmentToUser);
+                    Issue issue = new Issue();
+                    String joined = String.join(", ", mapArrayList.keySet());
+                    issue.setIssue_id(issueId);
+                    issue.setDescription("Department [" + joined + "] added successfully - File: [" + fileName + "]");
+                    listIssueSuccess.add(issue);
                 } else {
-                    Issue issueFail = new Issue();
-                    requestSummary.setRequestStatus(RequestStatus.INVALID_INPUT);
-                }
-
-                if (!strings.isEmpty()) {
-                    mapArrayList.forEach(ma -> {
-                        ma.forEach(this::updateDepartmentToUser);
-                    });
-                    Issue issueSuccess = new Issue();
-                } else {
-                    Issue issueFail = new Issue();
-                    requestSummary.setRequestStatus(RequestStatus.INVALID_INPUT);
+                    if (!departmentDuplicate.isEmpty()) {
+                        Issue issueFail = new Issue();
+                        issueFail.setIssue_id(issueId);
+                        String joined = String.join(", ", departmentDuplicate);
+                        issueFail.setDescription("Department [" + joined + "] is duplicate - File: [" + fileName + "]");
+                        listIssueFail.add(issueFail);
+                    }
+                    if (!emailDoNotExist.isEmpty()) {
+                        Issue issueFail = new Issue();
+                        issueFail.setIssue_id(issueId);
+                        String joined = String.join(", ", emailDoNotExist);
+                        issueFail.setDescription("User [" + joined + "] does not exist - File: [" + fileName + "]");
+                        listIssueFail.add(issueFail);
+                    }
+                    requestSummary.setRequestStatus(RequestStatus.FAILURE);
                 }
             }
-
-
-            IMPORT_STATUS = false;
+            IMPORT_DEPARTMENT_STATUS = false;
             FileUtil.writeLogToFile(INFO, functionName, "END", configDTO.getPathFolderLog());
         } catch (Exception e) {
-            IMPORT_STATUS = false;
+            IMPORT_DEPARTMENT_STATUS = false;
             FileUtil.writeLogToFile(ERROR, functionName, e.getMessage(), configDTO.getPathFolderLog());
             String msg = "Failed to import department";
-            log.error("Can't read file: {}", e.getMessage());
             requestSummary.setMessage(msg);
             requestSummary.setRequestStatus(RequestStatus.FAILURE);
         }
-        log.info("***********2.IMPORT_STATUS**********" + IMPORT_STATUS);
+        responseData(listIssueSuccess, listIssueFail);
         return requestSummary;
     }
 
-    public List<Map<String, List<String>>> readFileCsv(String filePath) {
+    public Map<String, List<String>> readFileCsv(String filePath) {
         String functionName = new Object() {
         }.getClass().getEnclosingMethod().getName();
-        List<Map<String, List<String>>> mapList = new ArrayList<>();
+        Map<String, List<String>> listMap = new HashMap<>();
+        List<String> emailCsv = new ArrayList<>();
         RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
         FileUtil.writeLogToFile(INFO, functionName, "START", configDTO.getPathFolderLog());
         try {
@@ -223,22 +232,36 @@ public class UserDatabaseHandler {
             for (String[] row : rows) {
                 if (row.length > 1) {
                     if (!Objects.equals(row[0], "")) mapTemp = row[0];
-
+                    if (!Objects.equals(row[0], "")) {
+                        if (!mapTemp.isEmpty()) {
+                            if (listMap.containsKey(mapTemp)) {
+                                departmentDuplicate.add(mapTemp);
+                            }
+                            listMap.put(mapTemp, emailCsv);
+                            emailCsv = new ArrayList<>();
+                        }
+                        mapTemp = row[0];
+                    }
+                    String email = row[1];
+                    emailCsv.add(email);
                 }
             }
+            if (listMap.containsKey(mapTemp)) {
+                departmentDuplicate.add(mapTemp);
+            }
+            listMap.put(mapTemp, emailCsv);
             FileUtil.writeLogToFile(INFO, functionName, "END", configDTO.getPathFolderLog());
         } catch (IOException | CsvException e) {
             log.error("Can't read file csv: {}", e.getMessage());
             FileUtil.writeLogToFile(ERROR, functionName, e.getMessage(), configDTO.getPathFolderLog());
         }
-        return mapList;
+        return listMap;
     }
 
-    public List<Map<String, List<String>>> readFileExcel(String filePath) {
+    public Map<String, List<String>> readFileExcel(String filePath) {
         String functionName = new Object() {
         }.getClass().getEnclosingMethod().getName();
         RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
-        List<Map<String, List<String>>> mapListFileExcel = new ArrayList<>();
         Map<String, List<String>> listMap = new HashMap<>();
         List<String> emailExcel = new ArrayList<>();
 
@@ -254,12 +277,14 @@ public class UserDatabaseHandler {
             while (rows.hasNext()) {
                 Row row = rows.next();
                 if (!isRowEmpty(row)) {
+                    // department have value
                     if (row.getCell(0) != null) {
                         if (!mapTemp.isEmpty()) {
+                            if (listMap.containsKey(mapTemp)) {
+                                departmentDuplicate.add(mapTemp);
+                            }
                             listMap.put(mapTemp, emailExcel);
-                            mapListFileExcel.add(listMap);
-                            emailExcel.clear();
-                            // listMap.clear();
+                            emailExcel = new ArrayList<>();
                         }
                         mapTemp = row.getCell(0).getStringCellValue();
                     }
@@ -267,8 +292,10 @@ public class UserDatabaseHandler {
                     emailExcel.add(email);
                 }
             }
+            if (listMap.containsKey(mapTemp)) {
+                departmentDuplicate.add(mapTemp);
+            }
             listMap.put(mapTemp, emailExcel);
-            mapListFileExcel.add(listMap);
 
             FileUtil.writeLogToFile(INFO, functionName, "END", configDTO.getPathFolderLog());
         } catch (Exception ex) {
@@ -281,7 +308,7 @@ public class UserDatabaseHandler {
                 log.error(e.getMessage());
             }
         }
-        return mapListFileExcel;
+        return listMap;
     }
 
     public static boolean isRowEmpty(Row row) {
@@ -318,79 +345,61 @@ public class UserDatabaseHandler {
         return listMap;
     }
 
-//    public void responseData(List<Object> success, List<Object> fails) {
-//        try {
-//            ApiResponse response = new ApiResponse();
-//            URL url = new URL("http://10.116.41.47:3000/redmine");
-//            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-//            conn.setDoOutput(true);
-//            conn.setRequestMethod("POST");
-//            conn.setRequestProperty("Content-Type", "application/json");
-//            response.setSuccess(success);
-//            response.setFail(fails);
-//            ObjectMapper mapper = new ObjectMapper();
-//            String arrayToJson = mapper.writeValueAsString(response);
-//            log.info("***************arrayToJson********************" + arrayToJson);
-//            OutputStream os = conn.getOutputStream();
-//            os.write(arrayToJson.getBytes());
-//            os.flush();
-//            new BufferedReader(new InputStreamReader((conn.getInputStream())));
-//
-//            if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
-//                throw new RuntimeException("Failed : HTTP error code : "
-//                        + conn.getResponseCode());
-//            }
-//            conn.disconnect();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
+    public void responseData(List<Issue> success, List<Issue> fails) {
+        try {
+            APIResponseRedmine response = new APIResponseRedmine();
+            URL url = new URL("http://10.116.41.47:3000/redmine");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setDoOutput(true);
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            response.setSuccess(success);
+            response.setFail(fails);
+            ObjectMapper mapper = new ObjectMapper();
+            String arrayToJson = mapper.writeValueAsString(response);
+            OutputStream os = conn.getOutputStream();
+            os.write(arrayToJson.getBytes());
+            os.flush();
+            new BufferedReader(new InputStreamReader((conn.getInputStream())));
+            if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                throw new RuntimeException("Failed : HTTP error code : "
+                        + conn.getResponseCode());
+            }
+            conn.disconnect();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     public void updateDepartmentToUser(String department, List<String> emails) {
-
-        if (!emails.isEmpty() && department != null) {
-            for (String email : emails) {
-                User user = repository.getByEmail(email);
-                Map<String, Set<UserGroup>> map;
-                Set<UserGroup> userGroups = new HashSet<>();
-                if (user.getSecondaryDepartmentsAndRoles() != null) {
-                    map = user.getSecondaryDepartmentsAndRoles();
-                    for (Map.Entry<String, Set<UserGroup>> entry : map.entrySet()) {
-                        if (entry.getKey().equals(department)) {
-                            userGroups = entry.getValue();
-                        }
+        for (String email : emails) {
+            User user = repository.getByEmail(email);
+            Map<String, Set<UserGroup>> map;
+            Set<UserGroup> userGroups = new HashSet<>();
+            if (user.getSecondaryDepartmentsAndRoles() != null) {
+                map = user.getSecondaryDepartmentsAndRoles();
+                for (Map.Entry<String, Set<UserGroup>> entry : map.entrySet()) {
+                    if (entry.getKey().equals(department)) {
+                        userGroups = entry.getValue();
                     }
-                } else {
-                    map = new HashMap<>();
                 }
-                userGroups.add(UserGroup.USER);
-                map.put(department, userGroups);
-                user.setSecondaryDepartmentsAndRoles(map);
-                repository.update(user);
+            } else {
+                map = new HashMap<>();
             }
+            userGroups.add(UserGroup.USER);
+            map.put(department, userGroups);
+            user.setSecondaryDepartmentsAndRoles(map);
+            repository.update(user);
         }
     }
 
-    public List<String> validateListEmailExistDB(List<Map<String, List<String>>> mapList) {
-        List<String> emailNotExist = new ArrayList<>();
-        Set<String> a = new HashSet<>();
-        mapList.forEach(m -> m.forEach((v, k) -> a.addAll(k)));
-        for (String as : a) {
-            User user = repository.getByEmail(as);
-            if (user == null) {
-                emailNotExist.add(as);
-            }
+    public void validateListEmailExistDB(Map<String, List<String>> mapList) {
+        Set<String> setEmail = new HashSet<>();
+        mapList.forEach((v, k) -> setEmail.addAll(k));
+        for (String email : setEmail) {
+            User user = repository.getByEmail(email);
+            if (user == null) emailDoNotExist.add(email);
         }
-        return emailNotExist;
-    }
-
-    public List<String> validateListDepartmentDuplicate(List<Map<String, List<String>>> mapList) {
-        List<String> departments = new ArrayList<>();
-        mapList.forEach(m -> m.forEach((v, k) -> {
-            departments.add(v);
-        }));
-        return departments.stream()
-                .filter(i -> Collections.frequency(departments, i) > 1).distinct().collect(Collectors.toList());
     }
 
 }
