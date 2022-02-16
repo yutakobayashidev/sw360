@@ -27,9 +27,9 @@ public class ReadFileRedmineConfig {
         String[] parts = pathFile.split("/");
         for (int i = 0; i < parts.length; i++) {
             path.append(parts[i + 1]).append("/");
-            if (i == 3) return (path + "path-folder-department-config.json");
+            if (i == 3) return (path + "department-config.json");
         }
-        return (path + "path-folder-department-config.json");
+        return (path + "department-config.json");
     }
 
     public RedmineConfigDTO readFileJson() {

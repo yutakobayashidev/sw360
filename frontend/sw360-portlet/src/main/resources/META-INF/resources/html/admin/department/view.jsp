@@ -30,11 +30,6 @@
     <portlet:param name="<%=PortalConstants.ACTION%>"
                    value='<%=PortalConstants.IMPORT_DEPARTMENT_MANUALLY%>'/>
 </portlet:resourceURL>
-<%--<jsp:useBean id="departmentList" scope="request" class="java.util.HashMap"/>--%>
-<%--<jsp:useBean id="allMessageError" scope="request" class="java.util.HashMap"/>--%>
-<%--<jsp:useBean id="lastFileName" scope="request" class="java.lang.String"/>--%>
-<%--<jsp:useBean id="pathConfigFolderDepartment" scope="request" class="java.lang.String"/>--%>
-<%--<jsp:useBean id="lastRunningTime" scope="request" type="java.lang.String"/>--%>
 <style>
     .error-none {
         display: none;
@@ -278,52 +273,9 @@
                     }
                 );
             });
-
-            // // Check on input type change
-            // $('#pathFolderDepartment').on('input', function () {
-            //     if ($('#editPathFolder').hasClass('was-validated')) {
-            //         validateInput();
-            //     }
-            // });
-            //
-            // // Check on enter key press
-            // $('#pathFolderDepartment').keypress(function (event) {
-            //     var keycode = (event.keyCode ? event.keyCode : event.which);
-            //     if (keycode == '13' && !validateInput()) {
-            //         event.preventDefault();
-            //     }
-            // });
-            //
             $('.portlet-toolbar button[data-action="save"]').on('click', function (event) {
                 $('#editPathFolder').submit();
             });
-            //
-            // function validateInput() {
-            //     $('#editPathFolder').removeClass('needs-validation');
-            //     $('#pathFolderDepartment')[0].setCustomValidity('');
-            //     $('.invalid-feedback').css('display', 'none');
-            //     $('.invalid-feedback').removeClass('d-block');
-            //
-            //     let pathFolderDepartment = $('#pathFolderDepartment').val();
-            //
-            //     if (pathFolderDepartment.length === 0 || $.trim(pathFolderDepartment).length === 0) {
-            //         $('#editPathFolder').addClass('was-validated');
-            //         $('#pathFolderDepartment')[0].setCustomValidity('error');
-            //         $('#error-empty').addClass('d-block');
-            //         return false;
-            //     }
-            //     ;
-            //
-            //     // const valid=/^[a-zA-Z]:\\(\w+\\)*\w*$/;
-            //     // if(!pathFolderDepartment.match(valid)){
-            //     //     $('#editPathFolder').addClass('was-validated');
-            //     //     $('#pathFolderDepartment')[0].setCustomValidity('error');
-            //     //     $('#error-invalid-char').addClass('d-block');
-            //     //     return false;
-            //     // };
-            //
-            //     return true;
-            // }
         });
     });
     $('#file-log').on('change', function () {
