@@ -39,6 +39,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 
@@ -82,8 +83,7 @@ public class UserDatabaseHandler {
     }
 
     public User getByEmail(String email) {
-        return repository.getByEmail(email)
-                ;
+        return repository.getByEmail(email);
     }
 
     public User getUser(String id) {
@@ -151,13 +151,11 @@ public class UserDatabaseHandler {
     }
 
     public RequestSummary importFileToDB(String pathFolder) {
-        String functionName = new Object() {
-        }.getClass().getEnclosingMethod().getName();
         departmentDuplicate = new ArrayList<>();
         emailDoNotExist = new ArrayList<>();
         List<Issue> listIssueSuccess = new ArrayList<>();
         List<Issue> listIssueFail = new ArrayList<>();
-        RequestSummary requestSummary = new RequestSummary().setTotalAffectedElements(0).setMessage("Import Department Success").setRequestStatus(RequestStatus.SUCCESS);
+        RequestSummary requestSummary = new RequestSummary().setTotalAffectedElements(0).setMessage("");
         RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
         Map<String, List<String>> mapArrayList = new HashMap<>();
         if (IMPORT_DEPARTMENT_STATUS) {
@@ -165,7 +163,7 @@ public class UserDatabaseHandler {
         }
         IMPORT_DEPARTMENT_STATUS = true;
         try {
-            FileUtil.writeLogToFile(INFO, functionName, "START", configDTO.getPathFolderLog());
+            FileUtil.writeLogToFile(INFO, "Import", "Start Import File Department", "", configDTO.getPathFolderLog());
             Set<String> files = FileUtil.listFilesUsingFileWalk(pathFolder);
             for (String file : files) {
                 String pathFile = pathFolder + "/" + file;
@@ -185,31 +183,37 @@ public class UserDatabaseHandler {
                     issue.setIssue_id(issueId);
                     issue.setDescription("Department [" + joined + "] added successfully - File: [" + fileName + "]");
                     listIssueSuccess.add(issue);
-                    FileUtil.writeLogToFile(INFO, functionName, "Department [" + joined + "] added successfully - File: [" + fileName + "]", configDTO.getPathFolderLog());
+                    FileUtil.writeLogToFile(INFO, "Import", "Department [" + joined + "] - File: [" + fileName + "]", "Added Successfully", configDTO.getPathFolderLog());
+                    requestSummary.setTotalAffectedElements(listIssueSuccess.size());
+                    requestSummary.setTotalElements(listIssueSuccess.size() + listIssueFail.size());
+                    requestSummary.setRequestStatus(RequestStatus.SUCCESS);
                 } else {
                     if (!departmentDuplicate.isEmpty()) {
                         Issue issueFail = new Issue();
                         issueFail.setIssue_id(issueId);
-                        String joined = String.join(", ", departmentDuplicate);
+                        List<String> departmentDuplicateOrder = departmentDuplicate.stream().sorted().collect(Collectors.toList());
+                        String joined = String.join(", ", departmentDuplicateOrder);
                         issueFail.setDescription("Department [" + joined + "] is duplicate - File: [" + fileName + "]");
                         listIssueFail.add(issueFail);
-                        FileUtil.writeLogToFile(ERROR, functionName, "Department [" + joined + "] is duplicate - File: [" + fileName + "]", configDTO.getPathFolderLog());
+                        FileUtil.writeLogToFile(ERROR, "Import", "Department [" + joined + "] is duplicate - File: [" + fileName + "]", "Add Fail", configDTO.getPathFolderLog());
                         departmentDuplicate = new ArrayList<>();
                     }
                     if (!emailDoNotExist.isEmpty()) {
                         Issue issueFail = new Issue();
                         issueFail.setIssue_id(issueId);
-                        String joined = String.join(", ", emailDoNotExist);
+                        List<String> emailDoNotExistOrder = emailDoNotExist.stream().sorted().collect(Collectors.toList());
+                        String joined = String.join(", ", emailDoNotExistOrder);
                         issueFail.setDescription("User [" + joined + "] does not exist - File: [" + fileName + "]");
                         listIssueFail.add(issueFail);
-                        FileUtil.writeLogToFile(ERROR, functionName, "User [" + joined + "] does not exist - File: [" + fileName + "]", configDTO.getPathFolderLog());
+                        FileUtil.writeLogToFile(ERROR, "Import", "User [" + joined + "] does not exist - File: [" + fileName + "]", "Add Fail", configDTO.getPathFolderLog());
                         emailDoNotExist = new ArrayList<>();
                     }
-                    requestSummary.setRequestStatus(RequestStatus.FAILURE);
+                    requestSummary.setTotalAffectedElements(listIssueFail.size());
+                    requestSummary.setTotalElements(listIssueSuccess.size() + listIssueFail.size());
+                    requestSummary.setRequestStatus(RequestStatus.INVALID_INPUT);
                 }
             }
             IMPORT_DEPARTMENT_STATUS = false;
-            FileUtil.writeLogToFile(INFO, functionName, "END", configDTO.getPathFolderLog());
         } catch (Exception e) {
             IMPORT_DEPARTMENT_STATUS = false;
             String msg = "Failed to import department";
@@ -217,6 +221,8 @@ public class UserDatabaseHandler {
             requestSummary.setRequestStatus(RequestStatus.FAILURE);
         }
 //        responseData(listIssueSuccess, listIssueFail);
+        FileUtil.writeLogToFile(INFO, "Import", " File success: " + listIssueSuccess.size() + "- File error: " + listIssueFail.size() + "- Total File: " + (listIssueSuccess.size() + listIssueFail.size()), "Complete The File Import", configDTO.getPathFolderLog());
+        FileUtil.writeLogToFile(INFO, "Import", "End Import File Department", "", configDTO.getPathFolderLog());
         return requestSummary;
     }
 
@@ -268,7 +274,6 @@ public class UserDatabaseHandler {
             while (rows.hasNext()) {
                 Row row = rows.next();
                 if (!isRowEmpty(row)) {
-                    // department have value
                     if (row.getCell(0) != null) {
                         if (!mapTemp.isEmpty()) {
                             if (listMap.containsKey(mapTemp)) {
@@ -335,8 +340,9 @@ public class UserDatabaseHandler {
 
     public void responseData(List<Issue> success, List<Issue> fails) {
         try {
+            RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
             APIResponseRedmine response = new APIResponseRedmine();
-            URL url = new URL("http://10.116.41.47:3000/redmine");
+            URL url = new URL(configDTO.getUrlApiRedmine());
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setDoOutput(true);
             conn.setRequestMethod("POST");

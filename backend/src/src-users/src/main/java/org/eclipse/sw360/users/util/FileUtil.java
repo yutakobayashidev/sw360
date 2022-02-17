@@ -18,16 +18,16 @@ import java.util.stream.Stream;
 
 public class FileUtil {
     private static final String EXTENSION = ".log";
-    private static final DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
     private FileUtil() {
     }
 
-    public static void writeLogToFile(String typeLog, String method, String message, String folder) {
+    public static void writeLogToFile(String typeLog, String title, String message, String status, String folder) {
         BufferedWriter writer = null;
         FileWriter fileWriter = null;
         try {
-            String error = LocalDateTime.now().format(format) + " " + typeLog + " " + " " + method + " - " + message;
+            String error = LocalDateTime.now().format(format) + " " + typeLog + " " + " " + title + " - " + message + ": " + status;
             String path = folder + LocalDate.now() + EXTENSION;
             File file = new File(path);
             if (file.exists()) {
@@ -36,9 +36,7 @@ public class FileUtil {
                 writer.append(error);
             } else {
                 File files = new File(path);
-                if (files.getParentFile() != null) {
-                    file.getParentFile().mkdirs();
-                }
+                if (files.getParentFile() != null) file.getParentFile().mkdirs();
                 fileWriter = new FileWriter(files);
                 writer = new BufferedWriter(fileWriter);
                 writer.write(error);
@@ -48,12 +46,8 @@ public class FileUtil {
             e.printStackTrace();
         } finally {
             try {
-                if (writer != null) {
-                    writer.close();
-                }
-                if (fileWriter != null) {
-                    fileWriter.close();
-                }
+                if (writer != null) writer.close();
+                if (fileWriter != null) fileWriter.close();
             } catch (Exception e) {
                 e.printStackTrace();
             }

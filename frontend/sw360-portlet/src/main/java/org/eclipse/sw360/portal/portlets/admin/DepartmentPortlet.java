@@ -24,8 +24,6 @@ import javax.portlet.*;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static org.eclipse.sw360.portal.common.PortalConstants.DEPARTMENT_PORTLET_NAME;
@@ -49,7 +47,6 @@ import static org.eclipse.sw360.portal.common.PortalConstants.DEPARTMENT_PORTLET
 )
 public class DepartmentPortlet extends Sw360Portlet {
     private static final Logger log = LogManager.getLogger(DepartmentPortlet.class);
-    private static final DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     DateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
     private static String temp;
     private static String lastRunningTime;

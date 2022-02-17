@@ -168,8 +168,11 @@ public class UserHandler implements UserService.Iface {
     public Set<String> getListFileLog() {
         try {
             RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
-            if (configDTO != null && configDTO.getPathFolderLog().length() > 0) {
-                return FileUtil.listFilesUsingFileWalk(configDTO.getPathFolderLog());
+            if (configDTO != null && !configDTO.getPathFolderLog().isEmpty()) {
+                String path = configDTO.getPathFolderLog();
+                File theDir = new File(path);
+                if (!theDir.exists()) theDir.mkdirs();
+                return FileUtil.listFilesUsingFileWalk(path);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -184,6 +187,8 @@ public class UserHandler implements UserService.Iface {
             RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
             if (configDTO != null && configDTO.getPathFolderLog().length() > 0) {
                 String path = configDTO.getPathFolderLog();
+                File theDir = new File(path);
+                if (!theDir.exists()) theDir.mkdirs();
                 Set<String> fileNames = FileUtil.listFilesUsingFileWalk(path);
                 for (String fileName : fileNames) {
                     listMap.put(fileName.replace(EXTENSION, ""), FileUtil.readFileError(path + fileName));
@@ -199,8 +204,10 @@ public class UserHandler implements UserService.Iface {
     public String getLastModifiedFileName() throws TException {
         try {
             RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
-            if (configDTO != null && configDTO.getPathFolderLog().length() > 0) {
+            if (configDTO != null && !configDTO.getPathFolderLog().isEmpty()) {
                 String path = configDTO.getPathFolderLog();
+                File theDir = new File(path);
+                if (!theDir.exists()) theDir.mkdirs();
                 Set<String> strings = FileUtil.listFilesUsingFileWalk(path);
                 if (!strings.isEmpty()) {
                     File file = FileUtil.getFileLastModified(path);
@@ -217,7 +224,7 @@ public class UserHandler implements UserService.Iface {
     public String getPathConfigDepartment() throws TException {
         try {
             RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
-            if (configDTO != null && configDTO.getPathFolderLog().length() > 0) {
+            if (configDTO != null && !configDTO.getPathFolder().isEmpty()) {
                 return configDTO.getPathFolder();
             }
         } catch (Exception e) {
