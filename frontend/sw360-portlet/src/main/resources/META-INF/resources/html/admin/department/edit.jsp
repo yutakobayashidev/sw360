@@ -140,7 +140,7 @@
 
         require(['jquery', 'modules/dialog', 'modules/validation'], function ($, dialog, validation) {
             let index=0;
-
+            let emailDelete=[];
             let emailsJson=[];
             let emailsOtherDepartment=[];
             let emailsAdd=[];
@@ -167,10 +167,19 @@
 
             $('.portlet-toolbar button[data-action="save"]').on('click', function () {
                 $('.secGrp').each(function() {
-                    emailsAdd.push($(this).val())
+                    emailsAdd.push($(this).val());
 
                 });
+         
+               if(emailsAdd.length === 1){
+                
+                var jsonArrayEmail = JSON.parse(JSON.stringify(emailDelete));
+
+               } else{
+
                 var jsonArrayEmail = JSON.parse(JSON.stringify(emailsAdd));
+               
+               }
 
                 $('#listEmail').val(JSON.stringify(jsonArrayEmail));
                 $('#departmentEditForm').submit();
@@ -241,8 +250,9 @@
                 if(email !== "") {
                     // let emailObject = { Email: email };
                     emailsOtherDepartment.push(email);
-
                 }
+                
+                
                 if ($('.delete-btn').length > 1) {
                     $(this).closest('tr').remove();
                 } else {

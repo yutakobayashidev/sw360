@@ -13,8 +13,8 @@
 <%@ include file="/html/init.jsp" %>
 <%--&lt;%&ndash; the following is needed by liferay to display error messages&ndash;%&gt;--%>
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf" %>
-
-<jsp:useBean id='departmentIsScheduled' type="java.lang.Boolean" scope="request"/>
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
+<%--<jsp:useBean id='departmentIsScheduled' type="java.lang.Boolean" scope="request"/>--%>
 <jsp:useBean id='departmentOffset' type="java.lang.String" scope="request"/>
 <jsp:useBean id='departmentInterval' type="java.lang.String" scope="request"/>
 <jsp:useBean id='departmentNextSync' type="java.lang.String" scope="request"/>
@@ -26,10 +26,19 @@
 </portlet:actionURL>
 <portlet:actionURL var="scheduleDepartmentManuallyURL" name="importDepartmentManually">
 </portlet:actionURL>
+
+<portlet:actionURL var="editPathFolder" name="writePathFolder">
+</portlet:actionURL>
+<portlet:resourceURL var="importDepartmentManually">
+    <portlet:param name="<%=PortalConstants.ACTION%>"
+                   value='<%=PortalConstants.IMPORT_DEPARTMENT_MANUALLY%>'/>
+</portlet:resourceURL>
+
 <style>
     .error-none {
         display: none;
     }
+
     #content-${lastFileName} {
         display: block;
     }
@@ -39,19 +48,39 @@
     <div class="row">
         <div class="col">
             <div class="row">
-                <div class="col-6">
+                <div class="col-6 portlet-toolbar">
                     <table class="table bordered-table">
                         <tr>
-                            <th><liferay-ui:message key="schedule.offset"/></th>
-                            <td>${departmentOffset} (hh:mm:ss)</td>
+                            <th style="line-height: 40px"><liferay-ui:message key="registration.folder.path"/></th>
+                            <td>
+                                <form id="editPathFolder" name="editPathFolder" class="needs-validation"
+                                      action="<%=editPathFolder%>" method="post" novalidate>
+                                    <input id="pathFolderDepartment" style="margin-top: 0" required type="text"
+                                           class="form-control"
+                                           name="<portlet:namespace/><%=PortalConstants.DEPARTMENT_URL%>" value="<sw360:out value="${pathConfigFolderDepartment}"/>"
+                                           placeholder="Enter the directory path"/>
+                                </form>
+                            </td>
+                            <td width="3%">
+                                <button type="button" class="btn btn-primary" data-action="save"><liferay-ui:message
+                                        key="update"/></button>
+                            </td>
+
                         </tr>
                         <tr>
                             <th><liferay-ui:message key="interval"/></th>
                             <td>${departmentInterval} (hh:mm:ss)</td>
+                            <td></td>
                         </tr>
                         <tr>
-                            <th><liferay-ui:message key="next.synchronization"/></th>
+                            <th><liferay-ui:message key="last.running.time.department"/></th>
+                            <td>${lastRunningTime}</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <th><liferay-ui:message key="next.running.time.department"/></th>
                             <td>${departmentNextSync}</td>
+                            <td></td>
                         </tr>
                     </table>
                     <form class="form mt-3">
@@ -64,10 +93,11 @@
                                     <core_rt:if test="${not departmentIsScheduled}">disabled</core_rt:if> >
                                 <liferay-ui:message key="cancel.department.service"/>
                             </button>
-                            <button type="button" class="btn btn-info" onclick="window.location.href='<%=scheduleDepartmentManuallyURL%>'">
+                            <button type="button" class="btn btn-info" data-action="import-department-manually">
                                 <liferay-ui:message key="manually"/>
                             </button>
-                            <button type="button" class="btn btn-secondary" id="view-log"><liferay-ui:message  key="view.log"/></button>
+                            <button type="button" class="btn btn-secondary" id="view-log"><liferay-ui:message  key="view.log"/>
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -90,7 +120,7 @@
                             <tr>
                                 <td style="text-align: center"><sw360:out value="${department.key}"/></td>
                                 <td>
-                                    <div style="width:100%; max-height:515px; overflow:auto">
+                                    <div style="width:100%; max-height:210px; overflow:auto">
                                         <core_rt:forEach var="secondDepartment" items="${department.value}" varStatus="loop">
                                             <span>${loop.index + 1}.</span> <span><sw360:out value="${secondDepartment.email}"/></span>
                                             <br/>
@@ -99,8 +129,11 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="actions">
-                                        <svg class="editDepartment lexicon-icon" data-map="${department.key}"><title><liferay-ui:message key="edit"/></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>
+                                        <div class="actions" style="justify-content: center;">
+                                            <svg class="editDepartment lexicon-icon" data-map="<sw360:out value="${department.key}"/>">
+                                                <title><liferay-ui:message key="edit"/></title>
+                                                <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/>
+                                            </svg>
                                         <svg class="delete lexicon-icon">
                                             <title><liferay-ui:message key="delete"/></title>
                                             <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
@@ -159,15 +192,17 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     AUI().use('liferay-portlet-url', function () {
-        var PortletURL = Liferay.PortletURL;
-        require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'modules/dialog'], function ($, datatables, quickfilter, dialog) {
-            var usersTable,
-                <%--list.filter(<%=PortalConstants.DEPARTMENT_KEY%>)--%>
-                departmentKeyInURL ='<%=PortalConstants.DEPARTMENT_KEY%>',
-                pageName = '<%=PortalConstants.PAGENAME%>';
-            pageEdit = '<%=PortalConstants.PAGENAME_EDIT%>';
-            baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
-            $('#view-log').on('click', showDialog);
+        require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'modules/dialog', 'modules/validation'], function ($, datatables, quickfilter, dialog, validation) {
+            validation.enableForm('#editPathFolder');
+                            var PortletURL = Liferay.PortletURL;
+                            var usersTable,
+                            <%--list.filter(<%=PortalConstants.DEPARTMENT_KEY%>)--%>
+                            departmentKeyInURL ='<%=PortalConstants.DEPARTMENT_KEY%>',
+                            pageName = '<%=PortalConstants.PAGENAME%>';
+                            pageEdit = '<%=PortalConstants.PAGENAME_EDIT%>';
+                            baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
+
+                            $('#view-log').on('click', showDialog);
 
             function showDialog() {
                 $dialog = dialog.open('#deleteComponentDialog');
@@ -178,6 +213,7 @@
 
             $('#userTable').on('click', 'svg.editDepartment', function (event) {
                 var data= $(event.currentTarget).data();
+                console.log("--key--"+data.map)
                 window.location.href = createDetailURLfromDepartmentKey(data.map);
             });
             function createDetailURLfromDepartmentKey (paramVal) {
@@ -205,11 +241,61 @@
                     ],
                 });
             }
+
+            let progress = null;
+            $('.portlet-toolbar button[data-action="import-department-manually"]').on('click', function () {
+                var $dialog;
+                if (progress != null) {
+                    progress.abort();
+                }
+
+                function importDepartmentManually(callback) {
+                    progress = $.ajax({
+                        type: 'POST',
+                        url: '<%=importDepartmentManually%>',
+                        cache: false,
+                        dataType: 'json'
+                    }).always(function () {
+                        callback();
+                    }).done(function (data) {
+                        $('.alert.alert-dialog').hide();
+                        if (data.result === 'SUCCESS') {
+                            $dialog.success(`<liferay-ui:message key="i.imported.x.out.of.y.department" />`);
+                            location.reload();
+                        } else if (data.result === 'PROCESSING') {
+                            $dialog.info('<liferay-ui:message key="importing.process.is.already.running.please.try.again.later" />');
+                        } else {
+                            $dialog.alert('<liferay-ui:message key="error.happened.during.importing.some.department.may.not.be.imported" />');
+                        }
+                    }).fail(function () {
+                        $('.alert.alert-dialog').hide();
+                        $dialog.alert('<liferay-ui:message key="something.went.wrong" />');
+                    });
+                }
+
+                $dialog = dialog.confirm(
+                    null,
+                    'question-circle',
+                    '<liferay-ui:message key="import.department" />?',
+                    '<p id="departmentConfirmMessage"><liferay-ui:message key="do.you.really.want.to.import.department" />',
+                    '<liferay-ui:message key="import.department" />',
+                    {},
+                    function (submit, callback) {
+                        $('#departmentConfirmMessage').hide();
+                        $dialog.info('<liferay-ui:message key="importing.process.is.running.it.may.takes.a.few.minutes" />', true);
+                        $('.modal-header > button').prop('disabled', false);
+                        importDepartmentManually(callback);
+                    }
+                );
+            });
+            $('.portlet-toolbar button[data-action="save"]').on('click', function (event) {
+                $('#editPathFolder').submit();
+            });
         });
-    });
-    $('#file-log').on('change', function () {
-        $('.content-errors').hide();
-        $('#content-' + this.value).show();
+        $('#file-log').on('change', function () {
+            $('.content-errors').hide();
+            $('#content-' + this.value).show();
+        });
     });
 </script>
 

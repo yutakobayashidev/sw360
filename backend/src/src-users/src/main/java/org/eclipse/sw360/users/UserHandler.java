@@ -16,6 +16,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.users.db.UserDatabaseHandler;
@@ -145,15 +146,18 @@ public class UserHandler implements UserService.Iface {
         return db.getUserEmails();
     }
 
+
+
     @Override
-    public void importFileToDB(String pathFolder) {
-        db.importFileToDB(pathFolder);
+    public RequestSummary importFileToDB() {
+        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+        return db.importFileToDB(configDTO.getPathFolder());
     }
 
     @Override
     public RequestStatus importDepartmentSchedule() throws TException {
         RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
-        importFileToDB(configDTO.getPathFolder());
+        db.importFileToDB(configDTO.getPathFolder());
         return RequestStatus.SUCCESS;
     }
 
@@ -183,25 +187,6 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
-    public void updateDepartmentToUser(String email, String department) throws TException {
-        db.updateDepartmentToUser(email,department);
-    }
-
-    @Override
-    public void updateDepartmentToListUser(List<String> emails, String department) throws TException {
-        db.updateDepartmentToListUser(emails,department);
-    }
-
-    @Override
-    public void deleteDepartmentByEmail(String email, String department) throws TException {
-        db.deleteDepartmentByEmail(email,department);
-    }
-
-    @Override
-    public void deleteDepartmentByListEmail(List<String> emails,String department){
-        db.deleteDepartmentByListEmail(emails,department);
-    }
-    @Override
     public String searchUsersByDepartmentToJson(String department) throws TException {
        return db.searchUsersByDepartmentToJson(department);
     }
@@ -214,7 +199,9 @@ public class UserHandler implements UserService.Iface {
     public Set<String> getListFileLog() {
         try {
             RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
-            return FileUtil.listFilesUsingFileWalk(configDTO.getPathFolderLog());
+            if (configDTO != null && configDTO.getPathFolderLog().length() > 0) {
+                return FileUtil.listFilesUsingFileWalk(configDTO.getPathFolderLog());
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -226,9 +213,12 @@ public class UserHandler implements UserService.Iface {
         Map<String, List<String>> listMap = new HashMap<>();
         try {
             RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
-            Set<String> fileNames = FileUtil.listFilesUsingFileWalk(configDTO.getPathFolderLog());
-            for (String fileName : fileNames) {
-                listMap.put(fileName.replace(EXTENSION, ""), FileUtil.readFileError(configDTO.getPathFolderLog() + fileName));
+            if (configDTO != null && configDTO.getPathFolderLog().length() > 0) {
+                String path = configDTO.getPathFolderLog();
+                Set<String> fileNames = FileUtil.listFilesUsingFileWalk(path);
+                for (String fileName : fileNames) {
+                    listMap.put(fileName.replace(EXTENSION, ""), FileUtil.readFileError(path + fileName));
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -238,8 +228,67 @@ public class UserHandler implements UserService.Iface {
 
     @Override
     public String getLastModifiedFileName() throws TException {
-        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
-        File file = FileUtil.getFileLastModified(configDTO.getPathFolderLog());
-        return file.getName().replace(EXTENSION, "");
+        try {
+            RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+            if (configDTO != null && configDTO.getPathFolderLog().length() > 0) {
+                String path = configDTO.getPathFolderLog();
+                Set<String> strings = FileUtil.listFilesUsingFileWalk(path);
+                if (!strings.isEmpty()) {
+                    File file = FileUtil.getFileLastModified(path);
+                    return file.getName().replace(EXTENSION, "");
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    @Override
+    public String getPathConfigDepartment() throws TException {
+        try {
+            RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+            if (configDTO != null && configDTO.getPathFolderLog().length() > 0) {
+                return configDTO.getPathFolder();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    @Override
+    public void writePathFolderConfig(String pathFolder) throws TException {
+        readFileRedmineConfig.writePathFolderConfig(pathFolder);
+    }
+
+    @Override
+    public void updateDepartmentToListUserCheck(List<User> users, String department) throws TException {
+            db.updateDepartmentToListUserCheck(users,department);
+    }
+
+    @Override
+    public void deleteDepartmentByUser(User user, String department) throws TException {
+            db.deleteDepartmentByUser(user,department);
+    }
+
+    @Override
+    public void deleteDepartmentByListUser(List<User> users, String department) throws TException {
+            db.deleteDepartmentByListUser(users,department);
+    }
+
+    @Override
+    public List<User> getAllUserByListEmail(List<String> emails) throws TException {
+        return db.getAllUserByListEmail(emails);
+    }
+
+    @Override
+    public List<User> getAllUsersByDepartment(String department) throws TException {
+        return db.getAllUsersByDepartment(department);
+    }
+
+    @Override
+    public void deleteUserByDepartment(String department){
+        db.deleteUserByDepartment(department);
     }
 }

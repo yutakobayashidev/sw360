@@ -42,7 +42,7 @@ import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
 
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.*;
 import java.util.Properties;
 
 /**
@@ -62,6 +62,10 @@ public class ThriftClients {
     public static final int THRIFT_CONNECTION_TIMEOUT;
     public static final int THRIFT_READ_TIMEOUT;
 
+	private static final String PROXY_HOST;
+	private static final String PROXY_PORT;
+	private static final String PROXY_USER;
+	private static final String PROXY_PASSWORD;
     //! Service addresses
     private static final String ATTACHMENT_SERVICE_URL = "/attachments/thrift";
     private static final String COMPONENT_SERVICE_URL = "/components/thrift";
@@ -96,6 +100,11 @@ public class ThriftClients {
         // maximum timeout for connecting and reading
         THRIFT_CONNECTION_TIMEOUT = Integer.valueOf(props.getProperty("backend.timeout.connection", "5000"));
         THRIFT_READ_TIMEOUT = Integer.valueOf(props.getProperty("backend.timeout.read", "600000"));
+
+        PROXY_HOST = props.getProperty("proxy.http.host", null);
+        PROXY_PORT = props.getProperty("proxy.http.port", null);
+        PROXY_USER = props.getProperty("proxy.http.user", null);
+        PROXY_PASSWORD = props.getProperty("proxy.http.password", null);
 
         log.info("The following configuration will be used for connections to the backend:\n" +
             "\tURL                      : " + BACKEND_URL + "\n" +
@@ -132,6 +141,34 @@ public class ThriftClients {
         return new TCompactProtocol(thriftClient);
     }
 
+    private static void configProxy() {
+
+        // log.info("The following configuration will be used for connections to the proxy:\n" +
+        //     "\tProxy Host           : " + PROXY_HOST + "\n" +
+        //     "\tProxy Port           : " + PROXY_PORT + "\n" +
+        //     "\tProxy User           : " + PROXY_USER + "\n" +
+        //     "\tProxy Password       : " + "********" + "\n");
+        try {
+            if (PROXY_HOST != null) {
+                Authenticator.setDefault(
+                    new Authenticator() {
+                        @Override
+                        public PasswordAuthentication getPasswordAuthentication() {
+                        return new PasswordAuthentication(PROXY_USER, PROXY_PASSWORD.toCharArray());
+                        }
+                    }
+                );
+                System.setProperty("https.proxyHost", PROXY_HOST);
+                System.setProperty("https.proxyPort", PROXY_PORT);
+                System.setProperty("https.proxyUser", PROXY_USER);
+                System.setProperty("https.proxyPassword", PROXY_PASSWORD);
+                System.setProperty("jdk.http.auth.tunneling.disabledSchemes", "");
+            }
+        } catch (Exception e) {
+            log.error("Cannot connect via http proxy");
+        }
+    }
+
     public AttachmentService.Iface makeAttachmentClient() {
         return new AttachmentService.Client(makeProtocol(BACKEND_URL, ATTACHMENT_SERVICE_URL));
     }
@@ -149,6 +186,7 @@ public class ThriftClients {
     }
 
     public LicenseService.Iface makeLicenseClient() {
+        configProxy();
         return new LicenseService.Client(makeProtocol(BACKEND_URL, LICENSE_SERVICE_URL));
     }
 

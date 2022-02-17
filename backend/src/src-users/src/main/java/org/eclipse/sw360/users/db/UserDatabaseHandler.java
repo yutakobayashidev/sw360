@@ -10,8 +10,12 @@
 package org.eclipse.sw360.users.db;
 
 import com.cloudant.client.api.CloudantClient;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.exceptions.CsvException;
@@ -24,20 +28,20 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.UserRepository;
 import org.eclipse.sw360.datahandler.db.UserSearchHandler;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftValidate;
+import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.users.dto.APIResponseRedmine;
+import org.eclipse.sw360.users.dto.Issue;
 import org.eclipse.sw360.users.dto.RedmineConfigDTO;
-import org.eclipse.sw360.users.dto.UserDTO;
 import org.eclipse.sw360.users.redmine.ReadFileRedmineConfig;
 import org.eclipse.sw360.users.util.FileUtil;
 import org.ektorp.http.HttpClient;
 
 import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -57,12 +61,13 @@ public class UserDatabaseHandler {
     private DatabaseConnector dbConnector;
     private UserRepository repository;
     private UserSearchHandler userSearchHandler;
-    private Map<String, UserDTO> userDTOMap;
     private static final Logger log = LogManager.getLogger(UserDatabaseHandler.class);
-    private static final String DEPARTMENT = "DEPARTMENT";
     private ReadFileRedmineConfig readFileRedmineConfig;
     private static final String INFO = "INFO";
     private static final String ERROR = "ERROR";
+    private static boolean IMPORT_DEPARTMENT_STATUS = false;
+    private List<String> departmentDuplicate;
+    private List<String> emailDoNotExist;
 
     public UserDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws IOException {
         // Create the connector
@@ -82,7 +87,8 @@ public class UserDatabaseHandler {
     }
 
     public User getByEmail(String email) {
-        return repository.getByEmail(email);
+        return repository.getByEmail(email)
+                ;
     }
 
     public User getUser(String id) {
@@ -149,77 +155,115 @@ public class UserDatabaseHandler {
         return repository.getUsersWithPagination(pageData);
     }
 
-    public void importFileToDB(String pathFolder) {
+    public RequestSummary importFileToDB(String pathFolder) {
         String functionName = new Object() {
         }.getClass().getEnclosingMethod().getName();
+        departmentDuplicate = new ArrayList<>();
+        emailDoNotExist = new ArrayList<>();
+        List<Issue> listIssueSuccess = new ArrayList<>();
+        List<Issue> listIssueFail = new ArrayList<>();
+        RequestSummary requestSummary = new RequestSummary().setTotalAffectedElements(0).setMessage("Import Department Success").setRequestStatus(RequestStatus.SUCCESS);
         RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+        Map<String, List<String>> mapArrayList = new HashMap<>();
+        if (IMPORT_DEPARTMENT_STATUS) {
+            return requestSummary.setRequestStatus(RequestStatus.PROCESSING);
+        }
+        IMPORT_DEPARTMENT_STATUS = true;
         try {
-            FileUtil.writeErrorToFile(INFO, functionName, "START", configDTO.getPathFolderLog());
-            List<User> users = repository.getAll();
-            userDTOMap = new HashMap<>();
-            for (User user : users) {
-                UserDTO userDTO = UserDTO.convertToUserDTO(user);
-                userDTOMap.put(user.getEmail(), userDTO);
-            }
+            FileUtil.writeLogToFile(INFO, functionName, "START", configDTO.getPathFolderLog());
             Set<String> files = FileUtil.listFilesUsingFileWalk(pathFolder);
             for (String file : files) {
-                checkFileFormat(pathFolder + "/" + file);
-            }
-            userDTOMap.forEach((key, value) -> {
-                if (value.getId() == null || value.getId().isEmpty() || value.getId().equals("")) {
-                    repository.add(value.convertToUser());
-                } else {
-                    repository.update(value.convertToUserUpdate());
+                String pathFile = pathFolder + "/" + file;
+                String extension = FilenameUtils.getExtension(pathFile);
+                if (extension.equalsIgnoreCase("xlsx") || extension.equalsIgnoreCase("xls")) {
+                    mapArrayList = readFileExcel(pathFile);
+                } else if (extension.equalsIgnoreCase("csv")) {
+                    mapArrayList = readFileCsv(pathFile);
                 }
-            });
-            FileUtil.writeErrorToFile(INFO, functionName, "END", configDTO.getPathFolderLog());
-        } catch (IOException e) {
-            log.error("Can't read file: {}", e.getMessage());
-            FileUtil.writeErrorToFile(ERROR, functionName, e.getMessage(), configDTO.getPathFolderLog());
+                Map<String, User> mapEmail = validateListEmailExistDB(mapArrayList);
+                String issueId = pathFile.substring(pathFile.lastIndexOf("_") + 1, pathFile.lastIndexOf("."));
+                String fileName = file.replace(pathFile.substring(pathFile.lastIndexOf("_"), pathFile.lastIndexOf(".")), "");
+                if (departmentDuplicate.isEmpty() && emailDoNotExist.isEmpty()) {
+                    mapArrayList.forEach((k, v) -> v.forEach(email -> updateDepartmentToUserCheck( mapEmail.get(email),k)));
+                    Issue issue = new Issue();
+                    String joined = String.join(", ", mapArrayList.keySet());
+                    issue.setIssue_id(issueId);
+                    issue.setDescription("Department [" + joined + "] added successfully - File: [" + fileName + "]");
+                    listIssueSuccess.add(issue);
+                    FileUtil.writeLogToFile(INFO, functionName, "Department [" + joined + "] added successfully - File: [" + fileName + "]", configDTO.getPathFolderLog());
+                } else {
+                    if (!departmentDuplicate.isEmpty()) {
+                        Issue issueFail = new Issue();
+                        issueFail.setIssue_id(issueId);
+                        String joined = String.join(", ", departmentDuplicate);
+                        issueFail.setDescription("Department [" + joined + "] is duplicate - File: [" + fileName + "]");
+                        listIssueFail.add(issueFail);
+                        FileUtil.writeLogToFile(ERROR, functionName, "Department [" + joined + "] is duplicate - File: [" + fileName + "]", configDTO.getPathFolderLog());
+                        departmentDuplicate = new ArrayList<>();
+                    }
+                    if (!emailDoNotExist.isEmpty()) {
+                        Issue issueFail = new Issue();
+                        issueFail.setIssue_id(issueId);
+                        String joined = String.join(", ", emailDoNotExist);
+                        issueFail.setDescription("User [" + joined + "] does not exist - File: [" + fileName + "]");
+                        listIssueFail.add(issueFail);
+                        FileUtil.writeLogToFile(ERROR, functionName, "User [" + joined + "] does not exist - File: [" + fileName + "]", configDTO.getPathFolderLog());
+                        emailDoNotExist = new ArrayList<>();
+                    }
+                    requestSummary.setRequestStatus(RequestStatus.FAILURE);
+                }
+            }
+            IMPORT_DEPARTMENT_STATUS = false;
+            FileUtil.writeLogToFile(INFO, functionName, "END", configDTO.getPathFolderLog());
+        } catch (Exception e) {
+            IMPORT_DEPARTMENT_STATUS = false;
+            String msg = "Failed to import department";
+            requestSummary.setMessage(msg);
+            requestSummary.setRequestStatus(RequestStatus.FAILURE);
         }
+        return requestSummary;
     }
 
-    private void checkFileFormat(String pathFile) {
-        String extension = FilenameUtils.getExtension(pathFile);
-        if (extension.equalsIgnoreCase("xlsx") || extension.equalsIgnoreCase("xls")) {
-            readFileExcel(pathFile);
-        } else {
-            readFileCsv(pathFile);
-        }
-    }
-
-    public void readFileCsv(String filePath) {
-        String functionName = new Object() {
-        }.getClass().getEnclosingMethod().getName();
-        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
-        FileUtil.writeErrorToFile(INFO, functionName, "START", configDTO.getPathFolderLog());
+    public Map<String, List<String>> readFileCsv(String filePath) {
+        Map<String, List<String>> listMap = new HashMap<>();
+        List<String> emailCsv = new ArrayList<>();
         try {
             File file = new File(filePath);
-            FileUtil.writeErrorToFile(INFO, functionName, file.getName(), configDTO.getPathFolderLog());
             CSVReader reader = new CSVReaderBuilder(new FileReader(file)).withSkipLines(1).build();
             List<String[]> rows = reader.readAll();
             String mapTemp = "";
             for (String[] row : rows) {
                 if (row.length > 1) {
-                    if (!Objects.equals(row[0], "")) mapTemp = row[0];
-                    checkUser(row[1], mapTemp);
+                    if (!Objects.equals(row[0], "")) {
+                        if (!mapTemp.isEmpty()) {
+                            if (listMap.containsKey(mapTemp)) {
+                                departmentDuplicate.add(mapTemp);
+                            }
+                            listMap.put(mapTemp, emailCsv);
+                            emailCsv = new ArrayList<>();
+                        }
+                        mapTemp = row[0];
+                    }
+                    String email = row[1];
+                    emailCsv.add(email);
                 }
             }
-            FileUtil.writeErrorToFile(INFO, functionName, "END", configDTO.getPathFolderLog());
+            if (listMap.containsKey(mapTemp)) {
+                departmentDuplicate.add(mapTemp);
+            }
+            listMap.put(mapTemp, emailCsv);
         } catch (IOException | CsvException e) {
             log.error("Can't read file csv: {}", e.getMessage());
-            FileUtil.writeErrorToFile(ERROR, functionName, e.getMessage(), configDTO.getPathFolderLog());
         }
+        return listMap;
     }
 
-    public void readFileExcel(String filePath) {
-        String functionName = new Object() {
-        }.getClass().getEnclosingMethod().getName();
-        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+    public Map<String, List<String>> readFileExcel(String filePath) {
+        Map<String, List<String>> listMap = new HashMap<>();
+        List<String> emailExcel = new ArrayList<>();
+
         Workbook wb = null;
-        FileUtil.writeErrorToFile(INFO, functionName, "START", configDTO.getPathFolderLog());
         try (InputStream inp = new FileInputStream(filePath)) {
-            FileUtil.writeErrorToFile(INFO, functionName, FilenameUtils.getName(filePath), configDTO.getPathFolderLog());
             wb = WorkbookFactory.create(inp);
             Sheet sheet = wb.getSheetAt(0);
             Iterator<Row> rows = sheet.iterator();
@@ -228,14 +272,27 @@ public class UserDatabaseHandler {
             while (rows.hasNext()) {
                 Row row = rows.next();
                 if (!isRowEmpty(row)) {
-                    if (row.getCell(0) != null) mapTemp = row.getCell(0).getStringCellValue();
-                    checkUser(row.getCell(1).getStringCellValue(), mapTemp);
+                    // department have value
+                    if (row.getCell(0) != null) {
+                        if (!mapTemp.isEmpty()) {
+                            if (listMap.containsKey(mapTemp)) {
+                                departmentDuplicate.add(mapTemp);
+                            }
+                            listMap.put(mapTemp, emailExcel);
+                            emailExcel = new ArrayList<>();
+                        }
+                        mapTemp = row.getCell(0).getStringCellValue();
+                    }
+                    String email = row.getCell(1).getStringCellValue();
+                    emailExcel.add(email);
                 }
             }
-            FileUtil.writeErrorToFile(INFO, functionName, "END", configDTO.getPathFolderLog());
+            if (listMap.containsKey(mapTemp)) {
+                departmentDuplicate.add(mapTemp);
+            }
+            listMap.put(mapTemp, emailExcel);
         } catch (Exception ex) {
             log.error("Can't read file excel: {}", ex.getMessage());
-            FileUtil.writeErrorToFile(ERROR, functionName, ex.getMessage(), configDTO.getPathFolderLog());
         } finally {
             try {
                 if (wb != null) wb.close();
@@ -243,6 +300,7 @@ public class UserDatabaseHandler {
                 log.error(e.getMessage());
             }
         }
+        return listMap;
     }
 
     public static boolean isRowEmpty(Row row) {
@@ -257,27 +315,6 @@ public class UserDatabaseHandler {
             }
         }
         return isEmpty;
-    }
-
-    private void checkUser(String email, String apartment) {
-        UserDTO userDTO = userDTOMap.get(email);
-        if (userDTO == null) {
-            UserDTO u = new UserDTO();
-            u.setEmail(email);
-            u.setDepartment(DEPARTMENT);
-            Set<UserGroup> userGroups = new HashSet<>();
-            userGroups.add(UserGroup.USER);
-            Map<String, Set<UserGroup>> map = new HashMap<>();
-            map.put(apartment, userGroups);
-            u.setSecondaryDepartmentsAndRoles(map);
-            userDTOMap.put(email, u);
-        } else {
-            if (!userDTO.getSecondaryDepartmentsAndRoles().containsKey(apartment)) {
-                Set<UserGroup> userGroups = new HashSet<>();
-                userGroups.add(UserGroup.USER);
-                userDTO.getSecondaryDepartmentsAndRoles().put(apartment, userGroups);
-            }
-        }
     }
 
     public Map<String, List<User>> getAllUserByDepartment() {
@@ -299,6 +336,7 @@ public class UserDatabaseHandler {
         }
         return listMap;
     }
+
 
     public Map<String, List<User>> searchUsersByDepartment(String departmentKey) {
         Map<String, List<User>> listMap = getAllUserByDepartment();
@@ -380,44 +418,83 @@ public class UserDatabaseHandler {
 
     }
 
-    public boolean updateDepartmentToUser(String email, String department) {
-        User user = getByEmail(email);
-        if(user==null){
-            return false;
-        } else{
-            Map<String, Set<UserGroup>> map;
-            Set<UserGroup> userGroups = new HashSet<>();
-            if (user.getSecondaryDepartmentsAndRoles() != null){
-                map = user.getSecondaryDepartmentsAndRoles();
-                for (Map.Entry<String, Set<UserGroup>> entry : map.entrySet()) {
-                    if (entry.getKey().equals(department)) {
-                        userGroups = entry.getValue();
-                    }
-                }
-            }else {
-                map = new HashMap<>();
+
+    public void responseData(List<Issue> success, List<Issue> fails) {
+        try {
+            APIResponseRedmine response = new APIResponseRedmine();
+            URL url = new URL("http://10.116.41.47:3000/redmine");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setDoOutput(true);
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            response.setSuccess(success);
+            response.setFail(fails);
+            ObjectMapper mapper = new ObjectMapper();
+            String arrayToJson = mapper.writeValueAsString(response);
+            OutputStream os = conn.getOutputStream();
+            os.write(arrayToJson.getBytes());
+            os.flush();
+            new BufferedReader(new InputStreamReader((conn.getInputStream())));
+            if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                throw new RuntimeException("Failed : HTTP error code : "
+                        + conn.getResponseCode());
             }
-            userGroups.add(UserGroup.USER);
-            map.put(department, userGroups);
-            user.setSecondaryDepartmentsAndRoles(map);
-            repository.update(user);
-            return true;
+            conn.disconnect();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
-    public void updateDepartmentToListUser(List<String> emails, String department) {
-        List<String> emailsByDepartment = getAllEmailByDepartment(department);
-        deleteDepartmentByListEmail(emailsByDepartment,department);
-        for (String email : emails) {
-            updateDepartmentToUser(email, department);
+
+    public Map<String, User> validateListEmailExistDB(Map<String, List<String>> mapList) {
+        Map<String, User> listUser = new HashMap<>();
+        Set<String> setEmail = new HashSet<>();
+        mapList.forEach((v, k) -> setEmail.addAll(k));
+        for (String email : setEmail) {
+            User user = repository.getByEmail(email);
+            if (user == null) {
+                emailDoNotExist.add(email);
+            } else {
+                listUser.put(email, user);
+            }
         }
+        return listUser;
     }
 
-    public boolean deleteDepartmentByEmail(String email, String departmentKey) {
-        User user = getByEmail(email);
-        if(user==null){
-            return false;
+    public void updateDepartmentToUserCheck(User user,String department) {
+        log.info("---qbat dau vao "+user);
+        Map<String, Set<UserGroup>> map;
+        Set<UserGroup> userGroups = new HashSet<>();
+        if (user.getSecondaryDepartmentsAndRoles() != null) {
+            map = user.getSecondaryDepartmentsAndRoles();
+            for (Map.Entry<String, Set<UserGroup>> entry : map.entrySet()) {
+                if (entry.getKey().equals(department)) {
+                    userGroups = entry.getValue();
+                }
+            }
         } else {
+            map = new HashMap<>();
+        }
+        log.info("---qua set group+user"+user);
+
+        userGroups.add(UserGroup.USER);
+        map.put(department, userGroups);
+        user.setSecondaryDepartmentsAndRoles(map);
+        log.info("---End"+user);
+        /// User ko co gi thay doi se bi conflic voi user database
+        repository.update(user);
+    }
+    public void updateDepartmentToListUserCheck(List<User> users, String department) {
+        List<User> usersByDepartment = getAllUsersByDepartment(department);
+
+        deleteDepartmentByListUser(usersByDepartment,department);
+        users.forEach(u->{
+            User ua = repository.getByEmail(u.getEmail());
+            updateDepartmentToUserCheck(ua,department);
+        });
+
+    }
+    public void deleteDepartmentByUser(User user, String departmentKey) {
             Map<String, Set<UserGroup>> map = user.getSecondaryDepartmentsAndRoles();
             Set<UserGroup> userGroups = new HashSet<>();
             for (Map.Entry<String, Set<UserGroup>> entry : map.entrySet()) {
@@ -428,14 +505,36 @@ public class UserDatabaseHandler {
             map.remove(departmentKey, userGroups);
             user.setSecondaryDepartmentsAndRoles(map);
             repository.update(user);
-            return true;
+    }
+    public void deleteUserByDepartment(String department){
+        List<User> usersByDepartment = getAllUsersByDepartment(department);
+
+        deleteDepartmentByListUser(usersByDepartment,department);
+    }
+    public void deleteDepartmentByListUser(List<User> users, String departmentKey) {
+        for (User user:users) {
+            deleteDepartmentByUser(user,departmentKey);
         }
     }
 
-    public void deleteDepartmentByListEmail(List<String> emails, String departmentKey) {
-        for (String email:emails) {
-            deleteDepartmentByEmail(email,departmentKey);
+    public List<User> getAllUserByListEmail(List<String> emails){
+        List<User> users=new ArrayList<>();
+        for (String email: emails) {
+            users.add(getByEmail(email));
         }
+        return users;
     }
 
+    public List<User> getAllUsersByDepartment(String departmentKey) {
+        Map<String, List<User>> listMap = getAllUserByDepartment();
+
+        List<User> users = new ArrayList<>();
+        for (Map.Entry<String, List<User>> entry : listMap.entrySet()) {
+            if (entry.getKey().equals(departmentKey)) {
+                users = entry.getValue();
+            }
+        }
+        return users;
+    }
 }
+

@@ -23,11 +23,11 @@ public class FileUtil {
     private FileUtil() {
     }
 
-    public static void writeErrorToFile(String typeLog, String method, String messageError, String folder) {
+    public static void writeLogToFile(String typeLog, String method, String message, String folder) {
         BufferedWriter writer = null;
         FileWriter fileWriter = null;
         try {
-            String error = LocalDateTime.now().format(format) + " " + typeLog + " " + " " + method + " - " + messageError;
+            String error = LocalDateTime.now().format(format) + " " + typeLog + " " + " " + method + " - " + message;
             String path = folder + LocalDate.now() + EXTENSION;
             File file = new File(path);
             if (file.exists()) {

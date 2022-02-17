@@ -167,17 +167,35 @@ public abstract class ComponentPortletUtils {
         setFieldValue(request, vendor, Vendor._Fields.URL);
     }
 
-    public static List<String> updateUserFromRequest(PortletRequest request,Logger log) {
-
+//    public static List<String> updateUserFromRequest(PortletRequest request,Logger log) {
+//
+//        List<String> emails=new ArrayList<>();
+//        String emailsRequest=request.getParameter(PortalConstants.ADD_LIST_EMAIL);
+//        String replaceEmail = emailsRequest.replace("[","").replace("]", "");
+//        String[] parts = replaceEmail.split(",");
+//        for (String email: parts) {
+//            emails.add(handlerEmails(email));
+//        }
+//        return emails;
+//
+//    }
+    public static List<User> updateUserFromRequest(PortletRequest request,Logger log) throws TException {
+        ThriftClients thriftClients = new ThriftClients();
+        UserService.Iface client = thriftClients.makeUserClient();
+        List<User> users=new ArrayList<>();
         List<String> emails=new ArrayList<>();
         String emailsRequest=request.getParameter(PortalConstants.ADD_LIST_EMAIL);
         String replaceEmail = emailsRequest.replace("[","").replace("]", "");
-        String[] parts = replaceEmail.split(",");
-        for (String email: parts) {
-            emails.add(handlerEmails(email));
+        if(replaceEmail.length()==0){
+            return null;
+        } else{
+            String[] parts = replaceEmail.split(",");
+            for (String email: parts) {
+                emails.add(handlerEmails(email));
+            }
+            users =client.getAllUserByListEmail(emails);
+            return  users;
         }
-        return emails;
-
     }
 
     public static void updateTodoFromRequest(PortletRequest request, Obligation oblig) {
@@ -259,29 +277,6 @@ public abstract class ComponentPortletUtils {
             }
         }
         return RequestStatus.FAILURE;
-    }
-    public static RequestStatus deleteDepartment(PortletRequest request, Logger log) {
-
-        String email=request.getParameter("email");
-        String departmentKey = request.getParameter("departmentKey");
-        if (departmentKey != null) {
-            try {
-                User user = UserCacheHolder.getUserFromRequest(request);
-                ThriftClients thriftClients = new ThriftClients();
-                ComponentService.Iface componentClient = thriftClients.makeComponentClient();
-                UserService.Iface client = thriftClients.makeUserClient();
-
-                RequestStatus global_status = RequestStatus.SUCCESS;
-                if (global_status == RequestStatus.SUCCESS) {
-                    client.deleteDepartmentByEmail(email, departmentKey);
-                } else {
-                    return global_status;
-                }
-            } catch (TException e) {
-                log.error("Could not delete department from DB", e);
-            }
-        }
-        return RequestStatus.SUCCESS;
     }
 
     public static RequestStatus deleteVendor(PortletRequest request, Logger log) {

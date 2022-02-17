@@ -13,6 +13,7 @@ namespace java org.eclipse.sw360.datahandler.thrift.users
 namespace php sw360.thrift.users
 
 typedef sw360.RequestStatus RequestStatus
+typedef sw360.RequestSummary RequestSummary
 typedef sw360.PaginationData PaginationData
 
 enum UserGroup {
@@ -144,7 +145,7 @@ service UserService {
      **/
     set<string> getUserEmails();
 
-    void importFileToDB(1:string pathFolder);
+    RequestSummary importFileToDB();
 
     RequestStatus importDepartmentSchedule();
 
@@ -158,14 +159,6 @@ service UserService {
 
     list<string>  getAllEmailOtherDepartment(string departmentKey);
 
-    void updateDepartmentToUser(1: string email, 2: string department)
-
-    void updateDepartmentToListUser(1: list<string> emails, 2: string department)
-
-    void deleteDepartmentByEmail(1: string email, 2: string department)
-
-    void deleteDepartmentByListEmail(1: list<string> emails,2: string department)
-
     string searchUsersByDepartmentToJson(1: string department)
 
      string getAllEmailOtherDepartmentToJson(1: string department)
@@ -176,6 +169,22 @@ service UserService {
 
     string getLastModifiedFileName();
 
+    string getPathConfigDepartment();
 
+    void writePathFolderConfig(1:string pathFolder);
+
+
+
+     void updateDepartmentToListUserCheck(1: list<User> users, 2: string department)
+
+     void deleteDepartmentByUser(1: User user, 2: string department)
+
+     void deleteDepartmentByListUser(1: list<User> users,2: string department)
+
+     list<User> getAllUserByListEmail(1: list<string> emails)
+
+     list<User> getAllUsersByDepartment(1: string department)
+
+     void deleteUserByDepartment(1: string department)
 
 }
