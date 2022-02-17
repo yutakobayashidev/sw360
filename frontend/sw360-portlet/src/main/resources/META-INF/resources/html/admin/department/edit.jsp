@@ -75,22 +75,22 @@
                             </tr>
                             </thead>
                             <tbody>
-                                <tr id="" class="bodyRow" display="none">
-                                    <td>
-                                        <input list="suggestionsList" class="form-control secGrp" name="email" placeholder="<liferay-ui:message key="Search User" />" title="<liferay-ui:message key="select.secondary.department.role" />"   />
-                                        <datalist class="suggestion" id="suggestionsList">
-                                        </datalist>
-                                    </td>
-                                    <td>
-                                        <input  class="form-control" disabled class="secGrp" minlength="1" placeholder="<liferay-ui:message key="role" />" title="<liferay-ui:message key="role" />" value="User"/>
-                                    </td>
-                                    <td class="content-middle">
-                                        <svg class="action lexicon-icon delete-btn" data-value="" data-row-id="" onclick="">
-                                            <title>Delete</title>
-                                            <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
-                                        </svg>
-                                    </td>
-                                </tr>
+                            <tr id="" class="bodyRow" display="none">
+                                <td>
+                                    <input list="suggestionsList" class="form-control secGrp" name="email" placeholder="<liferay-ui:message key="Search User" />" title="<liferay-ui:message key="select.secondary.department.role" />"   />
+                                    <datalist class="suggestion" id="suggestionsList">
+                                    </datalist>
+                                </td>
+                                <td>
+                                    <input  class="form-control" disabled class="secGrp" minlength="1" placeholder="<liferay-ui:message key="role" />" title="<liferay-ui:message key="role" />" value="User"/>
+                                </td>
+                                <td class="content-middle">
+                                    <svg class="action lexicon-icon delete-btn" data-value="" data-row-id="" onclick="">
+                                        <title>Delete</title>
+                                        <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
+                                    </svg>
+                                </td>
+                            </tr>
                             </tbody>
                         </table>
                         <button type="button" class="btn btn-secondary" id="add-sec-grp-roles-id">
@@ -140,13 +140,24 @@
 
         require(['jquery', 'modules/dialog', 'modules/validation'], function ($, dialog, validation) {
             let index=0;
+
+            let emailsJson=[];
+            let emailsOtherDepartment=[];
             let emailsAdd=[];
             let emailJSON = jQuery.parseJSON(JSON.stringify(${ departmentRoleUser }));
             let emailOtherDepartment= jQuery.parseJSON(JSON.stringify(${emailOtherDepartment}));
             createSecDepartmentRolesTable();
+
             pageName = '<%=PortalConstants.PAGENAME%>';
             pageEdit = '<%=PortalConstants.PAGENAME_EDIT%>';
             validation.enableForm('#departmentEditForm');
+
+            function arrayObjectToArrayString(arrayObject,arrayString){
+                for(let object of arrayObject){
+                    arrayString.push(object.Email);
+                }
+                return arrayString;
+            }
 
             $('.portlet-toolbar button[data-action="cancel"]').on('click', function () {
                 var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
@@ -157,33 +168,56 @@
             $('.portlet-toolbar button[data-action="save"]').on('click', function () {
                 $('.secGrp').each(function() {
                     emailsAdd.push($(this).val())
+
                 });
                 var jsonArrayEmail = JSON.parse(JSON.stringify(emailsAdd));
-                console.log("--------------"+jsonArrayEmail);
+
                 $('#listEmail').val(JSON.stringify(jsonArrayEmail));
                 $('#departmentEditForm').submit();
             });
 
             function createSecDepartmentRolesTable() {
+
+                emailsJson=arrayObjectToArrayString(emailJSON,emailsJson);
+                emailsOtherDepartment=arrayObjectToArrayString(emailOtherDepartment,emailsOtherDepartment);
+                
                 $('.delete-btn').first().bind('click', deleteRow);
 
-                if (emailJSON.length == 0) {
-                    return;                    
+                if (emailsJson.length == 0) {
+                    return;
                 }
 
-                for (let i = 0; i < emailJSON.length - 1; i++) {
+                for (let i = 0; i < emailsJson.length - 1; i++) {
+
                     addNewRow();
+                    // $('.bodyRow').focusout(function() {
+                    // handleFocusOut($(this).find('input').first());
+                    // })
+                    fillSuggestion();
                 }
 
-                for (let i = 0; i < emailJSON.length; i++) {
-                    $('.secGrp').eq(i).val(emailJSON[i].Email);
+                for (let i = 0; i < emailsJson.length; i++) {
+                    $('.secGrp').eq(i).val(emailsJson[i]);
                 }
 
                 fillSuggestion();
             }
 
             $('#add-sec-grp-roles-id').on('click', function() {
+
+                let emailLastInput = $('.secGrp').last().val();
+                const index = emailsOtherDepartment.indexOf(emailLastInput);
+                if (index > -1) {
+                    emailsOtherDepartment.splice(index, 1);
+                }
+                emailsOtherDepartment = Array.from(new Set(emailsOtherDepartment));
+                fillSuggestion();
+
+
                 addNewRow();
+                $('.bodyRow').last().focusout(function() {
+                    handleFocusOut($(this).find('input').first());
+                })
             });
 
             function addNewRow() {
@@ -191,6 +225,7 @@
                     $('.bodyRow').last().css('display', 'table-row');
                     return;
                 }
+
 
                 let newRow = $('.bodyRow').last().clone();
 
@@ -203,27 +238,26 @@
 
             function deleteRow() {
                 let email = $(this).parent().parent().children('td').first().children('input').val();
-    
-                let emailObject = { Email: email };
-    
-                emailOtherDepartment.push(emailObject);
-                emailOtherDepartment = Array.from(new Set(emailOtherDepartment));
-    
+                if(email !== "") {
+                    // let emailObject = { Email: email };
+                    emailsOtherDepartment.push(email);
+
+                }
                 if ($('.delete-btn').length > 1) {
                     $(this).closest('tr').remove();
                 } else {
                     $('.secGrp').val('');
                     $(this).closest('tr').css('display', 'none');
                 }
-    
+
                 fillSuggestion();
             }
 
             function fillSuggestion() {
                 let suggestionsList = '';
 
-                for(let email of emailOtherDepartment) {
-                    suggestionsList += '<option value="'+email.Email+'">' + email.Email + '</option>';
+                for(let email of emailsOtherDepartment) {
+                    suggestionsList += '<option value="'+email+'">' + email+ '</option>';
                 }
 
                 $('.suggestion').empty();
@@ -235,9 +269,9 @@
 
             function handleFocusOut(element) {
                 let value = element.val();
-                for (let i = 0; i < emailOtherDepartment.length; i++) {
-                    if (emailOtherDepartment[i].Email == value) {
-                        $(element).val(emailOtherDepartment[i].Email);
+                for (let i = 0; i < emailsOtherDepartment.length; i++) {
+                    if (emailsOtherDepartment[i] == value) {
+                        $(element).val(emailsOtherDepartment[i]);
                         break;
                     } else {
                         $(element).val("");
