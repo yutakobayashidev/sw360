@@ -170,16 +170,14 @@
                     emailsAdd.push($(this).val());
 
                 });
-         
-               if(emailsAdd.length === 1){
-                
-                var jsonArrayEmail = JSON.parse(JSON.stringify(emailDelete));
-
-               } else{
-
+            
+              console.log("--------length input----------"+emailsAdd.length);
+                for(let i of emailsAdd){
+                    console.log("---email---"+i);
+                }
                 var jsonArrayEmail = JSON.parse(JSON.stringify(emailsAdd));
+            
                
-               }
 
                 $('#listEmail').val(JSON.stringify(jsonArrayEmail));
                 $('#departmentEditForm').submit();

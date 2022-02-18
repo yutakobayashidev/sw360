@@ -6,10 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.users.dto.RedmineConfigDTO;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -41,32 +38,38 @@ public class ReadFileRedmineConfig {
                 JsonNode jsonNode = objectMapper.readTree(reader);
                 JsonNode configRedmine = jsonNode.path("configRedmine");
                 String pathFolder = configRedmine.path("pathFolder").asText();
-                String pathFolderLog = pathFolder + FOLDER_LOG;
-                return new RedmineConfigDTO(pathFolder, pathFolderLog);
+                String urlApiRedmine = configRedmine.path("urlApiRedmine").asText();
+                String pathFolderLog = "";
+                if (!pathFolder.isEmpty()) pathFolderLog = pathFolder + FOLDER_LOG;
+                return new RedmineConfigDTO(pathFolder, pathFolderLog, urlApiRedmine);
             }
+        } catch (FileNotFoundException e) {
+            log.error("Error not find the file: {}", e.getMessage());
         } catch (IOException e) {
-            log.error("An I/O error occurred: {}", e.getMessage());
+            log.error("Unread file error: {}", e.getMessage());
         }
         return null;
     }
 
     public void writePathFolderConfig(String pathFolder) {
+        RedmineConfigDTO redmineConfigDTO = readFileJson();
         BufferedWriter writer = null;
         try {
             writer = Files.newBufferedWriter(Paths.get(getPathConfig()));
             Map<String, Object> configRedmine = new HashMap<>();
             Map<String, Object> map = new HashMap<>();
             map.put("pathFolder", pathFolder);
+            map.put("urlApiRedmine", redmineConfigDTO.getUrlApiRedmine());
             configRedmine.put("configRedmine", map);
             ObjectMapper mapper = new ObjectMapper();
             writer.write(mapper.writeValueAsString(configRedmine));
+        } catch (FileNotFoundException e) {
+            log.error("Error not find the file: {}", e.getMessage());
         } catch (IOException e) {
-            log.error("An I/O error occurred: {}", e.getMessage());
+            log.error("Unread file error: {}", e.getMessage());
         } finally {
             try {
-                if (writer != null) {
-                    writer.close();
-                }
+                if (writer != null) writer.close();
             } catch (Exception e) {
                 e.printStackTrace();
             }

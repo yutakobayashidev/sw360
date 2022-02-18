@@ -3,13 +3,15 @@ package org.eclipse.sw360.users.dto;
 public class RedmineConfigDTO {
     private String pathFolder;
     private String pathFolderLog;
+    private String urlApiRedmine;
 
     public RedmineConfigDTO() {
     }
 
-    public RedmineConfigDTO(String pathFolder, String pathFolderLog) {
+    public RedmineConfigDTO(String pathFolder, String pathFolderLog, String urlApiRedmine) {
         this.pathFolder = pathFolder;
         this.pathFolderLog = pathFolderLog;
+        this.urlApiRedmine = urlApiRedmine;
     }
 
     public String getPathFolder() {
@@ -26,5 +28,13 @@ public class RedmineConfigDTO {
 
     public void setPathFolderLog(String pathFolderLog) {
         this.pathFolderLog = pathFolderLog;
+    }
+
+    public String getUrlApiRedmine() {
+        return urlApiRedmine;
+    }
+
+    public void setUrlApiRedmine(String urlApiRedmine) {
+        this.urlApiRedmine = urlApiRedmine;
     }
 }

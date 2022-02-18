@@ -1,7 +1,6 @@
 package org.eclipse.sw360.portal.portlets.admin;
 
 
-
 import java.io.UnsupportedEncodingException;
 
 
@@ -29,12 +28,8 @@ import org.osgi.service.component.annotations.ConfigurationPolicy;
 
 import javax.portlet.*;
 import java.io.IOException;
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-
 import java.util.*;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -59,7 +54,6 @@ import static org.eclipse.sw360.portal.common.PortalConstants.*;
 )
 public class DepartmentPortlet extends Sw360Portlet {
     private static final Logger log = LogManager.getLogger(DepartmentPortlet.class);
-    private static final DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     DateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
     private static String temp;
     private static String lastRunningTime;
@@ -179,7 +173,7 @@ public class DepartmentPortlet extends Sw360Portlet {
                 UserService.Iface userClient = thriftClients.makeUserClient();
                 String jsonEmail = userClient.searchUsersByDepartmentToJson(key);
                 String jsonEmailOtherDepartment = userClient.getAllEmailOtherDepartmentToJson(key);
-                log.info("-------key------"+ decodeString(encodeString(key)));
+                log.info("-------key------" + decodeString(encodeString(key)));
                 request.setAttribute(EMAIL_OTHER_DEPARTMENT_JSON, jsonEmailOtherDepartment);
                 request.setAttribute(DEPARTMENT_EMAIL_ROLE_JSON, jsonEmail);
                 request.setAttribute(PortalConstants.DEPARTMENT_ENCODE, decodeString(encodeString(key)));
@@ -201,9 +195,9 @@ public class DepartmentPortlet extends Sw360Portlet {
         if (key != null) {
             try {
                 UserService.Iface userClient = thriftClients.makeUserClient();
-                if(users == null){
+                if (users == null) {
                     userClient.deleteUserByDepartment(department);
-                } else{
+                } else {
                     userClient.updateDepartmentToListUserCheck(users, department);
                 }
             } catch (TException e) {
@@ -220,10 +214,10 @@ public class DepartmentPortlet extends Sw360Portlet {
     }
 
     public static String decodeString(String encodeText) throws UnsupportedEncodingException {
-            byte[] decodeBytes = Base64.getDecoder().decode(encodeText);
-            String str = new String(decodeBytes, "UTF-8");
-            return str;
-        }
+        byte[] decodeBytes = Base64.getDecoder().decode(encodeText);
+        String str = new String(decodeBytes, "UTF-8");
+        return str;
+    }
 
     @Override
     public void serveResource(ResourceRequest request, ResourceResponse response) throws PortletException {

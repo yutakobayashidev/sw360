@@ -57,13 +57,15 @@
                                       action="<%=editPathFolder%>" method="post" novalidate>
                                     <input id="pathFolderDepartment" style="margin-top: 0" required type="text"
                                            class="form-control"
-                                           name="<portlet:namespace/><%=PortalConstants.DEPARTMENT_URL%>" value="<sw360:out value="${pathConfigFolderDepartment}"/>"
-                                           placeholder="Enter the directory path"/>
+                                           name="<portlet:namespace/><%=PortalConstants.DEPARTMENT_URL%>"
+                                           value="<sw360:out value="${pathConfigFolderDepartment}"/>"
+                                           placeholder=" <liferay-ui:message key="enter.the.directory.path"/>"/>
                                 </form>
                             </td>
                             <td width="3%">
-                                <button type="button" class="btn btn-primary" data-action="save"><liferay-ui:message
-                                        key="update"/></button>
+                                <button type="button" class="btn btn-primary" id="updatePathFolder" data-action="save">
+                                    <liferay-ui:message
+                                            key="update"/></button>
                             </td>
 
                         </tr>
@@ -85,7 +87,8 @@
                     </table>
                     <form class="form mt-3">
                         <div class="form-group">
-                            <button type="button" class="btn btn-primary" onclick="window.location.href='<%=scheduleDepartmentURL%>'"
+                            <button type="button" class="btn btn-primary" id="departmentIsScheduled"
+                                    onclick="window.location.href='<%=scheduleDepartmentURL%>'"
                                     <core_rt:if test="${departmentIsScheduled}">disabled</core_rt:if> >
                                 <liferay-ui:message key="schedule.department.service"/>
                             </button>
@@ -93,7 +96,8 @@
                                     <core_rt:if test="${not departmentIsScheduled}">disabled</core_rt:if> >
                                 <liferay-ui:message key="cancel.department.service"/>
                             </button>
-                            <button type="button" class="btn btn-info" data-action="import-department-manually">
+                            <button type="button" class="btn btn-info" id="manually"
+                                    data-action="import-department-manually">
                                 <liferay-ui:message key="manually"/>
                             </button>
                             <button type="button" class="btn btn-secondary" id="view-log"><liferay-ui:message  key="view.log"/>
@@ -129,11 +133,11 @@
                                     </div>
                                 </td>
                                 <td>
-                                        <div class="actions" style="justify-content: center;">
-                                            <svg class="editDepartment lexicon-icon" data-map="<sw360:out value="${department.key}"/>">
-                                                <title><liferay-ui:message key="edit"/></title>
-                                                <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/>
-                                            </svg>
+                                    <div class="actions" style="justify-content: center;">
+                                        <svg class="editDepartment lexicon-icon" data-map="<sw360:out value="${department.key}"/>">
+                                            <title><liferay-ui:message key="edit"/></title>
+                                            <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/>
+                                        </svg>
                                         <svg class="delete lexicon-icon">
                                             <title><liferay-ui:message key="delete"/></title>
                                             <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
@@ -164,16 +168,18 @@
                 </div>
                 <div class="modal-body">
                     <div id="header-log-error">
-                        <label for="file-log">File log</label>
+                        <label for="file-log">Search</label>
                         <input list="file-logs" name="file-log" id="file-log"
                                class="col-sm-12 custom-select custom-select-sm"/>
                         <datalist id="file-logs">
                             <core_rt:forEach var="errorMessage" items="${allMessageError}">
-                                <option value="${errorMessage.key}" ${errorMessage.key == lastFileName ? 'selected' : ''}>${errorMessage.key}</option>
+                                <option value="${errorMessage.key}" }>${errorMessage.key}</option>
                             </core_rt:forEach>
                         </datalist>
                     </div>
-                    <hr>
+                    <br/>
+                    <div style="text-align: center" class="title-log-file"><h4>Log File On: ${lastFileName}</h4></div>
+                    <br/>
                     <div id="content-log-error">
                         <core_rt:forEach var="errorMessage" items="${allMessageError}">
                             <div id="content-${errorMessage.key}" class="content-errors error-none">
@@ -192,18 +198,17 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     AUI().use('liferay-portlet-url', function () {
-        require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'modules/dialog', 'modules/validation'], function ($, datatables, quickfilter, dialog, validation) {
-            validation.enableForm('#editPathFolder');
-                            var PortletURL = Liferay.PortletURL;
-                            var usersTable,
-                            <%--list.filter(<%=PortalConstants.DEPARTMENT_KEY%>)--%>
-                            departmentKeyInURL ='<%=PortalConstants.DEPARTMENT_KEY%>',
-                            pageName = '<%=PortalConstants.PAGENAME%>';
-                            pageEdit = '<%=PortalConstants.PAGENAME_EDIT%>';
-                            baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
+        require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'modules/dialog'], function ($, datatables, quickfilter, dialog) {
+            // validation.enableForm('#editPathFolder');
+            var PortletURL = Liferay.PortletURL;
+                <%--list.filter(<%=PortalConstants.DEPARTMENT_KEY%>)--%>
+                departmentKeyInURL ='<%=PortalConstants.DEPARTMENT_KEY%>',
+                pageName = '<%=PortalConstants.PAGENAME%>';
+                pageEdit = '<%=PortalConstants.PAGENAME_EDIT%>';
+                baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
 
-                            $('#view-log').on('click', showDialog);
-
+            let usersTable;
+            $('#view-log').on('click', showDialog);
             function showDialog() {
                 $dialog = dialog.open('#deleteComponentDialog');
             }
@@ -244,7 +249,7 @@
 
             let progress = null;
             $('.portlet-toolbar button[data-action="import-department-manually"]').on('click', function () {
-                var $dialog;
+                let $dialog;
                 if (progress != null) {
                     progress.abort();
                 }
@@ -261,11 +266,16 @@
                         $('.alert.alert-dialog').hide();
                         if (data.result === 'SUCCESS') {
                             $dialog.success(`<liferay-ui:message key="i.imported.x.out.of.y.department" />`);
-                            location.reload();
+                            setTimeout(() => {
+                                location.reload();
+                            }, 3000);
                         } else if (data.result === 'PROCESSING') {
                             $dialog.info('<liferay-ui:message key="importing.process.is.already.running.please.try.again.later" />');
                         } else {
                             $dialog.alert('<liferay-ui:message key="error.happened.during.importing.some.department.may.not.be.imported" />');
+                            setTimeout(() => {
+                                location.reload();
+                            }, 3000);
                         }
                     }).fail(function () {
                         $('.alert.alert-dialog').hide();
@@ -291,10 +301,47 @@
             $('.portlet-toolbar button[data-action="save"]').on('click', function (event) {
                 $('#editPathFolder').submit();
             });
-        });
-        $('#file-log').on('change', function () {
-            $('.content-errors').hide();
-            $('#content-' + this.value).show();
+            let pathFolderDepartment = $('#pathFolderDepartment').val();
+            if (pathFolderDepartment === '${pathConfigFolderDepartment}') {
+                $('#updatePathFolder').prop('disabled', true);
+            }
+            $('#pathFolderDepartment').on('input change', function () {
+                $('#editPathFolder').removeClass('needs-validation');
+                $('#pathFolderDepartment')[0].setCustomValidity('');
+                $('#updatePathFolder').prop('disabled', true);
+                $('#departmentIsScheduled').prop('disabled', true);
+                $('#manually').prop('disabled', true);
+                $('#view-log').prop('disabled', true);
+
+                if ($(this).val() === '${pathConfigFolderDepartment}') {
+                    $('#updatePathFolder').prop('disabled', true);
+                    $('#departmentIsScheduled').prop('disabled', false);
+                    $('#manually').prop('disabled', false);
+                    $('#view-log').prop('disabled', false);
+                    return false;
+                }
+                if ($(this).val() === '' || $.trim($(this).val()).length === 0) {
+                    $('#editPathFolder').addClass('was-validated');
+                    $('#pathFolderDepartment')[0].setCustomValidity('error');
+                    $('#updatePathFolder').prop('disabled', true);
+                    return false;
+                }
+                const valid = /(\/.*|[a-zA-Z]:\\(?:([^<>:"\/\\|?*]*[^<>:"\/\\|?*.]\\|..\\)*([^<>:"\/\\|?*]*[^<>:"\/\\|?*.]\\?|..\\))?)/;
+                if (!$(this).val().match(valid)) {
+                    $('#editPathFolder').addClass('was-validated');
+                    $('#pathFolderDepartment')[0].setCustomValidity('error');
+                    $('#updatePathFolder').prop('disabled', true);
+                    return false;
+                }
+                $('#updatePathFolder').prop('disabled', false)
+                return true;
+            });
+            $('#file-log').on('change', function () {
+                $('.content-errors').hide();
+                $('#content-' + this.value).show();
+                let a = $('#file-log').val();
+                $(".title-log-file").html("<h4>Log File On: " + a + "</h4>");
+            });
         });
     });
 </script>
