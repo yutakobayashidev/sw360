@@ -270,6 +270,19 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
+    public String getLastRunningTime() throws TException {
+        try {
+            RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+            if (configDTO != null && !configDTO.getLastRunningTime().isEmpty()) {
+                return configDTO.getLastRunningTime();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    @Override
     public void updateDepartmentToListUser(List<User> users, String department) throws TException {
             db.updateDepartmentToListUser(users,department);
     }

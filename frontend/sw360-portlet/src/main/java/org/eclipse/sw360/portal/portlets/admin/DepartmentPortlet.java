@@ -34,8 +34,6 @@ import org.osgi.service.component.annotations.ConfigurationPolicy;
 import javax.portlet.*;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -60,9 +58,6 @@ import static org.eclipse.sw360.portal.common.PortalConstants.*;
 )
 public class DepartmentPortlet extends Sw360Portlet {
     private static final Logger log = LogManager.getLogger(DepartmentPortlet.class);
-    DateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
-    private static String temp;
-    private static String lastRunningTime;
 
     @Override
     public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
@@ -89,7 +84,6 @@ public class DepartmentPortlet extends Sw360Portlet {
             request.setAttribute(PortalConstants.DEPARTMENT_INTERVAL, CommonUtils.formatTime(intervalInSeconds));
             String nextSync = scheduleClient.getNextSync(ThriftClients.IMPORT_DEPARTMENT_SERVICE);
             request.setAttribute(PortalConstants.DEPARTMENT_NEXT_SYNC, nextSync);
-            request.setAttribute(PortalConstants.LAST_RUNNING_TIME, lastRunningTime);
 
             UserService.Iface userClient = thriftClients.makeUserClient();
             Map<String, List<User>> listMap = userClient.getAllUserByDepartment();
@@ -102,6 +96,7 @@ public class DepartmentPortlet extends Sw360Portlet {
             String pathConfigFolderDepartment = userClient.getPathConfigDepartment();
             request.setAttribute(PortalConstants.PATH_CONFIG_FOLDER_DEPARTMENT, pathConfigFolderDepartment);
             request.setAttribute(PortalConstants.LAST_FILE_NAME, userClient.getLastModifiedFileName());
+            request.setAttribute(PortalConstants.LAST_RUNNING_TIME, userClient.getLastRunningTime());
         } catch (TException e) {
             log.error("Error: {}", e.getMessage());
         }
@@ -119,11 +114,8 @@ public class DepartmentPortlet extends Sw360Portlet {
     @UsedAsLiferayAction
     public void scheduleImportDepartment(ActionRequest request, ActionResponse response) throws PortletException {
         try {
-            Calendar calendar = Calendar.getInstance(Locale.getDefault());
-            temp = dateFormat.format(calendar.getTime());
             RequestSummary requestSummary =
                     new ThriftClients().makeScheduleClient().scheduleService(ThriftClients.IMPORT_DEPARTMENT_SERVICE);
-            if (requestSummary.getRequestStatus() != RequestStatus.PROCESSING) lastRunningTime = temp;
             setSessionMessage(request, requestSummary.getRequestStatus(), "Task", "schedule");
             removeParamUrl(request, response);
         } catch (TException e) {
@@ -245,11 +237,8 @@ public class DepartmentPortlet extends Sw360Portlet {
     }
 
     private void importDepartmentManually(ResourceRequest request, ResourceResponse response) throws TException {
-        Calendar calendar = Calendar.getInstance(Locale.getDefault());
-        temp = dateFormat.format(calendar.getTime());
         UserService.Iface userClient = thriftClients.makeUserClient();
         RequestSummary requestSummary = userClient.importFileToDB();
-        if (requestSummary.getRequestStatus() != RequestStatus.PROCESSING) lastRunningTime = temp;
         renderRequestSummary(request, response, requestSummary);
 
     }

@@ -49,9 +49,10 @@ public class ReadFileRedmineConfig {
                 JsonNode configRedmine = jsonNode.path("configRedmine");
                 String pathFolder = configRedmine.path("pathFolder").asText();
                 String urlApiRedmine = configRedmine.path("urlApiRedmine").asText();
+                String lastRunningTime = configRedmine.path("lastRunningTime").asText();
                 String pathFolderLog = "";
                 if (!pathFolder.isEmpty()) pathFolderLog = pathFolder + FOLDER_LOG;
-                return new RedmineConfigDTO(pathFolder, pathFolderLog, urlApiRedmine);
+                return new RedmineConfigDTO(pathFolder, pathFolderLog, urlApiRedmine, lastRunningTime);
             }
         } catch (FileNotFoundException e) {
             log.error("Error not find the file: {}", e.getMessage());
@@ -69,6 +70,33 @@ public class ReadFileRedmineConfig {
             Map<String, Object> configRedmine = new HashMap<>();
             Map<String, Object> map = new HashMap<>();
             map.put("pathFolder", pathFolder);
+            map.put("urlApiRedmine", redmineConfigDTO.getUrlApiRedmine());
+            map.put("lastRunningTime", redmineConfigDTO.getLastRunningTime());
+            configRedmine.put("configRedmine", map);
+            ObjectMapper mapper = new ObjectMapper();
+            writer.write(mapper.writeValueAsString(configRedmine));
+        } catch (FileNotFoundException e) {
+            log.error("Error not find the file: {}", e.getMessage());
+        } catch (IOException e) {
+            log.error("Unread file error: {}", e.getMessage());
+        } finally {
+            try {
+                if (writer != null) writer.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void writeLastRunningTimeConfig(String lastRunningTime) {
+        RedmineConfigDTO redmineConfigDTO = readFileJson();
+        BufferedWriter writer = null;
+        try {
+            writer = Files.newBufferedWriter(Paths.get(getPathConfig()));
+            Map<String, Object> configRedmine = new HashMap<>();
+            Map<String, Object> map = new HashMap<>();
+            map.put("lastRunningTime", lastRunningTime);
+            map.put("pathFolder", redmineConfigDTO.getPathFolder());
             map.put("urlApiRedmine", redmineConfigDTO.getUrlApiRedmine());
             configRedmine.put("configRedmine", map);
             ObjectMapper mapper = new ObjectMapper();
