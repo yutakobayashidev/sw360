@@ -154,7 +154,7 @@
 
             function arrayObjectToArrayString(arrayObject,arrayString){
                 for(let object of arrayObject){
-                    arrayString.push(object.Email);
+                    arrayString.push(object.email);
                 }
                 return arrayString;
             }
@@ -170,12 +170,12 @@
                     emailsAdd.push($(this).val());
 
                 });
-            
-              console.log("--------length input----------"+emailsAdd.length);
-                for(let i of emailsAdd){
-                    console.log("---email---"+i);
-                }
+                // emailsAdd = Array.from(new Set(emailsAdd));
+                emailsAdd.forEach(element => {
+                    console.log(element);
+                });
                 var jsonArrayEmail = JSON.parse(JSON.stringify(emailsAdd));
+                // console.log("---jsonArrayEmail-----")
             
                
 
@@ -187,28 +187,45 @@
 
                 emailsJson=arrayObjectToArrayString(emailJSON,emailsJson);
                 emailsOtherDepartment=arrayObjectToArrayString(emailOtherDepartment,emailsOtherDepartment);
-                
+                // focusInput();
                 $('.delete-btn').first().bind('click', deleteRow);
 
                 if (emailsJson.length == 0) {
                     return;
                 }
-
+                // focusInput()
                 for (let i = 0; i < emailsJson.length - 1; i++) {
-
+                    // fillSuggestion();
                     addNewRow();
                     // $('.bodyRow').focusout(function() {
                     // handleFocusOut($(this).find('input').first());
                     // })
+                    // focusInput();
                     fillSuggestion();
                 }
 
                 for (let i = 0; i < emailsJson.length; i++) {
                     $('.secGrp').eq(i).val(emailsJson[i]);
                 }
-
+                // $('.bodyRow').focusout(function() {
+                //     handleFocusOut($(this).find('input').first());
+                //     })
+          
                 fillSuggestion();
+
+               
             }
+            function focusInput() {
+                $('.secGrp').focus(function() {
+                    value = $(this).val();
+                    // emailsOtherDepartment.push(value)
+                    // for (let i of emailsOtherDepartment) {
+                    //     console.log("------"+i)
+                    // }
+                   
+                });
+            }
+           
 
             $('#add-sec-grp-roles-id').on('click', function() {
 
@@ -246,7 +263,6 @@
             function deleteRow() {
                 let email = $(this).parent().parent().children('td').first().children('input').val();
                 if(email !== "") {
-                    // let emailObject = { Email: email };
                     emailsOtherDepartment.push(email);
                 }
                 
@@ -277,6 +293,9 @@
 
             function handleFocusOut(element) {
                 let value = element.val();
+                if(emailsOtherDepartment.length ==0 ){
+                        $(element).val("");
+                }
                 for (let i = 0; i < emailsOtherDepartment.length; i++) {
                     if (emailsOtherDepartment[i] == value) {
                         $(element).val(emailsOtherDepartment[i]);
