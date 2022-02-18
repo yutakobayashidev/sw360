@@ -61,7 +61,6 @@ import static org.eclipse.sw360.portal.common.PortalConstants.*;
 public class DepartmentPortlet extends Sw360Portlet {
     private static final Logger log = LogManager.getLogger(DepartmentPortlet.class);
     DateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
-    Calendar calendar = Calendar.getInstance(Locale.getDefault());
     private static String temp;
     private static String lastRunningTime;
 
@@ -120,6 +119,7 @@ public class DepartmentPortlet extends Sw360Portlet {
     @UsedAsLiferayAction
     public void scheduleImportDepartment(ActionRequest request, ActionResponse response) throws PortletException {
         try {
+            Calendar calendar = Calendar.getInstance(Locale.getDefault());
             temp = dateFormat.format(calendar.getTime());
             RequestSummary requestSummary =
                     new ThriftClients().makeScheduleClient().scheduleService(ThriftClients.IMPORT_DEPARTMENT_SERVICE);
@@ -245,6 +245,7 @@ public class DepartmentPortlet extends Sw360Portlet {
     }
 
     private void importDepartmentManually(ResourceRequest request, ResourceResponse response) throws TException {
+        Calendar calendar = Calendar.getInstance(Locale.getDefault());
         temp = dateFormat.format(calendar.getTime());
         UserService.Iface userClient = thriftClients.makeUserClient();
         RequestSummary requestSummary = userClient.importFileToDB();
