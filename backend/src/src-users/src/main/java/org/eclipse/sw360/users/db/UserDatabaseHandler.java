@@ -184,9 +184,6 @@ public class UserDatabaseHandler {
                     issue.setDescription("Department [" + joined + "] added successfully - File: [" + fileName + "]");
                     listIssueSuccess.add(issue);
                     FileUtil.writeLogToFile(INFO, "Import", "Department [" + joined + "] - File: [" + fileName + "]", "Added Successfully", configDTO.getPathFolderLog());
-                    requestSummary.setTotalAffectedElements(listIssueSuccess.size());
-                    requestSummary.setTotalElements(listIssueSuccess.size() + listIssueFail.size());
-                    requestSummary.setRequestStatus(RequestStatus.SUCCESS);
                 } else {
                     if (!departmentDuplicate.isEmpty()) {
                         Issue issueFail = new Issue();
@@ -208,12 +205,12 @@ public class UserDatabaseHandler {
                         FileUtil.writeLogToFile(ERROR, "Import", "User [" + joined + "] does not exist - File: [" + fileName + "]", "Add Fail", configDTO.getPathFolderLog());
                         emailDoNotExist = new ArrayList<>();
                     }
-                    requestSummary.setTotalAffectedElements(listIssueFail.size());
-                    requestSummary.setTotalElements(listIssueSuccess.size() + listIssueFail.size());
-                    requestSummary.setRequestStatus(RequestStatus.INVALID_INPUT);
                 }
             }
             IMPORT_DEPARTMENT_STATUS = false;
+            requestSummary.setTotalAffectedElements(listIssueSuccess.size());
+            requestSummary.setTotalElements(listIssueSuccess.size() + listIssueFail.size());
+            requestSummary.setRequestStatus(RequestStatus.SUCCESS);
         } catch (Exception e) {
             IMPORT_DEPARTMENT_STATUS = false;
             String msg = "Failed to import department";

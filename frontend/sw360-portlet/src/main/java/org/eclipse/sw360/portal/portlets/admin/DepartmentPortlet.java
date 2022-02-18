@@ -48,6 +48,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.DEPARTMENT_PORTLET
 public class DepartmentPortlet extends Sw360Portlet {
     private static final Logger log = LogManager.getLogger(DepartmentPortlet.class);
     DateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
+    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"),Locale.getDefault());
     private static String temp;
     private static String lastRunningTime;
 
@@ -99,8 +100,8 @@ public class DepartmentPortlet extends Sw360Portlet {
     @UsedAsLiferayAction
     public void scheduleImportDepartment(ActionRequest request, ActionResponse response) throws PortletException {
         try {
-            dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-            temp = dateFormat.format(new Date());
+            dateFormat.setTimeZone(TimeZone.getTimeZone("GMT+7"));
+            temp = dateFormat.format(calendar.getTime());
             RequestSummary requestSummary =
                     new ThriftClients().makeScheduleClient().scheduleService(ThriftClients.IMPORT_DEPARTMENT_SERVICE);
             if (requestSummary.getRequestStatus() != RequestStatus.PROCESSING) lastRunningTime = temp;
@@ -172,8 +173,8 @@ public class DepartmentPortlet extends Sw360Portlet {
     }
 
     private void importDepartmentManually(ResourceRequest request, ResourceResponse response) throws TException {
-        dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-        temp = dateFormat.format(new Date());
+        dateFormat.setTimeZone(TimeZone.getTimeZone("GMT+7"));
+        temp = dateFormat.format(calendar.getTime());
         UserService.Iface userClient = thriftClients.makeUserClient();
         RequestSummary requestSummary = userClient.importFileToDB();
         if (requestSummary.getRequestStatus() != RequestStatus.PROCESSING) lastRunningTime = temp;

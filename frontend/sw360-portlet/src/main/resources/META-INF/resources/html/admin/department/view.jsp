@@ -243,16 +243,10 @@
                         $('.alert.alert-dialog').hide();
                         if (data.result === 'SUCCESS') {
                             $dialog.success(`<liferay-ui:message key="i.imported.x.out.of.y.department" />`);
-                            setTimeout(() => {
-                                location.reload();
-                            }, 3000);
                         } else if (data.result === 'PROCESSING') {
                             $dialog.info('<liferay-ui:message key="importing.process.is.already.running.please.try.again.later" />');
                         } else {
                             $dialog.alert('<liferay-ui:message key="error.happened.during.importing.some.department.may.not.be.imported" />');
-                            setTimeout(() => {
-                                location.reload();
-                            }, 3000);
                         }
                     }).fail(function () {
                         $('.alert.alert-dialog').hide();
@@ -290,13 +284,6 @@
                 $('#manually').prop('disabled', true);
                 $('#view-log').prop('disabled', true);
 
-                if ($(this).val() === '${pathConfigFolderDepartment}') {
-                    $('#updatePathFolder').prop('disabled', true);
-                    $('#departmentIsScheduled').prop('disabled', false);
-                    $('#manually').prop('disabled', false);
-                    $('#view-log').prop('disabled', false);
-                    return false;
-                }
                 if ($(this).val() === '' || $.trim($(this).val()).length === 0) {
                     $('#editPathFolder').addClass('was-validated');
                     $('#pathFolderDepartment')[0].setCustomValidity('error');
@@ -310,14 +297,21 @@
                     $('#updatePathFolder').prop('disabled', true);
                     return false;
                 }
+                if (${departmentIsScheduled == false}) {
+                    $('#departmentIsScheduled').prop('disabled', false);
+                } else {
+                    $('#departmentIsScheduled').prop('disabled', true);
+                }
                 $('#updatePathFolder').prop('disabled', false)
+                $('#manually').prop('disabled', false);
+                $('#view-log').prop('disabled', false);
                 return true;
             });
             $('#file-log').on('change', function () {
                 $('.content-errors').hide();
                 $('#content-' + this.value).show();
-                let a = $('#file-log').val();
-                $(".title-log-file").html("<h4>Log File On: " + a + "</h4>");
+                let fileName = $('#file-log').val();
+                $(".title-log-file").html("<h4>Log File On: " + fileName + "</h4>");
             });
         });
     });
