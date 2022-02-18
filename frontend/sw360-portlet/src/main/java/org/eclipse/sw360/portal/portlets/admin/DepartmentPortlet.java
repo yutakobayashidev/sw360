@@ -1,14 +1,19 @@
+/*
+ * Copyright TOSHIBA CORPORATION, 2022. Part of the SW360 Portal Project.
+ * Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2022. Part of the SW360 Portal Project.
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
 package org.eclipse.sw360.portal.portlets.admin;
-
-
-import java.io.UnsupportedEncodingException;
-
 
 import com.liferay.portal.kernel.portlet.LiferayPortletURL;
 import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.WebKeys;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
@@ -28,6 +33,7 @@ import org.osgi.service.component.annotations.ConfigurationPolicy;
 
 import javax.portlet.*;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -173,7 +179,6 @@ public class DepartmentPortlet extends Sw360Portlet {
                 UserService.Iface userClient = thriftClients.makeUserClient();
                 String jsonEmail = userClient.searchUsersByDepartmentToJson(key);
                 String jsonEmailOtherDepartment = userClient.getAllEmailOtherDepartmentToJson(key);
-                log.info("-------key------" + decodeString(encodeString(key)));
                 request.setAttribute(EMAIL_OTHER_DEPARTMENT_JSON, jsonEmailOtherDepartment);
                 request.setAttribute(DEPARTMENT_EMAIL_ROLE_JSON, jsonEmail);
                 request.setAttribute(PortalConstants.DEPARTMENT_ENCODE, decodeString(encodeString(key)));
@@ -198,7 +203,7 @@ public class DepartmentPortlet extends Sw360Portlet {
                 if (users == null) {
                     userClient.deleteUserByDepartment(department);
                 } else {
-                    userClient.updateDepartmentToListUserCheck(users, department);
+                    userClient.updateDepartmentToListUser(users, department);
                 }
             } catch (TException e) {
                 log.error("Error fetching User from backend!", e);

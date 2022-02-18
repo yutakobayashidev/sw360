@@ -10,12 +10,9 @@
 package org.eclipse.sw360.users.db;
 
 import com.cloudant.client.api.CloudantClient;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.exceptions.CsvException;
@@ -182,7 +179,7 @@ public class UserDatabaseHandler {
                 String issueId = pathFile.substring(pathFile.lastIndexOf("_") + 1, pathFile.lastIndexOf("."));
                 String fileName = file.replace(pathFile.substring(pathFile.lastIndexOf("_"), pathFile.lastIndexOf(".")), "");
                 if (departmentDuplicate.isEmpty() && emailDoNotExist.isEmpty()) {
-                    mapArrayList.forEach((k, v) -> v.forEach(email -> updateDepartmentToUserCheck( mapEmail.get(email),k)));
+                    mapArrayList.forEach((k, v) -> v.forEach(email -> updateDepartmentToUser(mapEmail.get(email), k)));
                     Issue issue = new Issue();
                     String joined = String.join(", ", mapArrayList.keySet());
                     issue.setIssue_id(issueId);
@@ -370,7 +367,7 @@ public class UserDatabaseHandler {
             object.addProperty("Email", user.getEmail());
             departmentJsonArray.add(object);
         }
-        return departmentJsonArray.toString().replace("\\","");
+        return departmentJsonArray.toString().replace("\\", "");
     }
 
     public List<String> getAllDepartment() {
@@ -411,14 +408,14 @@ public class UserDatabaseHandler {
 
     public String getAllEmailOtherDepartmentToJson(String departmentKey) {
         JsonArray emailJsonArray = new JsonArray();
-        List<String> emailOtherDepartment=getAllEmailOtherDepartment(departmentKey);
+        List<String> emailOtherDepartment = getAllEmailOtherDepartment(departmentKey);
 
         for (String email : emailOtherDepartment) {
             JsonObject object = new JsonObject();
             object.addProperty("Email", email);
             emailJsonArray.add(object);
         }
-        return emailJsonArray.toString().replace("\\","");
+        return emailJsonArray.toString().replace("\\", "");
 
     }
 
@@ -466,7 +463,7 @@ public class UserDatabaseHandler {
         return listUser;
     }
 
-    public void updateDepartmentToUserCheck(User user,String department) {
+    public void updateDepartmentToUser(User user, String department) {
         Map<String, Set<UserGroup>> map;
         Set<UserGroup> userGroups = new HashSet<>();
         if (user.getSecondaryDepartmentsAndRoles() != null) {
@@ -484,42 +481,46 @@ public class UserDatabaseHandler {
         user.setSecondaryDepartmentsAndRoles(map);
         repository.update(user);
     }
-    public void updateDepartmentToListUserCheck(List<User> users, String department) {
+
+    public void updateDepartmentToListUser(List<User> users, String department) {
         List<User> usersByDepartment = getAllUsersByDepartment(department);
 
-        deleteDepartmentByListUser(usersByDepartment,department);
-        users.forEach(u->{
+        deleteDepartmentByListUser(usersByDepartment, department);
+        users.forEach(u -> {
             User ua = repository.getByEmail(u.getEmail());
-            updateDepartmentToUserCheck(ua,department);
+            updateDepartmentToUser(ua, department);
         });
 
     }
+
     public void deleteDepartmentByUser(User user, String departmentKey) {
-            Map<String, Set<UserGroup>> map = user.getSecondaryDepartmentsAndRoles();
-            Set<UserGroup> userGroups = new HashSet<>();
-            for (Map.Entry<String, Set<UserGroup>> entry : map.entrySet()) {
-                if (entry.getKey().equals(departmentKey)) {
-                    userGroups = entry.getValue();
-                }
+        Map<String, Set<UserGroup>> map = user.getSecondaryDepartmentsAndRoles();
+        Set<UserGroup> userGroups = new HashSet<>();
+        for (Map.Entry<String, Set<UserGroup>> entry : map.entrySet()) {
+            if (entry.getKey().equals(departmentKey)) {
+                userGroups = entry.getValue();
             }
-            map.remove(departmentKey, userGroups);
-            user.setSecondaryDepartmentsAndRoles(map);
-            repository.update(user);
+        }
+        map.remove(departmentKey, userGroups);
+        user.setSecondaryDepartmentsAndRoles(map);
+        repository.update(user);
     }
-    public void deleteUserByDepartment(String department){
+
+    public void deleteUserByDepartment(String department) {
         List<User> usersByDepartment = getAllUsersByDepartment(department);
 
-        deleteDepartmentByListUser(usersByDepartment,department);
+        deleteDepartmentByListUser(usersByDepartment, department);
     }
+
     public void deleteDepartmentByListUser(List<User> users, String departmentKey) {
-        for (User user:users) {
-            deleteDepartmentByUser(user,departmentKey);
+        for (User user : users) {
+            deleteDepartmentByUser(user, departmentKey);
         }
     }
 
-    public List<User> getAllUserByListEmail(List<String> emails){
-        List<User> users=new ArrayList<>();
-        for (String email: emails) {
+    public List<User> getAllUserByListEmail(List<String> emails) {
+        List<User> users = new ArrayList<>();
+        for (String email : emails) {
             users.add(getByEmail(email));
         }
         return users;

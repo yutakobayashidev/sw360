@@ -270,8 +270,8 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
-    public void updateDepartmentToListUserCheck(List<User> users, String department) throws TException {
-            db.updateDepartmentToListUserCheck(users,department);
+    public void updateDepartmentToListUser(List<User> users, String department) throws TException {
+            db.updateDepartmentToListUser(users,department);
     }
 
     @Override

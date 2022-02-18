@@ -175,7 +175,7 @@ service UserService {
 
 
 
-     void updateDepartmentToListUserCheck(1: list<User> users, 2: string department)
+     void updateDepartmentToListUser(1: list<User> users, 2: string department)
 
      void deleteDepartmentByUser(1: User user, 2: string department)
 
