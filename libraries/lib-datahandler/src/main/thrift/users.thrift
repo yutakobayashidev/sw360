@@ -15,6 +15,7 @@ namespace php sw360.thrift.users
 typedef sw360.RequestStatus RequestStatus
 typedef sw360.RequestSummary RequestSummary
 typedef sw360.PaginationData PaginationData
+typedef sw360.RedmineConfigDTO RedmineConfigDTO
 
 enum UserGroup {
     USER = 0,
@@ -161,7 +162,7 @@ service UserService {
 
     string searchUsersByDepartmentToJson(1: string department)
 
-     string getAllEmailOtherDepartmentToJson(1: string department)
+    string getAllEmailOtherDepartmentToJson(1: string department)
 
     set<string> getListFileLog();
 
@@ -173,18 +174,18 @@ service UserService {
 
     void writePathFolderConfig(1:string pathFolder);
 
+    string getLastRunningTime();
 
+    void updateDepartmentToListUser(1: list<User> users, 2: string department)
 
-     void updateDepartmentToListUser(1: list<User> users, 2: string department)
+    void deleteDepartmentByUser(1: User user, 2: string department)
 
-     void deleteDepartmentByUser(1: User user, 2: string department)
+    void deleteDepartmentByListUser(1: list<User> users,2: string department)
 
-     void deleteDepartmentByListUser(1: list<User> users,2: string department)
+    list<User> getAllUserByListEmail(1: list<string> emails)
 
-     list<User> getAllUserByListEmail(1: list<string> emails)
+    list<User> getAllUsersByDepartment(1: string department)
 
-     list<User> getAllUsersByDepartment(1: string department)
-
-     void deleteUserByDepartment(1: string department)
+    void deleteUserByDepartment(1: string department)
 
 }

@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 
 public class FileUtil {
     private static final String EXTENSION = ".log";
-    private static final DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+    private static final DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private FileUtil() {
     }

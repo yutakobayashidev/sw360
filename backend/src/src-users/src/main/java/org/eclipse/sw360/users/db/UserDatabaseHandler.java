@@ -40,6 +40,8 @@ import org.ektorp.http.HttpClient;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -67,6 +69,7 @@ public class UserDatabaseHandler {
     private static boolean IMPORT_DEPARTMENT_STATUS = false;
     private List<String> departmentDuplicate;
     private List<String> emailDoNotExist;
+    DateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
 
     public UserDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws IOException {
         // Create the connector
@@ -165,6 +168,9 @@ public class UserDatabaseHandler {
             return requestSummary.setRequestStatus(RequestStatus.PROCESSING);
         }
         IMPORT_DEPARTMENT_STATUS = true;
+        Calendar calendar = Calendar.getInstance(Locale.getDefault());
+        String lastRunningTime = dateFormat.format(calendar.getTime());
+        readFileRedmineConfig.writeLastRunningTimeConfig(lastRunningTime);
         try {
             FileUtil.writeLogToFile(INFO, "Import", "Start Import File Department", "", configDTO.getPathFolderLog());
             Set<String> files = FileUtil.listFilesUsingFileWalk(pathFolder);

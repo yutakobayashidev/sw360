@@ -14,14 +14,16 @@ public class RedmineConfigDTO {
     private String pathFolder;
     private String pathFolderLog;
     private String urlApiRedmine;
+    private String lastRunningTime;
 
     public RedmineConfigDTO() {
     }
 
-    public RedmineConfigDTO(String pathFolder, String pathFolderLog, String urlApiRedmine) {
+    public RedmineConfigDTO(String pathFolder, String pathFolderLog, String urlApiRedmine, String lastRunningTime) {
         this.pathFolder = pathFolder;
         this.pathFolderLog = pathFolderLog;
         this.urlApiRedmine = urlApiRedmine;
+        this.lastRunningTime = lastRunningTime;
     }
 
     public String getPathFolder() {
@@ -46,5 +48,13 @@ public class RedmineConfigDTO {
 
     public void setUrlApiRedmine(String urlApiRedmine) {
         this.urlApiRedmine = urlApiRedmine;
+    }
+
+    public String getLastRunningTime() {
+        return lastRunningTime;
+    }
+
+    public void setLastRunningTime(String lastRunningTime) {
+        this.lastRunningTime = lastRunningTime;
     }
 }
