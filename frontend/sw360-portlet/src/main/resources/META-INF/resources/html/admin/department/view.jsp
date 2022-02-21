@@ -14,7 +14,6 @@
 <%@ include file="/html/init.jsp" %>
 <%--&lt;%&ndash; the following is needed by liferay to display error messages&ndash;%&gt;--%>
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf" %>
-<%--<jsp:useBean id='departmentIsScheduled' type="java.lang.Boolean" scope="request"/>--%>
 <jsp:useBean id='departmentOffset' type="java.lang.String" scope="request"/>
 <jsp:useBean id='departmentInterval' type="java.lang.String" scope="request"/>
 <jsp:useBean id='departmentNextSync' type="java.lang.String" scope="request"/>
@@ -30,8 +29,8 @@
 <portlet:actionURL var="editPathFolder" name="writePathFolder">
 </portlet:actionURL>
 <portlet:resourceURL var="importDepartmentManually">
-    <portlet:param name="<%=PortalConstants.ACTION%>"
-                   value='<%=PortalConstants.IMPORT_DEPARTMENT_MANUALLY%>'/>
+<portlet:param name="<%=PortalConstants.ACTION%>"
+      value='<%=PortalConstants.IMPORT_DEPARTMENT_MANUALLY%>'/>
 </portlet:resourceURL>
 
 <style>
@@ -199,43 +198,6 @@
         </div>
     </div>
 </div>
-
-<div class="dialogs auto-dialogs">
-    <div id="confirmManually" class="modal fade" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-info" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><liferay-ui:message key="import.department"/>?</h5>
-                </div>
-                <div class="modal-body">
-                    <p id="departmentConfirmMessage"><liferay-ui:message key="do.you.really.want.to.import.department"/>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary"><liferay-ui:message key="import.department"/></button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="dialogs auto-dialogs">
-    <div id="successManually" class="modal fade" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-info" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><liferay-ui:message key="import.department"/>?</h5>
-                </div>
-                <div class="modal-body">
-
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-close-department">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
@@ -302,12 +264,9 @@
                     }).always(function () {
                         callback();
                     }).done(function (data) {
-                        $('#confirmManually').hide();
+                        $('.alert.alert-dialog').hide();
                         if (data.result === 'SUCCESS') {
-                            $dialog = dialog.open('#successManually');
-                            $('#successManually .modal-body').append(`<div>
-                                        <p><liferay-ui:message key="i.imported.x.out.of.y.department" /></p>
-                                    </div>`);
+                            $dialog.success(`<liferay-ui:message key="i.imported.x.out.of.y.department" />`);
                         } else if (data.result === 'PROCESSING') {
                             $dialog.info('<liferay-ui:message key="importing.process.is.already.running.please.try.again.later" />');
                         } else {
@@ -315,24 +274,24 @@
                         }
                     }).fail(function () {
                         $('.alert.alert-dialog').hide();
-                        $('#confirmManually').hide();
-                        $dialog = dialog.open('#successManually');
-                        $('#successManually .modal-body').append(`<div>
-                                        <p><liferay-ui:message key="something.went.wrong" /></p>
-                                    </div>`);
+                        $dialog.alert('<liferay-ui:message key="something.went.wrong" />');
                     });
                 }
 
-                $dialog = dialog.open(
-                    '#confirmManually',
+                $dialog = dialog.confirm(
+                    null,
+                    'question-circle',
+                    '<liferay-ui:message key="import.department" />?',
+                    '<p id="departmentConfirmMessage"><liferay-ui:message key="do.you.really.want.to.import.department" />',
+                    '<liferay-ui:message key="import.department" />',
                     {},
                     function (submit, callback) {
                         $('#departmentConfirmMessage').hide();
                         $dialog.info('<liferay-ui:message key="importing.process.is.running.it.may.takes.a.few.minutes" />', true);
                         $('.modal-header > button').prop('disabled', false);
-                        importDepartmentManually(callback)
+                        importDepartmentManually(callback);
                     }
-                )
+                );
             });
             $('.btn-close-department').on('click', () => window.location.reload());
 
