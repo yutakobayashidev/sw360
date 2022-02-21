@@ -402,7 +402,7 @@ public class PortalConstants {
 
     public static final String REMOVE_DEPARTMENT_BY_EMAIL = "remove_department";
     public static final String DEPARTMENT_URL = "departmentUrl";
-    public static final String ALL_MESSAGE_ERROR = "allMessageError";
+    public static final String LIST_CONTENT_FILE_LOG = "listContentFileLog";
     public static final String LAST_FILE_NAME = "lastFileName";
     public static final String LAST_RUNNING_TIME = "lastRunningTime";
     public static final String PATH_CONFIG_FOLDER_DEPARTMENT = "pathConfigFolderDepartment";
