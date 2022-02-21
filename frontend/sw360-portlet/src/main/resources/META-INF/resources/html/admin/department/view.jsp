@@ -29,8 +29,8 @@
 <portlet:actionURL var="editPathFolder" name="writePathFolder">
 </portlet:actionURL>
 <portlet:resourceURL var="importDepartmentManually">
-<portlet:param name="<%=PortalConstants.ACTION%>"
-      value='<%=PortalConstants.IMPORT_DEPARTMENT_MANUALLY%>'/>
+    <portlet:param name="<%=PortalConstants.ACTION%>"
+                   value='<%=PortalConstants.IMPORT_DEPARTMENT_MANUALLY%>'/>
 </portlet:resourceURL>
 
 <style>
@@ -267,6 +267,8 @@
                         $('.alert.alert-dialog').hide();
                         if (data.result === 'SUCCESS') {
                             $dialog.success(`<liferay-ui:message key="i.imported.x.out.of.y.department" />`);
+                            $('button:contains("Close")').on('click', () => location.reload());
+                            $('.close').last().on('click', () => location.reload());
                         } else if (data.result === 'PROCESSING') {
                             $dialog.info('<liferay-ui:message key="importing.process.is.already.running.please.try.again.later" />');
                         } else {
