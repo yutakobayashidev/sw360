@@ -186,7 +186,6 @@ public abstract class ComponentPortletUtils {
         List<String> emails=new ArrayList<>();
         String emailsRequest=request.getParameter(PortalConstants.ADD_LIST_EMAIL);
         String replaceEmail = emailsRequest.replace("[","").replace("]", "");
-//        log.info("-------replaceEmail-----"+replaceEmail.length());
         if(replaceEmail.length()==2){
             return null;
         } else{

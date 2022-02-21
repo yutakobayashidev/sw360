@@ -17,6 +17,7 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.exceptions.CsvException;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.jena.shared.NotFoundException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.ss.usermodel.*;
@@ -379,7 +380,7 @@ public class UserDatabaseHandler {
         }
         for (User user : userList) {
             JsonObject object = new JsonObject();
-            object.addProperty("Email", user.getEmail());
+            object.addProperty("email", user.getEmail());
             departmentJsonArray.add(object);
         }
         return departmentJsonArray.toString().replace("\\", "");
@@ -427,7 +428,7 @@ public class UserDatabaseHandler {
 
         for (String email : emailOtherDepartment) {
             JsonObject object = new JsonObject();
-            object.addProperty("Email", email);
+            object.addProperty("email", email);
             emailJsonArray.add(object);
         }
         return emailJsonArray.toString().replace("\\", "");
@@ -509,10 +510,9 @@ public class UserDatabaseHandler {
 
         deleteDepartmentByListUser(usersByDepartment, department);
         users.forEach(u -> {
-            User ua = repository.getByEmail(u.getEmail());
-            updateDepartmentToUser(ua, department);
+            User user = repository.getByEmail(u.getEmail());
+            updateDepartmentToUser(user, department);
         });
-
     }
 
     public void deleteDepartmentByUser(User user, String departmentKey) {
@@ -543,7 +543,13 @@ public class UserDatabaseHandler {
     public List<User> getAllUserByListEmail(List<String> emails) {
         List<User> users = new ArrayList<>();
         for (String email : emails) {
-            users.add(getByEmail(email));
+          if(getByEmail(email)== null){
+              log.info("Not Found Email in Database!! "+ email);
+            continue;
+          } else {
+              users.add(getByEmail(email));
+          }
+
         }
         return users;
     }

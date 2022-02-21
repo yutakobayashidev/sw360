@@ -1,11 +1,11 @@
 <%@ taglib prefix="sw360" uri="http://example.com/tld/customTags.tld" %>
 <%--
-  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
+  ~ Copyright TOSHIBA CORPORATION, 2022. Part of the SW360 Portal Project.
+  ~ Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2022. Part of the SW360 Portal Project.
   ~
   ~ This program and the accompanying materials are made
   ~ available under the terms of the Eclipse Public License 2.0
   ~ which is available at https://www.eclipse.org/legal/epl-2.0/
-  ~
   ~ SPDX-License-Identifier: EPL-2.0
   --%>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
@@ -45,6 +45,13 @@
 <portlet:actionURL var="updateURL" name="updateDepartment">
     <portlet:param name="<%=PortalConstants.DEPARTMENT_KEY%>" value="${departmentKey}"/>
 </portlet:actionURL>
+
+<style>
+.duplicate {
+    border: 1px solid red;
+    color: red;
+}
+</style>
 
 
 <div class="container">
@@ -144,6 +151,7 @@
             let emailsJson=[];
             let emailsOtherDepartment=[];
             let emailsAdd=[];
+            let emailInDatabase=[];
             let emailJSON = jQuery.parseJSON(JSON.stringify(${ departmentRoleUser }));
             let emailOtherDepartment= jQuery.parseJSON(JSON.stringify(${emailOtherDepartment}));
             createSecDepartmentRolesTable();
@@ -154,7 +162,7 @@
 
             function arrayObjectToArrayString(arrayObject,arrayString){
                 for(let object of arrayObject){
-                    arrayString.push(object.Email);
+                    arrayString.push(object.email);
                 }
                 return arrayString;
             }
@@ -168,13 +176,11 @@
             $('.portlet-toolbar button[data-action="save"]').on('click', function () {
                 $('.secGrp').each(function() {
                     emailsAdd.push($(this).val());
-
                 });
-            
-              console.log("--------length input----------"+emailsAdd.length);
-                for(let i of emailsAdd){
-                    console.log("---email---"+i);
-                }
+           
+        
+                emailsAdd = Array.from(new Set(emailsAdd));
+           
                 var jsonArrayEmail = JSON.parse(JSON.stringify(emailsAdd));
             
                
@@ -182,48 +188,68 @@
                 $('#listEmail').val(JSON.stringify(jsonArrayEmail));
                 $('#departmentEditForm').submit();
             });
+            
 
             function createSecDepartmentRolesTable() {
 
                 emailsJson=arrayObjectToArrayString(emailJSON,emailsJson);
                 emailsOtherDepartment=arrayObjectToArrayString(emailOtherDepartment,emailsOtherDepartment);
+                emailInDatabase=emailsJson.concat(emailsOtherDepartment);
+
+
                 
+     
                 $('.delete-btn').first().bind('click', deleteRow);
 
                 if (emailsJson.length == 0) {
                     return;
                 }
-
+           
                 for (let i = 0; i < emailsJson.length - 1; i++) {
-
                     addNewRow();
-                    // $('.bodyRow').focusout(function() {
-                    // handleFocusOut($(this).find('input').first());
-                    // })
-                    fillSuggestion();
+                    $('.bodyRow').focusout(function() {
+                    handleFocusOut($(this).find('input').first(),emailInDatabase);
+                    let arr=[];
+                    $('.secGrp').each(function(){
+                        var value = $(this).val();
+                        if (arr.indexOf(value) == -1){
+                            arr.push(value);
+                        }
+                        else{
+                            $(this).val("");
+                        }
+                    });
+                    })
                 }
+            
 
                 for (let i = 0; i < emailsJson.length; i++) {
                     $('.secGrp').eq(i).val(emailsJson[i]);
+                    
                 }
-
+          
                 fillSuggestion();
+
+               
             }
 
             $('#add-sec-grp-roles-id').on('click', function() {
-
+                let arrayFocus= emailsOtherDepartment.slice()
                 let emailLastInput = $('.secGrp').last().val();
                 const index = emailsOtherDepartment.indexOf(emailLastInput);
                 if (index > -1) {
                     emailsOtherDepartment.splice(index, 1);
                 }
                 emailsOtherDepartment = Array.from(new Set(emailsOtherDepartment));
+
+                  
                 fillSuggestion();
-
-
                 addNewRow();
+                
+             
                 $('.bodyRow').last().focusout(function() {
-                    handleFocusOut($(this).find('input').first());
+                    focusInput()
+                    handleFocusOut($(this).find('input').first(),arrayFocus);
                 })
             });
 
@@ -246,7 +272,6 @@
             function deleteRow() {
                 let email = $(this).parent().parent().children('td').first().children('input').val();
                 if(email !== "") {
-                    // let emailObject = { Email: email };
                     emailsOtherDepartment.push(email);
                 }
                 
@@ -275,11 +300,15 @@
                 });
             }
 
-            function handleFocusOut(element) {
+
+            function handleFocusOut(element,array) {
                 let value = element.val();
-                for (let i = 0; i < emailsOtherDepartment.length; i++) {
-                    if (emailsOtherDepartment[i] == value) {
-                        $(element).val(emailsOtherDepartment[i]);
+                if(array.length ==0 ){
+                        $(element).val("");
+                }
+                for (let i = 0; i < array.length; i++) {
+                    if (array[i] == value) {
+                        $(element).val(array[i]);
                         break;
                     } else {
                         $(element).val("");
