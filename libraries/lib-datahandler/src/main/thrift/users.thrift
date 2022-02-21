@@ -166,7 +166,7 @@ service UserService {
 
     set<string> getListFileLog();
 
-    map<string, list<string>> getAllMessageError();
+    map<string, list<string>> getAllContentFileLog();
 
     string getLastModifiedFileName();
 

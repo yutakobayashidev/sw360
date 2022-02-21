@@ -88,17 +88,17 @@ public class DepartmentPortlet extends Sw360Portlet {
             UserService.Iface userClient = thriftClients.makeUserClient();
             Map<String, List<User>> listMap = userClient.getAllUserByDepartment();
             request.setAttribute(PortalConstants.DEPARTMENT_LIST, listMap);
-            Map<String, List<String>> allMessageError = userClient.getAllMessageError();
+            Map<String, List<String>> listContentFileLog = userClient.getAllContentFileLog();
             LinkedHashMap<String, List<String>> sortedMap = new LinkedHashMap<>();
-            allMessageError.entrySet().stream().sorted(Map.Entry.comparingByKey(Comparator.reverseOrder()))
+            listContentFileLog.entrySet().stream().sorted(Map.Entry.comparingByKey(Comparator.reverseOrder()))
                     .forEachOrdered(x -> sortedMap.put(x.getKey(), x.getValue()));
-            request.setAttribute(PortalConstants.ALL_MESSAGE_ERROR, sortedMap);
+            request.setAttribute(PortalConstants.LIST_CONTENT_FILE_LOG, sortedMap);
             String pathConfigFolderDepartment = userClient.getPathConfigDepartment();
             request.setAttribute(PortalConstants.PATH_CONFIG_FOLDER_DEPARTMENT, pathConfigFolderDepartment);
             request.setAttribute(PortalConstants.LAST_FILE_NAME, userClient.getLastModifiedFileName());
             request.setAttribute(PortalConstants.LAST_RUNNING_TIME, userClient.getLastRunningTime());
         } catch (TException e) {
-            log.error("Error: {}", e.getMessage());
+            log.error("Error server: {}", e.getMessage());
         }
     }
 

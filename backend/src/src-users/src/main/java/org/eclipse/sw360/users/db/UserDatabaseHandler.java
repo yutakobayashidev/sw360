@@ -40,6 +40,8 @@ import org.ektorp.http.HttpClient;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -66,9 +68,12 @@ public class UserDatabaseHandler {
     private ReadFileRedmineConfig readFileRedmineConfig;
     private static final String INFO = "INFO";
     private static final String ERROR = "ERROR";
+    private static final String SUCCESS = "SUCCESS";
+    private static final String FAIL = "FAIL";
     private static boolean IMPORT_DEPARTMENT_STATUS = false;
     private List<String> departmentDuplicate;
     private List<String> emailDoNotExist;
+    private List<String> fileNames;
     DateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
 
     public UserDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws IOException {
@@ -159,6 +164,7 @@ public class UserDatabaseHandler {
     public RequestSummary importFileToDB(String pathFolder) {
         departmentDuplicate = new ArrayList<>();
         emailDoNotExist = new ArrayList<>();
+        fileNames = new ArrayList<>();
         List<Issue> listIssueSuccess = new ArrayList<>();
         List<Issue> listIssueFail = new ArrayList<>();
         RequestSummary requestSummary = new RequestSummary().setTotalAffectedElements(0).setMessage("");
@@ -192,7 +198,8 @@ public class UserDatabaseHandler {
                     issue.setIssue_id(issueId);
                     issue.setDescription("Department [" + joined + "] added successfully - File: [" + fileName + "]");
                     listIssueSuccess.add(issue);
-                    FileUtil.writeLogToFile(INFO, "Import", "Department [" + joined + "] - File: [" + fileName + "]", "Added Successfully", configDTO.getPathFolderLog());
+                    fileNames.add(pathFile);
+                    FileUtil.writeLogToFile(INFO, "Import", "Department [" + joined + "] - File: [" + fileName + "]", SUCCESS, configDTO.getPathFolderLog());
                 } else {
                     if (!departmentDuplicate.isEmpty()) {
                         Issue issueFail = new Issue();
@@ -201,7 +208,7 @@ public class UserDatabaseHandler {
                         String joined = String.join(", ", departmentDuplicateOrder);
                         issueFail.setDescription("Department [" + joined + "] is duplicate - File: [" + fileName + "]");
                         listIssueFail.add(issueFail);
-                        FileUtil.writeLogToFile(ERROR, "Import", "Department [" + joined + "] is duplicate - File: [" + fileName + "]", "Add Fail", configDTO.getPathFolderLog());
+                        FileUtil.writeLogToFile(ERROR, "Import", "Department [" + joined + "] is duplicate - File: [" + fileName + "]", SUCCESS, configDTO.getPathFolderLog());
                         departmentDuplicate = new ArrayList<>();
                     }
                     if (!emailDoNotExist.isEmpty()) {
@@ -211,7 +218,7 @@ public class UserDatabaseHandler {
                         String joined = String.join(", ", emailDoNotExistOrder);
                         issueFail.setDescription("User [" + joined + "] does not exist - File: [" + fileName + "]");
                         listIssueFail.add(issueFail);
-                        FileUtil.writeLogToFile(ERROR, "Import", "User [" + joined + "] does not exist - File: [" + fileName + "]", "Add Fail", configDTO.getPathFolderLog());
+                        FileUtil.writeLogToFile(ERROR, "Import", "User [" + joined + "] does not exist - File: [" + fileName + "]", FAIL, configDTO.getPathFolderLog());
                         emailDoNotExist = new ArrayList<>();
                     }
                 }
@@ -225,9 +232,11 @@ public class UserDatabaseHandler {
             String msg = "Failed to import department";
             requestSummary.setMessage(msg);
             requestSummary.setRequestStatus(RequestStatus.FAILURE);
+            FileUtil.writeLogToFile(ERROR, "Import", "File error", "", configDTO.getPathFolderLog());
         }
-//       responseData(listIssueSuccess, listIssueFail);
+
         FileUtil.writeLogToFile(INFO, "Import", " File success: " + listIssueSuccess.size() + "- File error: " + listIssueFail.size() + "- Total File: " + (listIssueSuccess.size() + listIssueFail.size()), "Complete The File Import", configDTO.getPathFolderLog());
+        responseData(listIssueSuccess, listIssueFail, fileNames);
         FileUtil.writeLogToFile(INFO, "Import", "End Import File Department", "", configDTO.getPathFolderLog());
 
         return requestSummary;
@@ -427,9 +436,9 @@ public class UserDatabaseHandler {
     }
 
 
-    public void responseData(List<Issue> success, List<Issue> fails) {
+    public void responseData(List<Issue> success, List<Issue> fails, List<String> fileNames) {
+        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
         try {
-            RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
             APIResponseRedmine response = new APIResponseRedmine();
             URL url = new URL(configDTO.getUrlApiRedmine());
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -444,13 +453,20 @@ public class UserDatabaseHandler {
             os.write(arrayToJson.getBytes());
             os.flush();
             new BufferedReader(new InputStreamReader((conn.getInputStream())));
-            if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                throw new RuntimeException("Failed : HTTP error code : "
-                        + conn.getResponseCode());
+            if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                fileNames.forEach(fileName -> {
+                    try {
+                        Files.delete(Paths.get(fileName));
+                    } catch (IOException e) {
+                        log.error("There was an error while deleting the file: {}", e.getMessage());
+                        FileUtil.writeLogToFile(ERROR, "Delete file", "File name:" + FilenameUtils.getName(fileName), FAIL, configDTO.getPathFolderLog());
+                    }
+                });
             }
             conn.disconnect();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.info("An error occurred while calling the api : {} ", e.getMessage());
+            FileUtil.writeLogToFile(ERROR, "Update Redmine", "Server error: " + e.getMessage() + "", FAIL, configDTO.getPathFolderLog());
         }
     }
 

@@ -8,13 +8,12 @@
   ~
   ~ SPDX-License-Identifier: EPL-2.0
   --%>
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 <%@ page import="javax.portlet.PortletRequest" %>
-<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
 <%@ include file="/html/init.jsp" %>
 <%--&lt;%&ndash; the following is needed by liferay to display error messages&ndash;%&gt;--%>
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf" %>
-<%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 <%--<jsp:useBean id='departmentIsScheduled' type="java.lang.Boolean" scope="request"/>--%>
 <jsp:useBean id='departmentOffset' type="java.lang.String" scope="request"/>
 <jsp:useBean id='departmentInterval' type="java.lang.String" scope="request"/>
@@ -36,7 +35,7 @@
 </portlet:resourceURL>
 
 <style>
-    .error-none {
+    .log-none {
         display: none;
     }
 
@@ -93,7 +92,8 @@
                                     <core_rt:if test="${departmentIsScheduled}">disabled</core_rt:if> >
                                 <liferay-ui:message key="schedule.department.service"/>
                             </button>
-                            <button type="button" class="btn btn-light" onclick="window.location.href='<%=unscheduleDepartmentURL%>'"
+                            <button type="button" class="btn btn-light"
+                                    onclick="window.location.href='<%=unscheduleDepartmentURL%>'"
                                     <core_rt:if test="${not departmentIsScheduled}">disabled</core_rt:if> >
                                 <liferay-ui:message key="cancel.department.service"/>
                             </button>
@@ -101,7 +101,8 @@
                                     data-action="import-department-manually">
                                 <liferay-ui:message key="manually"/>
                             </button>
-                            <button type="button" class="btn btn-secondary" id="view-log"><liferay-ui:message  key="view.log"/>
+                            <button type="button" class="btn btn-secondary" id="view-log"><liferay-ui:message
+                                    key="view.log"/>
                             </button>
                         </div>
                     </form>
@@ -126,8 +127,10 @@
                                 <td style="text-align: center"><sw360:out value="${department.key}"/></td>
                                 <td>
                                     <div style="width:100%; max-height:210px; overflow:auto">
-                                        <core_rt:forEach var="secondDepartment" items="${department.value}" varStatus="loop">
-                                            <span>${loop.index + 1}.</span> <span><sw360:out value="${secondDepartment.email}"/></span>
+                                        <core_rt:forEach var="secondDepartment" items="${department.value}"
+                                                         varStatus="loop">
+                                            <span>${loop.index + 1}.</span> <span><sw360:out
+                                                value="${secondDepartment.email}"/></span>
                                             <br/>
                                         </core_rt:forEach>
                                         <br/>
@@ -135,7 +138,8 @@
                                 </td>
                                 <td>
                                     <div class="actions" style="justify-content: center;">
-                                        <svg class="editDepartment lexicon-icon" data-map="<sw360:out value="${department.key}"/>">
+                                        <svg class="editDepartment lexicon-icon"
+                                             data-map="<sw360:out value="${department.key}"/>">
                                             <title><liferay-ui:message key="edit"/></title>
                                             <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/>
                                         </svg>
@@ -156,7 +160,7 @@
 </div>
 
 <div class="dialogs auto-dialogs">
-    <div id="deleteComponentDialog" class="modal fade" tabindex="-1" role="dialog">
+    <div id="viewLogDepartmentDialog" class="modal fade" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-xl modal-info" role="document">
             <div class="modal-content" style="width:100%; max-height:800px; overflow:auto">
                 <div class="modal-header">
@@ -170,11 +174,11 @@
                 <div class="modal-body">
                     <div id="header-log-error">
                         <label for="file-log">Search</label>
-                        <input list="file-logs" name="file-log" id="file-log"
+                        <input list="file-logs" type="date" name="file-log" id="file-log"
                                class="col-sm-12 custom-select custom-select-sm"/>
                         <datalist id="file-logs">
-                            <core_rt:forEach var="errorMessage" items="${allMessageError}">
-                                <option value="${errorMessage.key}" }>${errorMessage.key}</option>
+                            <core_rt:forEach var="contentFileLog" items="${listContentFileLog}">
+                                <option value="${contentFileLog.key}" }>${contentFileLog.key}</option>
                             </core_rt:forEach>
                         </datalist>
                     </div>
@@ -182,14 +186,51 @@
                     <div style="text-align: center" class="title-log-file"><h4>Log File On: ${lastFileName}</h4></div>
                     <br/>
                     <div id="content-log-error">
-                        <core_rt:forEach var="errorMessage" items="${allMessageError}">
-                            <div id="content-${errorMessage.key}" class="content-errors error-none">
-                                <core_rt:forEach var="error" items="${errorMessage.value}">
-                                    <p>${error}</p>
+                        <core_rt:forEach var="contentLog" items="${listContentFileLog}">
+                            <div id="content-${contentLog.key}" class="content-log log-none">
+                                <core_rt:forEach var="content" items="${contentLog.value}">
+                                    <p>${content}</p>
                                 </core_rt:forEach>
                             </div>
                         </core_rt:forEach>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="dialogs auto-dialogs">
+    <div id="confirmManually" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-info" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><liferay-ui:message key="import.department"/>?</h5>
+                </div>
+                <div class="modal-body">
+                    <p id="departmentConfirmMessage"><liferay-ui:message key="do.you.really.want.to.import.department"/>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary"><liferay-ui:message key="import.department"/></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="dialogs auto-dialogs">
+    <div id="successManually" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-info" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><liferay-ui:message key="import.department"/>?</h5>
+                </div>
+                <div class="modal-body">
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-close-department">Close</button>
                 </div>
             </div>
         </div>
@@ -200,30 +241,25 @@
 <script>
     AUI().use('liferay-portlet-url', function () {
         require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'modules/dialog'], function ($, datatables, quickfilter, dialog) {
-            // validation.enableForm('#editPathFolder');
             var PortletURL = Liferay.PortletURL;
-                <%--list.filter(<%=PortalConstants.DEPARTMENT_KEY%>)--%>
-                departmentKeyInURL ='<%=PortalConstants.DEPARTMENT_KEY%>',
+            <%--list.filter(<%=PortalConstants.DEPARTMENT_KEY%>)--%>
+            departmentKeyInURL = '<%=PortalConstants.DEPARTMENT_KEY%>',
                 pageName = '<%=PortalConstants.PAGENAME%>';
-                pageEdit = '<%=PortalConstants.PAGENAME_EDIT%>';
-                baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
+            pageEdit = '<%=PortalConstants.PAGENAME_EDIT%>';
+            baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
 
             let usersTable;
-            $('#view-log').on('click', showDialog);
-            function showDialog() {
-                $dialog = dialog.open('#deleteComponentDialog');
-            }
             // initializing
             usersTable = createExistingUserTable('#userTable');
 
-
             $('#userTable').on('click', 'svg.editDepartment', function (event) {
-                var data= $(event.currentTarget).data();
-                console.log("--key--"+data.map)
+                var data = $(event.currentTarget).data();
+                console.log("--key--" + data.map)
                 window.location.href = createDetailURLfromDepartmentKey(data.map);
             });
-            function createDetailURLfromDepartmentKey (paramVal) {
-                var portletURL = PortletURL.createURL( baseUrl ).setParameter(pageName, pageEdit).setParameter(departmentKeyInURL, paramVal);
+
+            function createDetailURLfromDepartmentKey(paramVal) {
+                var portletURL = PortletURL.createURL(baseUrl).setParameter(pageName, pageEdit).setParameter(departmentKeyInURL, paramVal);
                 return portletURL.toString();
             }
 
@@ -248,6 +284,8 @@
                 });
             }
 
+            $('#view-log').on('click', () => $dialog = dialog.open('#viewLogDepartmentDialog'));
+
             let progress = null;
             $('.portlet-toolbar button[data-action="import-department-manually"]').on('click', function () {
                 let $dialog;
@@ -264,9 +302,12 @@
                     }).always(function () {
                         callback();
                     }).done(function (data) {
-                        $('.alert.alert-dialog').hide();
+                        $('#confirmManually').hide();
                         if (data.result === 'SUCCESS') {
-                            $dialog.success(`<liferay-ui:message key="i.imported.x.out.of.y.department" />`);
+                            $dialog = dialog.open('#successManually');
+                            $('#successManually .modal-body').append(`<div>
+                                        <p><liferay-ui:message key="i.imported.x.out.of.y.department" /></p>
+                                    </div>`);
                         } else if (data.result === 'PROCESSING') {
                             $dialog.info('<liferay-ui:message key="importing.process.is.already.running.please.try.again.later" />');
                         } else {
@@ -274,25 +315,27 @@
                         }
                     }).fail(function () {
                         $('.alert.alert-dialog').hide();
-                        $dialog.alert('<liferay-ui:message key="something.went.wrong" />');
+                        $('#confirmManually').hide();
+                        $dialog = dialog.open('#successManually');
+                        $('#successManually .modal-body').append(`<div>
+                                        <p><liferay-ui:message key="something.went.wrong" /></p>
+                                    </div>`);
                     });
                 }
 
-                $dialog = dialog.confirm(
-                    null,
-                    'question-circle',
-                    '<liferay-ui:message key="import.department" />?',
-                    '<p id="departmentConfirmMessage"><liferay-ui:message key="do.you.really.want.to.import.department" />',
-                    '<liferay-ui:message key="import.department" />',
+                $dialog = dialog.open(
+                    '#confirmManually',
                     {},
                     function (submit, callback) {
                         $('#departmentConfirmMessage').hide();
                         $dialog.info('<liferay-ui:message key="importing.process.is.running.it.may.takes.a.few.minutes" />', true);
                         $('.modal-header > button').prop('disabled', false);
-                        importDepartmentManually(callback);
+                        importDepartmentManually(callback)
                     }
-                );
+                )
             });
+            $('.btn-close-department').on('click', () => window.location.reload());
+
             $('.portlet-toolbar button[data-action="save"]').on('click', function (event) {
                 $('#editPathFolder').submit();
             });
@@ -332,7 +375,7 @@
                 return true;
             });
             $('#file-log').on('change', function () {
-                $('.content-errors').hide();
+                $('.content-log').hide();
                 $('#content-' + this.value).show();
                 let fileName = $('#file-log').val();
                 $(".title-log-file").html("<h4>Log File On: " + fileName + "</h4>");
