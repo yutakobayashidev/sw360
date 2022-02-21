@@ -23,12 +23,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class FileUtil {
     private static final String EXTENSION = ".log";
     private static final DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final long dayMTimeMillis = 24 * 60 * 60 * 1000;
 
     private FileUtil() {
     }
@@ -99,6 +101,23 @@ public class FileUtil {
                     .map(Path::toString)
                     .collect(Collectors.toSet());
         }
+    }
+
+    public static Set<String> getListFilesOlderThanNDays(int days, String dirPath) throws IOException {
+        long cutOff;
+        if (days != 0) cutOff = System.currentTimeMillis() - (days * dayMTimeMillis);
+        else cutOff = System.currentTimeMillis() - (30 * dayMTimeMillis);
+        try (Stream<Path> stream = Files.list(Paths.get(dirPath))) {
+            return stream.filter(path -> {
+                        try {
+                            return Files.isRegularFile(path) && Files.getLastModifiedTime(path).to(TimeUnit.MILLISECONDS) > cutOff;
+                        } catch (IOException ex) {
+                            return false;
+                        }
+                    }).map(Path::toString)
+                    .collect(Collectors.toSet());
+        }
+
     }
 
 }

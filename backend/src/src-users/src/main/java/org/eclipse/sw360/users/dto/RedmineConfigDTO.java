@@ -15,6 +15,7 @@ public class RedmineConfigDTO {
     private String pathFolderLog;
     private String urlApiRedmine;
     private String lastRunningTime;
+    private int showFileLogFrom;
 
     public RedmineConfigDTO() {
     }
@@ -24,6 +25,14 @@ public class RedmineConfigDTO {
         this.pathFolderLog = pathFolderLog;
         this.urlApiRedmine = urlApiRedmine;
         this.lastRunningTime = lastRunningTime;
+    }
+
+    public RedmineConfigDTO(String pathFolder, String pathFolderLog, String urlApiRedmine, String lastRunningTime, int showFileLogFrom) {
+        this.pathFolder = pathFolder;
+        this.pathFolderLog = pathFolderLog;
+        this.urlApiRedmine = urlApiRedmine;
+        this.lastRunningTime = lastRunningTime;
+        this.showFileLogFrom = showFileLogFrom;
     }
 
     public String getPathFolder() {
@@ -56,5 +65,13 @@ public class RedmineConfigDTO {
 
     public void setLastRunningTime(String lastRunningTime) {
         this.lastRunningTime = lastRunningTime;
+    }
+
+    public int getShowFileLogFrom() {
+        return showFileLogFrom;
+    }
+
+    public void setShowFileLogFrom(int showFileLogFrom) {
+        this.showFileLogFrom = showFileLogFrom;
     }
 }

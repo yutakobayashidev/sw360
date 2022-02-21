@@ -50,9 +50,10 @@ public class ReadFileRedmineConfig {
                 String pathFolder = configRedmine.path("pathFolder").asText();
                 String urlApiRedmine = configRedmine.path("urlApiRedmine").asText();
                 String lastRunningTime = configRedmine.path("lastRunningTime").asText();
+                int showFileLogFrom = configRedmine.path("showFileLogFrom").asInt();
                 String pathFolderLog = "";
                 if (!pathFolder.isEmpty()) pathFolderLog = pathFolder + FOLDER_LOG;
-                return new RedmineConfigDTO(pathFolder, pathFolderLog, urlApiRedmine, lastRunningTime);
+                return new RedmineConfigDTO(pathFolder, pathFolderLog, urlApiRedmine, lastRunningTime, showFileLogFrom);
             }
         } catch (FileNotFoundException e) {
             log.error("Error not find the file: {}", e.getMessage());
@@ -72,6 +73,7 @@ public class ReadFileRedmineConfig {
             map.put("pathFolder", pathFolder);
             map.put("urlApiRedmine", redmineConfigDTO.getUrlApiRedmine());
             map.put("lastRunningTime", redmineConfigDTO.getLastRunningTime());
+            map.put("showFileLogFrom", redmineConfigDTO.getShowFileLogFrom());
             configRedmine.put("configRedmine", map);
             ObjectMapper mapper = new ObjectMapper();
             writer.write(mapper.writeValueAsString(configRedmine));
@@ -98,6 +100,7 @@ public class ReadFileRedmineConfig {
             map.put("lastRunningTime", lastRunningTime);
             map.put("pathFolder", redmineConfigDTO.getPathFolder());
             map.put("urlApiRedmine", redmineConfigDTO.getUrlApiRedmine());
+            map.put("showFileLogFrom", redmineConfigDTO.getShowFileLogFrom());
             configRedmine.put("configRedmine", map);
             ObjectMapper mapper = new ObjectMapper();
             writer.write(mapper.writeValueAsString(configRedmine));

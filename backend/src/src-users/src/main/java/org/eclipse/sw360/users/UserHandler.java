@@ -10,6 +10,7 @@
 package org.eclipse.sw360.users;
 
 import com.cloudant.client.api.CloudantClient;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
@@ -147,7 +148,6 @@ public class UserHandler implements UserService.Iface {
     }
 
 
-
     @Override
     public RequestSummary importFileToDB() {
         RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
@@ -188,7 +188,7 @@ public class UserHandler implements UserService.Iface {
 
     @Override
     public String searchUsersByDepartmentToJson(String department) throws TException {
-       return db.searchUsersByDepartmentToJson(department);
+        return db.searchUsersByDepartmentToJson(department);
     }
 
     @Override
@@ -212,7 +212,7 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
-    public Map<String, List<String>> getAllMessageError() {
+    public Map<String, List<String>> getAllContentFileLog() {
         Map<String, List<String>> listMap = new HashMap<>();
         try {
             RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
@@ -220,9 +220,9 @@ public class UserHandler implements UserService.Iface {
                 String path = configDTO.getPathFolderLog();
                 File theDir = new File(path);
                 if (!theDir.exists()) theDir.mkdirs();
-                Set<String> fileNames = FileUtil.listFilesUsingFileWalk(path);
-                for (String fileName : fileNames) {
-                    listMap.put(fileName.replace(EXTENSION, ""), FileUtil.readFileError(path + fileName));
+                Set<String> fileNamesSet = FileUtil.getListFilesOlderThanNDays(configDTO.getShowFileLogFrom(), path);
+                for (String fileName : fileNamesSet) {
+                    listMap.put(FilenameUtils.getName(fileName).replace(EXTENSION, ""), FileUtil.readFileError(fileName));
                 }
             }
         } catch (Exception e) {
@@ -284,17 +284,17 @@ public class UserHandler implements UserService.Iface {
 
     @Override
     public void updateDepartmentToListUser(List<User> users, String department) throws TException {
-            db.updateDepartmentToListUser(users,department);
+        db.updateDepartmentToListUser(users, department);
     }
 
     @Override
     public void deleteDepartmentByUser(User user, String department) throws TException {
-            db.deleteDepartmentByUser(user,department);
+        db.deleteDepartmentByUser(user, department);
     }
 
     @Override
     public void deleteDepartmentByListUser(List<User> users, String department) throws TException {
-            db.deleteDepartmentByListUser(users,department);
+        db.deleteDepartmentByListUser(users, department);
     }
 
     @Override
@@ -308,7 +308,7 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
-    public void deleteUserByDepartment(String department){
+    public void deleteUserByDepartment(String department) {
         db.deleteUserByDepartment(department);
     }
 }
