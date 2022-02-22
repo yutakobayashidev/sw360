@@ -20,28 +20,16 @@
 
 <%@ page import="javax.portlet.PortletRequest" %>
 <%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
-<%@ page import="com.liferay.portal.kernel.util.PortalUtil" %>
-<%@ page import="org.eclipse.sw360.datahandler.thrift.users.User" %>
 <jsp:useBean id="departmentKey" type="java.lang.String" scope="request"/>
 
 <jsp:useBean id="departmentEncode" type="java.lang.String" scope="request"/>
 <jsp:useBean id="departmentRoleUser" type="java.lang.String" scope="request"/>
 <jsp:useBean id="emailOtherDepartment" type="java.lang.String" scope="request"/>
-<%--<jsp:useBean id="departmentEmail" type="java.util.List<java.lang.String>" scope="request"/>--%>
-<%--<jsp:useBean id="emails" type="java.util.List<java.lang.String>" scope="request"/>--%>
-<%--<jsp:useBean id="departmentName" type="java.util.List<java.lang.String>" scope="request"/>--%>
-<%--<jsp:useBean id="departmentList"--%>
-<%--             type="java.util.HashMap<java.lang.String,org.eclipse.sw360.datahandler.thrift.users.User>"--%>
-<%--             scope="request"/>--%>
 
-<%--<core_rt:set var="addMode" value="${empty departmentKey}"/>--%>
 
 <portlet:resourceURL var="deleteDepartmentURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.REMOVE_DEPARTMENT_BY_EMAIL%>'/>
 </portlet:resourceURL>
-
-
-
 <portlet:actionURL var="updateURL" name="updateDepartment">
     <portlet:param name="<%=PortalConstants.DEPARTMENT_KEY%>" value="${departmentKey}"/>
 </portlet:actionURL>
@@ -141,13 +129,10 @@
 <div class="dialogs auto-dialogs"></div>
 
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
-<%--<script>--%>
 <script >
     AUI().use('liferay-portlet-url', function () {
 
         require(['jquery', 'modules/dialog', 'modules/validation'], function ($, dialog, validation) {
-            let index=0;
-            let emailDelete=[];
             let emailsJson=[];
             let emailsOtherDepartment=[];
             let emailsAdd=[];
@@ -168,8 +153,8 @@
             }
 
             $('.portlet-toolbar button[data-action="cancel"]').on('click', function () {
-                var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
-                var portletURL = Liferay.PortletURL.createURL(baseUrl).setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_VIEW%>');
+                let baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
+                let portletURL = Liferay.PortletURL.createURL(baseUrl).setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_VIEW%>');
                 window.location = portletURL.toString();
             });
 
@@ -177,13 +162,9 @@
                 $('.secGrp').each(function() {
                     emailsAdd.push($(this).val());
                 });
-           
-        
+
                 emailsAdd = Array.from(new Set(emailsAdd));
-           
-                var jsonArrayEmail = JSON.parse(JSON.stringify(emailsAdd));
-            
-               
+                let jsonArrayEmail = JSON.parse(JSON.stringify(emailsAdd));
 
                 $('#listEmail').val(JSON.stringify(jsonArrayEmail));
                 $('#departmentEditForm').submit();
@@ -191,14 +172,10 @@
             
 
             function createSecDepartmentRolesTable() {
-
                 emailsJson=arrayObjectToArrayString(emailJSON,emailsJson);
                 emailsOtherDepartment=arrayObjectToArrayString(emailOtherDepartment,emailsOtherDepartment);
                 emailInDatabase=emailsJson.concat(emailsOtherDepartment);
 
-
-                
-     
                 $('.delete-btn').first().bind('click', deleteRow);
 
                 if (emailsJson.length == 0) {
@@ -211,7 +188,7 @@
                     handleFocusOut($(this).find('input').first(),emailInDatabase);
                     let arr=[];
                     $('.secGrp').each(function(){
-                        var value = $(this).val();
+                        let value = $(this).val();
                         if (arr.indexOf(value) == -1){
                             arr.push(value);
                         }
@@ -221,16 +198,12 @@
                     });
                     })
                 }
-            
 
                 for (let i = 0; i < emailsJson.length; i++) {
                     $('.secGrp').eq(i).val(emailsJson[i]);
-                    
                 }
           
                 fillSuggestion();
-
-               
             }
 
             $('#add-sec-grp-roles-id').on('click', function() {
@@ -241,14 +214,11 @@
                     emailsOtherDepartment.splice(index, 1);
                 }
                 emailsOtherDepartment = Array.from(new Set(emailsOtherDepartment));
-
                   
                 fillSuggestion();
                 addNewRow();
-                
              
                 $('.bodyRow').last().focusout(function() {
-                    focusInput()
                     handleFocusOut($(this).find('input').first(),arrayFocus);
                 })
             });
@@ -259,13 +229,9 @@
                     return;
                 }
 
-
                 let newRow = $('.bodyRow').last().clone();
-
                 $('#secDepartmentRolesTable').find('tbody').append(newRow);
-
                 $('.secGrp').last().val('');
-
                 $('.delete-btn').last().bind('click', deleteRow);
             }
 
@@ -274,8 +240,7 @@
                 if(email !== "") {
                     emailsOtherDepartment.push(email);
                 }
-                
-                
+
                 if ($('.delete-btn').length > 1) {
                     $(this).closest('tr').remove();
                 } else {
@@ -300,7 +265,6 @@
                 });
             }
 
-
             function handleFocusOut(element,array) {
                 let value = element.val();
                 if(array.length ==0 ){
@@ -316,6 +280,7 @@
                     }
                 }
             }
+
         });
     });
 </script>

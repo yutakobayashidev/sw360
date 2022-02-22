@@ -35,11 +35,11 @@ public class FileUtil {
     private FileUtil() {
     }
 
-    public static void writeLogToFile(String typeLog, String title, String message, String status, String folder) {
+    public static void writeLogToFile( String title, String message, String status, String folder) {
         BufferedWriter writer = null;
         FileWriter fileWriter = null;
         try {
-            String error = LocalDateTime.now().format(format) + " " + typeLog + " " + " " + title + " - " + message + ": " + status;
+            String error = LocalDateTime.now().format(format) + " " + title + " " + message + " " + status;
             String path = folder + LocalDate.now() + EXTENSION;
             File file = new File(path);
             if (file.exists()) {
@@ -82,7 +82,7 @@ public class FileUtil {
         return chosenFile;
     }
 
-    public static List<String> readFileError(String filePath) {
+    public static List<String> readFileLog(String filePath) {
         List<String> errors = new ArrayList<>();
         Path path = Paths.get(filePath);
         try {

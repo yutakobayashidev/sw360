@@ -222,7 +222,7 @@ public class UserHandler implements UserService.Iface {
                 if (!theDir.exists()) theDir.mkdirs();
                 Set<String> fileNamesSet = FileUtil.getListFilesOlderThanNDays(configDTO.getShowFileLogFrom(), path);
                 for (String fileName : fileNamesSet) {
-                    listMap.put(FilenameUtils.getName(fileName).replace(EXTENSION, ""), FileUtil.readFileError(fileName));
+                    listMap.put(FilenameUtils.getName(fileName).replace(EXTENSION, ""), FileUtil.readFileLog(fileName));
                 }
             }
         } catch (Exception e) {
