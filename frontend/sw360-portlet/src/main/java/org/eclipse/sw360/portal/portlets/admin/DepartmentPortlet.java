@@ -165,18 +165,15 @@ public class DepartmentPortlet extends Sw360Portlet {
 
     private void prepareDepartmentEdit(RenderRequest request) throws PortletException, UnsupportedEncodingException {
         String key = request.getParameter(DEPARTMENT_KEY);
-
         if (!isNullOrEmpty(key)) {
             try {
                 UserService.Iface userClient = thriftClients.makeUserClient();
-                String jsonEmail = userClient.searchUsersByDepartmentToJson(key);
-                String jsonEmailOtherDepartment = userClient.getAllEmailOtherDepartmentToJson(key);
-                request.setAttribute(EMAIL_OTHER_DEPARTMENT_JSON, jsonEmailOtherDepartment);
-                request.setAttribute(DEPARTMENT_EMAIL_ROLE_JSON, jsonEmail);
+                String jsonEmailsByDepartment = userClient.searchUsersByDepartmentToJson(key);
+                String jsonEmailsOtherDepartment = userClient.getAllEmailOtherDepartmentToJson(key);
+                request.setAttribute(EMAIL_OTHER_DEPARTMENT_JSON, jsonEmailsOtherDepartment);
+                request.setAttribute(DEPARTMENT_EMAIL_ROLE_JSON, jsonEmailsByDepartment);
                 request.setAttribute(PortalConstants.DEPARTMENT_ENCODE, decodeString(encodeString(key)));
                 request.setAttribute(PortalConstants.DEPARTMENT_KEY, encodeString(key));
-
-
             } catch (TException e) {
                 log.error("Problem retrieving department");
             }
@@ -187,33 +184,21 @@ public class DepartmentPortlet extends Sw360Portlet {
     public void updateDepartment(ActionRequest request, ActionResponse response) throws PortletException, IOException, TException {
         String key = request.getParameter(DEPARTMENT_KEY);
         String department = decodeString(key);
-        List<User> users = ComponentPortletUtils.updateUserFromRequest(request, log);
-
+        List<User> usersAdd = ComponentPortletUtils.updateUserAddFromRequest(request, log);
+        List<User> usersDelete = ComponentPortletUtils.updateUserDeleteFromRequest(request, log);
         if (key != null) {
             try {
                 UserService.Iface userClient = thriftClients.makeUserClient();
-                if (users == null) {
-                    userClient.deleteUserByDepartment(department);
-                } else {
-                    userClient.updateDepartmentToListUser(users, department);
+                if(usersAdd != null){
+                    userClient.updateDepartmentToListUser(usersAdd,department);
+                }
+                if(usersDelete != null) {
+                    userClient.deleteDepartmentByListUser(usersDelete,department);
                 }
             } catch (TException e) {
                 log.error("Error fetching User from backend!", e);
             }
         }
-    }
-
-    public static String encodeString(String text)
-            throws UnsupportedEncodingException {
-        byte[] bytes = text.getBytes("UTF-8");
-        String encodeString = Base64.getEncoder().encodeToString(bytes);
-        return encodeString;
-    }
-
-    public static String decodeString(String encodeText) throws UnsupportedEncodingException {
-        byte[] decodeBytes = Base64.getDecoder().decode(encodeText);
-        String str = new String(decodeBytes, "UTF-8");
-        return str;
     }
 
     @Override
@@ -242,5 +227,20 @@ public class DepartmentPortlet extends Sw360Portlet {
         renderRequestSummary(request, response, requestSummary);
 
     }
+
+
+    public static String encodeString(String text)
+            throws UnsupportedEncodingException {
+        byte[] bytes = text.getBytes("UTF-8");
+        String encodeString = Base64.getEncoder().encodeToString(bytes);
+        return encodeString;
+    }
+
+    public static String decodeString(String encodeText) throws UnsupportedEncodingException {
+        byte[] decodeBytes = Base64.getDecoder().decode(encodeText);
+        String str = new String(decodeBytes, "UTF-8");
+        return str;
+    }
+
 
 }

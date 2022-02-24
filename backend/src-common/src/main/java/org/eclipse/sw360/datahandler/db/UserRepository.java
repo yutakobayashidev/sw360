@@ -33,12 +33,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -81,6 +76,43 @@ public class UserRepository extends SummaryAwareRepository<User> {
             "  }" +
             "}";
 
+    private static final String USERS_ALL_SECONDARY_DEPARTMENT_VIEW = "function(doc) { " +
+            "  if (doc.type == 'user') {" +
+            "    for (var secondaryDepartmentsAndRole in doc.secondaryDepartmentsAndRoles) {" +
+            "      try {" +
+            "            var values = JSON.parse(doc.secondaryDepartmentsAndRoles[secondaryDepartmentsAndRole]);" +
+            "            if(!isNaN(values)) {" +
+            "               emit( secondaryDepartmentsAndRole, doc._id);" +
+            "               continue;" +
+            "            }" +
+            "            for (var idx in values) {" +
+            "              emit( secondaryDepartmentsAndRole, doc._id);" +
+            "            }" +
+            "      } catch(error) {" +
+            "          emit( secondaryDepartmentsAndRole, doc._id);" +
+            "      }" +
+            "    }" +
+            "  }" +
+            "}";
+    private static final String FIND_BY_SECONDARY_DEPARTMENT = "function(doc) { " +
+            "  if (doc.type == 'user') {" +
+            "    for (var secondaryDepartmentsAndRole in doc.secondaryDepartmentsAndRoles) {" +
+            "      try {" +
+            "            var values = JSON.parse(doc.secondaryDepartmentsAndRoles[secondaryDepartmentsAndRole]);" +
+            "            if(!isNaN(values)) {" +
+            "               emit( secondaryDepartmentsAndRole, doc.email);" +
+            "               continue;" +
+            "            }" +
+            "            for (var idx in values) {" +
+            "              emit( secondaryDepartmentsAndRole, doc.email);" +
+            "            }" +
+            "      } catch(error) {" +
+            "          emit( secondaryDepartmentsAndRole, doc.email);" +
+            "      }" +
+            "    }" +
+            "  }" +
+            "}";
+
     public UserRepository(DatabaseConnectorCloudant databaseConnector) {
         super(User.class, databaseConnector, new UserSummary());
         Map<String, MapReduce> views = new HashMap<String, MapReduce>();
@@ -89,6 +121,8 @@ public class UserRepository extends SummaryAwareRepository<User> {
         views.put("byApiToken", createMapReduce(BYAPITOKEN, null));
         views.put("byEmail", createMapReduce(BYEMAIL, null));
         views.put("userDepartments", createMapReduce(USERS_ALL_DEPARTMENT_VIEW, null));
+        views.put("userSecondaryDepartments", createMapReduce(USERS_ALL_SECONDARY_DEPARTMENT_VIEW, null));
+        views.put("find_by_secondaryDepartments", createMapReduce(FIND_BY_SECONDARY_DEPARTMENT, null));
         views.put("userEmails", createMapReduce(USERS_ALL_EMAIL_VIEW, null));
         initStandardDesignDocument(views, databaseConnector);
         createIndex("byEmailUser", new String[] {"email"}, databaseConnector);
@@ -116,6 +150,11 @@ public class UserRepository extends SummaryAwareRepository<User> {
     public User getByEmail(String email) {
         final Set<String> userIds = queryForIdsAsValue("byEmail", email);
         return getUserFromIds(userIds);
+    }
+
+    public Set<String> getEmailsByDepartmentName(String key) {
+        final Set<String> emails = queryForIdsAsValue("find_by_secondaryDepartments", key);
+        return emails;
     }
 
     public User getByApiToken(String token) {
@@ -176,43 +215,43 @@ public class UserRepository extends SummaryAwareRepository<User> {
         qb.skip(pageData.getDisplayStart());
 
         switch (sortColumnNo) {
-        case -1:
-        case 2:
-            qb = qb.useIndex("byEmailUser");
-            qb = ascending ? qb.sort(Sort.asc("email")) : qb.sort(Sort.desc("email"));
-            query = qb.build();
-            break;
-        case 0:
-            qb = qb.useIndex("byFirstName");
-            qb = ascending ? qb.sort(Sort.asc("givenname")) : qb.sort(Sort.desc("givenname"));
-            query = qb.build();
-            break;
-        case 1:
-            qb = qb.useIndex("byLastName");
-            qb = ascending ? qb.sort(Sort.asc("lastname")) : qb.sort(Sort.desc("lastname"));
-            query = qb.build();
-            break;
-        case 3:
-            qb = qb.useIndex("byDepartment");
-            qb = ascending ? qb.sort(Sort.asc("department")) : qb.sort(Sort.desc("department"));
-            query = qb.build();
-            break;
-        case 4:
-            qb = qb.useIndex("byUserGroup");
-            qb = ascending ? qb.sort(Sort.asc("userGroup")) : qb.sort(Sort.desc("userGroup"));
-            query = qb.build();
-            break;
-        case 5:
-            if (ascending) {
-                qb.skip(0);
-            }
-            qb = qb.useIndex("bySecondaryDepartmentsAndRoles");
-            qb = ascending ? qb.sort(Sort.asc("secondaryDepartmentsAndRoles"))
-                    : qb.sort(Sort.desc("secondaryDepartmentsAndRoles"));
-            query = qb.build();
-            break;
-        default:
-            break;
+            case -1:
+            case 2:
+                qb = qb.useIndex("byEmailUser");
+                qb = ascending ? qb.sort(Sort.asc("email")) : qb.sort(Sort.desc("email"));
+                query = qb.build();
+                break;
+            case 0:
+                qb = qb.useIndex("byFirstName");
+                qb = ascending ? qb.sort(Sort.asc("givenname")) : qb.sort(Sort.desc("givenname"));
+                query = qb.build();
+                break;
+            case 1:
+                qb = qb.useIndex("byLastName");
+                qb = ascending ? qb.sort(Sort.asc("lastname")) : qb.sort(Sort.desc("lastname"));
+                query = qb.build();
+                break;
+            case 3:
+                qb = qb.useIndex("byDepartment");
+                qb = ascending ? qb.sort(Sort.asc("department")) : qb.sort(Sort.desc("department"));
+                query = qb.build();
+                break;
+            case 4:
+                qb = qb.useIndex("byUserGroup");
+                qb = ascending ? qb.sort(Sort.asc("userGroup")) : qb.sort(Sort.desc("userGroup"));
+                query = qb.build();
+                break;
+            case 5:
+                if (ascending) {
+                    qb.skip(0);
+                }
+                qb = qb.useIndex("bySecondaryDepartmentsAndRoles");
+                qb = ascending ? qb.sort(Sort.asc("secondaryDepartmentsAndRoles"))
+                        : qb.sort(Sort.desc("secondaryDepartmentsAndRoles"));
+                query = qb.build();
+                break;
+            default:
+                break;
         }
 
         try {

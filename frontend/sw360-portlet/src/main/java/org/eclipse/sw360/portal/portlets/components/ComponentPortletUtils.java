@@ -167,36 +167,45 @@ public abstract class ComponentPortletUtils {
         setFieldValue(request, vendor, Vendor._Fields.URL);
     }
 
-//    public static List<String> updateUserFromRequest(PortletRequest request,Logger log) {
-//
-//        List<String> emails=new ArrayList<>();
-//        String emailsRequest=request.getParameter(PortalConstants.ADD_LIST_EMAIL);
-//        String replaceEmail = emailsRequest.replace("[","").replace("]", "");
-//        String[] parts = replaceEmail.split(",");
-//        for (String email: parts) {
-//            emails.add(handlerEmails(email));
-//        }
-//        return emails;
-//
-//    }
-    public static List<User> updateUserFromRequest(PortletRequest request,Logger log) throws TException {
+    public static List<User> updateUserAddFromRequest(PortletRequest request, Logger log) throws TException {
         ThriftClients thriftClients = new ThriftClients();
         UserService.Iface client = thriftClients.makeUserClient();
-        List<User> users=new ArrayList<>();
-        List<String> emails=new ArrayList<>();
-        String emailsRequest=request.getParameter(PortalConstants.ADD_LIST_EMAIL);
-        String replaceEmail = emailsRequest.replace("[","").replace("]", "");
-        if(replaceEmail.length()==2){
+        List<User> users = new ArrayList<>();
+        List<String> emails = new ArrayList<>();
+        String emailsAddRequest = request.getParameter(PortalConstants.ADD_LIST_EMAIL);
+        String replaceEmailsAddRequest = emailsAddRequest.replace("[", "").replace("]", "");
+        if (replaceEmailsAddRequest.length() == 2) {
             return null;
-        } else{
-            String[] parts = replaceEmail.split(",");
-            for (String email: parts) {
+        } else {
+            String[] parts = replaceEmailsAddRequest.split(",");
+            for (String email : parts) {
                 emails.add(handlerEmails(email));
             }
-            users =client.getAllUserByListEmail(emails);
-            return  users;
+            users = client.getAllUserByListEmail(emails);
+            return users;
         }
     }
+
+
+    public static List<User> updateUserDeleteFromRequest(PortletRequest request, Logger log) throws TException {
+        ThriftClients thriftClients = new ThriftClients();
+        UserService.Iface client = thriftClients.makeUserClient();
+        List<User> users = new ArrayList<>();
+        List<String> emails = new ArrayList<>();
+        String emailsDeleteRequest = request.getParameter(PortalConstants.DELETE_LIST_EMAIL);
+        String replaceEmailsDeleteRequest = emailsDeleteRequest.replace("[", "").replace("]", "");
+        if (replaceEmailsDeleteRequest.length() == 2) {
+            return null;
+        } else {
+            String[] parts = replaceEmailsDeleteRequest.split(",");
+            for (String email : parts) {
+                emails.add(handlerEmails(email));
+            }
+            users = client.getAllUserByListEmail(emails);
+            return users;
+        }
+    }
+
 
     public static void updateTodoFromRequest(PortletRequest request, Obligation oblig) {
         setFieldValue(request, oblig, Obligation._Fields.TITLE);
@@ -265,7 +274,7 @@ public abstract class ComponentPortletUtils {
             try {
                 String deleteCommentEncoded = request.getParameter(PortalConstants.MODERATION_REQUEST_COMMENT);
                 User user = UserCacheHolder.getUserFromRequest(request);
-                if(deleteCommentEncoded != null) {
+                if (deleteCommentEncoded != null) {
                     String deleteComment = new String(Base64.getDecoder().decode(deleteCommentEncoded));
                     user.setCommentMadeDuringModerationRequest(deleteComment);
                 }
@@ -334,7 +343,7 @@ public abstract class ComponentPortletUtils {
             try {
                 String deleteCommentEncoded = request.getParameter(PortalConstants.MODERATION_REQUEST_COMMENT);
                 User user = UserCacheHolder.getUserFromRequest(request);
-                if(deleteCommentEncoded != null) {
+                if (deleteCommentEncoded != null) {
                     String deleteComment = new String(Base64.getDecoder().decode(deleteCommentEncoded));
                     user.setCommentMadeDuringModerationRequest(deleteComment);
                 }
@@ -428,10 +437,11 @@ public abstract class ComponentPortletUtils {
 
         return dbRelation;
     }
-    public static String handlerEmails(String email){
-        String value="";
-        for (int i = 1; i <email.length() -1; i++) {
-            value+= email.charAt(i);
+
+    public static String handlerEmails(String email) {
+        String value = "";
+        for (int i = 1; i < email.length() - 1; i++) {
+            value += email.charAt(i);
         }
         return value;
     }

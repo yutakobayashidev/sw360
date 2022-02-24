@@ -17,7 +17,6 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.exceptions.CsvException;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.jena.shared.NotFoundException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.ss.usermodel.*;
@@ -160,6 +159,12 @@ public class UserDatabaseHandler {
     public Map<PaginationData, List<User>> getUsersWithPagination(PaginationData pageData) {
         return repository.getUsersWithPagination(pageData);
     }
+
+    public Set<String> getAllEmailsByDepartmentKey(String departmentKey) {
+        Set<String> emails = repository.getEmailsByDepartmentName(departmentKey);
+        return emails;
+    }
+
 
     public RequestSummary importFileToDB(String pathFolder) {
         departmentDuplicate = new ArrayList<>();
@@ -354,69 +359,20 @@ public class UserDatabaseHandler {
         return listMap;
     }
 
-
-    public Map<String, List<User>> searchUsersByDepartment(String departmentKey) {
-        Map<String, List<User>> listMap = getAllUserByDepartment();
-        Map<String, List<User>> mapByDepartment = new HashMap<>();
-        List<User> users = new ArrayList<>();
-
-        for (Map.Entry<String, List<User>> entry : listMap.entrySet()) {
-            if (entry.getKey().equals(departmentKey)) {
-                users = entry.getValue();
-                mapByDepartment.put(entry.getKey(), users);
-            }
-        }
-        return mapByDepartment;
-    }
-
     public String searchUsersByDepartmentToJson(String departmentKey) {
-        Map<String, List<User>> listMap = searchUsersByDepartment(departmentKey);
+        Set<String> emails = repository.getEmailsByDepartmentName(departmentKey);
         JsonArray departmentJsonArray = new JsonArray();
-        List<User> userList = new ArrayList<>();
-        for (Map.Entry<String, List<User>> entry : listMap.entrySet()) {
-            if (entry.getKey().equals(departmentKey)) {
-                userList = entry.getValue();
-            }
-        }
-        for (User user : userList) {
+        for (String email : emails) {
             JsonObject object = new JsonObject();
-            object.addProperty("email", user.getEmail());
+            object.addProperty("email", email);
             departmentJsonArray.add(object);
         }
         return departmentJsonArray.toString().replace("\\", "");
     }
 
-    public List<String> getAllDepartment() {
-        Map<String, List<User>> listMap = getAllUserByDepartment();
-        List<String> departments = new ArrayList<>();
-        for (Map.Entry<String, List<User>> entry : listMap.entrySet()) {
-            departments.add(entry.getKey());
-        }
-        return departments;
-    }
-
-    public List<String> getAllEmailByDepartment(String departmentKey) {
-        Map<String, List<User>> listMap = getAllUserByDepartment();
-        List<String> emails = new ArrayList<>();
-        List<User> users = new ArrayList<>();
-        for (Map.Entry<String, List<User>> entry : listMap.entrySet()) {
-            if (entry.getKey().equals(departmentKey)) {
-                users = entry.getValue();
-            }
-        }
-        for (User user : users) {
-            emails.add(user.getEmail());
-        }
-        return emails;
-    }
-
     public List<String> getAllEmailOtherDepartment(String departmentKey) {
-        List<String> emailsbyDepartment = getAllEmailByDepartment(departmentKey);
-        List<String> emailByListUser = new ArrayList<>();
-        List<User> users = repository.getAll();
-        for (User user : users) {
-            emailByListUser.add(user.getEmail());
-        }
+        Set<String> emailsbyDepartment = getAllEmailsByDepartmentKey(departmentKey);
+        Set<String> emailByListUser = getUserEmails();
         List<String> emailOtherDepartment = new ArrayList<>(emailByListUser);
         emailOtherDepartment.removeAll(emailsbyDepartment);
         return emailOtherDepartment;
@@ -434,7 +390,6 @@ public class UserDatabaseHandler {
         return emailJsonArray.toString().replace("\\", "");
 
     }
-
 
     public void responseData(List<Issue> success, List<Issue> fails, List<String> fileNames) {
         RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
@@ -469,7 +424,6 @@ public class UserDatabaseHandler {
             FileUtil.writeLogToFile(ERROR, "Update Redmine", "Server error: " + e.getMessage() + "", FAIL, configDTO.getPathFolderLog());
         }
     }
-
 
     public Map<String, User> validateListEmailExistDB(Map<String, List<String>> mapList) {
         Map<String, User> listUser = new HashMap<>();
@@ -506,9 +460,6 @@ public class UserDatabaseHandler {
     }
 
     public void updateDepartmentToListUser(List<User> users, String department) {
-        List<User> usersByDepartment = getAllUsersByDepartment(department);
-
-        deleteDepartmentByListUser(usersByDepartment, department);
         users.forEach(u -> {
             User user = repository.getByEmail(u.getEmail());
             updateDepartmentToUser(user, department);
@@ -529,7 +480,7 @@ public class UserDatabaseHandler {
     }
 
     public void deleteUserByDepartment(String department) {
-        List<User> usersByDepartment = getAllUsersByDepartment(department);
+        List<User> usersByDepartment = getAllUsersByDepartmentName(department);
 
         deleteDepartmentByListUser(usersByDepartment, department);
     }
@@ -543,27 +494,18 @@ public class UserDatabaseHandler {
     public List<User> getAllUserByListEmail(List<String> emails) {
         List<User> users = new ArrayList<>();
         for (String email : emails) {
-          if(getByEmail(email)== null){
-              log.info("Not Found Email in Database!! "+ email);
-            continue;
-          } else {
-              users.add(getByEmail(email));
-          }
-
-        }
-        return users;
-    }
-
-    public List<User> getAllUsersByDepartment(String departmentKey) {
-        Map<String, List<User>> listMap = getAllUserByDepartment();
-
-        List<User> users = new ArrayList<>();
-        for (Map.Entry<String, List<User>> entry : listMap.entrySet()) {
-            if (entry.getKey().equals(departmentKey)) {
-                users = entry.getValue();
+            if (getByEmail(email) != null) {
+                users.add(getByEmail(email));
             }
         }
         return users;
     }
+
+    public List<User> getAllUsersByDepartmentName(String departmentName) {
+        Set<String> emails = repository.getEmailsByDepartmentName(departmentName);
+        List<String> emaillist = emails.stream().collect(Collectors.toList());
+        return getAllUserByListEmail(emaillist);
+    }
+
 }
 
