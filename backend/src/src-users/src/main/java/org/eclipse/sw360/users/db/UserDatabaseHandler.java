@@ -65,14 +65,12 @@ public class UserDatabaseHandler {
     private UserSearchHandler userSearchHandler;
     private static final Logger log = LogManager.getLogger(UserDatabaseHandler.class);
     private ReadFileRedmineConfig readFileRedmineConfig;
-    private static final String INFO = "INFO";
-    private static final String ERROR = "ERROR";
     private static final String SUCCESS = "SUCCESS";
     private static final String FAIL = "FAIL";
+    private static final String TITLE = "IMPORT";
     private static boolean IMPORT_DEPARTMENT_STATUS = false;
     private List<String> departmentDuplicate;
     private List<String> emailDoNotExist;
-    private List<String> fileNames;
     DateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
 
     public UserDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws IOException {
@@ -169,7 +167,7 @@ public class UserDatabaseHandler {
     public RequestSummary importFileToDB(String pathFolder) {
         departmentDuplicate = new ArrayList<>();
         emailDoNotExist = new ArrayList<>();
-        fileNames = new ArrayList<>();
+        List<String> fileNames = new ArrayList<>();
         List<Issue> listIssueSuccess = new ArrayList<>();
         List<Issue> listIssueFail = new ArrayList<>();
         RequestSummary requestSummary = new RequestSummary().setTotalAffectedElements(0).setMessage("");
@@ -183,7 +181,7 @@ public class UserDatabaseHandler {
         String lastRunningTime = dateFormat.format(calendar.getTime());
         readFileRedmineConfig.writeLastRunningTimeConfig(lastRunningTime);
         try {
-            FileUtil.writeLogToFile(INFO, "Import", "Start Import File Department", "", configDTO.getPathFolderLog());
+            FileUtil.writeLogToFile("", "START IMPORT DEPARTMENT", "", configDTO.getPathFolderLog());
             Set<String> files = FileUtil.listFilesUsingFileWalk(pathFolder);
             for (String file : files) {
                 String pathFile = pathFolder + "/" + file;
@@ -199,21 +197,21 @@ public class UserDatabaseHandler {
                 if (departmentDuplicate.isEmpty() && emailDoNotExist.isEmpty()) {
                     mapArrayList.forEach((k, v) -> v.forEach(email -> updateDepartmentToUser(mapEmail.get(email), k)));
                     Issue issue = new Issue();
-                    String joined = String.join(", ", mapArrayList.keySet());
+                    String joined = mapArrayList.keySet().stream().sorted().collect(Collectors.joining(", "));
                     issue.setIssue_id(issueId);
-                    issue.setDescription("Department [" + joined + "] added successfully - File: [" + fileName + "]");
+                    issue.setDescription("DEPARTMENT [" + joined + "] ADDED SUCCESSFULLY - FILE NAME: [" + fileName + "]");
                     listIssueSuccess.add(issue);
                     fileNames.add(pathFile);
-                    FileUtil.writeLogToFile(INFO, "Import", "Department [" + joined + "] - File: [" + fileName + "]", SUCCESS, configDTO.getPathFolderLog());
+                    FileUtil.writeLogToFile(TITLE, "DEPARTMENT [" + joined + "] - FILE NAME: [" + fileName + "]", SUCCESS, configDTO.getPathFolderLog());
                 } else {
                     if (!departmentDuplicate.isEmpty()) {
                         Issue issueFail = new Issue();
                         issueFail.setIssue_id(issueId);
                         List<String> departmentDuplicateOrder = departmentDuplicate.stream().sorted().collect(Collectors.toList());
                         String joined = String.join(", ", departmentDuplicateOrder);
-                        issueFail.setDescription("Department [" + joined + "] is duplicate - File: [" + fileName + "]");
+                        issueFail.setDescription("DEPARTMENT [" + joined + "] IS DUPLICATE - FILE NAME: [" + fileName + "]");
                         listIssueFail.add(issueFail);
-                        FileUtil.writeLogToFile(ERROR, "Import", "Department [" + joined + "] is duplicate - File: [" + fileName + "]", SUCCESS, configDTO.getPathFolderLog());
+                        FileUtil.writeLogToFile(TITLE, "DEPARTMENT [" + joined + "] IS DUPLICATE - FILE NAME: [" + fileName + "]", FAIL, configDTO.getPathFolderLog());
                         departmentDuplicate = new ArrayList<>();
                     }
                     if (!emailDoNotExist.isEmpty()) {
@@ -221,9 +219,9 @@ public class UserDatabaseHandler {
                         issueFail.setIssue_id(issueId);
                         List<String> emailDoNotExistOrder = emailDoNotExist.stream().sorted().collect(Collectors.toList());
                         String joined = String.join(", ", emailDoNotExistOrder);
-                        issueFail.setDescription("User [" + joined + "] does not exist - File: [" + fileName + "]");
+                        issueFail.setDescription("USER [" + joined + "] DOES NOT EXIST - FILE NAME: [" + fileName + "]");
                         listIssueFail.add(issueFail);
-                        FileUtil.writeLogToFile(ERROR, "Import", "User [" + joined + "] does not exist - File: [" + fileName + "]", FAIL, configDTO.getPathFolderLog());
+                        FileUtil.writeLogToFile(TITLE, "USER [" + joined + "] DOES NOT EXIST - FILE NAME: [" + fileName + "]", FAIL, configDTO.getPathFolderLog());
                         emailDoNotExist = new ArrayList<>();
                     }
                 }
@@ -237,12 +235,26 @@ public class UserDatabaseHandler {
             String msg = "Failed to import department";
             requestSummary.setMessage(msg);
             requestSummary.setRequestStatus(RequestStatus.FAILURE);
-            FileUtil.writeLogToFile(ERROR, "Import", "File error", "", configDTO.getPathFolderLog());
+            FileUtil.writeLogToFile(TITLE, "FILE ERROR: " + e.getMessage(), "", configDTO.getPathFolderLog());
         }
-
-        FileUtil.writeLogToFile(INFO, "Import", " File success: " + listIssueSuccess.size() + "- File error: " + listIssueFail.size() + "- Total File: " + (listIssueSuccess.size() + listIssueFail.size()), "Complete The File Import", configDTO.getPathFolderLog());
-        responseData(listIssueSuccess, listIssueFail, fileNames);
-        FileUtil.writeLogToFile(INFO, "Import", "End Import File Department", "", configDTO.getPathFolderLog());
+        FileUtil.writeLogToFile(TITLE, "[ FILE SUCCESS: " + listIssueSuccess.size() + " - " + "FILE FAIL: " + listIssueFail.size() + " - " + "TOTAL FILE: " + (listIssueSuccess.size() + listIssueFail.size()) + " ]", "Complete The File Import", configDTO.getPathFolderLog());
+        HttpURLConnection connection = responseData(listIssueSuccess, listIssueFail);
+        try {
+            if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                FileUtil.writeLogToFile("REDMINE", "Update redmine", SUCCESS, configDTO.getPathFolderLog());
+                fileNames.forEach(fileName -> {
+                    try {
+                        Files.delete(Paths.get(fileName));
+                    } catch (IOException e) {
+                        log.error("There was an error while deleting the file: {}", e.getMessage());
+                        FileUtil.writeLogToFile("Delete file", "File name:" + FilenameUtils.getName(fileName), FAIL, configDTO.getPathFolderLog());
+                    }
+                });
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        FileUtil.writeLogToFile(TITLE, "END IMPORT DEPARTMENT", "", configDTO.getPathFolderLog());
 
         return requestSummary;
     }
@@ -359,6 +371,19 @@ public class UserDatabaseHandler {
         return listMap;
     }
 
+    public Map<String, List<User>> searchUsersByDepartment(String departmentKey) {
+        Map<String, List<User>> listMap = getAllUserByDepartment();
+        Map<String, List<User>> mapByDepartment = new HashMap<>();
+        List<User> users;
+        for (Map.Entry<String, List<User>> entry : listMap.entrySet()) {
+            if (entry.getKey().equals(departmentKey)) {
+                users = entry.getValue();
+                mapByDepartment.put(entry.getKey(), users);
+            }
+        }
+        return mapByDepartment;
+    }
+
     public String searchUsersByDepartmentToJson(String departmentKey) {
         Set<String> emails = repository.getEmailsByDepartmentName(departmentKey);
         JsonArray departmentJsonArray = new JsonArray();
@@ -373,6 +398,11 @@ public class UserDatabaseHandler {
     public List<String> getAllEmailOtherDepartment(String departmentKey) {
         Set<String> emailsbyDepartment = getAllEmailsByDepartmentKey(departmentKey);
         Set<String> emailByListUser = getUserEmails();
+
+        List<User> users = repository.getAll();
+        for (User user : users) {
+            emailByListUser.add(user.getEmail());
+        }
         List<String> emailOtherDepartment = new ArrayList<>(emailByListUser);
         emailOtherDepartment.removeAll(emailsbyDepartment);
         return emailOtherDepartment;
@@ -381,22 +411,21 @@ public class UserDatabaseHandler {
     public String getAllEmailOtherDepartmentToJson(String departmentKey) {
         JsonArray emailJsonArray = new JsonArray();
         List<String> emailOtherDepartment = getAllEmailOtherDepartment(departmentKey);
-
         for (String email : emailOtherDepartment) {
             JsonObject object = new JsonObject();
             object.addProperty("email", email);
             emailJsonArray.add(object);
         }
         return emailJsonArray.toString().replace("\\", "");
-
     }
 
-    public void responseData(List<Issue> success, List<Issue> fails, List<String> fileNames) {
+    public HttpURLConnection responseData(List<Issue> success, List<Issue> fails) {
         RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+        HttpURLConnection conn = null;
         try {
             APIResponseRedmine response = new APIResponseRedmine();
             URL url = new URL(configDTO.getUrlApiRedmine());
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn = (HttpURLConnection) url.openConnection();
             conn.setDoOutput(true);
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json");
@@ -408,21 +437,12 @@ public class UserDatabaseHandler {
             os.write(arrayToJson.getBytes());
             os.flush();
             new BufferedReader(new InputStreamReader((conn.getInputStream())));
-            if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                fileNames.forEach(fileName -> {
-                    try {
-                        Files.delete(Paths.get(fileName));
-                    } catch (IOException e) {
-                        log.error("There was an error while deleting the file: {}", e.getMessage());
-                        FileUtil.writeLogToFile(ERROR, "Delete file", "File name:" + FilenameUtils.getName(fileName), FAIL, configDTO.getPathFolderLog());
-                    }
-                });
-            }
             conn.disconnect();
         } catch (Exception e) {
             log.info("An error occurred while calling the api : {} ", e.getMessage());
-            FileUtil.writeLogToFile(ERROR, "Update Redmine", "Server error: " + e.getMessage() + "", FAIL, configDTO.getPathFolderLog());
+            FileUtil.writeLogToFile("REDMINE", "Update Redmine error: " + e.getMessage() + "", "", configDTO.getPathFolderLog());
         }
+        return conn;
     }
 
     public Map<String, User> validateListEmailExistDB(Map<String, List<String>> mapList) {
@@ -479,11 +499,6 @@ public class UserDatabaseHandler {
         repository.update(user);
     }
 
-    public void deleteUserByDepartment(String department) {
-        List<User> usersByDepartment = getAllUsersByDepartmentName(department);
-
-        deleteDepartmentByListUser(usersByDepartment, department);
-    }
 
     public void deleteDepartmentByListUser(List<User> users, String departmentKey) {
         for (User user : users) {
@@ -499,12 +514,6 @@ public class UserDatabaseHandler {
             }
         }
         return users;
-    }
-
-    public List<User> getAllUsersByDepartmentName(String departmentName) {
-        Set<String> emails = repository.getEmailsByDepartmentName(departmentName);
-        List<String> emaillist = emails.stream().collect(Collectors.toList());
-        return getAllUserByListEmail(emaillist);
     }
 
 }

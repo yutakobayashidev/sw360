@@ -174,6 +174,6 @@ service UserService {
 
     void deleteDepartmentByListUser(1: list<User> users,2: string department)
 
-   set<string> getAllEmailsByDepartmentKey(1: string departmentName)
+    set<string> getAllEmailsByDepartmentKey(1: string departmentName)
 
 }

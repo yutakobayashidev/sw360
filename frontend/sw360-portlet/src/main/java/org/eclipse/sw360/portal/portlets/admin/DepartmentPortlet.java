@@ -35,6 +35,7 @@ import javax.portlet.*;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
@@ -88,11 +89,13 @@ public class DepartmentPortlet extends Sw360Portlet {
             UserService.Iface userClient = thriftClients.makeUserClient();
             Map<String, List<User>> listMap = userClient.getAllUserByDepartment();
             request.setAttribute(PortalConstants.DEPARTMENT_LIST, listMap);
-            Map<String, List<String>> listContentFileLog = userClient.getAllContentFileLog();
-            LinkedHashMap<String, List<String>> sortedMap = new LinkedHashMap<>();
-            listContentFileLog.entrySet().stream().sorted(Map.Entry.comparingByKey(Comparator.reverseOrder()))
-                    .forEachOrdered(x -> sortedMap.put(x.getKey(), x.getValue()));
-            request.setAttribute(PortalConstants.LIST_CONTENT_FILE_LOG, sortedMap);
+            Map<String, List<String>> listContentFileLog = userClient.getAllContentFileLog()
+                    .entrySet()
+                    .stream()
+                    .sorted(Map.Entry.comparingByKey(Comparator.reverseOrder()))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                            (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+            request.setAttribute(PortalConstants.LIST_CONTENT_FILE_LOG, listContentFileLog);
             String pathConfigFolderDepartment = userClient.getPathConfigDepartment();
             request.setAttribute(PortalConstants.PATH_CONFIG_FOLDER_DEPARTMENT, pathConfigFolderDepartment);
             request.setAttribute(PortalConstants.LAST_FILE_NAME, userClient.getLastModifiedFileName());
@@ -189,11 +192,11 @@ public class DepartmentPortlet extends Sw360Portlet {
         if (key != null) {
             try {
                 UserService.Iface userClient = thriftClients.makeUserClient();
-                if(usersAdd != null){
-                    userClient.updateDepartmentToListUser(usersAdd,department);
+                if (usersAdd != null) {
+                    userClient.updateDepartmentToListUser(usersAdd, department);
                 }
-                if(usersDelete != null) {
-                    userClient.deleteDepartmentByListUser(usersDelete,department);
+                if (usersDelete != null) {
+                    userClient.deleteDepartmentByListUser(usersDelete, department);
                 }
             } catch (TException e) {
                 log.error("Error fetching User from backend!", e);

@@ -141,12 +141,12 @@ public class UserHandler implements UserService.Iface {
     public Set<String> getUserDepartments() throws TException {
         return db.getUserDepartments();
     }
+
     @Override
     public Set<String> getAllEmailsByDepartmentKey(String departmentName) throws TException {
         return db.getAllEmailsByDepartmentKey(departmentName);
     }
 
-//    @Override
     public Set<String> getUserEmails() throws TException {
         return db.getUserEmails();
     }
@@ -169,30 +169,6 @@ public class UserHandler implements UserService.Iface {
     public Map<String, List<User>> getAllUserByDepartment() throws TException {
         return db.getAllUserByDepartment();
     }
-//    @Override
-//    public List<User> getAllUsersByDepartment(String department) throws TException {
-//        return db.getAllUsersByDepartment(department);
-//    }
-
-//    @Override
-//    public Map<String, List<User>> searchUsersByDepartment(String departmentKey) throws TException {
-//        return db.searchUsersByDepartment(departmentKey);
-//    }
-//
-//    @Override
-//    public List<String> getAllDepartment() throws TException {
-//        return db.getAllDepartment();
-//    }
-//
-//    @Override
-//    public List<String> getAllEmailByDepartment(String departmentKey) throws TException {
-//        return db.getAllEmailByDepartment(departmentKey);
-//    }
-
-//    @Override
-//    public List<String> getAllEmailOtherDepartment(String departmentKey) throws TException {
-//        return db.getAllEmailOtherDepartment(departmentKey);
-//    }
 
     @Override
     public String searchUsersByDepartmentToJson(String department) throws TException {
@@ -204,6 +180,7 @@ public class UserHandler implements UserService.Iface {
         return db.getAllEmailOtherDepartmentToJson(department);
     }
 
+    @Override
     public Set<String> getListFileLog() {
         try {
             RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
@@ -230,7 +207,7 @@ public class UserHandler implements UserService.Iface {
                 if (!theDir.exists()) theDir.mkdirs();
                 Set<String> fileNamesSet = FileUtil.getListFilesOlderThanNDays(configDTO.getShowFileLogFrom(), path);
                 for (String fileName : fileNamesSet) {
-                    listMap.put(FilenameUtils.getName(fileName).replace(EXTENSION, ""), FileUtil.readFileError(fileName));
+                    listMap.put(FilenameUtils.getName(fileName).replace(EXTENSION, ""), FileUtil.readFileLog(fileName));
                 }
             }
         } catch (Exception e) {
@@ -294,8 +271,6 @@ public class UserHandler implements UserService.Iface {
     public void updateDepartmentToListUser(List<User> users, String department) throws TException {
         db.updateDepartmentToListUser(users, department);
     }
-
-
 
     @Override
     public void deleteDepartmentByListUser(List<User> users, String department) throws TException {

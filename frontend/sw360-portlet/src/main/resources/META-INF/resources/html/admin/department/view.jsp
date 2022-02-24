@@ -8,8 +8,6 @@
   ~
   ~ SPDX-License-Identifier: EPL-2.0
   --%>
-
-
 <%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 <%@ page import="javax.portlet.PortletRequest" %>
@@ -19,15 +17,16 @@
 <jsp:useBean id='departmentOffset' type="java.lang.String" scope="request"/>
 <jsp:useBean id='departmentInterval' type="java.lang.String" scope="request"/>
 <jsp:useBean id='departmentNextSync' type="java.lang.String" scope="request"/>
+
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
+
 <portlet:actionURL var="scheduleDepartmentURL" name="scheduleImportDepartment">
 </portlet:actionURL>
 <portlet:actionURL var="unscheduleDepartmentURL" name="unScheduleImportDepartment">
 </portlet:actionURL>
 <portlet:actionURL var="scheduleDepartmentManuallyURL" name="importDepartmentManually">
 </portlet:actionURL>
-
 <portlet:actionURL var="editPathFolder" name="writePathFolder">
 </portlet:actionURL>
 <portlet:resourceURL var="importDepartmentManually">
@@ -65,8 +64,7 @@
                             </td>
                             <td width="3%">
                                 <button type="button" class="btn btn-primary" id="updatePathFolder" data-action="save">
-                                    <liferay-ui:message
-                                            key="update"/></button>
+                                    <liferay-ui:message key="update"/></button>
                             </td>
 
                         </tr>
@@ -144,10 +142,6 @@
                                             <title><liferay-ui:message key="edit"/></title>
                                             <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/>
                                         </svg>
-                                        <svg class="delete lexicon-icon">
-                                            <title><liferay-ui:message key="delete"/></title>
-                                            <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
-                                        </svg>
                                     </div>
                                 </td>
                             </tr>
@@ -176,7 +170,7 @@
                     <div id="header-log-error">
                         <label for="file-log">Search</label>
                         <input list="file-logs" type="date" name="file-log" id="file-log"
-                               class="col-sm-12 custom-select custom-select-sm"/>
+                               class="col-sm-12"/>
                         <datalist id="file-logs">
                             <core_rt:forEach var="contentFileLog" items="${listContentFileLog}">
                                 <option value="${contentFileLog.key}" }>${contentFileLog.key}</option>
@@ -206,19 +200,16 @@
 <script>
     AUI().use('liferay-portlet-url', function () {
         require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'modules/dialog'], function ($, datatables, quickfilter, dialog) {
-            var PortletURL = Liferay.PortletURL;
-            <%--list.filter(<%=PortalConstants.DEPARTMENT_KEY%>)--%>
+            let PortletURL = Liferay.PortletURL;
             departmentKeyInURL = '<%=PortalConstants.DEPARTMENT_KEY%>',
-                pageName = '<%=PortalConstants.PAGENAME%>';
+            pageName = '<%=PortalConstants.PAGENAME%>';
             pageEdit = '<%=PortalConstants.PAGENAME_EDIT%>';
             baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
 
-            let usersTable;
-            // initializing
-            usersTable = createExistingUserTable('#userTable');
+            createExistingUserTable('#userTable');
 
             $('#userTable').on('click', 'svg.editDepartment', function (event) {
-                var data = $(event.currentTarget).data();
+                let data = $(event.currentTarget).data();
                 console.log("--key--" + data.map)
                 window.location.href = createDetailURLfromDepartmentKey(data.map);
             });
@@ -236,13 +227,7 @@
                     },
                     columnDefs: [
                         {
-                            "targets": 0,
-                            "createdCell": function (td, cellData, rowData, row, col) {
-                                $(td).attr('title', 'click the icon to toggle obligation text');
-                            }
-                        },
-                        {
-                            'targets': [2],
+                            'targets': [1, 2],
                             'orderable': false,
                         }
                     ],
@@ -298,11 +283,11 @@
                     }
                 );
             });
-            $('.btn-close-department').on('click', () => window.location.reload());
 
             $('.portlet-toolbar button[data-action="save"]').on('click', function (event) {
                 $('#editPathFolder').submit();
             });
+
             let pathFolderDepartment = $('#pathFolderDepartment').val();
             if (pathFolderDepartment === '${pathConfigFolderDepartment}') {
                 $('#updatePathFolder').prop('disabled', true);
@@ -344,6 +329,7 @@
                 let fileName = $('#file-log').val();
                 $(".title-log-file").html("<h4>Log File On: " + fileName + "</h4>");
             });
+
         });
     });
 </script>

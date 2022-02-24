@@ -27,21 +27,10 @@
 <jsp:useBean id="departmentEncode" type="java.lang.String" scope="request"/>
 <jsp:useBean id="departmentRoleUser" type="java.lang.String" scope="request"/>
 <jsp:useBean id="emailOtherDepartment" type="java.lang.String" scope="request"/>
-<%--<jsp:useBean id="departmentEmail" type="java.util.List<java.lang.String>" scope="request"/>--%>
-<%--<jsp:useBean id="emails" type="java.util.List<java.lang.String>" scope="request"/>--%>
-<%--<jsp:useBean id="departmentName" type="java.util.List<java.lang.String>" scope="request"/>--%>
-<%--<jsp:useBean id="departmentList"--%>
-<%--             type="java.util.HashMap<java.lang.String,org.eclipse.sw360.datahandler.thrift.users.User>"--%>
-<%--             scope="request"/>--%>
-
-<%--<core_rt:set var="addMode" value="${empty departmentKey}"/>--%>
 
 <portlet:resourceURL var="deleteDepartmentURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.REMOVE_DEPARTMENT_BY_EMAIL%>'/>
 </portlet:resourceURL>
-
-
-
 <portlet:actionURL var="updateURL" name="updateDepartment">
     <portlet:param name="<%=PortalConstants.DEPARTMENT_KEY%>" value="${departmentKey}"/>
 </portlet:actionURL>
@@ -61,7 +50,7 @@
                             <button type="button" class="btn btn-light" data-action="cancel"><liferay-ui:message
                                     key="Cancel"/></button>
                         </div>
-                       
+
                     </div>
                 </div>
             </div>
@@ -138,7 +127,6 @@
 <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
 
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
-<%--<script>--%>
 <script >
     AUI().use('liferay-portlet-url', function () {
         require(['jquery', 'modules/dialog', 'modules/validation'], function ($, dialog, validation) {
@@ -177,13 +165,13 @@
                 $('.secGrp').each(function() {
                     emailsAdd.push($(this).val());
                 });
-                    emailStart=arrayObjectToArrayString(emailsByDepartment,emailStart);
+                emailStart=arrayObjectToArrayString(emailsByDepartment,emailStart);
                 let emailInsert = emailsAdd.filter((o) => emailStart.indexOf(o) === -1);
                 let emailDelete = emailStart.filter((o) => emailsAdd.indexOf(o) === -1);
 
                 emailInsert = Array.from(new Set(emailInsert));
                 emailDelete=Array.from(new Set(emailDelete));
-            
+
                 let jsonArrayEmailAdd = JSON.parse(JSON.stringify(emailInsert));
                 let jsonArrayEmailDelete = JSON.parse(JSON.stringify(emailDelete));
 
@@ -191,27 +179,22 @@
                 $('#listEmail2').val(JSON.stringify(jsonArrayEmailDelete));
                 $('#departmentEditForm').submit();
             });
-     
 
-                
-            
             function createSecDepartmentRolesTable() {
 
                 emailsJson=arrayObjectToArrayString(emailsByDepartment,emailsJson);
                 emailsOtherDepartment=arrayObjectToArrayString(emailOtherDepartment,emailsOtherDepartment);
                 emailInDatabase=emailsJson.concat(emailsOtherDepartment);
 
-            
-
                 $('.delete-btn').first().bind('click', deleteRow);
 
                 if (emailsJson.length == 0) {
                     return;
-                }   
+                }
                 for (let i = 0; i < emailsJson.length - 1; i++) {
                     addNewRow();
                     $('.bodyRow').focusout(function() {
-                    handleFocusOut($(this).find('input').first(),emailInDatabase);
+                        handleFocusOut($(this).find('input').first(),emailInDatabase);
                         let arr=[];
                         $('.secGrp').each(function(){
                             var value = $(this).val();
@@ -227,7 +210,7 @@
                 fillSuggestion();
                 for (let i = 0; i < emailsJson.length; i++) {
                     $('.secGrp').eq(i).val(emailsJson[i]);
-                    
+
                 }
             }
 
@@ -239,22 +222,22 @@
                     emailsOtherDepartment.splice(index, 1);
                 }
                 emailsOtherDepartment = Array.from(new Set(emailsOtherDepartment));
-                
+
                 addNewRow()
                 fillSuggestion();
 
                 $('.bodyRow').last().focusout(function() {
                     handleFocusOut($(this).find('input').first(),arrayFocus);
                     let arr=[];
-                        $('.secGrp').each(function(){
-                            var value = $(this).val();
-                            if (arr.indexOf(value) == -1){
-                                arr.push(value);
-                            }
-                            else{
-                                $(this).val("");
-                            }
-                        });
+                    $('.secGrp').each(function(){
+                        var value = $(this).val();
+                        if (arr.indexOf(value) == -1){
+                            arr.push(value);
+                        }
+                        else{
+                            $(this).val("");
+                        }
+                    });
                 })
             });
 
@@ -305,7 +288,7 @@
             function handleFocusOut(element,array) {
                 let value = element.val();
                 if(array.length ==0 ){
-                        $(element).val("");
+                    $(element).val("");
                 }
 
                 for (let i = 0; i < array.length; i++) {
