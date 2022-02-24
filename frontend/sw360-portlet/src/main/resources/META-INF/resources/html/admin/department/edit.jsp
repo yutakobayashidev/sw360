@@ -152,7 +152,7 @@
                 for(let object of arrayObject){
                     arrayString.push(object.email);
                 }
-                return arrayString;
+                return arrayString.sort();
             }
 
             $('.portlet-toolbar button[data-action="cancel"]').on('click', function () {
