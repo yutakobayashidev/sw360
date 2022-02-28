@@ -166,6 +166,7 @@ public class UserDatabaseHandler {
         List<Issue> listIssueFail = new ArrayList<>();
         RequestSummary requestSummary = new RequestSummary().setTotalAffectedElements(0).setMessage("");
         RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+        String pathFolderLog = configDTO.getPathFolderLog();
         Map<String, List<String>> mapArrayList = new HashMap<>();
         if (IMPORT_DEPARTMENT_STATUS) {
             return requestSummary.setRequestStatus(RequestStatus.PROCESSING);
@@ -175,19 +176,22 @@ public class UserDatabaseHandler {
         String lastRunningTime = dateFormat.format(calendar.getTime());
         readFileRedmineConfig.writeLastRunningTimeConfig(lastRunningTime);
         try {
-            FileUtil.writeLogToFile("", "START IMPORT DEPARTMENT", "", configDTO.getPathFolderLog());
-            Set<String> files = FileUtil.listFilesUsingFileWalk(pathFolder);
+            FileUtil.writeLogToFile("", "START IMPORT DEPARTMENT", "", pathFolderLog);
+            Set<String> files = FileUtil.listPathFiles(pathFolder);
             for (String file : files) {
-                String pathFile = pathFolder + "/" + file;
-                String extension = FilenameUtils.getExtension(pathFile);
+                String extension = FilenameUtils.getExtension(file);
                 if (extension.equalsIgnoreCase("xlsx") || extension.equalsIgnoreCase("xls")) {
-                    mapArrayList = readFileExcel(pathFile);
+                    mapArrayList = readFileExcel(file);
                 } else if (extension.equalsIgnoreCase("csv")) {
-                    mapArrayList = readFileCsv(pathFile);
+                    mapArrayList = readFileCsv(file);
                 }
                 Map<String, User> mapEmail = validateListEmailExistDB(mapArrayList);
-                String issueId = pathFile.substring(pathFile.lastIndexOf("_") + 1, pathFile.lastIndexOf("."));
-                String fileName = file.replace(pathFile.substring(pathFile.lastIndexOf("_"), pathFile.lastIndexOf(".")), "");
+                String issueId = Arrays.stream(FilenameUtils.removeExtension(file).split("_")).reduce((first, second) -> second).orElse(null);
+                String fileName;
+                if (file.lastIndexOf("_") != -1)
+                    fileName = FilenameUtils.getName(file).replace(file.substring(file.lastIndexOf("_"), file.lastIndexOf(".")), "");
+                else fileName = FilenameUtils.getName(file);
+
                 if (departmentDuplicate.isEmpty() && emailDoNotExist.isEmpty()) {
                     mapArrayList.forEach((k, v) -> v.forEach(email -> updateDepartmentToUser(mapEmail.get(email), k)));
                     Issue issue = new Issue();
@@ -195,8 +199,8 @@ public class UserDatabaseHandler {
                     issue.setIssue_id(issueId);
                     issue.setDescription("DEPARTMENT [" + joined + "] ADDED SUCCESSFULLY - FILE NAME: [" + fileName + "]");
                     listIssueSuccess.add(issue);
-                    fileNames.add(pathFile);
-                    FileUtil.writeLogToFile(TITLE, "DEPARTMENT [" + joined + "] - FILE NAME: [" + fileName + "]", SUCCESS, configDTO.getPathFolderLog());
+                    fileNames.add(file);
+                    FileUtil.writeLogToFile(TITLE, "DEPARTMENT [" + joined + "] - FILE NAME: [" + fileName + "]", SUCCESS, pathFolderLog);
                 } else {
                     if (!departmentDuplicate.isEmpty()) {
                         Issue issueFail = new Issue();
@@ -205,7 +209,7 @@ public class UserDatabaseHandler {
                         String joined = String.join(", ", departmentDuplicateOrder);
                         issueFail.setDescription("DEPARTMENT [" + joined + "] IS DUPLICATE - FILE NAME: [" + fileName + "]");
                         listIssueFail.add(issueFail);
-                        FileUtil.writeLogToFile(TITLE, "DEPARTMENT [" + joined + "] IS DUPLICATE - FILE NAME: [" + fileName + "]", FAIL, configDTO.getPathFolderLog());
+                        FileUtil.writeLogToFile(TITLE, "DEPARTMENT [" + joined + "] IS DUPLICATE - FILE NAME: [" + fileName + "]", FAIL, pathFolderLog);
                         departmentDuplicate = new ArrayList<>();
                     }
                     if (!emailDoNotExist.isEmpty()) {
@@ -215,7 +219,7 @@ public class UserDatabaseHandler {
                         String joined = String.join(", ", emailDoNotExistOrder);
                         issueFail.setDescription("USER [" + joined + "] DOES NOT EXIST - FILE NAME: [" + fileName + "]");
                         listIssueFail.add(issueFail);
-                        FileUtil.writeLogToFile(TITLE, "USER [" + joined + "] DOES NOT EXIST - FILE NAME: [" + fileName + "]", FAIL, configDTO.getPathFolderLog());
+                        FileUtil.writeLogToFile(TITLE, "USER [" + joined + "] DOES NOT EXIST - FILE NAME: [" + fileName + "]", FAIL, pathFolderLog);
                         emailDoNotExist = new ArrayList<>();
                     }
                 }
@@ -229,26 +233,26 @@ public class UserDatabaseHandler {
             String msg = "Failed to import department";
             requestSummary.setMessage(msg);
             requestSummary.setRequestStatus(RequestStatus.FAILURE);
-            FileUtil.writeLogToFile(TITLE, "FILE ERROR: " + e.getMessage(), "", configDTO.getPathFolderLog());
+            FileUtil.writeLogToFile(TITLE, "FILE ERROR: " + e.getMessage(), "", pathFolderLog);
         }
-        FileUtil.writeLogToFile(TITLE, "[ FILE SUCCESS: " + listIssueSuccess.size() + " - " + "FILE FAIL: " + listIssueFail.size() + " - " + "TOTAL FILE: " + (listIssueSuccess.size() + listIssueFail.size()) + " ]", "Complete The File Import", configDTO.getPathFolderLog());
+        FileUtil.writeLogToFile(TITLE, "[ FILE SUCCESS: " + listIssueSuccess.size() + " - " + "FILE FAIL: " + listIssueFail.size() + " - " + "TOTAL FILE: " + (listIssueSuccess.size() + listIssueFail.size()) + " ]", "Complete The File Import", pathFolderLog);
         HttpURLConnection connection = responseData(listIssueSuccess, listIssueFail);
         try {
             if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                FileUtil.writeLogToFile("REDMINE", "Update redmine", SUCCESS, configDTO.getPathFolderLog());
+                FileUtil.writeLogToFile("REDMINE", "Update redmine", SUCCESS, pathFolderLog);
                 fileNames.forEach(fileName -> {
                     try {
                         Files.delete(Paths.get(fileName));
                     } catch (IOException e) {
                         log.error("There was an error while deleting the file: {}", e.getMessage());
-                        FileUtil.writeLogToFile("Delete file", "File name:" + FilenameUtils.getName(fileName), FAIL, configDTO.getPathFolderLog());
+                        FileUtil.writeLogToFile("Delete file", "File name:" + FilenameUtils.getName(fileName), FAIL, pathFolderLog);
                     }
                 });
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        FileUtil.writeLogToFile(TITLE, "END IMPORT DEPARTMENT", "", configDTO.getPathFolderLog());
+        FileUtil.writeLogToFile(TITLE, "END IMPORT DEPARTMENT", "", pathFolderLog);
 
         return requestSummary;
     }

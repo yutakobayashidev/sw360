@@ -83,21 +83,30 @@ public class FileUtil {
     }
 
     public static List<String> readFileLog(String filePath) {
-        List<String> errors = new ArrayList<>();
+        List<String> contentLog = new ArrayList<>();
         Path path = Paths.get(filePath);
         try {
-            errors = Files.readAllLines(path);
+            contentLog = Files.readAllLines(path);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-        return errors;
+        return contentLog;
     }
 
-    public static Set<String> listFilesUsingFileWalk(String dir) throws IOException {
+    public static Set<String> listFileNames(String dir) throws IOException {
         try (Stream<Path> stream = Files.walk(Paths.get(dir), 1)) {
             return stream
                     .filter(file -> !Files.isDirectory(file))
                     .map(Path::getFileName)
+                    .map(Path::toString)
+                    .collect(Collectors.toSet());
+        }
+    }
+
+    public static Set<String> listPathFiles(String dir) throws IOException {
+        try (Stream<Path> stream = Files.walk(Paths.get(dir), 1)) {
+            return stream
+                    .filter(file -> !Files.isDirectory(file))
                     .map(Path::toString)
                     .collect(Collectors.toSet());
         }

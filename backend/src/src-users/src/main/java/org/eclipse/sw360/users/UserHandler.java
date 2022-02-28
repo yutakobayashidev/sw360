@@ -196,6 +196,7 @@ public class UserHandler implements UserService.Iface {
         return db.getAllEmailOtherDepartmentToJson(department);
     }
 
+    @Override
     public Set<String> getListFileLog() {
         try {
             RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
@@ -203,7 +204,7 @@ public class UserHandler implements UserService.Iface {
                 String path = configDTO.getPathFolderLog();
                 File theDir = new File(path);
                 if (!theDir.exists()) theDir.mkdirs();
-                return FileUtil.listFilesUsingFileWalk(path);
+                return FileUtil.listFileNames(path);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -239,7 +240,7 @@ public class UserHandler implements UserService.Iface {
                 String path = configDTO.getPathFolderLog();
                 File theDir = new File(path);
                 if (!theDir.exists()) theDir.mkdirs();
-                Set<String> strings = FileUtil.listFilesUsingFileWalk(path);
+                Set<String> strings = FileUtil.listFileNames(path);
                 if (!strings.isEmpty()) {
                     File file = FileUtil.getFileLastModified(path);
                     return file.getName().replace(EXTENSION, "");

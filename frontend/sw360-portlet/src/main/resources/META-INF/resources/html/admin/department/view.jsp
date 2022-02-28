@@ -169,8 +169,8 @@
                 <div class="modal-body">
                     <div id="header-log-error">
                         <label for="file-log">Search</label>
-                        <input list="file-logs" type="date" name="file-log" id="file-log"
-                               class="col-sm-12 custom-select custom-select-sm"/>
+                        <input list="file-logs" type="date" name="file-log" id="file-log" value="${lastFileName}"
+                               class="col-sm-12"/>
                         <datalist id="file-logs">
                             <core_rt:forEach var="contentFileLog" items="${listContentFileLog}">
                                 <option value="${contentFileLog.key}" }>${contentFileLog.key}</option>
@@ -180,7 +180,7 @@
                     <br/>
                     <div style="text-align: center" class="title-log-file"><h4>Log File On: ${lastFileName}</h4></div>
                     <br/>
-                    <div id="content-log-error">
+                    <div id="content-log-error" style="width:100%; max-height:500px; overflow:auto">
                         <core_rt:forEach var="contentLog" items="${listContentFileLog}">
                             <div id="content-${contentLog.key}" class="content-log log-none">
                                 <core_rt:forEach var="content" items="${contentLog.value}">
@@ -194,7 +194,7 @@
         </div>
     </div>
 </div>
-<%--for javascript library loading --%>
+
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     AUI().use('liferay-portlet-url', function () {
@@ -209,7 +209,6 @@
 
             $('#userTable').on('click', 'svg.editDepartment', function (event) {
                 let data = $(event.currentTarget).data();
-                console.log("--key--" + data.map)
                 window.location.href = createDetailURLfromDepartmentKey(data.map);
             });
 
