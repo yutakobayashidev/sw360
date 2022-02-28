@@ -14,7 +14,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.users.dto.RedmineConfigDTO;
+import org.eclipse.sw360.users.dto.DepartmentConfigDTO;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -22,9 +22,9 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ReadFileRedmineConfig {
+public class ReadFileDepartmentConfig {
 
-    private static final Logger log = LogManager.getLogger(ReadFileRedmineConfig.class);
+    private static final Logger log = LogManager.getLogger(ReadFileDepartmentConfig.class);
     private static final String FOLDER_LOG = "/logs/";
 
     protected String getPathConfig() throws IOException {
@@ -39,21 +39,20 @@ public class ReadFileRedmineConfig {
         return (path + "department-config.json");
     }
 
-    public RedmineConfigDTO readFileJson() {
+    public DepartmentConfigDTO readFileJson() {
         try {
             File file = new File(getPathConfig());
             if (file.exists()) {
                 Reader reader = Files.newBufferedReader(Paths.get(getPathConfig()));
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode jsonNode = objectMapper.readTree(reader);
-                JsonNode configRedmine = jsonNode.path("configRedmine");
+                JsonNode configRedmine = jsonNode.path("configDepartment");
                 String pathFolder = configRedmine.path("pathFolder").asText();
-                String urlApiRedmine = configRedmine.path("urlApiRedmine").asText();
                 String lastRunningTime = configRedmine.path("lastRunningTime").asText();
                 int showFileLogFrom = configRedmine.path("showFileLogFrom").asInt();
                 String pathFolderLog = "";
                 if (!pathFolder.isEmpty()) pathFolderLog = pathFolder + FOLDER_LOG;
-                return new RedmineConfigDTO(pathFolder, pathFolderLog, urlApiRedmine, lastRunningTime, showFileLogFrom);
+                return new DepartmentConfigDTO(pathFolder, pathFolderLog, lastRunningTime, showFileLogFrom);
             }
         } catch (FileNotFoundException e) {
             log.error("Error not find the file: {}", e.getMessage());
@@ -64,17 +63,16 @@ public class ReadFileRedmineConfig {
     }
 
     public void writePathFolderConfig(String pathFolder) {
-        RedmineConfigDTO redmineConfigDTO = readFileJson();
+        DepartmentConfigDTO redmineConfigDTO = readFileJson();
         BufferedWriter writer = null;
         try {
             writer = Files.newBufferedWriter(Paths.get(getPathConfig()));
             Map<String, Object> configRedmine = new HashMap<>();
             Map<String, Object> map = new HashMap<>();
             map.put("pathFolder", pathFolder);
-            map.put("urlApiRedmine", redmineConfigDTO.getUrlApiRedmine());
             map.put("lastRunningTime", redmineConfigDTO.getLastRunningTime());
             map.put("showFileLogFrom", redmineConfigDTO.getShowFileLogFrom());
-            configRedmine.put("configRedmine", map);
+            configRedmine.put("configDepartment", map);
             ObjectMapper mapper = new ObjectMapper();
             writer.write(mapper.writeValueAsString(configRedmine));
         } catch (FileNotFoundException e) {
@@ -91,7 +89,7 @@ public class ReadFileRedmineConfig {
     }
 
     public void writeLastRunningTimeConfig(String lastRunningTime) {
-        RedmineConfigDTO redmineConfigDTO = readFileJson();
+        DepartmentConfigDTO redmineConfigDTO = readFileJson();
         BufferedWriter writer = null;
         try {
             writer = Files.newBufferedWriter(Paths.get(getPathConfig()));
@@ -99,9 +97,8 @@ public class ReadFileRedmineConfig {
             Map<String, Object> map = new HashMap<>();
             map.put("lastRunningTime", lastRunningTime);
             map.put("pathFolder", redmineConfigDTO.getPathFolder());
-            map.put("urlApiRedmine", redmineConfigDTO.getUrlApiRedmine());
             map.put("showFileLogFrom", redmineConfigDTO.getShowFileLogFrom());
-            configRedmine.put("configRedmine", map);
+            configRedmine.put("configDepartment", map);
             ObjectMapper mapper = new ObjectMapper();
             writer.write(mapper.writeValueAsString(configRedmine));
         } catch (FileNotFoundException e) {

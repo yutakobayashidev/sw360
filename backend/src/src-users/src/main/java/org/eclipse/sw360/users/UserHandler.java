@@ -21,8 +21,8 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.users.db.UserDatabaseHandler;
-import org.eclipse.sw360.users.dto.RedmineConfigDTO;
-import org.eclipse.sw360.users.redmine.ReadFileRedmineConfig;
+import org.eclipse.sw360.users.dto.DepartmentConfigDTO;
+import org.eclipse.sw360.users.redmine.ReadFileDepartmentConfig;
 import org.eclipse.sw360.users.util.FileUtil;
 import org.ektorp.http.HttpClient;
 
@@ -45,11 +45,11 @@ public class UserHandler implements UserService.Iface {
     private static final String EXTENSION = ".log";
 
     private UserDatabaseHandler db;
-    private ReadFileRedmineConfig readFileRedmineConfig;
+    private ReadFileDepartmentConfig readFileRedmineConfig;
 
     public UserHandler() throws IOException {
         db = new UserDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_USERS);
-        readFileRedmineConfig = new ReadFileRedmineConfig();
+        readFileRedmineConfig = new ReadFileDepartmentConfig();
     }
 
     public UserHandler(Supplier<CloudantClient> client, Supplier<HttpClient> httpclient, String userDbName) throws IOException {
@@ -150,13 +150,13 @@ public class UserHandler implements UserService.Iface {
 
     @Override
     public RequestSummary importFileToDB() {
-        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+        DepartmentConfigDTO configDTO = readFileRedmineConfig.readFileJson();
         return db.importFileToDB(configDTO.getPathFolder());
     }
 
     @Override
     public RequestStatus importDepartmentSchedule() throws TException {
-        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+        DepartmentConfigDTO configDTO = readFileRedmineConfig.readFileJson();
         db.importFileToDB(configDTO.getPathFolder());
         return RequestStatus.SUCCESS;
     }
@@ -199,7 +199,7 @@ public class UserHandler implements UserService.Iface {
     @Override
     public Set<String> getListFileLog() {
         try {
-            RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+            DepartmentConfigDTO configDTO = readFileRedmineConfig.readFileJson();
             if (configDTO != null && !configDTO.getPathFolderLog().isEmpty()) {
                 String path = configDTO.getPathFolderLog();
                 File theDir = new File(path);
@@ -216,7 +216,7 @@ public class UserHandler implements UserService.Iface {
     public Map<String, List<String>> getAllContentFileLog() {
         Map<String, List<String>> listMap = new HashMap<>();
         try {
-            RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+            DepartmentConfigDTO configDTO = readFileRedmineConfig.readFileJson();
             if (configDTO != null && configDTO.getPathFolderLog().length() > 0) {
                 String path = configDTO.getPathFolderLog();
                 File theDir = new File(path);
@@ -235,7 +235,7 @@ public class UserHandler implements UserService.Iface {
     @Override
     public String getLastModifiedFileName() throws TException {
         try {
-            RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+            DepartmentConfigDTO configDTO = readFileRedmineConfig.readFileJson();
             if (configDTO != null && !configDTO.getPathFolderLog().isEmpty()) {
                 String path = configDTO.getPathFolderLog();
                 File theDir = new File(path);
@@ -255,7 +255,7 @@ public class UserHandler implements UserService.Iface {
     @Override
     public String getPathConfigDepartment() throws TException {
         try {
-            RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+            DepartmentConfigDTO configDTO = readFileRedmineConfig.readFileJson();
             if (configDTO != null && !configDTO.getPathFolder().isEmpty()) {
                 return configDTO.getPathFolder();
             }
@@ -273,7 +273,7 @@ public class UserHandler implements UserService.Iface {
     @Override
     public String getLastRunningTime() throws TException {
         try {
-            RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+            DepartmentConfigDTO configDTO = readFileRedmineConfig.readFileJson();
             if (configDTO != null && !configDTO.getLastRunningTime().isEmpty()) {
                 return configDTO.getLastRunningTime();
             }

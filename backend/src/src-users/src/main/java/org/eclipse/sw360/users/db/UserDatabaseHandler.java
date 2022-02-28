@@ -10,7 +10,6 @@
 package org.eclipse.sw360.users.db;
 
 import com.cloudant.client.api.CloudantClient;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.opencsv.CSVReader;
@@ -29,18 +28,12 @@ import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.users.dto.APIResponseRedmine;
-import org.eclipse.sw360.users.dto.Issue;
-import org.eclipse.sw360.users.dto.RedmineConfigDTO;
-import org.eclipse.sw360.users.redmine.ReadFileRedmineConfig;
+import org.eclipse.sw360.users.dto.DepartmentConfigDTO;
+import org.eclipse.sw360.users.redmine.ReadFileDepartmentConfig;
 import org.eclipse.sw360.users.util.FileUtil;
 import org.ektorp.http.HttpClient;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -64,7 +57,7 @@ public class UserDatabaseHandler {
     private UserRepository repository;
     private UserSearchHandler userSearchHandler;
     private static final Logger log = LogManager.getLogger(UserDatabaseHandler.class);
-    private ReadFileRedmineConfig readFileRedmineConfig;
+    private ReadFileDepartmentConfig readFileRedmineConfig;
     private static final String SUCCESS = "SUCCESS";
     private static final String FAIL = "FAIL";
     private static final String TITLE = "IMPORT";
@@ -78,7 +71,7 @@ public class UserDatabaseHandler {
         db = new DatabaseConnectorCloudant(httpClient, dbName);
         dbConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
         repository = new UserRepository(db);
-        readFileRedmineConfig = new ReadFileRedmineConfig();
+        readFileRedmineConfig = new ReadFileDepartmentConfig();
         userSearchHandler = new UserSearchHandler(dbConnector, httpClient);
     }
 
@@ -161,11 +154,10 @@ public class UserDatabaseHandler {
     public RequestSummary importFileToDB(String pathFolder) {
         departmentDuplicate = new ArrayList<>();
         emailDoNotExist = new ArrayList<>();
-        List<String> fileNames = new ArrayList<>();
-        List<Issue> listIssueSuccess = new ArrayList<>();
-        List<Issue> listIssueFail = new ArrayList<>();
+        List<String> listFileSuccess = new ArrayList<>();
+        List<String> listFileFail = new ArrayList<>();
         RequestSummary requestSummary = new RequestSummary().setTotalAffectedElements(0).setMessage("");
-        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+        DepartmentConfigDTO configDTO = readFileRedmineConfig.readFileJson();
         String pathFolderLog = configDTO.getPathFolderLog();
         Map<String, List<String>> mapArrayList = new HashMap<>();
         if (IMPORT_DEPARTMENT_STATUS) {
@@ -186,47 +178,31 @@ public class UserDatabaseHandler {
                     mapArrayList = readFileCsv(file);
                 }
                 Map<String, User> mapEmail = validateListEmailExistDB(mapArrayList);
-                String issueId = Arrays.stream(FilenameUtils.removeExtension(file).split("_")).reduce((first, second) -> second).orElse(null);
-                String fileName;
-                if (file.lastIndexOf("_") != -1)
-                    fileName = FilenameUtils.getName(file).replace(file.substring(file.lastIndexOf("_"), file.lastIndexOf(".")), "");
-                else fileName = FilenameUtils.getName(file);
-
+                String fileName = FilenameUtils.getName(file);
                 if (departmentDuplicate.isEmpty() && emailDoNotExist.isEmpty()) {
                     mapArrayList.forEach((k, v) -> v.forEach(email -> updateDepartmentToUser(mapEmail.get(email), k)));
-                    Issue issue = new Issue();
                     String joined = mapArrayList.keySet().stream().sorted().collect(Collectors.joining(", "));
-                    issue.setIssue_id(issueId);
-                    issue.setDescription("DEPARTMENT [" + joined + "] ADDED SUCCESSFULLY - FILE NAME: [" + fileName + "]");
-                    listIssueSuccess.add(issue);
-                    fileNames.add(file);
+                    listFileSuccess.add(fileName);
                     FileUtil.writeLogToFile(TITLE, "DEPARTMENT [" + joined + "] - FILE NAME: [" + fileName + "]", SUCCESS, pathFolderLog);
                 } else {
                     if (!departmentDuplicate.isEmpty()) {
-                        Issue issueFail = new Issue();
-                        issueFail.setIssue_id(issueId);
                         List<String> departmentDuplicateOrder = departmentDuplicate.stream().sorted().collect(Collectors.toList());
                         String joined = String.join(", ", departmentDuplicateOrder);
-                        issueFail.setDescription("DEPARTMENT [" + joined + "] IS DUPLICATE - FILE NAME: [" + fileName + "]");
-                        listIssueFail.add(issueFail);
                         FileUtil.writeLogToFile(TITLE, "DEPARTMENT [" + joined + "] IS DUPLICATE - FILE NAME: [" + fileName + "]", FAIL, pathFolderLog);
                         departmentDuplicate = new ArrayList<>();
                     }
                     if (!emailDoNotExist.isEmpty()) {
-                        Issue issueFail = new Issue();
-                        issueFail.setIssue_id(issueId);
                         List<String> emailDoNotExistOrder = emailDoNotExist.stream().sorted().collect(Collectors.toList());
                         String joined = String.join(", ", emailDoNotExistOrder);
-                        issueFail.setDescription("USER [" + joined + "] DOES NOT EXIST - FILE NAME: [" + fileName + "]");
-                        listIssueFail.add(issueFail);
                         FileUtil.writeLogToFile(TITLE, "USER [" + joined + "] DOES NOT EXIST - FILE NAME: [" + fileName + "]", FAIL, pathFolderLog);
                         emailDoNotExist = new ArrayList<>();
                     }
+                    listFileFail.add(fileName);
                 }
             }
             IMPORT_DEPARTMENT_STATUS = false;
-            requestSummary.setTotalAffectedElements(listIssueSuccess.size());
-            requestSummary.setTotalElements(listIssueSuccess.size() + listIssueFail.size());
+            requestSummary.setTotalAffectedElements(listFileSuccess.size());
+            requestSummary.setTotalElements(listFileSuccess.size() + listFileFail.size());
             requestSummary.setRequestStatus(RequestStatus.SUCCESS);
         } catch (Exception e) {
             IMPORT_DEPARTMENT_STATUS = false;
@@ -235,23 +211,7 @@ public class UserDatabaseHandler {
             requestSummary.setRequestStatus(RequestStatus.FAILURE);
             FileUtil.writeLogToFile(TITLE, "FILE ERROR: " + e.getMessage(), "", pathFolderLog);
         }
-        FileUtil.writeLogToFile(TITLE, "[ FILE SUCCESS: " + listIssueSuccess.size() + " - " + "FILE FAIL: " + listIssueFail.size() + " - " + "TOTAL FILE: " + (listIssueSuccess.size() + listIssueFail.size()) + " ]", "Complete The File Import", pathFolderLog);
-        HttpURLConnection connection = responseData(listIssueSuccess, listIssueFail);
-        try {
-            if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                FileUtil.writeLogToFile("REDMINE", "Update redmine", SUCCESS, pathFolderLog);
-                fileNames.forEach(fileName -> {
-                    try {
-                        Files.delete(Paths.get(fileName));
-                    } catch (IOException e) {
-                        log.error("There was an error while deleting the file: {}", e.getMessage());
-                        FileUtil.writeLogToFile("Delete file", "File name:" + FilenameUtils.getName(fileName), FAIL, pathFolderLog);
-                    }
-                });
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        FileUtil.writeLogToFile(TITLE, "[ FILE SUCCESS: " + listFileSuccess.size() + " - " + "FILE FAIL: " + listFileFail.size() + " - " + "TOTAL FILE: " + (listFileSuccess.size() + listFileFail.size()) + " ]", "Complete The File Import", pathFolderLog);
         FileUtil.writeLogToFile(TITLE, "END IMPORT DEPARTMENT", "", pathFolderLog);
 
         return requestSummary;
@@ -446,34 +406,6 @@ public class UserDatabaseHandler {
         }
         return emailJsonArray.toString().replace("\\", "");
     }
-
-
-    public HttpURLConnection responseData(List<Issue> success, List<Issue> fails) {
-        RedmineConfigDTO configDTO = readFileRedmineConfig.readFileJson();
-        HttpURLConnection conn = null;
-        try {
-            APIResponseRedmine response = new APIResponseRedmine();
-            URL url = new URL(configDTO.getUrlApiRedmine());
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setDoOutput(true);
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "application/json");
-            response.setSuccess(success);
-            response.setFail(fails);
-            ObjectMapper mapper = new ObjectMapper();
-            String arrayToJson = mapper.writeValueAsString(response);
-            OutputStream os = conn.getOutputStream();
-            os.write(arrayToJson.getBytes());
-            os.flush();
-            new BufferedReader(new InputStreamReader((conn.getInputStream())));
-            conn.disconnect();
-        } catch (Exception e) {
-            log.info("An error occurred while calling the api : {} ", e.getMessage());
-            FileUtil.writeLogToFile("REDMINE", "Update Redmine error: " + e.getMessage() + "", "", configDTO.getPathFolderLog());
-        }
-        return conn;
-    }
-
 
     public Map<String, User> validateListEmailExistDB(Map<String, List<String>> mapList) {
         Map<String, User> listUser = new HashMap<>();
