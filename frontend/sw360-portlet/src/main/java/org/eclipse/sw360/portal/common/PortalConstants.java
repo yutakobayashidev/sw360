@@ -389,14 +389,11 @@ public class PortalConstants {
     public static final String DEPARTMENT_EMAIL_ROLE_JSON = "departmentRoleUser";
     public static final String EMAIL_OTHER_DEPARTMENT_JSON = "emailOtherDepartment";
     public static final String DEPARTMENT_ROLE = "departmentRole";
-    public static final String DEPARTMENT_NAME = "departmentName";
-    public static final String LIST_EMAIL_BY_DEPARTMENT = "departmentEmail";
-    public static final String LIST_EMAIL_OTHER_DEPARTMENT = "emails";
+;
+    public static final String DELETE_LIST_EMAIL = "deleteEmail";
     public static final String ADD_LIST_EMAIL = "listEmail";
-    public static final String EMAIL_FAKE = "fakeEmail";
 
-    public static final String EMAIL_OTHER_DEPARTMENT = "email";
-    public static final String EMAIL_TO_DELETE = "emailDelete";
+
 
 
 

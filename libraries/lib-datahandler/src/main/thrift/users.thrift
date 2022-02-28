@@ -152,18 +152,6 @@ service UserService {
 
     map<string, list<User>> getAllUserByDepartment();
 
-    map<string, list<User>> searchUsersByDepartment(1:string departmentKey);
-
-    list<string> getAllDepartment();
-
-    list<string>  getAllEmailByDepartment(string departmentKey);
-
-    list<string>  getAllEmailOtherDepartment(string departmentKey);
-
-    string searchUsersByDepartmentToJson(1: string department)
-
-    string getAllEmailOtherDepartmentToJson(1: string department)
-
     set<string> getListFileLog();
 
     map<string, list<string>> getAllContentFileLog();
@@ -176,16 +164,16 @@ service UserService {
 
     string getLastRunningTime();
 
-    void updateDepartmentToListUser(1: list<User> users, 2: string department)
+     list<User> getAllUserByListEmail(1: list<string> emails)
 
-    void deleteDepartmentByUser(1: User user, 2: string department)
+     string searchUsersByDepartmentToJson(1: string department)
+
+     string getAllEmailOtherDepartmentToJson(1: string department)
+
+    void updateDepartmentToListUser(1: list<User> users, 2: string department)
 
     void deleteDepartmentByListUser(1: list<User> users,2: string department)
 
-    list<User> getAllUserByListEmail(1: list<string> emails)
-
-    list<User> getAllUsersByDepartment(1: string department)
-
-    void deleteUserByDepartment(1: string department)
+    set<string> getAllEmailsByDepartmentKey(1: string departmentName)
 
 }

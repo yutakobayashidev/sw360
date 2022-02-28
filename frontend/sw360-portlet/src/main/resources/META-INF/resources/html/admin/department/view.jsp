@@ -115,7 +115,7 @@
                     <table id="userTable" class="table table-bordered">
                         <thead>
                         <tr>
-                            <th><liferay-ui:message key="department"/></th>
+                            <th width="30%"><liferay-ui:message key="department"/></th>
                             <th><liferay-ui:message key="member.emails"/></th>
                             <th width="5%"><liferay-ui:message key="actions"/></th>
                         </tr>
@@ -123,7 +123,7 @@
                         <tbody>
                         <core_rt:forEach var="department" items="${departmentList}">
                             <tr>
-                                <td style="text-align: center"><sw360:out value="${department.key}"/></td>
+                                <td><sw360:out value="${department.key}"/></td>
                                 <td>
                                     <div style="width:100%; max-height:210px; overflow:auto">
                                         <core_rt:forEach var="secondDepartment" items="${department.value}"

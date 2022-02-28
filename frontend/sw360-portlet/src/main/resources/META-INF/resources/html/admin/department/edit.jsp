@@ -20,12 +20,13 @@
 
 <%@ page import="javax.portlet.PortletRequest" %>
 <%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
+<%@ page import="com.liferay.portal.kernel.util.PortalUtil" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.users.User" %>
 <jsp:useBean id="departmentKey" type="java.lang.String" scope="request"/>
 
 <jsp:useBean id="departmentEncode" type="java.lang.String" scope="request"/>
 <jsp:useBean id="departmentRoleUser" type="java.lang.String" scope="request"/>
 <jsp:useBean id="emailOtherDepartment" type="java.lang.String" scope="request"/>
-
 
 <portlet:resourceURL var="deleteDepartmentURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.REMOVE_DEPARTMENT_BY_EMAIL%>'/>
@@ -34,15 +35,8 @@
     <portlet:param name="<%=PortalConstants.DEPARTMENT_KEY%>" value="${departmentKey}"/>
 </portlet:actionURL>
 
-<style>
-.duplicate {
-    border: 1px solid red;
-    color: red;
-}
-</style>
 
-
-<div class="container">
+<div class="container" style="display: none;" id="container">
     <div class="row">
         <div class="col">
             <div class="row portlet-toolbar">
@@ -56,26 +50,28 @@
                             <button type="button" class="btn btn-light" data-action="cancel"><liferay-ui:message
                                     key="Cancel"/></button>
                         </div>
+
                     </div>
                 </div>
             </div>
             <div class="row">
                 <div class="col">
                     <form id="departmentEditForm" name="departmentEditForm" action="<%=updateURL%>" method="post" class="form needs-validation" novalidate>
-                        <table class="table edit-table two-columns-with-actions" id="secDepartmentRolesTable">
+                        <table  class="table edit-table two-columns-with-actions" id="secDepartmentRolesTable">
                             <thead>
-                            <input style="display: none;" type="text" id="listEmail" name="<portlet:namespace/><%=PortalConstants.ADD_LIST_EMAIL%>" value="" />
+                            <input style="display: none;" type="text" id="listEmail1" name="<portlet:namespace/><%=PortalConstants.ADD_LIST_EMAIL%>" value="" />
+                            <input style="display: none;" type="text" id="listEmail2" name="<portlet:namespace/><%=PortalConstants.DELETE_LIST_EMAIL%>" value="" />
                             <tr>
-                                <th colspan="3" class="headlabel" ><liferay-ui:message key="Edit Department"/>   ${departmentEncode}</th>
+                                <th colspan="3" class="headlabel" ><liferay-ui:message key="Edit Department"/> <sw360:out value="${departmentEncode}"/> </th>
                             </tr>
                             </thead>
                             <tbody>
                             <tr id="" class="bodyRow" display="none">
                                 <td>
-                                    <input list="suggestionsList" class="form-control secGrp" name="email" placeholder="<liferay-ui:message key="Search User" />" title="<liferay-ui:message key="select.secondary.department.role" />"   />
-                                    <datalist class="suggestion" id="suggestionsList">
-                                    </datalist>
+                                    <input  list="suggestionsList" class="form-control secGrp" name="email" placeholder="<liferay-ui:message key="Search User" />" title="<liferay-ui:message key="select.secondary.department.role" />"   />
                                 </td>
+                                <datalist class="suggestion" id="suggestionsList">
+                                </datalist>
                                 <td>
                                     <input  class="form-control" disabled class="secGrp" minlength="1" placeholder="<liferay-ui:message key="role" />" title="<liferay-ui:message key="role" />" value="User"/>
                                 </td>
@@ -128,18 +124,25 @@
 </div>
 <div class="dialogs auto-dialogs"></div>
 
+<%@ include file="/html/utils/includes/pageSpinner.jspf" %>
+
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script >
     AUI().use('liferay-portlet-url', function () {
-
         require(['jquery', 'modules/dialog', 'modules/validation'], function ($, dialog, validation) {
+            let emailStart=[];
             let emailsJson=[];
             let emailsOtherDepartment=[];
             let emailsAdd=[];
             let emailInDatabase=[];
-            let emailJSON = jQuery.parseJSON(JSON.stringify(${ departmentRoleUser }));
+            let emailsByDepartment = jQuery.parseJSON(JSON.stringify(${ departmentRoleUser }));
             let emailOtherDepartment= jQuery.parseJSON(JSON.stringify(${emailOtherDepartment}));
+
             createSecDepartmentRolesTable();
+            fillSuggestion();
+
+            $('#container').css('display', '');
+            $('.container-spinner').css('display', 'none');
 
             pageName = '<%=PortalConstants.PAGENAME%>';
             pageEdit = '<%=PortalConstants.PAGENAME_EDIT%>';
@@ -149,12 +152,12 @@
                 for(let object of arrayObject){
                     arrayString.push(object.email);
                 }
-                return arrayString;
+                return arrayString.sort();
             }
 
             $('.portlet-toolbar button[data-action="cancel"]').on('click', function () {
-                let baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
-                let portletURL = Liferay.PortletURL.createURL(baseUrl).setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_VIEW%>');
+                var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
+                var portletURL = Liferay.PortletURL.createURL(baseUrl).setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_VIEW%>');
                 window.location = portletURL.toString();
             });
 
@@ -162,17 +165,24 @@
                 $('.secGrp').each(function() {
                     emailsAdd.push($(this).val());
                 });
+                emailStart=arrayObjectToArrayString(emailsByDepartment,emailStart);
+                let emailInsert = emailsAdd.filter((o) => emailStart.indexOf(o) === -1);
+                let emailDelete = emailStart.filter((o) => emailsAdd.indexOf(o) === -1);
 
-                emailsAdd = Array.from(new Set(emailsAdd));
-                let jsonArrayEmail = JSON.parse(JSON.stringify(emailsAdd));
+                emailInsert = Array.from(new Set(emailInsert));
+                emailDelete=Array.from(new Set(emailDelete));
 
-                $('#listEmail').val(JSON.stringify(jsonArrayEmail));
+                let jsonArrayEmailAdd = JSON.parse(JSON.stringify(emailInsert));
+                let jsonArrayEmailDelete = JSON.parse(JSON.stringify(emailDelete));
+
+                $('#listEmail1').val(JSON.stringify(jsonArrayEmailAdd));
+                $('#listEmail2').val(JSON.stringify(jsonArrayEmailDelete));
                 $('#departmentEditForm').submit();
             });
-            
 
             function createSecDepartmentRolesTable() {
-                emailsJson=arrayObjectToArrayString(emailJSON,emailsJson);
+
+                emailsJson=arrayObjectToArrayString(emailsByDepartment,emailsJson);
                 emailsOtherDepartment=arrayObjectToArrayString(emailOtherDepartment,emailsOtherDepartment);
                 emailInDatabase=emailsJson.concat(emailsOtherDepartment);
 
@@ -181,29 +191,27 @@
                 if (emailsJson.length == 0) {
                     return;
                 }
-           
                 for (let i = 0; i < emailsJson.length - 1; i++) {
                     addNewRow();
                     $('.bodyRow').focusout(function() {
-                    handleFocusOut($(this).find('input').first(),emailInDatabase);
-                    let arr=[];
-                    $('.secGrp').each(function(){
-                        let value = $(this).val();
-                        if (arr.indexOf(value) == -1){
-                            arr.push(value);
-                        }
-                        else{
-                            $(this).val("");
-                        }
-                    });
+                        handleFocusOut($(this).find('input').first(),emailInDatabase);
+                        let arr=[];
+                        $('.secGrp').each(function(){
+                            var value = $(this).val();
+                            if (arr.indexOf(value) == -1){
+                                arr.push(value);
+                            }
+                            else{
+                                $(this).val("");
+                            }
+                        });
                     })
                 }
-
+                fillSuggestion();
                 for (let i = 0; i < emailsJson.length; i++) {
                     $('.secGrp').eq(i).val(emailsJson[i]);
+
                 }
-          
-                fillSuggestion();
             }
 
             $('#add-sec-grp-roles-id').on('click', function() {
@@ -214,12 +222,22 @@
                     emailsOtherDepartment.splice(index, 1);
                 }
                 emailsOtherDepartment = Array.from(new Set(emailsOtherDepartment));
-                  
+
+                addNewRow()
                 fillSuggestion();
-                addNewRow();
-             
+
                 $('.bodyRow').last().focusout(function() {
                     handleFocusOut($(this).find('input').first(),arrayFocus);
+                    let arr=[];
+                    $('.secGrp').each(function(){
+                        var value = $(this).val();
+                        if (arr.indexOf(value) == -1){
+                            arr.push(value);
+                        }
+                        else{
+                            $(this).val("");
+                        }
+                    });
                 })
             });
 
@@ -230,9 +248,12 @@
                 }
 
                 let newRow = $('.bodyRow').last().clone();
+
                 $('#secDepartmentRolesTable').find('tbody').append(newRow);
+
                 $('.secGrp').last().val('');
-                $('.delete-btn').last().bind('click', deleteRow);
+
+                $('.delete-btn').last().on('click', deleteRow);
             }
 
             function deleteRow() {
@@ -247,7 +268,6 @@
                     $('.secGrp').val('');
                     $(this).closest('tr').css('display', 'none');
                 }
-
                 fillSuggestion();
             }
 
@@ -268,8 +288,9 @@
             function handleFocusOut(element,array) {
                 let value = element.val();
                 if(array.length ==0 ){
-                        $(element).val("");
+                    $(element).val("");
                 }
+
                 for (let i = 0; i < array.length; i++) {
                     if (array[i] == value) {
                         $(element).val(array[i]);
@@ -280,7 +301,6 @@
                     }
                 }
             }
-
         });
     });
 </script>

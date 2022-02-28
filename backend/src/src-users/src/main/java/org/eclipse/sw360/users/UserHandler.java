@@ -22,8 +22,8 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.users.db.UserDatabaseHandler;
 import org.eclipse.sw360.users.dto.DepartmentConfigDTO;
-import org.eclipse.sw360.users.redmine.ReadFileDepartmentConfig;
 import org.eclipse.sw360.users.util.FileUtil;
+import org.eclipse.sw360.users.util.ReadFileDepartmentConfig;
 import org.ektorp.http.HttpClient;
 
 import java.io.File;
@@ -143,6 +143,10 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
+    public Set<String> getAllEmailsByDepartmentKey(String departmentName) throws TException {
+        return db.getAllEmailsByDepartmentKey(departmentName);
+    }
+
     public Set<String> getUserEmails() throws TException {
         return db.getUserEmails();
     }
@@ -164,26 +168,6 @@ public class UserHandler implements UserService.Iface {
     @Override
     public Map<String, List<User>> getAllUserByDepartment() throws TException {
         return db.getAllUserByDepartment();
-    }
-
-    @Override
-    public Map<String, List<User>> searchUsersByDepartment(String departmentKey) throws TException {
-        return db.searchUsersByDepartment(departmentKey);
-    }
-
-    @Override
-    public List<String> getAllDepartment() throws TException {
-        return db.getAllDepartment();
-    }
-
-    @Override
-    public List<String> getAllEmailByDepartment(String departmentKey) throws TException {
-        return db.getAllEmailByDepartment(departmentKey);
-    }
-
-    @Override
-    public List<String> getAllEmailOtherDepartment(String departmentKey) throws TException {
-        return db.getAllEmailOtherDepartment(departmentKey);
     }
 
     @Override
@@ -289,11 +273,6 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
-    public void deleteDepartmentByUser(User user, String department) throws TException {
-        db.deleteDepartmentByUser(user, department);
-    }
-
-    @Override
     public void deleteDepartmentByListUser(List<User> users, String department) throws TException {
         db.deleteDepartmentByListUser(users, department);
     }
@@ -303,13 +282,4 @@ public class UserHandler implements UserService.Iface {
         return db.getAllUserByListEmail(emails);
     }
 
-    @Override
-    public List<User> getAllUsersByDepartment(String department) throws TException {
-        return db.getAllUsersByDepartment(department);
-    }
-
-    @Override
-    public void deleteUserByDepartment(String department) {
-        db.deleteUserByDepartment(department);
-    }
 }
