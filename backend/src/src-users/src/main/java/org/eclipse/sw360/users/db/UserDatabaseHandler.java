@@ -152,10 +152,8 @@ public class UserDatabaseHandler {
     }
 
     public Set<String> getAllEmailsByDepartmentKey(String departmentKey) {
-        Set<String> emails = repository.getEmailsByDepartmentName(departmentKey);
-        return emails;
+        return repository.getEmailsByDepartmentName(departmentKey);
     }
-
 
     public RequestSummary importFileToDB(String pathFolder) {
         departmentDuplicate = new ArrayList<>();
@@ -192,14 +190,12 @@ public class UserDatabaseHandler {
                     FileUtil.writeLogToFile(TITLE, "DEPARTMENT [" + joined + "] - FILE NAME: [" + fileName + "]", SUCCESS, pathFolderLog);
                 } else {
                     if (!departmentDuplicate.isEmpty()) {
-                        List<String> departmentDuplicateOrder = departmentDuplicate.stream().sorted().collect(Collectors.toList());
-                        String joined = String.join(", ", departmentDuplicateOrder);
+                        String joined = departmentDuplicate.stream().sorted().collect(Collectors.joining(", "));
                         FileUtil.writeLogToFile(TITLE, "DEPARTMENT [" + joined + "] IS DUPLICATE - FILE NAME: [" + fileName + "]", FAIL, pathFolderLog);
                         departmentDuplicate = new ArrayList<>();
                     }
                     if (!emailDoNotExist.isEmpty()) {
-                        List<String> emailDoNotExistOrder = emailDoNotExist.stream().sorted().collect(Collectors.toList());
-                        String joined = String.join(", ", emailDoNotExistOrder);
+                        String joined = emailDoNotExist.stream().sorted().collect(Collectors.joining(", "));
                         FileUtil.writeLogToFile(TITLE, "USER [" + joined + "] DOES NOT EXIST - FILE NAME: [" + fileName + "]", FAIL, pathFolderLog);
                         emailDoNotExist = new ArrayList<>();
                     }
@@ -333,19 +329,6 @@ public class UserDatabaseHandler {
             }
         }
         return listMap;
-    }
-
-    public Map<String, List<User>> searchUsersByDepartment(String departmentKey) {
-        Map<String, List<User>> listMap = getAllUserByDepartment();
-        Map<String, List<User>> mapByDepartment = new HashMap<>();
-        List<User> users;
-        for (Map.Entry<String, List<User>> entry : listMap.entrySet()) {
-            if (entry.getKey().equals(departmentKey)) {
-                users = entry.getValue();
-                mapByDepartment.put(entry.getKey(), users);
-            }
-        }
-        return mapByDepartment;
     }
 
     public String searchUsersByDepartmentToJson(String departmentKey) {
