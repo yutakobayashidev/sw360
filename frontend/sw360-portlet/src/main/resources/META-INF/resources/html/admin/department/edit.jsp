@@ -191,6 +191,22 @@
                 if (emailsJson.length == 0) {
                     return;
                 }
+
+                if(emailsJson.length == 1){
+                    $('.bodyRow').focusout(function() {
+                        handleFocusOut($(this).find('input').first(),emailInDatabase);
+                        let arr=[];
+                        $('.secGrp').each(function(){
+                            var value = $(this).val();
+                            if (arr.indexOf(value) == -1){
+                                arr.push(value);
+                            }
+                            else{
+                                $(this).val("");
+                            }
+                        });
+                    })
+                }
                 for (let i = 0; i < emailsJson.length - 1; i++) {
                     addNewRow();
                     $('.bodyRow').focusout(function() {

@@ -202,7 +202,7 @@
         require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'modules/dialog'], function ($, datatables, quickfilter, dialog) {
             let PortletURL = Liferay.PortletURL;
             departmentKeyInURL = '<%=PortalConstants.DEPARTMENT_KEY%>',
-            pageName = '<%=PortalConstants.PAGENAME%>';
+                pageName = '<%=PortalConstants.PAGENAME%>';
             pageEdit = '<%=PortalConstants.PAGENAME_EDIT%>';
             baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
 
@@ -210,7 +210,6 @@
 
             $('#userTable').on('click', 'svg.editDepartment', function (event) {
                 let data = $(event.currentTarget).data();
-                console.log("--key--" + data.map)
                 window.location.href = createDetailURLfromDepartmentKey(data.map);
             });
 
