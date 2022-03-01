@@ -170,12 +170,12 @@ public abstract class ComponentPortletUtils {
     public static List<User> updateUserAddFromRequest(PortletRequest request, Logger log) throws TException {
         ThriftClients thriftClients = new ThriftClients();
         UserService.Iface client = thriftClients.makeUserClient();
-        List<User> users = new ArrayList<>();
+        List<User> users;
         List<String> emails = new ArrayList<>();
         String emailsAddRequest = request.getParameter(PortalConstants.ADD_LIST_EMAIL);
         String replaceEmailsAddRequest = emailsAddRequest.replace("[", "").replace("]", "");
         if (replaceEmailsAddRequest.length() == 2) {
-            return null;
+            return Collections.emptyList();
         } else {
             String[] parts = replaceEmailsAddRequest.split(",");
             for (String email : parts) {
@@ -190,12 +190,12 @@ public abstract class ComponentPortletUtils {
     public static List<User> updateUserDeleteFromRequest(PortletRequest request, Logger log) throws TException {
         ThriftClients thriftClients = new ThriftClients();
         UserService.Iface client = thriftClients.makeUserClient();
-        List<User> users = new ArrayList<>();
+        List<User> users;
         List<String> emails = new ArrayList<>();
         String emailsDeleteRequest = request.getParameter(PortalConstants.DELETE_LIST_EMAIL);
         String replaceEmailsDeleteRequest = emailsDeleteRequest.replace("[", "").replace("]", "");
         if (replaceEmailsDeleteRequest.length() == 2) {
-            return null;
+            return Collections.emptyList();
         } else {
             String[] parts = replaceEmailsDeleteRequest.split(",");
             for (String email : parts) {
@@ -439,10 +439,10 @@ public abstract class ComponentPortletUtils {
     }
 
     public static String handlerEmails(String email) {
-        String value = "";
+        StringBuilder value = new StringBuilder();
         for (int i = 1; i < email.length() - 1; i++) {
-            value += email.charAt(i);
+            value.append(email.charAt(i));
         }
-        return value;
+        return value.toString();
     }
 }

@@ -63,7 +63,7 @@
                                 </form>
                             </td>
                             <td width="3%">
-                                <button type="button" class="btn btn-primary" id="updatePathFolder" data-action="save">
+                                <button type="button" class="btn btn-primary" id="updatePathFolder" data-action="save" disabled>
                                     <liferay-ui:message key="update"/></button>
                             </td>
 
