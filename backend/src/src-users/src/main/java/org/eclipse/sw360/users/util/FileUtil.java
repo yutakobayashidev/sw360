@@ -35,23 +35,23 @@ public class FileUtil {
     private FileUtil() {
     }
 
-    public static void writeLogToFile( String title, String message, String status, String folder) {
+    public static void writeLogToFile(String title, String message, String status, String folder) {
         BufferedWriter writer = null;
         FileWriter fileWriter = null;
         try {
-            String error = LocalDateTime.now().format(format) + " " + title + " " + message + " " + status;
+            String contentLog = LocalDateTime.now().format(format) + " " + title + " " + message + " " + status;
             String path = folder + LocalDate.now() + EXTENSION;
             File file = new File(path);
             if (file.exists()) {
                 fileWriter = new FileWriter(file, true);
                 writer = new BufferedWriter(fileWriter);
-                writer.append(error);
+                writer.append(contentLog);
             } else {
                 File files = new File(path);
                 if (files.getParentFile() != null) file.getParentFile().mkdirs();
                 fileWriter = new FileWriter(files);
                 writer = new BufferedWriter(fileWriter);
-                writer.write(error);
+                writer.write(contentLog);
             }
             writer.newLine();
         } catch (Exception e) {
