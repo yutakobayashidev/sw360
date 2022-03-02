@@ -27,7 +27,7 @@
                 </a>
 
                 <a class="btn btn-secondary" href="${baseUrl}/../departments">
-                    <clay:icon symbol="documents-and-media"/> <liferay-ui:message key="department" />
+                    <clay:icon symbol="organizations"/> <liferay-ui:message key="department" />
                 </a>
 
                 <a class="btn btn-secondary" href="${baseUrl}/../vendors">

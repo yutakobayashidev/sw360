@@ -155,7 +155,11 @@ public class UserHandler implements UserService.Iface {
     @Override
     public RequestSummary importFileToDB() {
         DepartmentConfigDTO configDTO = readFileRedmineConfig.readFileJson();
-        return db.importFileToDB(configDTO.getPathFolder());
+        RequestSummary requestSummary = new RequestSummary();
+        if (!configDTO.getPathFolder().isEmpty()) {
+            requestSummary = db.importFileToDB(configDTO.getPathFolder());
+        }
+        return requestSummary;
     }
 
     @Override

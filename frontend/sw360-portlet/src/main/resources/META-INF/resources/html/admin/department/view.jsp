@@ -287,17 +287,23 @@
             });
 
             let pathFolderDepartment = $('#pathFolderDepartment').val();
+            if (pathFolderDepartment === "") {
+                $('#departmentIsScheduled').prop('disabled', true);
+                $('#manually').prop('disabled', true);
+                $('#view-log').prop('disabled', true);
+            }
             if (pathFolderDepartment === '${pathConfigFolderDepartment}') {
                 $('#updatePathFolder').prop('disabled', true);
             }
             $('#pathFolderDepartment').on('input change', function () {
                 $('#editPathFolder').removeClass('needs-validation');
                 $('#pathFolderDepartment')[0].setCustomValidity('');
-                $('#updatePathFolder').prop('disabled', true);
-                $('#departmentIsScheduled').prop('disabled', true);
-                $('#manually').prop('disabled', true);
-                $('#view-log').prop('disabled', true);
-
+                if ("${pathConfigFolderDepartment}" == "") {
+                    $('#updatePathFolder').prop('disabled', true);
+                    $('#departmentIsScheduled').prop('disabled', true);
+                    $('#manually').prop('disabled', true);
+                    $('#view-log').prop('disabled', true);
+                }
                 if ($(this).val() === '' || $.trim($(this).val()).length === 0) {
                     $('#editPathFolder').addClass('was-validated');
                     $('#pathFolderDepartment')[0].setCustomValidity('error');
@@ -311,15 +317,24 @@
                     $('#updatePathFolder').prop('disabled', true);
                     return false;
                 }
-                if (${departmentIsScheduled == false}) {
-                    $('#departmentIsScheduled').prop('disabled', false);
-                } else {
-                    $('#departmentIsScheduled').prop('disabled', true);
+                if ("${pathConfigFolderDepartment}" !== "") {
+                    if (${departmentIsScheduled == false}) {
+                        $('#departmentIsScheduled').prop('disabled', false);
+                        console.log("false")
+                    } else {
+                        $('#departmentIsScheduled').prop('disabled', true);
+                        console.log("true")
+                    }
+                    $('#updatePathFolder').prop('disabled', false)
+                    $('#manually').prop('disabled', false);
+                    $('#view-log').prop('disabled', false);
+                    return true;
+                }else {
+                    $('#updatePathFolder').prop('disabled', false)
+                    $('#manually').prop('disabled', true);
+                    $('#view-log').prop('disabled', true);
+                    return true;
                 }
-                $('#updatePathFolder').prop('disabled', false)
-                $('#manually').prop('disabled', false);
-                $('#view-log').prop('disabled', false);
-                return true;
             });
             $('#file-log').on('change', function () {
                 $('.content-log').hide();
