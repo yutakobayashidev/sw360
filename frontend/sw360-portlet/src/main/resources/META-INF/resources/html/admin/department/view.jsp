@@ -320,10 +320,8 @@
                 if ("${pathConfigFolderDepartment}" !== "") {
                     if (${departmentIsScheduled == false}) {
                         $('#departmentIsScheduled').prop('disabled', false);
-                        console.log("false")
                     } else {
                         $('#departmentIsScheduled').prop('disabled', true);
-                        console.log("true")
                     }
                     $('#updatePathFolder').prop('disabled', false)
                     $('#manually').prop('disabled', false);
