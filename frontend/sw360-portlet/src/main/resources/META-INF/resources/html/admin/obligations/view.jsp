@@ -143,7 +143,7 @@
                         ),
 
                         $viewChangeLogAction = render.linkTo(
-                            makeComponentUrl(id, 'obligationchangelog'),
+                            makeComponentUrl(id, 'obligation_changelog'),
                             "",
                             '<svg class="lexicon-icon"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#document"/><title><liferay-ui:message key="change.log" /></title></svg>'
                         );

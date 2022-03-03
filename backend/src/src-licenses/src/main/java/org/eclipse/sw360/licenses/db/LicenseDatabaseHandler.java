@@ -27,7 +27,6 @@ import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.datahandler.thrift.changelogs.*;
 import org.eclipse.sw360.licenses.tools.SpdxConnector;
 import org.eclipse.sw360.licenses.tools.OSADLObligationConnector;
 import org.apache.http.HttpStatus;
@@ -40,6 +39,7 @@ import org.json.simple.JSONObject;
 import com.cloudant.client.api.CloudantClient;
 import com.cloudant.client.api.model.Response;
 import com.google.common.collect.Sets;
+import static com.google.common.base.Strings.isNullOrEmpty;
 
 import java.net.MalformedURLException;
 import java.sql.Timestamp;
@@ -59,7 +59,7 @@ import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 import com.google.common.collect.Lists;
-import org.eclipse.sw360.datahandler.common.*;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 
 /**
  * Class for accessing the CouchDB database
@@ -799,10 +799,10 @@ public class LicenseDatabaseHandler {
             return Collections.emptyList();
         }
 
-        if (lang.equals("") || action.equals("") || object.equals("")) {
+        if (isNullOrEmpty(lang) || isNullOrEmpty(action) || isNullOrEmpty(object)) {
             log.info("Obligation Element have empty field");
             List<ObligationElement> existedElement = existedObligationElement.stream().filter(el -> lang.equals(el.getLangElement()) && action.equals(el.getAction()) && object.equals(el.getObject())).collect(Collectors.toList());
-            if (existedElement.isEmpty()) {
+            if (CommonUtils.isNullOrEmptyCollection(existedElement)) {
                 return Collections.emptyList();
             } else {
                 return existedElement;

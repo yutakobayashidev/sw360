@@ -14,7 +14,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
-import org.eclipse.sw360.datahandler.thrift.changelogs.*;
+import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogsService;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationNode;
@@ -116,7 +116,7 @@ public class TodoPortlet extends Sw360Portlet {
     public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
 
         String pageName = request.getParameter(PAGENAME);
-        String obligatonId = request.getParameter(DOCUMENT_ID);
+        String obligationId = request.getParameter(DOCUMENT_ID);
 
         if (PAGENAME_ADD.equals(pageName)) {
             prepareStandardAdd(request);
@@ -133,7 +133,7 @@ public class TodoPortlet extends Sw360Portlet {
         } else if (OBLIGATION_CHANGELOG.equals(pageName)) {
             try {
                 LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
-                Obligation obligation = licenseClient.getObligationsById(obligatonId);
+                Obligation obligation = licenseClient.getObligationsById(obligationId);
                 request.setAttribute("obligationName", obligation.getTitle());
             } catch (TException e) {
                 log.error("Could not get Obligation from backend", e);
@@ -176,10 +176,10 @@ public class TodoPortlet extends Sw360Portlet {
         prepareStandardAction(request);
         try {
             LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
-            String obligatonId = request.getParameter(DOCUMENT_ID);
-            Obligation obligation = licenseClient.getObligationsById(obligatonId);
+            String obligationId = request.getParameter(DOCUMENT_ID);
+            Obligation obligation = licenseClient.getObligationsById(obligationId);
             String obligationJson = objectMapper.writeValueAsString(obligation);
-            request.setAttribute(OBLIGATION_ID, obligatonId);
+            request.setAttribute(OBLIGATION_ID, obligationId);
             request.setAttribute("obligationJson", obligationJson);
             request.setAttribute("obligationTextJson", generateJsonObligationText(obligation.getNode()));
         } catch (Exception e) {
