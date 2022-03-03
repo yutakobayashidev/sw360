@@ -18,9 +18,9 @@
 
 <table class="table label-value-table" id="componentOverview">
     <thead>
-        <tr>
-            <th colspan="2"><liferay-ui:message key="general" /></th>
-        </tr>
+    <tr>
+        <th colspan="2"><liferay-ui:message key="general" /></th>
+    </tr>
     </thead>
     <tr>
         <td><liferay-ui:message key="id" />:</td>
@@ -70,21 +70,27 @@
         <td><liferay-ui:message key="mailing.list" />:</td>
         <td><sw360:DisplayLink target="mailto:${component.mailinglist}" text="${component.mailinglist}"/></td>
     </tr>
+    <core_rt:if test="${componentVisibilityRestriction}">
+        <tr>
+            <td><liferay-ui:message key="visibility" />:</td>
+            <td><sw360:DisplayEnum value="${component.visbility}"/></td>
+        </tr>
+    </core_rt:if>
     <tr>
         <td><liferay-ui:message key="external.ids" />:</td>
         <td><sw360:DisplayMapOfExternalIdsString value="${component.externalIds}"/></td>
     </tr>
     <tr>
         <td><liferay-ui:message key="additional.data" />:</td>
-        <td><ul id="list-data-additional" class="mapDisplayRootItem"></ul> </td>
+        <td><sw360:DisplayMap value="${component.additionalData}"/></td>
     </tr>
 </table>
 
 <table class="table label-value-table" id="releaseAggregateTable">
     <thead>
-        <tr>
-            <th colspan="2"><liferay-ui:message key="release.aggregate.data" /></th>
-        </tr>
+    <tr>
+        <th colspan="2"><liferay-ui:message key="release.aggregate.data" /></th>
+    </tr>
     </thead>
     <tr>
         <td><liferay-ui:message key="vendors" />:</td>
@@ -112,10 +118,16 @@
 
 <table class="table label-value-table" id="componentRolesTable">
     <thead>
-        <tr>
-            <th colspan="2"><liferay-ui:message key="roles" /></th>
-        </tr>
+    <tr>
+        <th colspan="2"><liferay-ui:message key="roles" /></th>
+    </tr>
     </thead>
+    <core_rt:if test="${componentVisibilityRestriction}">
+        <tr>
+            <td><liferay-ui:message key="group" />:</td>
+            <td><sw360:out value="${component.businessUnit}"/></td>
+        </tr>
+    </core_rt:if>
     <tr>
         <td><liferay-ui:message key="component.owner" />:</td>
         <td><sw360:DisplayUserEmail email="${component.componentOwner}"/></td>

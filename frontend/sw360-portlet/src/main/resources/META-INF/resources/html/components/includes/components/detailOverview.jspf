@@ -24,23 +24,19 @@
     <portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/>
 </portlet:resourceURL>
 
-<core_rt:set var="docid" scope="request" value="${component.id}"/>
+<core_rt:set var = "docid" scope = "request" value = "${component.id}"/>
 
 <div class="container" style="display: none;">
     <div class="row">
         <div class="col-3 sidebar">
             <div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
-                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>"
-                   href="#tab-Summary" data-toggle="list" role="tab"><liferay-ui:message key="summary"/></a>
-                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Releases'}">active</core_rt:if>"
-                   href="#tab-Releases" data-toggle="list" role="tab"><liferay-ui:message key="release.overview"/></a>
-                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>"
-                   href="#tab-Attachments" data-toggle="list" role="tab"><liferay-ui:message key="attachments"/></a>
+                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab"><liferay-ui:message key="summary" /></a>
+                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Releases'}">active</core_rt:if>" href="#tab-Releases" data-toggle="list" role="tab"><liferay-ui:message key="release.overview" /></a>
+                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab"><liferay-ui:message key="attachments" /></a>
                 <core_rt:if test="${inComponentDetailsContext}">
                     <%@include file="/html/utils/includes/vulnerabilityTab.jspf" %>
                 </core_rt:if>
-                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ChangeLogs'}">active</core_rt:if>"
-                   href="#tab-ChangeLogs" data-toggle="list" role="tab"><liferay-ui:message key="change.log"/></a>
+                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ChangeLogs'}">active</core_rt:if>" href="#tab-ChangeLogs" data-toggle="list" role="tab"><liferay-ui:message key="change.log" /></a>
             </div>
         </div>
         <div class="col">
@@ -49,61 +45,47 @@
                     <core_rt:if test="${inComponentDetailsContext}">
                         <div class="btn-toolbar" role="toolbar">
                             <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-primary"
-                                        onclick="window.location.href='<%=editComponentURL%>' + window.location.hash">
-                                    <liferay-ui:message key="edit.component"/></button>
+                                <button type="button" class="btn btn-primary" onclick="window.location.href='<%=editComponentURL%>' + window.location.hash"><liferay-ui:message key="edit.component" /></button>
                             </div>
                             <core_rt:if test="${isUserAllowedToMerge}">
                                 <div class="btn-group" role="group">
-                                    <button type="button" data-component-id="${component.id}" id="mergeButton"
-                                            class="btn btn-secondary"><liferay-ui:message key="merge"/></button>
+                                    <button type="button" data-component-id="${component.id}" id="mergeButton" class="btn btn-secondary"><liferay-ui:message key="merge" /></button>
                                 </div>
                             </core_rt:if>
-                            <core_rt:if
-                                    test="${isUserAllowedToMerge && (not empty component.releases || not empty component.attachments)}">
+                            <core_rt:if test="${isUserAllowedToMerge && (not empty component.releases || not empty component.attachments)}">
                                 <div class="btn-group" role="group">
-                                    <button type="button" data-component-id="${component.id}" id="splitButton"
-                                            class="btn btn-secondary"><liferay-ui:message key="split"/></button>
+                                    <button type="button" data-component-id="${component.id}" id="splitButton" class="btn btn-secondary"><liferay-ui:message key="split" /></button>
                                 </div>
                             </core_rt:if>
                             <div class="btn-group" role="group">
-                                <sw360:DisplaySubscribeButton email="<%=themeDisplay.getUser().getEmailAddress()%>"
-                                                              object="${component}"
-                                                              id="SubscribeButton"/>
+                                <sw360:DisplaySubscribeButton email="<%=themeDisplay.getUser().getEmailAddress()%>" object="${component}"
+                                                              id="SubscribeButton" />
                             </div>
                             <div class="list-group-companion" data-belong-to="tab-Attachments">
                                 <div class="btn-group" role="group">
-                                    <button id="downloadAttachmentBundle" type="button" class="btn btn-secondary">
-                                        <liferay-ui:message key="download.attachment.bundle"/></button>
+                                    <button id="downloadAttachmentBundle" type="button" class="btn btn-secondary"><liferay-ui:message key="download.attachment.bundle" /></button>
                                 </div>
                             </div>
                             <div class="list-group-companion" data-belong-to="tab-Vulnerabilities">
                                 <div class="btn-group" role="group">
-                                    <button id="btnShowVulnerabilityCount" type="button"
-                                            class="btn btn-secondary dropdown-toggle" data-toggle="dropdown"
-                                            aria-haspopup="true" aria-expanded="false">
-                                        <liferay-ui:message key="show"/> <span data-name="count"></span>
-                                        <clay:icon symbol="caret-bottom"/>
+                                    <button id="btnShowVulnerabilityCount" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <liferay-ui:message key="show" /> <span data-name="count"></span>
+                                        <clay:icon symbol="caret-bottom" />
                                     </button>
                                     <div class="dropdown-menu" aria-labelledby="btnExport">
                                         <a class="dropdown-item" data-type="200">200</a>
                                         <a class="dropdown-item" data-type="500">500</a>
                                         <a class="dropdown-item" data-type="1000">1000</a>
-                                        <a class="dropdown-item" data-type="-1"><liferay-ui:message key="all"/></a>
+                                        <a class="dropdown-item" data-type="-1"><liferay-ui:message key="all" /></a>
                                     </div>
                                 </div>
                             </div>
                             <div class="list-group-companion" data-belong-to="tab-ChangeLogs">
-                                <div class="nav nav-pills justify-content-center bg-light font-weight-bold"
-                                     id="pills-tab" role="tablist">
-                                    <a class="nav-item nav-link active" id="pills-changelogs-list-tab"
-                                       data-toggle="pill" href="#pills-changelogslist" role="tab"
-                                       aria-controls="pills-changeloglist" aria-selected="true">
-                                        <liferay-ui:message key="change.log"/></a>
-                                    <a class="nav-item nav-link" id="pills-changelogs-view-tab"
-                                       href="#pills-changelogsView" role="tab" aria-controls="pills-changelogsView"
-                                       aria-selected="false">
-                                        <liferay-ui:message key="changes"/></a>
+                                <div class="nav nav-pills justify-content-center bg-light font-weight-bold" id="pills-tab" role="tablist">
+                                    <a class="nav-item nav-link active" id="pills-changelogs-list-tab" data-toggle="pill" href="#pills-changelogslist" role="tab" aria-controls="pills-changeloglist" aria-selected="true">
+                                        <liferay-ui:message key="change.log" /></a>
+                                    <a class="nav-item nav-link" id="pills-changelogs-view-tab" href="#pills-changelogsView" role="tab" aria-controls="pills-changelogsView" aria-selected="false">
+                                        <liferay-ui:message key="changes" /></a>
                                 </div>
                             </div>
                         </div>
@@ -116,31 +98,26 @@
             <div class="row">
                 <div class="col">
                     <div class="tab-content">
-                        <div id="tab-Summary"
-                             class="tab-pane <core_rt:if test="${selectedTab == 'tab-Summary'}">active show</core_rt:if>">
+                        <div id="tab-Summary" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Summary'}">active show</core_rt:if>" >
                             <%@include file="/html/components/includes/components/summary.jspf" %>
 
                             <core_rt:set var="documentName"><sw360:out value='${component.name}'/></core_rt:set>
                             <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
-                            <%@include file="/html/utils/includes/usingComponentsTable.jspf" %>
+                            <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
                         </div>
-                        <div id="tab-Releases"
-                             class="tab-pane <core_rt:if test="${selectedTab == 'tab-Releases'}">active show</core_rt:if>">
+                        <div id="tab-Releases" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Releases'}">active show</core_rt:if>">
                             <%@include file="/html/components/includes/components/clearingStatus.jspf" %>
                         </div>
-                        <div id="tab-Attachments"
-                             class="tab-pane <core_rt:if test="${selectedTab == 'tab-Attachments'}">active show</core_rt:if>">
-                            <jsp:include page="/html/utils/includes/attachmentsDetail.jsp"/>
+                        <div id="tab-Attachments" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Attachments'}">active show</core_rt:if>">
+                            <jsp:include page="/html/utils/includes/attachmentsDetail.jsp" />
                         </div>
                         <core_rt:if test="${inComponentDetailsContext}">
-                            <div id="tab-Vulnerabilities"
-                                 class="tab-pane <core_rt:if test="${selectedTab == 'tab-Vulnerabilities'}">active show</core_rt:if>">
+                            <div id="tab-Vulnerabilities" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Vulnerabilities'}">active show</core_rt:if>">
                                 <%@include file="/html/components/includes/components/vulnerabilities.jspf" %>
                             </div>
                         </core_rt:if>
-                        <div id="tab-ChangeLogs"
-                             class="tab-pane <core_rt:if test="${selectedTab == 'tab-ChangeLogs'}">active show</core_rt:if>">
-                            <jsp:include page="/html/changelogs/elementView.jsp"/>
+                        <div id="tab-ChangeLogs" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ChangeLogs'}">active show</core_rt:if>">
+                            <jsp:include page="/html/changelogs/elementView.jsp" />
                         </div>
                     </div>
                 </div>
@@ -157,10 +134,10 @@
 <script>
     document.title = $("<span></span>").html("<sw360:out value='${component.name}'/> - " + document.title).text();
 
-    require(['jquery', 'modules/button', 'modules/listgroup', 'utils/link', 'utils/includes/clipboard'], function ($, button, listgroup, linkutil, clipboard) {
+    require(['jquery', 'modules/button', 'modules/listgroup', 'utils/link', 'utils/includes/clipboard'], function($, button, listgroup, linkutil, clipboard) {
         listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
 
-        $('#mergeButton').on('click', function (event) {
+        $('#mergeButton').on('click', function(event) {
             var componentId = $(event.currentTarget).data().componentId;
             var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>',
                 portletURL = Liferay.PortletURL.createURL(baseUrl)
@@ -169,7 +146,7 @@
             window.location = portletURL.toString();
         });
 
-        $('#splitButton').on('click', function (event) {
+        $('#splitButton').on('click', function(event) {
             let splitComponentId = $(event.currentTarget).data().componentId;
             var baseUrlForSplitComponent = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>',
                 portletURL = Liferay.PortletURL.createURL(baseUrlForSplitComponent)
@@ -178,15 +155,15 @@
             window.location = portletURL.toString();
         });
 
-        $('#SubscribeButton').on('click', function (event) {
+        $('#SubscribeButton').on('click', function(event) {
             var $button = $(event.currentTarget),
                 subscribed = $button.hasClass('subscribed'),
                 url = subscribed ? '<%=unsubscribeComponentURL%>' : '<%=subscribeComponentURL%>';
 
             button.wait($button);
-            doAjax(url, function (data) {
-                if (data.result === "SUCCESS") {
-                    if (subscribed) {
+            doAjax(url, function(data) {
+                if(data.result === "SUCCESS") {
+                    if(subscribed) {
                         $button.text('<liferay-ui:message key="subscribe" />');
                         $button.removeClass('btn-outline-danger');
                         $button.addClass('btn-outline-success');
@@ -204,7 +181,7 @@
                     });
                 }
                 button.finish($button);
-            }, function () {
+            }, function() {
                 Liferay.Util.openToast({
                     title: '<liferay-ui:message key="error" />',
                     message: '<liferay-ui:message key="could.not.subscribe.to.release" />',
@@ -231,45 +208,10 @@
             window.history.replaceState(null, document.title, linkutil.to('component', 'show', "${component.id}"));
         }
 
-        $('#copyToClipboard').on('click', function (event) {
+        $('#copyToClipboard').on('click', function(event) {
             let textSelector = "table tr td#documentId",
                 textToCopy = $(textSelector).clone().children().remove().end().text().trim();
             clipboard.copyToClipboard(textToCopy, textSelector);
         });
     });
-</script>
-<script>
-    let obj = {};
-    let regexEmail = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-    let regexUrl = /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g;
-    let content = '';
-    renderData();
-    function renderData() {
-        <core_rt:forEach items="${component.additionalData}" var="additional">
-            obj[`${additional.key}`] = `${additional.value}`;
-        </core_rt:forEach>
-
-        Object.entries(obj).forEach(item => {
-            if (regexEmail.test(item[1])) {
-               content +=
-                   '<li>' +
-                       '<span class="mapDisplayChildItemLeft">'+ item[0] +': </span>'+
-                       '<span class="mapDisplayChildItemRight"><a href="mailto:'+item[1] +'"> '+item[1]+'</a></span>'+
-                   '</li>'
-            } else if (regexUrl.test(item[1])) {
-                content +=
-                    '<li>' +
-                        '<span class="mapDisplayChildItemLeft">'+ item[0] +': </span>'+
-                        '<span class="mapDisplayChildItemRight"><a href="'+item[1] +'"> '+item[1]+'</a></span>'+
-                    '</li>'
-            } else {
-                content +=
-                    '<li>' +
-                        '<span class="mapDisplayChildItemLeft">'+ item[0] +': </span>'+
-                        '<span class="mapDisplayChildItemRight"> '+item[1]+'</span>'+
-                    '</li>'
-            }
-        });
-        $('#list-data-additional').append(content);
-    }
 </script>
