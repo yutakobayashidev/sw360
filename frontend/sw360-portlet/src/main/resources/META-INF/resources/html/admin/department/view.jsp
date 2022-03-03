@@ -44,7 +44,7 @@
     }
 </style>
 
-<div class="container">
+<div class="container" style="display: none;" id="loading-page">
     <div class="row">
         <div class="col">
             <div class="row">
@@ -85,7 +85,7 @@
                         </tr>
                     </table>
                     <form class="form mt-3">
-                        <div class="form-group">
+                        <div class="form-group col-auto">
                             <button type="button" class="btn btn-primary" id="departmentIsScheduled"
                                     onclick="window.location.href='<%=scheduleDepartmentURL%>'"
                                     <core_rt:if test="${departmentIsScheduled}">disabled</core_rt:if> >
@@ -195,6 +195,7 @@
     </div>
 </div>
 
+<%@ include file="/html/utils/includes/pageSpinner.jspf" %>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     AUI().use('liferay-portlet-url', function () {
@@ -292,18 +293,13 @@
                 $('#manually').prop('disabled', true);
                 $('#view-log').prop('disabled', true);
             }
-            if (pathFolderDepartment === '${pathConfigFolderDepartment}') {
-                $('#updatePathFolder').prop('disabled', true);
-            }
+
+            $('#loading-page').css('display', '');
+            $('.container-spinner').css('display', 'none');
+
             $('#pathFolderDepartment').on('input change', function () {
                 $('#editPathFolder').removeClass('needs-validation');
                 $('#pathFolderDepartment')[0].setCustomValidity('');
-                if ("${pathConfigFolderDepartment}" == "") {
-                    $('#updatePathFolder').prop('disabled', true);
-                    $('#departmentIsScheduled').prop('disabled', true);
-                    $('#manually').prop('disabled', true);
-                    $('#view-log').prop('disabled', true);
-                }
                 if ($(this).val() === '' || $.trim($(this).val()).length === 0) {
                     $('#editPathFolder').addClass('was-validated');
                     $('#pathFolderDepartment')[0].setCustomValidity('error');
@@ -317,21 +313,9 @@
                     $('#updatePathFolder').prop('disabled', true);
                     return false;
                 }
-                if ("${pathConfigFolderDepartment}" !== "") {
-                    if (${departmentIsScheduled == false}) {
-                        $('#departmentIsScheduled').prop('disabled', false);
-                    } else {
-                        $('#departmentIsScheduled').prop('disabled', true);
-                    }
-                    $('#updatePathFolder').prop('disabled', false)
-                    $('#manually').prop('disabled', false);
-                    $('#view-log').prop('disabled', false);
-                    return true;
-                }else {
-                    $('#updatePathFolder').prop('disabled', false)
-                    $('#manually').prop('disabled', true);
-                    $('#view-log').prop('disabled', true);
-                    return true;
+                $('#updatePathFolder').prop('disabled', false)
+                if ($(this).val() === '${pathConfigFolderDepartment}'){
+                    $('#updatePathFolder').prop('disabled', true)
                 }
             });
             $('#file-log').on('change', function () {
