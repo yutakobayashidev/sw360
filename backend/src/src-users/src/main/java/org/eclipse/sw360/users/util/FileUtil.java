@@ -115,11 +115,11 @@ public class FileUtil {
     public static Set<String> getListFilesOlderThanNDays(int days, String dirPath) throws IOException {
         long cutOff;
         if (days != 0) cutOff = System.currentTimeMillis() - (days * dayMTimeMillis);
-        else cutOff = System.currentTimeMillis() - (30 * dayMTimeMillis);
+        else cutOff = days;
         try (Stream<Path> stream = Files.list(Paths.get(dirPath))) {
             return stream.filter(path -> {
                         try {
-                            return Files.isRegularFile(path) && Files.getLastModifiedTime(path).to(TimeUnit.MILLISECONDS) > cutOff;
+                            return Files.isRegularFile(path) && Files.getLastModifiedTime(path).to(TimeUnit.MILLISECONDS) >= cutOff;
                         } catch (IOException ex) {
                             return false;
                         }
