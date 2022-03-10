@@ -44,7 +44,7 @@
     }
 </style>
 
-<div class="container">
+<div class="container" style="display: none;" id="loading-page">
     <div class="row">
         <div class="col">
             <div class="row">
@@ -63,7 +63,7 @@
                                 </form>
                             </td>
                             <td width="3%">
-                                <button type="button" class="btn btn-primary" id="updatePathFolder" data-action="save">
+                                <button type="button" class="btn btn-primary" id="updatePathFolder" data-action="save" disabled>
                                     <liferay-ui:message key="update"/></button>
                             </td>
 
@@ -85,7 +85,7 @@
                         </tr>
                     </table>
                     <form class="form mt-3">
-                        <div class="form-group">
+                        <div class="form-group col-auto">
                             <button type="button" class="btn btn-primary" id="departmentIsScheduled"
                                     onclick="window.location.href='<%=scheduleDepartmentURL%>'"
                                     <core_rt:if test="${departmentIsScheduled}">disabled</core_rt:if> >
@@ -169,7 +169,7 @@
                 <div class="modal-body">
                     <div id="header-log-error">
                         <label for="file-log">Search</label>
-                        <input list="file-logs" type="date" name="file-log" id="file-log"
+                        <input list="file-logs" type="date" name="file-log" id="file-log" value="${lastFileName}"
                                class="col-sm-12"/>
                         <datalist id="file-logs">
                             <core_rt:forEach var="contentFileLog" items="${listContentFileLog}">
@@ -194,8 +194,8 @@
         </div>
     </div>
 </div>
-<%--for javascript library loading --%>
 
+<%@ include file="/html/utils/includes/pageSpinner.jspf" %>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     AUI().use('liferay-portlet-url', function () {
@@ -288,17 +288,18 @@
             });
 
             let pathFolderDepartment = $('#pathFolderDepartment').val();
-            if (pathFolderDepartment === '${pathConfigFolderDepartment}') {
-                $('#updatePathFolder').prop('disabled', true);
-            }
-            $('#pathFolderDepartment').on('input change', function () {
-                $('#editPathFolder').removeClass('needs-validation');
-                $('#pathFolderDepartment')[0].setCustomValidity('');
-                $('#updatePathFolder').prop('disabled', true);
+            if (pathFolderDepartment === "") {
                 $('#departmentIsScheduled').prop('disabled', true);
                 $('#manually').prop('disabled', true);
                 $('#view-log').prop('disabled', true);
+            }
 
+            $('#loading-page').css('display', '');
+            $('.container-spinner').css('display', 'none');
+
+            $('#pathFolderDepartment').on('input change', function () {
+                $('#editPathFolder').removeClass('needs-validation');
+                $('#pathFolderDepartment')[0].setCustomValidity('');
                 if ($(this).val() === '' || $.trim($(this).val()).length === 0) {
                     $('#editPathFolder').addClass('was-validated');
                     $('#pathFolderDepartment')[0].setCustomValidity('error');
@@ -312,15 +313,10 @@
                     $('#updatePathFolder').prop('disabled', true);
                     return false;
                 }
-                if (${departmentIsScheduled == false}) {
-                    $('#departmentIsScheduled').prop('disabled', false);
-                } else {
-                    $('#departmentIsScheduled').prop('disabled', true);
-                }
                 $('#updatePathFolder').prop('disabled', false)
-                $('#manually').prop('disabled', false);
-                $('#view-log').prop('disabled', false);
-                return true;
+                if ($(this).val() === '${pathConfigFolderDepartment}'){
+                    $('#updatePathFolder').prop('disabled', true)
+                }
             });
             $('#file-log').on('change', function () {
                 $('.content-log').hide();

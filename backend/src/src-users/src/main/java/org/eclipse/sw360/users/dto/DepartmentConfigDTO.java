@@ -10,27 +10,18 @@
  */
 package org.eclipse.sw360.users.dto;
 
-public class RedmineConfigDTO {
+public class DepartmentConfigDTO {
     private String pathFolder;
     private String pathFolderLog;
-    private String urlApiRedmine;
     private String lastRunningTime;
     private int showFileLogFrom;
 
-    public RedmineConfigDTO() {
+    public DepartmentConfigDTO() {
     }
 
-    public RedmineConfigDTO(String pathFolder, String pathFolderLog, String urlApiRedmine, String lastRunningTime) {
+    public DepartmentConfigDTO(String pathFolder, String pathFolderLog, String lastRunningTime, int showFileLogFrom) {
         this.pathFolder = pathFolder;
         this.pathFolderLog = pathFolderLog;
-        this.urlApiRedmine = urlApiRedmine;
-        this.lastRunningTime = lastRunningTime;
-    }
-
-    public RedmineConfigDTO(String pathFolder, String pathFolderLog, String urlApiRedmine, String lastRunningTime, int showFileLogFrom) {
-        this.pathFolder = pathFolder;
-        this.pathFolderLog = pathFolderLog;
-        this.urlApiRedmine = urlApiRedmine;
         this.lastRunningTime = lastRunningTime;
         this.showFileLogFrom = showFileLogFrom;
     }
@@ -49,14 +40,6 @@ public class RedmineConfigDTO {
 
     public void setPathFolderLog(String pathFolderLog) {
         this.pathFolderLog = pathFolderLog;
-    }
-
-    public String getUrlApiRedmine() {
-        return urlApiRedmine;
-    }
-
-    public void setUrlApiRedmine(String urlApiRedmine) {
-        this.urlApiRedmine = urlApiRedmine;
     }
 
     public String getLastRunningTime() {

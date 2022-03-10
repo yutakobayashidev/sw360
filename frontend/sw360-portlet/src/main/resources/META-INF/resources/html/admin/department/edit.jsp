@@ -192,7 +192,11 @@
                     return;
                 }
 
+<<<<<<< HEAD
                 if(emailsJson.length == 1){
+=======
+                if (emailsJson.length == 1) {
+>>>>>>> 094321bbad85f12a1973348085e19a5d3291e827
                     $('.bodyRow').focusout(function() {
                         handleFocusOut($(this).find('input').first(),emailInDatabase);
                         let arr=[];
@@ -207,6 +211,10 @@
                         });
                     })
                 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 094321bbad85f12a1973348085e19a5d3291e827
                 for (let i = 0; i < emailsJson.length - 1; i++) {
                     addNewRow();
                     $('.bodyRow').focusout(function() {

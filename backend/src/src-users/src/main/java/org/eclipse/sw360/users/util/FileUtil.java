@@ -35,23 +35,23 @@ public class FileUtil {
     private FileUtil() {
     }
 
-    public static void writeLogToFile( String title, String message, String status, String folder) {
+    public static void writeLogToFile(String title, String message, String status, String folder) {
         BufferedWriter writer = null;
         FileWriter fileWriter = null;
         try {
-            String error = LocalDateTime.now().format(format) + " " + title + " " + message + " " + status;
+            String contentLog = LocalDateTime.now().format(format) + " " + title + " " + message + " " + status;
             String path = folder + LocalDate.now() + EXTENSION;
             File file = new File(path);
             if (file.exists()) {
                 fileWriter = new FileWriter(file, true);
                 writer = new BufferedWriter(fileWriter);
-                writer.append(error);
+                writer.append(contentLog);
             } else {
                 File files = new File(path);
                 if (files.getParentFile() != null) file.getParentFile().mkdirs();
                 fileWriter = new FileWriter(files);
                 writer = new BufferedWriter(fileWriter);
-                writer.write(error);
+                writer.write(contentLog);
             }
             writer.newLine();
         } catch (Exception e) {
@@ -83,17 +83,17 @@ public class FileUtil {
     }
 
     public static List<String> readFileLog(String filePath) {
-        List<String> errors = new ArrayList<>();
+        List<String> contentLog = new ArrayList<>();
         Path path = Paths.get(filePath);
         try {
-            errors = Files.readAllLines(path);
+            contentLog = Files.readAllLines(path);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-        return errors;
+        return contentLog;
     }
 
-    public static Set<String> listFilesUsingFileWalk(String dir) throws IOException {
+    public static Set<String> listFileNames(String dir) throws IOException {
         try (Stream<Path> stream = Files.walk(Paths.get(dir), 1)) {
             return stream
                     .filter(file -> !Files.isDirectory(file))
@@ -103,14 +103,23 @@ public class FileUtil {
         }
     }
 
+    public static Set<String> listPathFiles(String dir) throws IOException {
+        try (Stream<Path> stream = Files.walk(Paths.get(dir), 1)) {
+            return stream
+                    .filter(file -> !Files.isDirectory(file))
+                    .map(Path::toString)
+                    .collect(Collectors.toSet());
+        }
+    }
+
     public static Set<String> getListFilesOlderThanNDays(int days, String dirPath) throws IOException {
         long cutOff;
         if (days != 0) cutOff = System.currentTimeMillis() - (days * dayMTimeMillis);
-        else cutOff = System.currentTimeMillis() - (30 * dayMTimeMillis);
+        else cutOff = days;
         try (Stream<Path> stream = Files.list(Paths.get(dirPath))) {
             return stream.filter(path -> {
                         try {
-                            return Files.isRegularFile(path) && Files.getLastModifiedTime(path).to(TimeUnit.MILLISECONDS) > cutOff;
+                            return Files.isRegularFile(path) && Files.getLastModifiedTime(path).to(TimeUnit.MILLISECONDS) >= cutOff;
                         } catch (IOException ex) {
                             return false;
                         }

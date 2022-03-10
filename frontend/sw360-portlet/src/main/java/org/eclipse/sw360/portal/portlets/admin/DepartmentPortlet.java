@@ -34,6 +34,7 @@ import org.osgi.service.component.annotations.ConfigurationPolicy;
 import javax.portlet.*;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -198,6 +199,7 @@ public class DepartmentPortlet extends Sw360Portlet {
                 if (usersDelete != null) {
                     userClient.deleteDepartmentByListUser(usersDelete, department);
                 }
+                removeParamUrl(request, response);
             } catch (TException e) {
                 log.error("Error fetching User from backend!", e);
             }
@@ -231,18 +233,15 @@ public class DepartmentPortlet extends Sw360Portlet {
 
     }
 
-
     public static String encodeString(String text)
             throws UnsupportedEncodingException {
-        byte[] bytes = text.getBytes("UTF-8");
-        String encodeString = Base64.getEncoder().encodeToString(bytes);
-        return encodeString;
+        byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
+        return Base64.getEncoder().encodeToString(bytes);
     }
 
     public static String decodeString(String encodeText) throws UnsupportedEncodingException {
         byte[] decodeBytes = Base64.getDecoder().decode(encodeText);
-        String str = new String(decodeBytes, "UTF-8");
-        return str;
+        return new String(decodeBytes, StandardCharsets.UTF_8);
     }
 
 
