@@ -24,8 +24,7 @@
 <%@ page import="org.eclipse.sw360.datahandler.thrift.users.User" %>
 <jsp:useBean id="departmentKey" type="java.lang.String" scope="request"/>
 
-<jsp:useBean id="departmentEncode" type="java.lang.String" scope="request"/>
-<jsp:useBean id="departmentRoleUser" type="java.lang.String" scope="request"/>
+<jsp:useBean id="emailByDepartment" type="java.lang.String" scope="request"/>
 <jsp:useBean id="emailOtherDepartment" type="java.lang.String" scope="request"/>
 
 <portlet:resourceURL var="deleteDepartmentURL">
@@ -62,7 +61,7 @@
                             <input style="display: none;" type="text" id="listEmail1" name="<portlet:namespace/><%=PortalConstants.ADD_LIST_EMAIL%>" value="" />
                             <input style="display: none;" type="text" id="listEmail2" name="<portlet:namespace/><%=PortalConstants.DELETE_LIST_EMAIL%>" value="" />
                             <tr>
-                                <th colspan="3" class="headlabel" ><liferay-ui:message key="Edit Department"/> <sw360:out value="${departmentEncode}"/> </th>
+                                <th colspan="3" class="headlabel" ><liferay-ui:message key="Edit Department"/> <sw360:out value="${departmentKey}"/> </th>
                             </tr>
                             </thead>
                             <tbody>
@@ -131,11 +130,11 @@
     AUI().use('liferay-portlet-url', function () {
         require(['jquery', 'modules/dialog', 'modules/validation'], function ($, dialog, validation) {
             let emailStart=[];
-            let emailsJson=[];
+            let emailsByDepartmentKey=[];
             let emailsOtherDepartment=[];
             let emailsAdd=[];
             let emailInDatabase=[];
-            let emailsByDepartment = jQuery.parseJSON(JSON.stringify(${ departmentRoleUser }));
+            let emailsByDepartment = jQuery.parseJSON(JSON.stringify(${ emailByDepartment }));
             let emailOtherDepartment= jQuery.parseJSON(JSON.stringify(${emailOtherDepartment}));
 
             createSecDepartmentRolesTable();
@@ -182,21 +181,17 @@
 
             function createSecDepartmentRolesTable() {
 
-                emailsJson=arrayObjectToArrayString(emailsByDepartment,emailsJson);
+                emailsByDepartmentKey=arrayObjectToArrayString(emailsByDepartment,emailsByDepartmentKey);
                 emailsOtherDepartment=arrayObjectToArrayString(emailOtherDepartment,emailsOtherDepartment);
-                emailInDatabase=emailsJson.concat(emailsOtherDepartment);
+                emailInDatabase=emailsByDepartmentKey.concat(emailsOtherDepartment);
 
                 $('.delete-btn').first().bind('click', deleteRow);
 
-                if (emailsJson.length == 0) {
+                if (emailsByDepartmentKey.length == 0) {
                     return;
                 }
 
-<<<<<<< HEAD
-                if(emailsJson.length == 1){
-=======
-                if (emailsJson.length == 1) {
->>>>>>> 094321bbad85f12a1973348085e19a5d3291e827
+                if (emailsByDepartmentKey.length == 1) {
                     $('.bodyRow').focusout(function() {
                         handleFocusOut($(this).find('input').first(),emailInDatabase);
                         let arr=[];
@@ -211,11 +206,7 @@
                         });
                     })
                 }
-<<<<<<< HEAD
-=======
-
->>>>>>> 094321bbad85f12a1973348085e19a5d3291e827
-                for (let i = 0; i < emailsJson.length - 1; i++) {
+                for (let i = 0; i < emailsByDepartmentKey.length - 1; i++) {
                     addNewRow();
                     $('.bodyRow').focusout(function() {
                         handleFocusOut($(this).find('input').first(),emailInDatabase);
@@ -232,8 +223,8 @@
                     })
                 }
                 fillSuggestion();
-                for (let i = 0; i < emailsJson.length; i++) {
-                    $('.secGrp').eq(i).val(emailsJson[i]);
+                for (let i = 0; i < emailsByDepartmentKey.length; i++) {
+                    $('.secGrp').eq(i).val(emailsByDepartmentKey[i]);
 
                 }
             }

@@ -235,7 +235,7 @@ public class PortalConstants {
     // ! Specialized keys for changelog
     public static final String LOAD_CHANGE_LOGS = "load_change_logs";
     public static final String VIEW_CHANGE_LOGS = "view_change_logs";
-    
+
     //! Specialized keys for projects
     public static final String PROJECTS = "projects";
     public static final String PROJECT_PORTLET_NAME = PORTLET_NAME_PREFIX + PROJECTS;
@@ -385,17 +385,12 @@ public class PortalConstants {
     public static final String DEPARTMENT_LIST = "departmentList";
 
     public static final String DEPARTMENT_KEY = "departmentKey";
-    public static final String DEPARTMENT_ENCODE = "departmentEncode";
-    public static final String DEPARTMENT_EMAIL_ROLE_JSON = "departmentRoleUser";
+    public static final String EMAIL_BY_DEPARTMENT_JSON = "emailByDepartment";
     public static final String EMAIL_OTHER_DEPARTMENT_JSON = "emailOtherDepartment";
     public static final String DEPARTMENT_ROLE = "departmentRole";
-;
+
     public static final String DELETE_LIST_EMAIL = "deleteEmail";
     public static final String ADD_LIST_EMAIL = "listEmail";
-
-
-
-
 
     public static final String REMOVE_DEPARTMENT_BY_EMAIL = "remove_department";
     public static final String DEPARTMENT_URL = "departmentUrl";
@@ -404,8 +399,6 @@ public class PortalConstants {
     public static final String LAST_RUNNING_TIME = "lastRunningTime";
     public static final String PATH_CONFIG_FOLDER_DEPARTMENT = "pathConfigFolderDepartment";
     public static final String IMPORT_DEPARTMENT_MANUALLY = "importdepartmentmanually";
-
-
 
     //! Specialized keys for licenseInfo
     public static final String LICENSE_INFO_OUTPUT_FORMATS = "licenseInfoOutputFormats";
