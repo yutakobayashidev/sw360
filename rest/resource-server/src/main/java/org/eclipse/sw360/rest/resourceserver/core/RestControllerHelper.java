@@ -10,6 +10,7 @@
 package org.eclipse.sw360.rest.resourceserver.core;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.resourcelists.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
@@ -21,6 +22,9 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityApiDTO;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.CVEReference;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentController;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.license.LicenseController;
@@ -75,6 +79,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.*;
+import java.util.regex.Pattern;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
@@ -105,6 +110,8 @@ public class RestControllerHelper<T> {
     private static final String PAGINATION_KEY_NEXT = "next";
     private static final String PAGINATION_KEY_LAST = "last";
     private static final String PAGINATION_PARAM_PAGE = "page";
+    private static final double MIN_CVSS = 0;
+    private static final double MAX_CVSS = 10;
     public static final String PAGINATION_PARAM_PAGE_ENTRIES = "page_entries";
     public static final ImmutableSet<ProjectReleaseRelationship._Fields> SET_OF_PROJECTRELEASERELATION_FIELDS_TO_IGNORE = ImmutableSet
             .of(ProjectReleaseRelationship._Fields.CREATED_ON, ProjectReleaseRelationship._Fields.CREATED_BY);
@@ -164,14 +171,14 @@ public class RestControllerHelper<T> {
         PaginationOptions paginationOptions = paginationResult.getPaginationOptions();
         List<Link> paginationLinks = new ArrayList<>();
 
-        paginationLinks.add(new Link(createPaginationLink(baseUrl, 0, paginationOptions.getPageSize()),PAGINATION_KEY_FIRST));
-        if(paginationOptions.getPageNumber() > 0) {
-            paginationLinks.add(new Link(createPaginationLink(baseUrl, paginationOptions.getPageNumber() - 1, paginationOptions.getPageSize()),PAGINATION_KEY_PREVIOUS));
+        paginationLinks.add(new Link(createPaginationLink(baseUrl, 0, paginationOptions.getPageSize()), PAGINATION_KEY_FIRST));
+        if (paginationOptions.getPageNumber() > 0) {
+            paginationLinks.add(new Link(createPaginationLink(baseUrl, paginationOptions.getPageNumber() - 1, paginationOptions.getPageSize()), PAGINATION_KEY_PREVIOUS));
         }
-        if(paginationOptions.getOffset() + paginationOptions.getPageSize() < paginationResult.getTotalCount()) {
-            paginationLinks.add(new Link(createPaginationLink(baseUrl, paginationOptions.getPageNumber() + 1, paginationOptions.getPageSize()),PAGINATION_KEY_NEXT));
+        if (paginationOptions.getOffset() + paginationOptions.getPageSize() < paginationResult.getTotalCount()) {
+            paginationLinks.add(new Link(createPaginationLink(baseUrl, paginationOptions.getPageNumber() + 1, paginationOptions.getPageSize()), PAGINATION_KEY_NEXT));
         }
-        paginationLinks.add(new Link(createPaginationLink(baseUrl, paginationResult.getTotalPageCount() - 1, paginationOptions.getPageSize()),PAGINATION_KEY_LAST));
+        paginationLinks.add(new Link(createPaginationLink(baseUrl, paginationResult.getTotalPageCount() - 1, paginationOptions.getPageSize()), PAGINATION_KEY_LAST));
 
         return paginationLinks;
     }
@@ -194,13 +201,13 @@ public class RestControllerHelper<T> {
         return new PaginationOptions<>(pageable.getPageNumber(), pageable.getPageSize(), comparator);
     }
 
-    private Comparator<T> comparatorFromPageable(Pageable pageable,  String resourceClassName) throws ResourceClassNotFoundException {
+    private Comparator<T> comparatorFromPageable(Pageable pageable, String resourceClassName) throws ResourceClassNotFoundException {
         Sort.Order order = firstOrderFromPageable(pageable);
-        if(order == null) {
+        if (order == null) {
             return resourceComparatorGenerator.generateComparator(resourceClassName);
         }
         Comparator<T> comparator = resourceComparatorGenerator.generateComparator(resourceClassName, order.getProperty());
-        if(order.isDescending()) {
+        if (order.isDescending()) {
             comparator = comparator.reversed();
         }
         return comparator;
@@ -208,11 +215,11 @@ public class RestControllerHelper<T> {
 
     private Sort.Order firstOrderFromPageable(Pageable pageable) {
         Sort sort = pageable.getSort();
-        if(sort == null) {
+        if (sort == null) {
             return null;
         }
         Iterator<Sort.Order> orderIterator = sort.iterator();
-        if(orderIterator.hasNext()) {
+        if (orderIterator.hasNext()) {
             return orderIterator.next();
         } else {
             return null;
@@ -367,7 +374,7 @@ public class RestControllerHelper<T> {
     }
 
     public Project updateProject(Project projectToUpdate, Project requestBodyProject, Map<String, Object> reqBodyMap,
-            ImmutableMap<Project._Fields, String> mapOfProjectFieldsToRequestBody) {
+                                 ImmutableMap<Project._Fields, String> mapOfProjectFieldsToRequestBody) {
         for (Project._Fields field : Project._Fields.values()) {
             Object fieldValue = requestBodyProject.getFieldValue(field);
             if (fieldValue != null) {
@@ -385,9 +392,9 @@ public class RestControllerHelper<T> {
     }
 
     public Component updateComponent(Component componentToUpdate, Component requestBodyComponent) {
-        for(Component._Fields field:Component._Fields.values()) {
+        for (Component._Fields field : Component._Fields.values()) {
             Object fieldValue = requestBodyComponent.getFieldValue(field);
-            if(fieldValue != null) {
+            if (fieldValue != null) {
                 componentToUpdate.setFieldValue(field, fieldValue);
             }
         }
@@ -447,10 +454,10 @@ public class RestControllerHelper<T> {
     public Component convertToEmbeddedComponent(Component component, List<String> fields) {
         Component embeddedComponent = this.convertToEmbeddedComponent(component);
         if (fields != null) {
-            for(String fieldName:fields) {
+            for (String fieldName : fields) {
                 String thriftField = PropertyKeyMapping.componentThriftKeyFromJSONKey(fieldName);
                 Component._Fields componentField = Component._Fields.findByName(thriftField);
-                if(componentField != null) {
+                if (componentField != null) {
                     embeddedComponent.setFieldValue(componentField, component.getFieldValue(componentField));
                 }
             }
@@ -478,10 +485,10 @@ public class RestControllerHelper<T> {
     public Release convertToEmbeddedRelease(Release release, List<String> fields) {
         Release embeddedRelease = this.convertToEmbeddedRelease(release);
         if (fields != null) {
-            for(String fieldName:fields) {
+            for (String fieldName : fields) {
                 String thriftField = PropertyKeyMapping.releaseThriftKeyFromJSONKey(fieldName);
                 Release._Fields releaseField = Release._Fields.findByName(thriftField);
-                if(releaseField != null) {
+                if (releaseField != null) {
                     embeddedRelease.setFieldValue(releaseField, release.getFieldValue(releaseField));
                 }
             }
@@ -509,6 +516,7 @@ public class RestControllerHelper<T> {
     public User convertToEmbeddedUser(User user) {
         User embeddedUser = new User();
         embeddedUser.setId(user.getId());
+        embeddedUser.setFullname(user.getFullname());
         embeddedUser.setEmail(user.getEmail());
         embeddedUser.setType(null);
         return embeddedUser;
@@ -530,7 +538,7 @@ public class RestControllerHelper<T> {
             halObligation.add(obligationSelfLink);
             return halObligation;
         } catch (Exception e) {
-            LOGGER.error("cannot create self link for obligation with id: " +obligation.getId());
+            LOGGER.error("cannot create self link for obligation with id: " + obligation.getId());
         }
         return null;
     }
@@ -573,7 +581,136 @@ public class RestControllerHelper<T> {
         Vulnerability embeddedVulnerability = new Vulnerability(vulnerability.getExternalId());
         embeddedVulnerability.setId(vulnerability.getId());
         embeddedVulnerability.setTitle(vulnerability.getTitle());
+        embeddedVulnerability.setCvss(vulnerability.getCvss());
+        embeddedVulnerability.setLastExternalUpdate(vulnerability.getLastExternalUpdate());
+
+        embeddedVulnerability.setPublishDate(vulnerability.getPublishDate());
         return embeddedVulnerability;
+    }
+
+
+    public boolean setDataVulApiDTO(VulnerabilityApiDTO vulnerabilityApiDTO, Vulnerability vulnerability, Set<Release> releaseList) {
+        for (Vulnerability._Fields field : Vulnerability._Fields.values()) {
+            for (VulnerabilityApiDTO._Fields fieldDTO : VulnerabilityApiDTO._Fields.values()) {
+                if (field.getThriftFieldId() == fieldDTO.getThriftFieldId()) {
+                    if (vulnerability.getFieldValue(field) == null) {
+                        break;
+                    }
+                    if (field.equals(Vulnerability._Fields.CVSS)) {
+                        vulnerabilityApiDTO.setCvss(String.valueOf(vulnerability.getCvss()));
+                    } else if (field.equals(Vulnerability._Fields.IS_SET_CVSS)) {
+                        vulnerabilityApiDTO.setIsSetCvss(String.valueOf(vulnerability.isSetCvss()));
+                    } else if (field.equals(Vulnerability._Fields.CVE_REFERENCES)) {
+                        Set<CVEReference> cveReferences = vulnerability.getCveReferences();
+                        if (cveReferences.size() > 0) {
+                            vulnerabilityApiDTO.setCveReferences(convertCVEReferenceString(cveReferences));
+                        }
+                    } else {
+                        vulnerabilityApiDTO.setFieldValue(fieldDTO, vulnerability.getFieldValue(field));
+                    }
+                }
+            }
+        }
+        if (releaseList.size() > 0) {
+            vulnerabilityApiDTO.setReleases(releaseList);
+        }
+        return true;
+    }
+
+    private Set<String> convertCVEReferenceString(Set<CVEReference> cveReferences) {
+        Set<String> cveReferenceString = new HashSet<String>();
+        for (CVEReference cveReference :cveReferences) {
+            String cveInfo = cveReference.getYear() + "-" + cveReference.getNumber();
+            cveReferenceString.add(cveInfo);
+        }
+        return cveReferenceString;
+    }
+
+    public boolean setDataForVulnerability(VulnerabilityApiDTO vulnerabilityApiDTO, Vulnerability vulnerability) {
+        for (Vulnerability._Fields field : Vulnerability._Fields.values()) {
+            if (field.equals(Vulnerability._Fields.REVISION) || field.equals(Vulnerability._Fields.ID) || field.equals(Vulnerability._Fields.TYPE)) {
+                continue;
+            }
+            for (VulnerabilityApiDTO._Fields fieldDTO : VulnerabilityApiDTO._Fields.values()) {
+                if (field.getThriftFieldId() == fieldDTO.getThriftFieldId()) {
+                    if (vulnerabilityApiDTO.getFieldValue(fieldDTO) == null) {
+                        break;
+                    }
+                    if (fieldDTO.equals(VulnerabilityApiDTO._Fields.CVSS)) {
+                        if (!setDataCVSS(vulnerabilityApiDTO.getCvss(), vulnerability)) {
+                            throw new RuntimeException(new SW360Exception("Invalid cvss: property 'cvss' should be a valid cvss.")
+                                    .setErrorCode(org.apache.http.HttpStatus.SC_BAD_REQUEST));
+                        }
+                    } else if (fieldDTO.equals(VulnerabilityApiDTO._Fields.IS_SET_CVSS)) {
+                        if(!setDataIsSetCvss(vulnerabilityApiDTO.getIsSetCvss(), vulnerability)) {
+                            throw new RuntimeException(new SW360Exception("Invalid isSetCvss: property 'isSetCvss' should be a valid isSetCvss.")
+                                    .setErrorCode(org.apache.http.HttpStatus.SC_BAD_REQUEST));
+                        }
+                    } else if (fieldDTO.equals(VulnerabilityApiDTO._Fields.CVE_REFERENCES)) {
+                        setDataCveReferences(vulnerabilityApiDTO.getCveReferences(), vulnerability);
+                    } else {
+                        vulnerability.setFieldValue(field, vulnerabilityApiDTO.getFieldValue(fieldDTO));
+                    }
+                }
+            }
+        }
+        vulnerability.setLastUpdateDate(SW360Utils.getCreatedOn());
+        return true;
+    }
+
+    private boolean setDataCVSS(String cvss, Vulnerability vulnerability) {
+        try {
+            double m_cvss = Double.parseDouble(cvss);
+            if (m_cvss < MIN_CVSS || m_cvss > MAX_CVSS) {
+                return false;
+            }
+            vulnerability.setCvss(m_cvss);
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
+        return true;
+    }
+
+    private boolean setDataIsSetCvss(String isSetCvss, Vulnerability vulnerability) {
+        boolean m_isSetCvss;
+        if (CommonUtils.isNullEmptyOrWhitespace(isSetCvss)) {
+            return false;
+        }
+        if (isSetCvss.equals("true")) {
+            m_isSetCvss = true;
+        } else if (isSetCvss.equals("false")) {
+            m_isSetCvss = false;
+        } else {
+            return false;
+        }
+        vulnerability.setIsSetCvss(m_isSetCvss);
+        return true;
+    }
+
+    private void setDataCveReferences(Set<String> cveReferences, Vulnerability vulnerability) {
+        if (cveReferences != null) {
+            Set<CVEReference> cveReferenceList = new HashSet<CVEReference>();
+            for (String cveReference : cveReferences) {
+                if (CommonUtils.isNullEmptyOrWhitespace(cveReference)) {
+                    throw new RuntimeException(new SW360Exception("Invalid yearNumber: property 'yearNumber' cannot be null, empty or whitespace.")
+                            .setErrorCode(org.apache.http.HttpStatus.SC_BAD_REQUEST));
+                }
+                if (!Pattern.matches("^\\d{4}-\\d*", cveReference)) {
+                    throw new RuntimeException(new SW360Exception("Invalid yearNumber: property 'yearNumber' is wrong format")
+                            .setErrorCode(org.apache.http.HttpStatus.SC_BAD_REQUEST));
+                }
+                String[] yearAndNumber = cveReference.split("-");
+                if (yearAndNumber.length != 2) {
+                    throw new RuntimeException(new SW360Exception("Invalid yearNumber: property 'year-Number' is wrong format")
+                            .setErrorCode(org.apache.http.HttpStatus.SC_BAD_REQUEST));
+                }
+                CVEReference m_cVEReference = new CVEReference();
+                m_cVEReference.setYear(yearAndNumber[0]);
+                m_cVEReference.setNumber(yearAndNumber[1]);
+                cveReferenceList.add(m_cVEReference);
+            }
+            vulnerability.setCveReferences(cveReferenceList);
+        }
     }
 
     /**
@@ -645,7 +782,7 @@ public class RestControllerHelper<T> {
         }
     }
 
-    public void addEmbeddedFields(String relation,Object value,HalResource<? extends TBase> halResource) {
+    public void addEmbeddedFields(String relation, Object value, HalResource<? extends TBase> halResource) {
         if (value instanceof String) {
             if (CommonUtils.isNotNullEmptyOrWhitespace((String) value)) {
                 halResource.addEmbeddedResource(relation, value);
