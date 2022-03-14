@@ -12,6 +12,7 @@ package org.eclipse.sw360.portal.portlets.components;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
@@ -57,11 +58,16 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation._Fields;
 import org.eclipse.sw360.exporter.ComponentExporter;
 import org.eclipse.sw360.portal.common.*;
 import org.eclipse.sw360.portal.common.datatables.PaginationParser;
 import org.eclipse.sw360.portal.common.datatables.data.PaginationParameters;
 import org.eclipse.sw360.portal.portlets.FossologyAwarePortlet;
+import org.eclipse.sw360.portal.portlets.components.spdx.SpdxPortlet;
 import org.eclipse.sw360.portal.users.LifeRayUserSession;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.apache.logging.log4j.LogManager;
@@ -72,6 +78,8 @@ import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.apache.commons.lang.StringUtils;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import javax.portlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -99,6 +107,8 @@ import static org.eclipse.sw360.portal.common.PortalConstants.*;
 import static org.eclipse.sw360.portal.common.PortletUtils.getVerificationState;
 
 import org.apache.thrift.transport.TTransportException;
+import org.apache.thrift.protocol.TType;
+import org.apache.xmlbeans.impl.common.SniffedXmlInputStream;
 
 @org.osgi.service.component.annotations.Component(
     immediate = true,
@@ -177,6 +187,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
     private static final String CONFIG_KEY_URL = "url";
 
+    private _Fields field;
+
     //! Serve resource and helpers
     @Override
     public void serveResource(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
@@ -222,10 +234,14 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             loadSpdxLicenseInfo(request, response);
         } else if (PortalConstants.WRITE_SPDX_LICENSE_INFO_INTO_RELEASE.equals(action)) {
             writeSpdxLicenseInfoIntoRelease(request, response);
+        } else if (PortalConstants.PREPARE_IMPORT_BOM.equals(action)) {
+            prepareImportBom(request, response);
         } else if (PortalConstants.IMPORT_BOM.equals(action)) {
             importBom(request, response);
         } else if (PortalConstants.LICENSE_TO_SOURCE_FILE.equals(action)) {
             serveLicenseToSourceFileMapping(request, response);
+        } else if (PortalConstants.IMPORT_BOM_AS_NEW.equals(action)) {
+            importBomAsNew(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
         } else if (PortalConstants.LOAD_CHANGE_LOGS.equals(action) || PortalConstants.VIEW_CHANGE_LOGS.equals(action)) {
@@ -234,8 +250,55 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             JSONObject dataForChangeLogs = changeLogsPortletUtilsPortletUtils.serveResourceForChangeLogs(request,
                     response, action);
             writeJSON(request, response, dataForChangeLogs);
-        } else if (PortalConstants.EVALUATE_CLI_ATTACHMENTS.equals(action)) {
-            evaluateCLIAttachments(request, response);
+        } else if (action.equals("export-spdx")) {
+            exportSPDX(request, response);
+        } else if (action.equals("download-export-spdx")) {
+            downloadSPDX(request, response);
+        }
+    }
+
+    private void downloadSPDX(ResourceRequest request, ResourceResponse response) {
+        final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
+        String outputFormat = request.getParameter(PortalConstants.WHAT);
+        User user = UserCacheHolder.getUserFromRequest(request);
+        String filename = releaseId + "." + outputFormat.toLowerCase();
+        String exportFileName = null;
+
+        if (PortalConstants.ACTION_CANCEL.equals(request.getParameter(PortalConstants.ACTION_CANCEL))) {
+            deleteFileExport(outputFormat, releaseId, filename);
+            return;
+        }
+
+        try {
+            log.info("Download SPDX file");
+            exportFileName = componentClient.getReleaseById(releaseId, user).getName().replaceAll("[\\/:*?\"<>|\\s]","_")
+                + "_" + componentClient.getReleaseById(releaseId, user).getVersion().replaceAll("[\\/:*?\"<>|\\s]","_")
+                + "_" + SW360Utils.getCreatedOn() + "." + outputFormat.toLowerCase();
+            InputStream inputStream = new FileInputStream(filename);
+            PortletResponseUtil.sendFile(request, response, exportFileName, inputStream, CONTENT_TYPE_OPENXML_SPREADSHEET);
+            log.info("Download SPDX file success !!!");
+        } catch (IOException | TException e) {
+            e.printStackTrace();
+        }
+        deleteFileExport(outputFormat, releaseId, filename);
+    }
+
+    // delete file after user download
+    private void deleteFileExport(String outputFormat, String releaseId, String filename) {
+        try {
+            if (!outputFormat.equals("JSON")) {
+                Files.delete(Paths.get(releaseId + ".json"));
+            }
+            if (outputFormat.equals("SPDX")) {
+                Files.delete(Paths.get("tmp.rdf"));
+            }
+            if (Files.exists(Paths.get(filename))) {
+                Files.delete(Paths.get(filename));
+            }
+        } catch (IOException e) {
+                e.printStackTrace();
+                log.error("Failed to delete files.");
         }
     }
 
@@ -258,14 +321,29 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         }
         writeJSON(request, response, jsonObject);
     }
+    
+    private void exportSPDX(ResourceRequest request, ResourceResponse response) {
+        final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
+        String outputFormat = request.getParameter(PortalConstants.WHAT);
+        User user = UserCacheHolder.getUserFromRequest(request);
+
+        try {
+            final RequestSummary requestSummary = componentClient.exportSPDX(user, releaseId, outputFormat);
+            renderRequestSummary(request, response, requestSummary);
+        } catch (TException e) {
+            log.error("Failed to export SPDX file.", e);
+        }
+    }
 
     private void importBom(ResourceRequest request, ResourceResponse response) {
         final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
         User user = UserCacheHolder.getUserFromRequest(request);
         String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
+        String rdfFilePath = request.getParameter(RDF_FILE_PATH);
 
         try {
-            final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId);
+            final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId, null, null, rdfFilePath);
 
             LiferayPortletURL releaseUrl = createDetailLinkTemplate(request);
             releaseUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_RELEASE_DETAIL);
@@ -274,6 +352,43 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             jsonObject.put("redirectUrl", releaseUrl.toString());
 
             renderRequestSummary(request, response, requestSummary, jsonObject);
+        } catch (TException e) {
+            log.error("Failed to import BOM.", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+        }
+    }
+
+    private void importBomAsNew(ResourceRequest request, ResourceResponse response) {
+        final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        User user = UserCacheHolder.getUserFromRequest(request);
+        String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
+        String newReleaseVersion = request.getParameter(NEW_RELEASE_VERSION);
+        String rdfFilePath = request.getParameter(RDF_FILE_PATH);
+
+        try {
+            final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId, newReleaseVersion, null, rdfFilePath);
+
+            LiferayPortletURL releaseUrl = createDetailLinkTemplate(request);
+            releaseUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_RELEASE_DETAIL);
+            releaseUrl.setParameter(RELEASE_ID, requestSummary.getMessage());
+            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+            jsonObject.put("redirectUrl", releaseUrl.toString());
+
+            renderRequestSummary(request, response, requestSummary, jsonObject);
+        } catch (TException e) {
+            log.error("Failed to import BOM.", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+        }
+    }
+
+    private void prepareImportBom(ResourceRequest request, ResourceResponse response) {
+        final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        User user = UserCacheHolder.getUserFromRequest(request);
+        String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
+
+        try {
+            final ImportBomRequestPreparation importBomRequestPreparation = componentClient.prepareImportBom(user, attachmentContentId);
+            renderRequestPreparation(request, response, importBomRequestPreparation);
         } catch (TException e) {
             log.error("Failed to import BOM.", e);
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE, Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
@@ -637,6 +752,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     private void writeSpdxLicenseInfoIntoRelease(ResourceRequest request, ResourceResponse response) {
         User user = UserCacheHolder.getUserFromRequest(request);
         String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
+        String attachmentContentId = request.getParameter(PortalConstants.ATTACHMENT_ID);
         ComponentService.Iface componentClient = thriftClients.makeComponentClient();
 
         RequestStatus result = null;
@@ -664,6 +780,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 }
             }
             result = componentClient.updateRelease(release, user);
+
+            componentClient.importBomFromAttachmentContent(user, attachmentContentId, null, releaseId, null);
         } catch (TException | IOException e) {
             log.error("Cannot write license info into release " + releaseId + ".", e);
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
@@ -765,7 +883,10 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             ComponentService.Iface client = thriftClients.makeComponentClient();
             Component component;
             Release release;
-
+            SPDXDocument spdxDocument = new SPDXDocument();
+            DocumentCreationInformation documentCreationInfo = new DocumentCreationInformation();
+            Set<PackageInformation> packageInfos = new HashSet<>();
+            PackageInformation packageInfo = new PackageInformation();
             if (!isNullOrEmpty(releaseId)) {
                 release = client.getReleaseByIdForEdit(releaseId, user);
                 Map<String, String> sortedAdditionalData = getSortedMap(release.getAdditionalData(), true);
@@ -784,6 +905,26 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     id = release.getComponentId();
                 }
                 component = client.getComponentById(id, user);
+
+                String spdxDocumentId = release.getSpdxId();
+                if(!isNullOrEmpty(spdxDocumentId)) {
+                    SPDXDocumentService.Iface SPDXDocumentClient = thriftClients.makeSPDXClient();
+                    spdxDocument = SPDXDocumentClient.getSPDXDocumentForEdit(spdxDocumentId, user);
+                    String spdxDocumentCreationInfoId = spdxDocument.getSpdxDocumentCreationInfoId();
+                    Set<String> spdxPackageInfoIds = spdxDocument.getSpdxPackageInfoIds();
+                    if(!isNullOrEmpty(spdxDocumentCreationInfoId)) {
+                        DocumentCreationInformationService.Iface doClient = thriftClients.makeSPDXDocumentInfoClient();
+                        documentCreationInfo = doClient.getDocumentCreationInfoForEdit(spdxDocumentCreationInfoId, user);
+                    }
+                    if(spdxPackageInfoIds != null && !spdxPackageInfoIds.isEmpty()){
+                        PackageInformationService.Iface paClient = thriftClients.makeSPDXPackageInfoClient();
+                        for (String spdxPackageInfoId : spdxPackageInfoIds) {
+                            packageInfo = paClient.getPackageInformationForEdit(spdxPackageInfoId, user);
+                            packageInfos.add(packageInfo);
+                        }
+                    }
+                }
+
 
             } else {
                 component = client.getComponentById(id, user);
@@ -822,11 +963,115 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             request.setAttribute(COMPONENT, component);
             request.setAttribute(IS_USER_AT_LEAST_ECC_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.ECC_ADMIN, user)
                     || PermissionUtils.isUserAtLeastDesiredRoleInSecondaryGroup(UserGroup.ECC_ADMIN, allSecRoles) ? "Yes" : "No");
+            request.setAttribute(SPDXDOCUMENT, spdxDocument);
+            request.setAttribute(SPDX_DOCUMENT_CREATION_INFO, documentCreationInfo);
+            request.setAttribute(SPDX_PACKAGE_INFO, packageInfos);
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            try {
+                if (!spdxDocument.isSetId()) {
+                    spdxDocument = generateSpdxDocument();
+                }
+                String spdxDocumentJson = objectMapper.writeValueAsString(spdxDocument);
+                request.setAttribute("spdxDocumentJson", spdxDocumentJson);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+            try {
+                if (!documentCreationInfo.isSetId()) {
+                    documentCreationInfo = generateDocumentCreationInformation();
+                }
+                String documentCreationInfoJson = objectMapper.writeValueAsString(documentCreationInfo);
+                request.setAttribute("documentCreationInfoJson", documentCreationInfoJson);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+            try {
+                JSONArray packageArray = JSONFactoryUtil.createJSONArray();
+                Set<String> setPackage = new HashSet<>();
+                for (PackageInformation pack : packageInfos) {
+                    // if (!pack.isSetId()) {
+                    //     packageInfo = generatePackageInfomation();
+                    // }
+                    String packageInfoJson = objectMapper.writeValueAsString(pack);
+                    setPackage.add(packageInfoJson);
+                    packageArray.put(packageInfoJson);
+                }
+                request.setAttribute("packageInfoJson", setPackage);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
 
         } catch (TException e) {
             log.error("Error fetching release from backend!", e);
             setSW360SessionError(request, ErrorMessages.ERROR_GETTING_RELEASE);
         }
+    }
+
+    private SPDXDocument generateSpdxDocument() {
+        SPDXDocument spdxDocument = new SPDXDocument();
+        for (SPDXDocument._Fields field : SPDXDocument._Fields.values()) {
+            switch (SPDXDocument.metaDataMap.get(field).valueMetaData.type) {
+                case TType.SET:
+                    spdxDocument.setFieldValue(field, new HashSet<>());
+                    break;
+                case TType.STRING:
+                    spdxDocument.setFieldValue(field, "");
+                    break;
+                default:
+                    break;
+            }
+        }
+        return spdxDocument;
+    }
+
+    private DocumentCreationInformation generateDocumentCreationInformation() {
+        DocumentCreationInformation documentCreationInfo = new DocumentCreationInformation();
+        for (DocumentCreationInformation._Fields field : DocumentCreationInformation._Fields.values()) {
+            switch (DocumentCreationInformation.metaDataMap.get(field).valueMetaData.type) {
+                case TType.SET:
+                documentCreationInfo.setFieldValue(field, new HashSet<>());
+                break;
+            case TType.STRING:
+                documentCreationInfo.setFieldValue(field, "");
+                break;
+            default:
+                break;
+            }
+        }
+        return documentCreationInfo;
+    }
+
+    private PackageInformation generatePackageInfomation() {
+        PackageInformation packageInfo = new PackageInformation();
+
+        for (PackageInformation._Fields field : PackageInformation._Fields.values()) {
+
+            switch (field) {
+                case PACKAGE_VERIFICATION_CODE: {
+                    PackageVerificationCode packageVerificationCode = new PackageVerificationCode();
+                    packageInfo.setPackageVerificationCode(packageVerificationCode);
+                    break;
+                }
+                default: {
+                    this.field = field;
+                    switch (PackageInformation.metaDataMap.get(field).valueMetaData.type) {
+                        case TType.SET:
+                        packageInfo.setFieldValue(field, new HashSet<>());
+                        break;
+                    case TType.STRING:
+                        packageInfo.setFieldValue(field, "");
+                        break;
+                    case TType.BOOL:
+                        packageInfo.setFieldValue(field, true);
+                    default:
+                        break;
+                    }
+                    break;
+                }
+            }
+        }
+        return packageInfo;
     }
 
     private void prepareReleaseDuplicate(RenderRequest request, RenderResponse response) throws PortletException {
@@ -1438,6 +1683,61 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             if (release != null) {
                 addReleaseBreadcrumb(request, response, release);
             }
+            String spdxDocumentId = release.getSpdxId();
+            SPDXDocument spdxDocument = new SPDXDocument();
+            DocumentCreationInformation documentCreationInfo = new DocumentCreationInformation();
+            PackageInformation packageInfo = new PackageInformation();
+            Set<PackageInformation> packageInfos = new HashSet<>();
+            if (!isNullOrEmpty(spdxDocumentId)) {
+                SPDXDocumentService.Iface SPDXDocumentClient = thriftClients.makeSPDXClient();
+                spdxDocument = SPDXDocumentClient.getSPDXDocumentById(spdxDocumentId, user);
+                String spdxDocumentCreationInfoId = spdxDocument.getSpdxDocumentCreationInfoId();
+                Set<String> spdxPackageInfoIds = spdxDocument.getSpdxPackageInfoIds();
+                if(!isNullOrEmpty(spdxDocumentCreationInfoId)) {
+                    DocumentCreationInformationService.Iface doClient = thriftClients.makeSPDXDocumentInfoClient();
+                    documentCreationInfo = doClient.getDocumentCreationInformationById(spdxDocumentCreationInfoId, user);
+                }
+                if(spdxPackageInfoIds != null) {
+                    PackageInformationService.Iface paClient = thriftClients.makeSPDXPackageInfoClient();
+                    for (String spdxPackageInfoId : spdxPackageInfoIds) {
+                        packageInfo = paClient.getPackageInformationById(spdxPackageInfoId, user);
+                        packageInfos.add(packageInfo);
+                    }
+                }
+                request.setAttribute(SPDXDOCUMENT, spdxDocument);
+                request.setAttribute(SPDX_DOCUMENT_CREATION_INFO, documentCreationInfo);
+                request.setAttribute(SPDX_PACKAGE_INFO, packageInfos);
+           }
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            try {
+                if (!spdxDocument.isSetId()) {
+                    spdxDocument = generateSpdxDocument();
+                }
+                String spdxDocumentJson = objectMapper.writeValueAsString(spdxDocument);
+                request.setAttribute("spdxDocumentJson", spdxDocumentJson);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+            try {
+                if (!documentCreationInfo.isSetId()) {
+                    documentCreationInfo = generateDocumentCreationInformation();
+                }
+                String documentCreationInfoJson = objectMapper.writeValueAsString(documentCreationInfo);
+                request.setAttribute("documentCreationInfoJson", documentCreationInfoJson);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+            try {
+                Set<String> setPackage = new HashSet<>();
+                for (PackageInformation pack : packageInfos) {
+                    String packageInfoJson = objectMapper.writeValueAsString(pack);
+                    setPackage.add(packageInfoJson);
+                }
+                request.setAttribute("packageInfoJson", setPackage);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
 
         } catch (TException e) {
             log.error("Error fetching release from backend!", e);
@@ -1845,6 +2145,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
                         request.setAttribute(WebKeys.REDIRECT, redirectUrl.toString());
                         sendRedirect(request, response);
+                        SpdxPortlet.updateSPDX(request, response, user, releaseId, false);
                     }
                 } else {
                     release = new Release();
@@ -1866,6 +2167,26 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     AddDocumentRequestStatus status = summary.getRequestStatus();
                     switch(status){
                         case SUCCESS:
+                            ObjectMapper objectMapper = new ObjectMapper();
+                            try {
+                                String spdxDocumentJson = objectMapper.writeValueAsString(generateSpdxDocument());
+                                request.setAttribute(SPDXDocument._Fields.TYPE.toString(), spdxDocumentJson);
+                            } catch (JsonProcessingException e) {
+                                e.printStackTrace();
+                            }
+                            try {
+                                String documentCreationInfoJson = objectMapper.writeValueAsString(generateDocumentCreationInformation());
+                                request.setAttribute(SPDXDocument._Fields.SPDX_DOCUMENT_CREATION_INFO_ID.toString(), documentCreationInfoJson);
+                            } catch (JsonProcessingException e) {
+                                e.printStackTrace();
+                            }
+                            try {
+                                String packageInfoJson = objectMapper.writeValueAsString(generatePackageInfomation());
+                                request.setAttribute(SPDXDocument._Fields.SPDX_PACKAGE_INFO_IDS.toString(), packageInfoJson);
+                            } catch (JsonProcessingException e) {
+                                e.printStackTrace();
+                            }
+                            SpdxPortlet.updateSPDX(request, response, user, summary.getId(), true);
                             response.setRenderParameter(RELEASE_ID, summary.getId());
                             String successMsg = "Release " + printName(release) + " added successfully";
                             SessionMessages.add(request, "request_processed", successMsg);
