@@ -128,7 +128,6 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
 
     function addSub(addBtn)  {
         if ($(addBtn).prev().css('display') == 'none') {
-            console.log("addSub1")
             $(addBtn).prev().css('display', 'flex');
 
             $(addBtn).prev().find('[name=delete-snippetRange]').removeClass('hidden');
@@ -149,7 +148,6 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
                 }
             }
         } else {
-            console.log("addSub2")
             let newItem = $(addBtn).prev().clone();
 
             clearSection(newItem)
@@ -545,7 +543,6 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
     // --------------------------------- Package Information ---------------------------------
 
     function initPackageInfo() {
-        console.log('initPackageInfo')
         if (packagesInformationObj.length == 0) {
           enableSection($('.section-package'), false);
         } else {
@@ -556,9 +553,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
     }
 
     function fillPackage(index) {
-        console.log("fillPackage")
         const packageInformationObj = packagesInformationObj[index]
-        console.log(packageInformationObj)
 
         $('#packageName').val(packageInformationObj['name']);
 
@@ -667,12 +662,10 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         fillArray('#spdxPackageAttributionText', packageInformationObj.attributionText);
 
     }
-    
+
 
     function storePackageInfo(packageIndex) {
-        console.log("storePackageInfo: ")
         let packageInformationObj = packagesInformationObj[packageIndex];
-        console.log(packageInformationObj);
         packageInformationObj['name'] = $('#packageName').val().trim();
 
         if ($('#packageSPDXId').val().trim() == '') {
@@ -748,36 +741,33 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
     // --------------------------------- External Reference ---------------------------------
 
     function fillExternalRef(packageInformationObj, index) {
-        console.log('fillExternalRef')
-        console.log(packageInformationObj)
         let obj = packageInformationObj.externalRefs[index];
-        $('#externalReferences').removeAttr('disabled')
+        $('#externalReferences').removeAttr('disabled');
 
         $('#referenceCategory').val(obj['referenceCategory']);
 
         $('#referenceCategory').change();
-        $('#referenceCategory').removeAttr('disabled')
+        $('#referenceCategory').removeAttr('disabled');
 
         if (obj['referenceCategory'] == 'SECURITY' || obj['referenceCategory'] == 'PACKAGE-MANAGER') {
             $('#referenceType-1').val(obj['referenceType']);
-            $('#referenceType-1').removeAttr('disabled')
+            $('#referenceType-1').removeAttr('disabled');
 
         } else {
             $('#referenceType-2').val(obj['referenceType']);
-            $('#referenceType-2').removeAttr('disabled')
+            $('#referenceType-2').removeAttr('disabled');
 
         }
 
         $('#externalReferencesLocator').val(obj['referenceLocator']);
-        $('#externalReferencesLocator').removeAttr('disabled')
+        $('#externalReferencesLocator').removeAttr('disabled');
 
 
         $('#externalReferencesComment').val(obj['comment']);
-        $('#externalReferencesComment').removeAttr('disabled')
+        $('#externalReferencesComment').removeAttr('disabled');
     }
 
     function storeExternalRef(packageInformationObj, index) {
-        console.log('store externalRefs')
         if (index < 0 || index > packageInformationObj.externalRefs.length - 1) {
             return;
         }
@@ -888,7 +878,6 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
     }
 
     function storeSnippet(index) {
-        console.log("storeSnippet")
         if (typeof(index) == 'undefined') {
             index = $('#selectSnippet')[0].selectedIndex;
         }

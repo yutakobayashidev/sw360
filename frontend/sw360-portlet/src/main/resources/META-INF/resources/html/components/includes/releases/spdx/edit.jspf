@@ -112,8 +112,6 @@
     let spdxDocumentObj = jQuery.parseJSON(JSON.stringify(${ spdxDocumentJson }));
     let documentCreationInformationObj = jQuery.parseJSON(JSON.stringify(${ documentCreationInfoJson }));
     let packagesInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
-    console.log(packagesInformationObj)
-    console.log(spdxDocumentObj.snippets)
 
 </script>
 <%@include file="/html/utils/includes/requirejs.jspf" %>
@@ -196,7 +194,6 @@
 
         packagesInformationObj.sort(dynamicSort('index', 'int'));
         for (let i = 0; i < packagesInformationObj.length; i++) {
-            console.log(packagesInformationObj[i].name)
             packagesInformationObj[i].checksums.sort(dynamicSort('index', 'int'));
             packagesInformationObj[i].externalRefs.sort(dynamicSort('index', 'int'));
             packagesInformationObj[i].annotations.sort(dynamicSort('index', 'int'));
@@ -248,7 +245,6 @@
         $('#addNewAlgorithm').on('click', function() {
             spdxjs.addSub($(this));
             let selectedPackage = $('#selectPackage')[0].selectedIndex;
-            console.log('11111111111111111: ' +selectedPackage)
             $('.checksum-delete').last().bind('click', function() {
                 spdxjs.deleteSub($(this));
                 spdxjs.storePackageInfo(selectedPackage);
@@ -264,7 +260,7 @@
         $('[name=add-package]').on('click', function(e) {
             e.preventDefault();
             let index = 0;
-            if (spdxDocumentObj.snippets.length > 0) {
+            if (packagesInformationObj.length > 0) {
                 index = parseInt(packagesInformationObj[packagesInformationObj.length - 1].index) + 1;
             }
             let newObj = {'name': '',
@@ -297,7 +293,7 @@
         });
 
         // 7 Package - Delete
-        $('[name=delete-package').on('click', function(e) {
+        $('[name=delete-package]').on('click', function(e) {
             let selectedIndex = $('#selectPackage')[0].selectedIndex;
             packagesInformationObj.splice(selectedIndex, 1);
             spdxjs.deleteMain($(this));
@@ -306,7 +302,6 @@
         // 7 Package - Change
         $('#selectPackage').on('change', function(e) {
             let selectedIndex = $('#selectPackage')[0].selectedIndex;
-            console.log("selectpackage: " +selectedIndex)
             spdxjs.fillPackage(selectedIndex);
         });
 
@@ -329,7 +324,7 @@
         });
 
         // 7.21 External Reference - Delete
-        $('[name=delete-externalRef').on('click', function(e) {
+        $('[name=delete-externalRef]').on('click', function(e) {
             let selectedIndex = $('#externalReferences')[0].selectedIndex;
             let selectedPackage = $('#selectPackage')[0].selectedIndex;
             packagesInformationObj[selectedPackage].externalRefs.splice(selectedIndex, 1);
@@ -396,7 +391,7 @@
         });
 
         // 9 Snippet - Delete
-        $('[name=delete-snippet').on('click', function(e) {
+        $('[name=delete-snippet]').on('click', function(e) {
             let selectedIndex = $('#selectSnippet')[0].selectedIndex;
             spdxDocumentObj.snippets.splice(selectedIndex, 1);
             spdxjs.deleteMain($(this));
@@ -450,7 +445,7 @@
         });
 
         // 10 Other Licensing - Delete
-        $('[name=delete-otherLicensing').on('click', function(e) {
+        $('[name=delete-otherLicensing]').on('click', function(e) {
             newOtherLicensing = true;
             let selectedIndex = $('#selectOtherLicensing')[0].selectedIndex;
             spdxDocumentObj.otherLicensingInformationDetecteds.splice(selectedIndex, 1);
@@ -503,7 +498,7 @@
         });
 
         // 11 Relationship - Delete
-        $('[name=delete-relationship').on('click', function(e) {
+        $('[name=delete-relationship]').on('click', function(e) {
             let selectedIndex = $('#selectRelationship')[0].selectedIndex;
             let source = spdxjs.getRelationshipsSource();
             source.splice(selectedIndex, 1);
@@ -542,7 +537,7 @@
         });
 
         // 12 Annotation - Delete
-        $('[name=delete-annotation').on('click', function(e) {
+        $('[name=delete-annotation]').on('click', function(e) {
             let source = spdxjs.getAnnotationsSource();
             let selectedIndex = $('#selectAnnotation')[0].selectedIndex;
             source.splice(selectedIndex, 1);
@@ -560,11 +555,8 @@
             $('.spdx-radio').on('change', function () {
                 spdxjs.updateRadioButton($(this));
             });
-            // let isInitialzing = true;
             $('.section').find('input, select, textarea').not('spdx-select').on('change keyup', function () {
-                // if (isInitialzing) {
-                //     return;
-                // }
+
                 if ($(this).hasClass('spdx-select')) {
                     return;
                 }
@@ -595,26 +587,23 @@
             });
 
             function initialize() {
-                // isInitialzing = true;
                 spdxjs.initDocumentCreation(userDisplay);
-
-                // if (packageInformationObj['name'] == '') {
-                //     packageInformationObj['name'] = "${component.name}";
-                // }
-                // spdxjs.initPackageInfo(packageInformationObj);
                 spdxjs.initPackageInfo();
                 spdxjs.initSnippetInfo();
                 spdxjs.initOtherLicensing();
                 spdxjs.initRelationships();
                 spdxjs.initAnnotations();
-                // isInitialzing = false;
             }
             initialize();
         });
 
         $('#formSubmit').click(function() {
             spdxjs.storeDocumentCreation();
-            //spdxjs.storePackageInfo(packageInformationObj);
+            let packageIndex = 0;
+            packagesInformationObj.forEach( p => {
+                p['index'] = packageIndex;
+                packageIndex++;
+            })
             $('#spdxDocumentData').val(JSON.stringify(spdxDocumentObj));
             $('#documentCreationInfoData').val(JSON.stringify(documentCreationInformationObj));
             $('#packageInfoData').val(JSON.stringify(packagesInformationObj));

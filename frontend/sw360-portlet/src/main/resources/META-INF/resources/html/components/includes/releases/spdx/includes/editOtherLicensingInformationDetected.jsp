@@ -70,12 +70,17 @@
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="licenseNameExist" type="radio" name="_sw360_portlet_components_LICENSE_NAME" value="EXIST">
                             <input style="flex: 6; margin-right: 1rem;" id="licenseName"
-                                class="form-control" type="text"
-                                placeholder="Enter license name">
+                                class="form-control needs-validation" type="text"
+                                placeholder="Enter license name"  rule="required">
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="licenseNameNoAssertion" type="radio" name="_sw360_portlet_components_LICENSE_NAME" value="NOASSERTION">
                             <label class="form-check-label radio-label" for="licenseNameNoAssertion">NOASSERTION</label>
+                        </div>
+                    </div>
+                    <div id="licenseName-error-messages">
+                        <div class="invalid-feedback" rule="required">
+                            <liferay-ui:message key="this.field.must.be.not.empty" />
                         </div>
                     </div>
                 </div>

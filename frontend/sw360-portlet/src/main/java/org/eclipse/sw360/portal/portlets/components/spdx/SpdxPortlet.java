@@ -11,41 +11,35 @@
 
 package org.eclipse.sw360.portal.portlets.components.spdx;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.portlet.ActionRequest;
-import javax.portlet.ActionResponse;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.json.JSONArray;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.ExternalDocumentReferences;
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.Creator;
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.CheckSum;
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformationService;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.OtherLicensingInformationDetected;
+import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.RelationshipsBetweenSPDXElements;
 import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetRange;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentService;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageVerificationCode;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReference;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
-import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.RelationshipsBetweenSPDXElements;
-import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.OtherLicensingInformationDetected;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageVerificationCode;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.*;
+
+import javax.portlet.ActionRequest;
+import javax.portlet.ActionResponse;
+import java.util.HashSet;
+import java.util.Set;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 
@@ -225,8 +219,10 @@ public abstract class SpdxPortlet {
             }
         }
         if (!isNullOrEmpty(packageInfoData)) {
-            log.info(packageInfoData);
             Set<PackageInformation> packageInfos = parsePackageInfosFromRequest(packageInfoData);
+            SPDXDocumentService.Iface SPDXClient = new ThriftClients().makeSPDXClient();
+            SPDXDocument spdxDocument = SPDXClient.getSPDXDocumentById(spdxDocumentId, user);
+            idDeletePackageInfo(packageInfos, spdxDocument, user);
             if (packageInfos != null) {
                 PackageInformationService.Iface packageClient = new ThriftClients().makeSPDXPackageInfoClient();
                 for (PackageInformation packageInfo : packageInfos) {
@@ -240,6 +236,22 @@ public abstract class SpdxPortlet {
                     } else {
                         packageClient.updatePackageInformation(packageInfo, user);
                     }
+                }
+            }
+        }
+    }
+
+    private static void idDeletePackageInfo(Set<PackageInformation> packageInfos, SPDXDocument spdxDocument, User user) {
+        Set<String> spdxDocumentId = spdxDocument.getSpdxPackageInfoIds();
+        Set<String> listIdPackageInfos = new HashSet<>();
+        packageInfos.forEach(pInfo -> listIdPackageInfos.add(pInfo.getId()));
+        for (String s : spdxDocumentId) {
+            if (!listIdPackageInfos.contains(s)) {
+                PackageInformationService.Iface packageClient = new ThriftClients().makeSPDXPackageInfoClient();
+                try {
+                    packageClient.deletePackageInformation(s, user);
+                } catch (Exception e) {
+                    log.error("Could not delete SDPX Package Info {}", e.getMessage());
                 }
             }
         }

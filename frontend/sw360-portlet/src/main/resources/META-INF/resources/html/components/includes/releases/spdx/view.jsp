@@ -910,7 +910,6 @@
 	}
 
 	$(function () {
-		console.log('33333333333333')
 		let spdxDocumentObj = jQuery.parseJSON(JSON.stringify(${ spdxDocumentJson }));
 		let documentCreationInformationObj = jQuery.parseJSON(JSON.stringify(${ documentCreationInfoJson }));
 		let packagesInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
@@ -1047,11 +1046,6 @@
 		} else {
 			$('#' + selectId).removeAttr('disabled', 'disabled');
 		}
-
-		if (selectId == 'externalReferenceSelect') {
-			console.log('length: ' +length)
-			console.log($('#' + selectId))
-		}
 	}
 	generateSelecterOption('snippetInfoSelect', "${snippets.size()}");
 	generateSelecterOption('otherLicensingSelect', "${otherLicensing.size()}");
@@ -1060,8 +1054,8 @@
 	generateSelecterOption('externalDocumentRefs', "${spdxDocumentCreationInfo.externalDocumentRefs.size()}");
 	generateSelecterOption('packageInfoSelect', "${spdxPackageInfo.size()}");
 
-	let packageIndex =  $('#packageInfoSelect')[0].selectedIndex;
-	let packagesInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
+	var packageIndex =  $('#packageInfoSelect')[0].selectedIndex;
+	var packagesInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
 	packagesInformationObj.sort(dynamicSort('index', 'int'));
 	generateSelecterOption('externalReferenceSelect', packagesInformationObj[packageIndex].externalRefs.length);
 
@@ -1094,8 +1088,6 @@
 			let packagesInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
 			packagesInformationObj.sort(dynamicSort('index', 'int'));
 			let packageIndex =  $('#packageInfoSelect')[0].selectedIndex;
-			console.log('change package index to: ' +packageIndex)
-			console.log('External size: ' +packagesInformationObj[packageIndex].externalRefs.length)
 			generateSelecterOption('externalReferenceSelect', packagesInformationObj[packageIndex].externalRefs.length);
 			$('#externalReferenceSelect').change();
 		}

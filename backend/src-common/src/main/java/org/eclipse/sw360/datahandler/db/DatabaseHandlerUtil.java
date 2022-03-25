@@ -427,7 +427,7 @@ public class DatabaseHandlerUtil {
             changeLog.setDbName(DatabaseSettings.COUCH_DB_SPDX);
         }
 
-        log.info("Initialize ChangeLogs for Document Id : " + changeLog.getDocumentId());
+//        log.info("Initialize ChangeLogs for Document Id : " + changeLog.getDocumentId());
 
         if (parentOperation != null)
             info.put("PARENT_OPERATION", parentOperation.name());
