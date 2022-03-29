@@ -362,7 +362,7 @@
 					<div class="spdx-col-2 section" data-size="4">
 						<div class="spdx-flex-row">
 							<div class="spdx-col-1 spdx-label-index">Index</div>
-							<select id="externalReferenceSelect" class="spdx-col-3" onchange="displayIndex(this)">
+							<select id="externalReferenceSelect${package.index}" class="spdx-col-3" onchange="displayIndex(this)">
 							</select>
 						</div>
 						<core_rt:forEach items="${package.externalRefs}" var="externalRefsData" varStatus="loop">
@@ -1035,7 +1035,6 @@
 
 	function generateSelecterOption(selectId, length) {
 		$('#' + selectId).find('option').remove();
-
 		for (var i = 1; i <= length; i++) {
 			var option = document.createElement("option");
 			option.text = i;
@@ -1057,7 +1056,7 @@
 	var packageIndex =  $('#packageInfoSelect')[0].selectedIndex;
 	var packagesInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
 	packagesInformationObj.sort(dynamicSort('index', 'int'));
-	generateSelecterOption('externalReferenceSelect', packagesInformationObj[packageIndex].externalRefs.length);
+	generateSelecterOption('externalReferenceSelect'+packagesInformationObj[packageIndex].externalRefs.length, packagesInformationObj[packageIndex].externalRefs.length);
 
 	function displayIndex(el) {
 		var index = $(el).val();
@@ -1088,8 +1087,8 @@
 			let packagesInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
 			packagesInformationObj.sort(dynamicSort('index', 'int'));
 			let packageIndex =  $('#packageInfoSelect')[0].selectedIndex;
-			generateSelecterOption('externalReferenceSelect', packagesInformationObj[packageIndex].externalRefs.length);
-			$('#externalReferenceSelect').change();
+			generateSelecterOption('externalReferenceSelect'+(index-1), packagesInformationObj[packageIndex].externalRefs.length);
+			$('#externalReferenceSelect'+(index-1)).change();
 		}
 	}
 
