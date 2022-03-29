@@ -162,8 +162,7 @@
 		<tr>
 			<td class="spdx-flex-row">
 					<div class="spdx-col-1 spdx-label-index">Index</div>
-					<%-- <select id="packageInfoSelect" class="spdx-col-2" onchange="displayIndex(this)"></select> --%>
-					<select id="packageInfoSelect" class="spdx-col-2" onchange="changePackageIndex(this)"></select>
+                     <select id="packageInfoSelect" class="spdx-col-2" onchange="changePackageIndex(this)"></select>
 			</td>
 		</tr>
 
@@ -1084,7 +1083,7 @@
 
 			section.find('[data-index=' + (index - 1).toString() + ']').css('display', '');
 
-			let packagesInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
+			var packagesInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
 			packagesInformationObj.sort(dynamicSort('index', 'int'));
 			let packageIndex =  $('#packageInfoSelect')[0].selectedIndex;
 			generateSelecterOption('externalReferenceSelect'+(index-1), packagesInformationObj[packageIndex].externalRefs.length);
