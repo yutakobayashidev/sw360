@@ -162,8 +162,8 @@
 		<tr>
 			<td class="spdx-flex-row">
 					<div class="spdx-col-1 spdx-label-index">Index</div>
-					<%-- <select id="packageInfoSelect" class="spdx-col-2" onchange="displayIndex(this)"></select> --%>
-					<select id="packageInfoSelect" class="spdx-col-2" onchange="changePackageIndex(this)"></select>
+					 <select id="packageInfoSelect" class="spdx-col-2" onchange="displayIndex(this)"></select>
+<%--					<select id="packageInfoSelect" class="spdx-col-2" onchange="changePackageIndex(this)"></select>--%>
 			</td>
 		</tr>
 
@@ -360,12 +360,18 @@
 					<div class="spdx-col-1">7.21 External references </div>
 					<core_rt:if test="${package.externalRefs.size() gt 0}">
 					<div class="spdx-col-2 section" data-size="4">
-						<div class="spdx-flex-row">
-							<div class="spdx-col-1 spdx-label-index">Index</div>
-							<select id="externalReferenceSelect" class="spdx-col-3" onchange="displayIndex(this)">
-							</select>
-						</div>
+<%--						<div class="spdx-flex-row">--%>
+<%--							<div class="spdx-col-1 spdx-label-index">Index</div>--%>
+<%--							<select id="externalReferenceSelect" class="spdx-col-3" onchange="displayIndex(this)">--%>
+<%--							</select>--%>
+<%--						</div>--%>
 						<core_rt:forEach items="${package.externalRefs}" var="externalRefsData" varStatus="loop">
+							<div class="spdx-flex-row" data-index="${externalRefsData.index}">
+								<div class="spdx-col-1 spdx-key">Index</div>
+								<div class="spdx-col-3 spdx-uppercase">
+									<sw360:out value="${loop.index + 1}" />
+								</div>
+							</div>
 							<div class="spdx-flex-row" data-index="${externalRefsData.index}">
 								<div class="spdx-col-1 spdx-key">Category</div>
 								<div class="spdx-col-3 spdx-uppercase">
@@ -1085,9 +1091,9 @@
 
 			section.find('[data-index=' + (index - 1).toString() + ']').css('display', '');
 
-			let packagesInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
+			var packagesInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
 			packagesInformationObj.sort(dynamicSort('index', 'int'));
-			let packageIndex =  $('#packageInfoSelect')[0].selectedIndex;
+			var packageIndex =  $('#packageInfoSelect')[0].selectedIndex;
 			generateSelecterOption('externalReferenceSelect', packagesInformationObj[packageIndex].externalRefs.length);
 			$('#externalReferenceSelect').change();
 		}
