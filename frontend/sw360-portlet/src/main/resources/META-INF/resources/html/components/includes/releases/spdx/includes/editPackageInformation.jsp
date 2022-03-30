@@ -198,7 +198,7 @@
                             placeholder="Enter verification code value"></input>
                         <textarea class="form-control" id="excludedFiles" rows="5"
                             name="_sw360_portlet_components_EXCLUDED_FILES"
-                            placeholder="Enter excluded files"><sw360:out value="${package.packageVerificationCode.excludedFiles.toString()}" hashSet="true"/></textarea>
+                            placeholder="Enter excluded files"><sw360:out value="${package.packageVerificationCode.excludedFiles.toString()}" /></textarea>
                     </div>
                 </div>
             </td>
