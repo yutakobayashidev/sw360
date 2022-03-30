@@ -989,14 +989,23 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             try {
                 JSONArray packageArray = JSONFactoryUtil.createJSONArray();
                 Set<String> setPackage = new HashSet<>();
-                for (PackageInformation pack : packageInfos) {
-                    // if (!pack.isSetId()) {
-                    //     packageInfo = generatePackageInfomation();
-                    // }
+                if (packageInfos == null) {
+                    packageInfo = generatePackageInfomation();
+                    String packageInfoJson = objectMapper.writeValueAsString(packageInfo);
+                    setPackage.add(packageInfoJson);
+                    packageArray.put(packageInfoJson);
+                } else {
+                    for (PackageInformation pack : packageInfos) {
+                    // namnp comment
+//                    if (!pack.isSetId()) {
+//                        packageInfo = generatePackageInfomation();
+//                    }
                     String packageInfoJson = objectMapper.writeValueAsString(pack);
                     setPackage.add(packageInfoJson);
                     packageArray.put(packageInfoJson);
                 }
+                }
+
                 request.setAttribute("packageInfoJson", setPackage);
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
@@ -2182,6 +2191,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                             }
                             try {
                                 String packageInfoJson = objectMapper.writeValueAsString(generatePackageInfomation());
+                                packageInfoJson = "[" + packageInfoJson +"]";
                                 request.setAttribute(SPDXDocument._Fields.SPDX_PACKAGE_INFO_IDS.toString(), packageInfoJson);
                             } catch (JsonProcessingException e) {
                                 e.printStackTrace();
