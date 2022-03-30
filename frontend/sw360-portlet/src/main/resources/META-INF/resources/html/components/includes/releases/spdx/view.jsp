@@ -134,17 +134,17 @@
 		<tr class="spdx-full">
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">6.10 Creator comment</div>
-				<p class="spdx-col-2" id="creatorComment">
+				<div class="spdx-col-2" id="creatorComment">
 					<sw360:out value="${spdxDocumentCreationInfo.creatorComment}" />
-				</p>
+				</div>
 			</td>
 		</tr>
 		<tr class="spdx-full">
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">6.11 Document comment</div>
-				<p class="spdx-col-2" id="documentComment">
+				<div class="spdx-col-2" id="documentComment">
 					<sw360:out value="${spdxDocumentCreationInfo.documentComment}" />
-				</p>
+				</div>
 			</td>
 		</tr>
 	</tbody>
@@ -282,7 +282,7 @@
 			<tr class="spdx-full" data-index="${package.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">7.12 Source information</div>
-					<p class="spdx-col-2 spdx-p" id="sourceInfo">
+					<p class="spdx-col-2 spdx-p" >
 						<sw360:out value="${package.sourceInfo}" />
 					</p>
 				</td>
@@ -873,8 +873,10 @@
 
 	function fillArray(tag, value) {
 		$(tag).text('');
+
 		for (let i = 0; i< value.length; i++) {
-			$(tag).append(value[i].replaceAll('<', '&lt;').replaceAll('>', '&gt;'));
+		    let temp = value[i].replaceAll('&lt','&amp;lt').replaceAll('&gt','&amp;gt').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+			$(tag).append(temp);
 			$(tag).append('<br>');
 		}
 	}
