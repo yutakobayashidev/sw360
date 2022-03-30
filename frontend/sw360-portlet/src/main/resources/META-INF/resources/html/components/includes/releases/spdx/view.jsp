@@ -135,7 +135,7 @@
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">6.10 Creator comment</div>
 				<p class="spdx-col-2" id="creatorComment">
-					<sw360:out value="${spdxDocumentCreationInfo.creatorComment}" />
+					<sw360:out value="${spdxDocumentCreationInfo.creatorComment}" stripNewlines="false" />
 				</p>
 			</td>
 		</tr>
@@ -143,7 +143,7 @@
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">6.11 Document comment</div>
 				<p class="spdx-col-2" id="documentComment">
-					<sw360:out value="${spdxDocumentCreationInfo.documentComment}" />
+					<sw360:out value="${spdxDocumentCreationInfo.documentComment}" stripNewlines="false"/>
 				</p>
 			</td>
 		</tr>
@@ -243,7 +243,7 @@
 						</div>
 						<div class="spdx-flex-row">
 							<div class="spdx-col-1 spdx-key">Excluded files</div>
-							<p class="spdx-col-3 spdx-p" id="excludedFiles">
+							<p class="spdx-col-3 " id="excludedFiles">
 								<core_rt:forEach items="${package.packageVerificationCode.excludedFiles}"
 									var="excludedFileData" varStatus="loop">
 									<sw360:out value="${excludedFileData}" /> <br>
@@ -282,9 +282,9 @@
 			<tr class="spdx-full" data-index="${package.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">7.12 Source information</div>
-					<p class="spdx-col-2 spdx-p" id="sourceInfo">
+					<div class="spdx-col-2 " id="sourceInfo">
 						<sw360:out value="${package.sourceInfo}" />
-					</p>
+					</div>
 				</td>
 			</tr>
 			<tr data-index="${package.index}">
@@ -298,10 +298,10 @@
 			<tr class="spdx-full" data-index="${package.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">7.14 All licenses information from files</div>
-					<p class="spdx-col-2 spdx-p" id="licenseInfoFromFile">
+					<p class="spdx-col-2 " id="licenseInfoFromFile">
 						<core_rt:forEach items="${package.licenseInfoFromFiles}" var="licenseInfoFromFileData"
 							varStatus="loop">
-							<sw360:out value="${licenseInfoFromFileData} " /> <br>
+							<sw360:out value="${licenseInfoFromFileData} " />
 						</core_rt:forEach>
 					</p>
 				</td>
@@ -317,7 +317,7 @@
 			<tr data-index="${package.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">7.16 Comments on license</div>
-					<p class="spdx-col-2 spdx-p" id="licenseComments">
+					<p class="spdx-col-2 " id="licenseComments">
 						<sw360:out value="${package.licenseComments}" stripNewlines="false" />
 					</p>
 				</td>
@@ -325,7 +325,7 @@
 			<tr data-index="${package.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">7.17 Copyright text</div>
-					<p class="spdx-col-2 spdx-p" id="copyrightText">
+					<p class="spdx-col-2 " id="copyrightText">
 						<sw360:out value="${package.copyrightText}" stripNewlines="false" />
 					</p>
 				</td>
@@ -333,7 +333,7 @@
 			<tr class="spdx-full" data-index="${package.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">7.18 Package summary description</div>
-					<p class="spdx-col-2 spdx-p" id="summary">
+					<p class="spdx-col-2 " id="summary" >
 						<sw360:out value="${package.summary}" stripNewlines="false" />
 					</p>
 				</td>
@@ -341,7 +341,7 @@
 			<tr class="spdx-full" data-index="${package.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">7.19 Package detailed description</div>
-					<p class="spdx-col-2 spdx-p" id="description">
+					<p class="spdx-col-2 " id="description">
 						<sw360:out value="${package.description}" stripNewlines="false" />
 					</p>
 				</td>
@@ -349,7 +349,7 @@
 			<tr data-index="${package.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">7.20 Package comment</div>
-					<p class="spdx-col-2 spdx-p" id="packageComment">
+					<p class="spdx-col-2 " id="packageComment">
 						<sw360:out value="${package.packageComment}" stripNewlines="false" />
 					</p>
 				</td>
@@ -397,7 +397,7 @@
 			<tr class="spdx-full" data-index="${package.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">7.23 Package attribution text</div>
-					<p class="spdx-col-2 spdx-p" id="attributionText">
+					<p class="spdx-col-2 " id="attributionText">
 						<core_rt:forEach items="${package.attributionText}" var="attributionTextData" varStatus="loop">
 							<sw360:out value="${attributionTextData}"/><br>
 						</core_rt:forEach>
@@ -476,7 +476,7 @@
 			<tr data-index="${snippetsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">9.6 License information in snippet</div>
-					<p class="spdx-col-2 spdx-p">
+					<p class="spdx-col-2 ">
 						<core_rt:forEach items="${snippetsData.licenseInfoInSnippets}" var="licenseInfoInSnippetData"
 							varStatus="loop">
 							<sw360:out value="${licenseInfoInSnippetData} " /> <br>
@@ -487,7 +487,7 @@
 			<tr data-index="${snippetsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">9.7 Snippet comments on license</div>
-					<p class="spdx-col-2 spdx-p" id="snippetLicenseComments-${snippetsData.index}">
+					<p class="spdx-col-2 " id="snippetLicenseComments-${snippetsData.index}">
 						<sw360:out value="${snippetsData.licenseComments}" stripNewlines="false" />
 					</p>
 				</td>
@@ -495,7 +495,7 @@
 			<tr data-index="${snippetsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">9.8 Snippet copyright text</div>
-					<p class="spdx-col-2 spdx-p" id="snippetCopyrightText-${snippetsData.index}">
+					<p class="spdx-col-2 " id="snippetCopyrightText-${snippetsData.index}">
 						<sw360:out value="${snippetsData.copyrightText}" stripNewlines="false" />
 					</p>
 				</td>
@@ -503,7 +503,7 @@
 			<tr data-index="${snippetsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">9.9 Snippet comment</div>
-					<p class="spdx-col-2 spdx-p" id="snippetComment-${snippetsData.index}">
+					<p class="spdx-col-2 " id="snippetComment-${snippetsData.index}">
 						<sw360:out value="${snippetsData.comment}" stripNewlines="false" />
 					</p>
 				</td>
@@ -511,7 +511,7 @@
 			<tr data-index="${snippetsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">9.10 Snippet name</div>
-					<p class="spdx-col-2 spdx-p">
+					<p class="spdx-col-2 ">
 						<sw360:out value="${snippetsData.name}" />
 					</p>
 				</td>
@@ -519,7 +519,7 @@
 			<tr data-index="${snippetsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">9.11 Snippet attribution text</div>
-					<p class="spdx-col-2 spdx-p" id="snippetAttributionText-${snippetsData.index}">
+					<p class="spdx-col-2 " id="snippetAttributionText-${snippetsData.index}">
 						<sw360:out value="${snippetsData.snippetAttributionText}" stripNewlines="false" />
 					</p>
 				</td>
@@ -554,7 +554,7 @@
 			<tr data-index="${otherLicensingData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">10.2 Extracted text</div>
-					<p class="spdx-col-2 spdx-p" id="extractedText-${otherLicensingData.index}">
+					<p class="spdx-col-2 " id="extractedText-${otherLicensingData.index}">
 						<sw360:out value="${otherLicensingData.extractedText}" stripNewlines="false" />
 					</p>
 				</td>
@@ -570,7 +570,7 @@
 			<tr class="spdx-full" data-index="${otherLicensingData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">10.4 License cross reference</div>
-					<p class="spdx-col-2 spdx-p" id="licenseCrossRefs-${otherLicensingData.index}">
+					<p class="spdx-col-2 " id="licenseCrossRefs-${otherLicensingData.index}">
 						<core_rt:forEach items="${otherLicensingData.licenseCrossRefs}" var="licenseCrossRefsData" varStatus="loop">
 							<sw360:out value="${licenseCrossRefsData}"/><br>
 						</core_rt:forEach>
@@ -580,7 +580,7 @@
 			<tr data-index="${otherLicensingData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">10.5 License comment</div>
-					<p class="spdx-col-2 spdx-p" id="otherLicenseComment-${otherLicensingData.index}">
+					<p class="spdx-col-2 " id="otherLicenseComment-${otherLicensingData.index}">
 						<sw360:out value="${otherLicensingData.licenseComment}" stripNewlines="false" />
 					</p>
 				</td>
@@ -640,7 +640,7 @@
 			<tr class="relationship-document" data-index="${relationshipsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">11.2 Relationship comment</div>
-					<p class="spdx-col-2 spdx-p" id="relationshipComment-${relationshipsData.index}">
+					<p class="spdx-col-2 " id="relationshipComment-${relationshipsData.index}">
 						<sw360:out value="${relationshipsData.relationshipComment}" stripNewlines="false" />
 					</p>
 				</td>
@@ -671,7 +671,7 @@
 			<tr class="relationship-package" data-index="${relationshipsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">11.2 Relationship comment</div>
-					<p class="spdx-col-2 spdx-p" id="relationshipComment-${relationshipsData.index}">
+					<p class="spdx-col-2 " id="relationshipComment-${relationshipsData.index}">
 						<sw360:out value="${relationshipsData.relationshipComment}" stripNewlines="false" />
 					</p>
 				</td>
@@ -712,7 +712,7 @@
 			<tr class="annotation-document" data-index="${annotationsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">12.1 Annotator</div>
-					<p class="spdx-col-2 spdx-p">
+					<p class="spdx-col-2 ">
 						<sw360:out value="${annotationsData.annotator}" />
 					</p>
 					</div>
@@ -721,7 +721,7 @@
 			<tr class="annotation-document" data-index="${annotationsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">12.2 Annotation date</div>
-					<p class="spdx-col-2 spdx-p" id="annotation-document-date-${loop.count}">
+					<p class="spdx-col-2 " id="annotation-document-date-${loop.count}">
 						<sw360:out value="${annotationsData.annotationDate}" />
 					</p>
 				</td>
@@ -749,7 +749,7 @@
 			<tr class="annotation-document" data-index="${annotationsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">12.5 Annotation comment</div>
-					<p class="spdx-col-2 spdx-p" id="documentAnnotationComment-${annotationsData.index}">
+					<p class="spdx-col-2 " id="documentAnnotationComment-${annotationsData.index}">
 						<sw360:out value="${annotationsData.annotationComment}" stripNewlines="false" />
 					</p>
 				</td>
@@ -759,7 +759,7 @@
 			<tr class="annotation-package" data-index="${annotationsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">12.1 Annotator</div>
-					<p class="spdx-col-2 spdx-p">
+					<p class="spdx-col-2 ">
 						<sw360:out value="${annotationsData.annotator}" />
 					</p>
 					</div>
@@ -768,7 +768,7 @@
 			<tr class="annotation-package" data-index="${annotationsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">12.2 Annotation date</div>
-					<p class="spdx-col-2 spdx-p" id="annotation-package-date-${loop.count}">
+					<p class="spdx-col-2 " id="annotation-package-date-${loop.count}">
 						<sw360:out value="${annotationsData.annotationDate}" />
 					</p>
 				</td>
@@ -796,7 +796,7 @@
 			<tr class="annotation-package" data-index="${annotationsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">12.5 Annotation comment</div>
-					<p class="spdx-col-2 spdx-p" id="packageAnnotationComment-${annotationsData.index}">
+					<p class="spdx-col-2 " id="packageAnnotationComment-${annotationsData.index}">
 						<sw360:out value="${annotationsData.annotationComment}" stripNewlines="false" />
 					</p>
 				</td>
@@ -831,9 +831,9 @@
 		flex-direction: column;
 	}
 
-	.spdx-p {
-		margin-bottom: 0;
-	}
+	/*. {*/
+	/*	margin-bottom: 0;*/
+	/*}*/
 
 	.spdx-key {
 		font-weight: bold;
@@ -874,7 +874,8 @@
 	function fillArray(tag, value) {
 		$(tag).text('');
 		for (let i = 0; i< value.length; i++) {
-			$(tag).append(value[i].replaceAll('<', '&lt;').replaceAll('>', '&gt;'));
+			let temp = value[i].replaceAll('&lt','&amp;lt').replaceAll('&gt','&amp;gt').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+			$(tag).append(temp);
 			$(tag).append('<br>');
 		}
 	}
