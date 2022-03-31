@@ -875,7 +875,7 @@
 		$(tag).text('');
 
 		for (let i = 0; i< value.length; i++) {
-		    let temp = value[i].replaceAll('&lt','&amp;lt').replaceAll('&gt','&amp;gt').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+		    let temp = value[i].replaceAll('&','&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 			$(tag).append(temp);
 			$(tag).append('<br>');
 		}
