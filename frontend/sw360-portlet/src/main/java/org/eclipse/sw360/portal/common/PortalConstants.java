@@ -44,6 +44,7 @@ public class PortalConstants {
     public static final UserGroup USER_ROLE_ALLOWED_TO_MERGE_OR_SPLIT_COMPONENT;
     public static final String CLEARING_REPORT_TEMPLATE_TO_FILENAMEMAPPING;
     public static final String CLEARING_REPORT_TEMPLATE_FORMAT;
+    public static final String DISABLE_CLEARING_REQUEST_FOR_PROJECT_WITH_GROUPS;
     public static final String LOAD_OPEN_MODERATION_REQUEST = "loadOpenModerationRequest";
     public static final String LOAD_CLOSED_MODERATION_REQUEST = "loadClosedModerationRequest";
 
@@ -64,12 +65,15 @@ public class PortalConstants {
 
     //! Standard keys for Lists and their size
     public static final String KEY_SUMMARY = "documents";
+    public static final String RDF_FILE_EXTENSION = ".rdf";
+    public static final String XML_FILE_EXTENSION = ".xml";
 
     public static final String KEY_LIST_SIZE = "documentssize";
 
     public static final String NO_FILTER = "noFilter";
     public static final String KEY_SEARCH_TEXT = "searchtext";
     public static final String KEY_SEARCH_FILTER_TEXT = "searchfilter";
+    public static final String SUBMIT_SEARCH = "submitSearch";
     public static final String DOCUMENT_ID = "documentID";
     public static final String PAGENAME = "pagename";
     public static final String PAGENAME_DETAIL = "detail";
@@ -111,6 +115,7 @@ public class PortalConstants {
     public static final String LICENSE_TYPE_GLOBAL = "global";
     public static final String LICENSE_TYPE_OTHERS = "Others";
     public static final String LICENSE_IDS = "licenseIds";
+    public static final String MAIN_LICENSE_FILES = "LICENSE.*|license|license.txt|license.html|COPYING.*|copying|copying.txt|copying.html";
 
     //! Specialized keys for moderation
     public static final String MODERATION_PORTLET_NAME = PORTLET_NAME_PREFIX + "moderations";
@@ -139,6 +144,7 @@ public class PortalConstants {
     public static final String LOAD_PROJECT_INFO = "loadProjectInfo";
     public static final String APPROVED_RELEASE_COUNT = "approvedReleaseCount";
     public static final String CRITICAL_CR_COUNT = "criticalCrCount";
+    public static final String IS_CLEARING_REQUEST_DISABLED_FOR_PROJECT_BU = "isCrDisabledForProjectBU";
 
     //! Specialized keys for components
     public static final String COMPONENT_PORTLET_NAME = PORTLET_NAME_PREFIX + "components";
@@ -159,6 +165,7 @@ public class PortalConstants {
     public static final Set<String> COMPONENT_EXTERNAL_ID_KEYS;
     public static final String SOURCE_COMPONENT = "srcComponent";
     public static final String TARGET_COMPONENT = "targetComponent";
+    public static final String COMPONENT_VISIBILITY_RESTRICTION = "componentVisibilityRestriction";
 
     //! Specialized keys for releases
     public static final String RELEASE_ID = "releaseId";
@@ -254,6 +261,7 @@ public class PortalConstants {
     public static final String PROJECT_LIST = "projectList";
     public static final String ALL_SUB_PROJECT_LINK = "allSubProjectLink";
     public static final String RELEASE_LIST = "releaseList";
+    public static final String TOTAL_INACCESSIBLE_ROWS = "totalInaccessibleRows";
     public static final String PROJECT_SEARCH = "projectSearch";
     public static final String RELEASE_SEARCH = "releaseSearch";
     public static final String RELEASE_SEARCH_BY_VENDOR = "releaseSearchByVendor";
@@ -645,6 +653,7 @@ public class PortalConstants {
     public static final String ONLY_APPROVED = "onlyApproved";
     public static final String PREDEFINED_TAGS;
     public static final boolean SSO_LOGIN_ENABLED;
+    public static final boolean IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED;
 
     //! Specialized keys for SPDX
     public static final String SPDXDOCUMENT = "spdxDocument";
@@ -697,6 +706,9 @@ public class PortalConstants {
         PREDEFINED_TAGS = props.getProperty("project.tag", "[]");
         SSO_LOGIN_ENABLED = Boolean.parseBoolean(props.getProperty("sso.login.enabled", "false"));
         SET_RELATIONSHIP_TYPE = CommonUtils.splitToSet(props.getProperty("relationship.type", "DESCRIBES,DESCRIBED_BY,CONTAINS,CONTAINED_BY,DEPENDS_ON,DEPENDENCY_OF,DEPENDENCY_MANIFEST_OF,BUILD_DEPENDENCY_OF,DEV_DEPENDENCY_OF,OPTIONAL_DEPENDENCY_OF,PROVIDED_DEPENDENCY_OF,TEST_DEPENDENCY_OF,RUNTIME_DEPENDENCY_OF,EXAMPLE_OF,GENERATES,GENERATED_FROM,ANCESTOR_OF,DESCENDANT_OF,VARIANT_OF,DISTRIBUTION_ARTIFACT,PATCH_FOR,PATCH_APPLIED,COPY_OF,FILE_ADDED,FILE_DELETED,FILE_MODIFIED,EXPANDED_FROM_ARCHIVE,DYNAMIC_LINK,STATIC_LINK,DATA_FILE_OF,TEST_CASE_OF,BUILD_TOOL_OF,DEV_TOOL_OF,TEST_OF,TEST_TOOL_OF,DOCUMENTATION_OF,OPTIONAL_COMPONENT_OF,METAFILE_OF,PACKAGE_OF,AMENDS,PREREQUISITE_FOR,HAS_PREREQUISITE,OTHER"));
+        IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED = Boolean.parseBoolean(
+            System.getProperty("RunComponentVisibilityRestrictionTest", props.getProperty("component.visibility.restriction.enabled", "false")));
+        DISABLE_CLEARING_REQUEST_FOR_PROJECT_WITH_GROUPS = props.getProperty("org.eclipse.sw360.disable.clearing.request.for.project.group", "");
     }
 
     private PortalConstants() {

@@ -122,7 +122,7 @@ public abstract class FossologyAwarePortlet extends LinkedReleasesAndProjectsAwa
                 Predicate<Attachment> isApprovedCLI = attachment -> CheckStatus.ACCEPTED.equals(attachment.getCheckStatus());
                 filteredAttachments = filteredAttachments.stream().filter(isApprovedCLI).collect(Collectors.toList());
             }
-            if (filteredAttachments.size() == 1 && filteredAttachments.get(0).getFilename().endsWith(".xml")) {
+            if (filteredAttachments.size() == 1 && filteredAttachments.get(0).getFilename().endsWith(PortalConstants.XML_FILE_EXTENSION)) {
                 final Attachment filteredAttachment = filteredAttachments.get(0);
                 final String attachmentContentId = filteredAttachment.getAttachmentContentId();
 
@@ -278,7 +278,7 @@ public abstract class FossologyAwarePortlet extends LinkedReleasesAndProjectsAwa
     protected void putReleasesAndProjectIntoRequest(PortletRequest request, String projectId, User user)
             throws TException {
         ProjectService.Iface client = thriftClients.makeProjectClient();
-        List<ReleaseClearingStatusData> releaseClearingStatuses = client.getReleaseClearingStatuses(projectId, user);
+        List<ReleaseClearingStatusData> releaseClearingStatuses = client.getReleaseClearingStatusesWithAccessibility(projectId, user);
         request.setAttribute(PortalConstants.RELEASES_AND_PROJECTS, releaseClearingStatuses);
     }
 

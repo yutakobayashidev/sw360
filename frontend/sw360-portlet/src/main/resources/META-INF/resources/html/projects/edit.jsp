@@ -233,12 +233,12 @@
 <jsp:include page="/html/utils/includes/searchReleases.jsp" />
 <jsp:include page="/html/utils/includes/searchAndSelectUsers.jsp" />
 <jsp:include page="/html/utils/includes/searchUsers.jsp" />
-
+<%@include file="/html/components/includes/vendors/searchVendor.jspf" %>
 </core_rt:if>
 
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation', 'bridges/jquery-ui' ], function($, autocomplete, dialog, listgroup, validation) {
+require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation', 'bridges/jquery-ui', 'components/includes/vendors/searchVendor' ], function($, autocomplete, dialog, listgroup, validation, jqui, vendorsearch) {
     document.title = $("<span></span>").html("<sw360:ProjectName project="${project}"/> - " + document.title).text();
 
     listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
@@ -248,6 +248,11 @@ require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup'
 
     autocomplete.prepareForMultipleHits('proj_tag', ${tagAutocomplete});
 
+    $('#ProjectBasicInfo input.edit-vendor').on('click', function() {
+        vendorsearch.openSearchDialog('<portlet:namespace/>what', '<portlet:namespace/>where',
+                  '<portlet:namespace/>FULLNAME', '<portlet:namespace/>SHORTNAME', '<portlet:namespace/>URL', fillVendorInfo);
+    });
+    
     $('#formSubmit').click(
         function () {
             <core_rt:choose>
@@ -283,6 +288,8 @@ require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup'
         <core_rt:if test="${not addMode and isProjectObligationsEnabled}">
             $('#org-updateObligationsButtonHidden').trigger('click');
         </core_rt:if>
+        $(document).find(".checkStatus select").attr("disabled", false);
+        $(document).find(".checkedComment input").attr("disabled", false);
         $('#projectEditForm').submit();
     }
 
@@ -383,6 +390,17 @@ require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup'
         $("form#projectEditForm button").prop("disabled", true);
         $("form#projectEditForm button[id='add-external-id']").prop("disabled", false);
         $("form#projectEditForm button[id='formSubmit']").prop("disabled", false);
+        
+        $("#enable_svm").prop("disabled", false);
+        $("#enable_vulnerabilities_display").prop("disabled", false);
+        $("#projectState").prop("disabled", false);
+        $("#proj_phaseout").prop("disabled", false);
+        $("#SECURITY_RESPONSIBLESDisplay").prop("disabled", false);
+        $("#PROJECT_OWNERDisplay").prop("disabled", false);
+        $("#PROJECT_RESPONSIBLEDisplay").prop("disabled", false);
+        $("#externalIdsTable :disabled").each(function () {
+            $(this).prop("disabled", false);
+        });
     </core_rt:if>
 
     <core_rt:if test="${isProjectObligationsEnabled}">
@@ -393,5 +411,19 @@ require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup'
             $("#tab-Obligations").html("").append(result);
       }});
     </core_rt:if>
+    
+
+    function fillVendorInfo(vendorInfo) {
+        var beforeComma = vendorInfo.substr(0, vendorInfo.indexOf(","));
+        var afterComma = vendorInfo.substr(vendorInfo.indexOf(",") + 1);
+
+        $('#<%=Project._Fields.VENDOR_ID.toString()%>').val(beforeComma.trim());
+        $('#<%=Project._Fields.VENDOR_ID.toString()%>Display').val(afterComma.trim());
+    }
+
+    $("#clearVendor").click(function() {
+        $('#<%=Project._Fields.VENDOR_ID.toString()%>').val("");
+        $('#<%=Project._Fields.VENDOR_ID.toString()%>Display').val("").attr("placeholder", "Click to set vendor");
+    });
 });
 </script>

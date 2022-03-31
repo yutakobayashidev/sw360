@@ -291,6 +291,8 @@
 
                     validateLib.showAllErrors();
                 }
+                $(document).find(".checkStatus select").attr("disabled", false);
+                $(document).find(".checkedComment input").attr("disabled", false);
                 <core_rt:choose>
                     <core_rt:when test="${addMode || release.permissions[WRITE]}">
                         $('#releaseEditForm').submit();

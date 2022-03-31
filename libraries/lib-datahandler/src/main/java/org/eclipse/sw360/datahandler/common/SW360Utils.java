@@ -33,6 +33,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
+import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -92,6 +93,8 @@ public class SW360Utils {
 
     public static Joiner spaceJoiner = Joiner.on(" ");
     public static Joiner commaJoiner = Joiner.on(", ");
+
+    public static String INACCESSIBLE_RELEASE ="RestrictedRelease";
 
     private SW360Utils() {
         // Utility class with only static functions
@@ -414,6 +417,18 @@ public class SW360Utils {
         return Collections.emptyList();
     }
 
+    public static List<ReleaseLink> getLinkedReleasesWithAccessibility(Project project, ThriftClients thriftClients, Logger log, User user) {
+        if (project != null && project.getReleaseIdToUsage() != null) {
+            try {
+                ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+                return componentClient.getLinkedReleasesWithAccessibility(project.getReleaseIdToUsage(), user);
+            } catch (TException e) {
+                log.error("Could not get linked releases", e);
+            }
+        }
+        return Collections.emptyList();
+    }
+    
     public static List<ReleaseLink> getLinkedReleaseRelations(Release release, ThriftClients thriftClients, Logger log) {
         if (release != null && release.getReleaseIdToRelationship() != null) {
             try {
@@ -426,6 +441,18 @@ public class SW360Utils {
         return Collections.emptyList();
     }
 
+    public static List<ReleaseLink> getLinkedReleaseRelationsWithAccessibility(Release release, ThriftClients thriftClients, Logger log, User user) {
+        if (release != null && release.getReleaseIdToRelationship() != null) {
+            try {
+                ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+                return componentClient.getLinkedReleaseRelationsWithAccessibility(release.getReleaseIdToRelationship(), user);
+            } catch (TException e) {
+                log.error("Could not get linked releases", e);
+            }
+        }
+        return Collections.emptyList();
+    }
+    
     public static Predicate<String> startsWith(final String prefix) {
         return new Predicate<String>() {
             @Override
@@ -555,6 +582,25 @@ public class SW360Utils {
         return releaseNamesMap;
     }
 
+    public static <T> Map<String, T> putAccessibleReleaseNamesInMap(Map<String, T> map, List<Release> releases, User user, T inaccessibleValue) {
+        if (map == null || releases == null) {
+            return Collections.emptyMap();
+        }
+        Map<String, T> releaseNamesMap = new HashMap<>();
+        int inaccessbileReleaseCount = 0;
+        if (!CommonUtils.isNullOrEmptyCollection(releases)) {
+            for (Release release : releases) {
+                if (release.isSetPermissions() && release.getPermissions().get(RequestedAction.READ)) {
+                    releaseNamesMap.put(printName(release), map.get(release.getId()));
+                } else {
+                    inaccessbileReleaseCount++;
+                    releaseNamesMap.put(String.format("%s%d", INACCESSIBLE_RELEASE, inaccessbileReleaseCount), inaccessibleValue);
+                }
+            }
+        }
+        return releaseNamesMap;
+    }
+    
     public static <T> Map<String, T> putProjectNamesInMap(Map<String, T> map, List<Project> projects) {
         if(map == null || projects == null) {
             return Collections.emptyMap();

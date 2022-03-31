@@ -98,6 +98,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
+import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
@@ -145,6 +146,7 @@ public class DatabaseHandlerUtil {
     private static final String SW360CHANGELOG_OUTPUT_PATH;
     private static boolean isChangeLogDisabledMessageLogged = false;
     private static boolean isLiferayEnvVarNotPresent = true;
+    public static final boolean AUTO_SET_ECC_STATUS;
 
     static {
         Properties props = CommonUtils.loadProperties(DatabaseSettings.class, PROPERTIES_FILE_PATH);
@@ -161,6 +163,7 @@ public class DatabaseHandlerUtil {
                 "/etc/sw360/log4j2.xml");
         SW360CHANGELOG_OUTPUT_PATH = props.getProperty("sw360changelog.output.path",
                 "sw360changelog/sw360changelog");
+        AUTO_SET_ECC_STATUS = Boolean.parseBoolean(props.getProperty("auto.set.ecc.status", "false"));
     }
 
     public DatabaseHandlerUtil(DatabaseConnectorCloudant db) {
@@ -184,23 +187,30 @@ public class DatabaseHandlerUtil {
                 String linkedElementId = linkedElementIterator.next();
                 T linkedElement = null;
                 String elementFullName = null;
+                boolean isAccessibleElement = false;
+                String inaccessibleElementLabel = "";
                 if (handler instanceof ProjectDatabaseHandler) {
                     ProjectDatabaseHandler projDBHandler = (ProjectDatabaseHandler) handler;
                     Project project = projDBHandler.getProjectById(linkedElementId, user);
                     elementFullName = SW360Utils.printName(project);
                     linkedElement = (T) project;
+                    isAccessibleElement = true;
                 } else if (handler instanceof ComponentDatabaseHandler) {
                     ComponentDatabaseHandler compDBHandler = (ComponentDatabaseHandler) handler;
                     Release release = compDBHandler.getRelease(linkedElementId, user);
                     elementFullName = SW360Utils.printName(release);
                     linkedElement = (T) release;
+                    isAccessibleElement = compDBHandler.isReleaseActionAllowed(release, user, RequestedAction.READ);
+                    if (!isAccessibleElement) {
+                        inaccessibleElementLabel = SW360Utils.INACCESSIBLE_RELEASE;
+                    }
                 }
 
                 if (linkedPath.containsKey(linkedElementId)) {
                     return new Object[] { Boolean.TRUE, elementFullName };
                 }
 
-                linkedPath.put(linkedElementId, elementFullName);
+                linkedPath.put(linkedElementId, isAccessibleElement ? elementFullName : inaccessibleElementLabel);
                 Object[] cyclicLinkPresenceAndLastElementInCycle = getCyclicLinkPresenceAndLastElementInCycle(
                         linkedElement, handler, user, linkedPath);
                 boolean isCyclicLinkPresent = (Boolean) cyclicLinkPresenceAndLastElementInCycle[0];

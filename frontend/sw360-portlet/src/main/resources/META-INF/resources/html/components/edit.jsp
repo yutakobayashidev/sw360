@@ -53,6 +53,7 @@
     <jsp:useBean id="allUsingProjectsCount" type="java.lang.Integer" scope="request"/>
     <jsp:useBean id="usingComponents" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.components.Component>"
                  scope="request"/>
+    <jsp:useBean id="componentVisibilityRestriction" class="java.lang.Boolean" scope="request"/>
 </c:catch>
 
 <%--These variables are used as a trick to allow referencing enum values in EL expressions below--%>
@@ -223,6 +224,8 @@
 
         $('#formSubmit').click(
             function () {
+                $(document).find(".checkStatus select").attr("disabled", false);
+                $(document).find(".checkedComment input").attr("disabled", false);
                 <core_rt:choose>
                     <core_rt:when test="${componentDivAddMode || component.permissions[WRITE]}">
                         $('#componentEditForm').submit();

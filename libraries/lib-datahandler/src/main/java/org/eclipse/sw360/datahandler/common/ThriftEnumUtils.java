@@ -113,6 +113,7 @@ public class ThriftEnumUtils {
             .put(AttachmentType.OTHER, "Other")
             .put(AttachmentType.SECURITY_ASSESSMENT, "Security Assessment")
             .put(AttachmentType.SBOM, "SBOM")
+            .put(AttachmentType.INITIAL_SCAN_REPORT, "Initial Scan Report")
             .build();
 
     // @formatter:off
@@ -138,14 +139,18 @@ public class ThriftEnumUtils {
             .put(AttachmentType.OTHER, "OTH")
             .put(AttachmentType.SECURITY_ASSESSMENT, "SECA")
             .put(AttachmentType.SBOM, "SBOM")
+            .put(AttachmentType.INITIAL_SCAN_REPORT, "ISR")
             .build();
 
-    private static final ImmutableMap<ClearingState, String> MAP_CLEARING_STATUS_STRING = ImmutableMap.of(
-            ClearingState.NEW_CLEARING, "New",
-            ClearingState.SENT_TO_CLEARING_TOOL, "Sent to clearing tool",
-            ClearingState.UNDER_CLEARING, "Under clearing",
-            ClearingState.REPORT_AVAILABLE, "Report available",
-            ClearingState.APPROVED, "Report approved");
+    private static final ImmutableMap<ClearingState, String> MAP_CLEARING_STATUS_STRING = ImmutableMap
+            .<ClearingState, String>builder()
+            .put(ClearingState.NEW_CLEARING, "New")
+            .put(ClearingState.SENT_TO_CLEARING_TOOL, "Sent to clearing tool")
+            .put(ClearingState.UNDER_CLEARING, "Under clearing")
+            .put(ClearingState.REPORT_AVAILABLE, "Report available")
+            .put(ClearingState.APPROVED, "Report approved")
+            .put(ClearingState.SCAN_AVAILABLE, "Scan available")
+            .build();
 
     private static final ImmutableMap<ExternalTool, String> MAP_EXTERNAL_TOOL_STRING = ImmutableMap
             .<ExternalTool, String>builder()
