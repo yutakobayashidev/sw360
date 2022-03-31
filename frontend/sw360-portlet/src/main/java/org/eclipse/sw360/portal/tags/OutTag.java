@@ -60,9 +60,8 @@ public class OutTag extends OutSupport {
             }
 
             if (hashSet) {
-//                candidate = StringUtils.removeStart(candidate, "[");
-//                candidate = StringUtils.chop(candidate);
-                candidate = candidate.replaceAll("[\r\n]+", "<br>");
+                candidate = StringUtils.removeStart(candidate, "[");
+                candidate = StringUtils.chop(candidate);
             }
 
             this.value = candidate;

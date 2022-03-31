@@ -460,6 +460,9 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         } else {
             fillDateTime('#createdDate', '#createdTime', documentCreationInformationObj.created);
         }
+
+        $('#creatorComment').val(documentCreationInformationObj['creatorComment'].trim());
+        $('#documentComment').val(documentCreationInformationObj['documentComment'].trim());
     }
 
     function storeDocumentCreation() {

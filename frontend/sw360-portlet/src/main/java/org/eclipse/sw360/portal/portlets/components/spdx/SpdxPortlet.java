@@ -63,8 +63,6 @@ public abstract class SpdxPortlet {
         if (jsonData == null) {
             return null;
         }
-
-        log.info("------------jsonData---------"+jsonData);
         try {
             JSONObject json = JSONFactoryUtil.createJSONObject(jsonData);
             Set<SnippetInformation> snippets = parseSnippets(json);
@@ -156,7 +154,6 @@ public abstract class SpdxPortlet {
             return null;
         }
         try {
-            log.info("HieuPV - " + jsonData);
             JSONArray arrayPackages = JSONFactoryUtil.createJSONArray(jsonData);
             if (arrayPackages == null) {
                 return packageInfos;

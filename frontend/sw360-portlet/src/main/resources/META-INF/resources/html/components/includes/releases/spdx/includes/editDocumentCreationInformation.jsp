@@ -212,7 +212,7 @@
                 <div class="form-group">
                     <label for="creatorComment">6.10 Creator comment</label>
                     <textarea class="form-control" id="creatorComment" rows="5"
-                        placeholder="Enter creator comment">${spdxDocumentCreationInfo.creatorComment}</textarea>
+                        placeholder="Enter creator comment"></textarea>
                 </div>
             </td>
         </tr>
@@ -221,7 +221,7 @@
                 <div class="form-group">
                     <label for="documentComment">6.11 Document comment</label>
                     <textarea class="form-control" id="documentComment" rows="5"
-                        placeholder="Enter document comment">${spdxDocumentCreationInfo.documentComment}</textarea>
+                        placeholder="Enter document comment"></textarea>
                 </div>
             </td>
         </tr>
