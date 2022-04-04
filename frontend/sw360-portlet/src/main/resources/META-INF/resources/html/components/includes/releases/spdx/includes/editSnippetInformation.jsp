@@ -15,7 +15,7 @@
             <th>9. Snippet Information</th>
         </tr>
     </thead>
-    <tbody class="section section-snippet">
+    <tbody id ="sectionSnippet" class="section section-snippet">
         <tr>
             <td>
                 <div style="display: flex; flex-direction: column; padding-left: 1rem;">

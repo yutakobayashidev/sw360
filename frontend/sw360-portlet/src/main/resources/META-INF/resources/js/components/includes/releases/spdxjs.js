@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-define('components/includes/releases/spdxjs', ['jquery'], function($) {
+define('components/includes/releases/spdxjs', ['jquery',"components/includes/releases/validateLib"] , function($,validateLib) {
     function enableSection(section, state) {
         if (!state) {
             section.find('button').attr('disabled', 'disabled');
@@ -1111,6 +1111,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
 
         obj['annotationComment'] = $('#annotationComment').val().trim();
     }
+
 
     return {
         addMain: addMain,

@@ -231,7 +231,6 @@
 <script>
     function setAnonymous() {
         let selectboxes = $('#creator-anonymous').parent().next().find('select');
-
         if ($('#creator-anonymous').is(':checked')) {
             selectboxes.each(function (index) {
                 if ($(this).val() == 'Organization' || $(this).val() == 'Person') {
@@ -250,7 +249,6 @@
             });
         }
     }
-
     function changeCreatorType(selectbox) {
         if ($('#creator-anonymous').is(':checked') &&
             ($(selectbox).val() == 'Organization' || $(selectbox).val() == 'Person')) {

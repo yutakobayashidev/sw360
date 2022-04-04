@@ -21,7 +21,7 @@
             <th colspan="3">7. Package Information</th>
         </tr>
     </thead>
-    <tbody class="section section-package">
+    <tbody id="sectionPackageInformation" class="section section-package">
         <tr>
             <td>
                 <div style="display: flex; flex-direction: column; padding-left: 1rem;">

@@ -8,7 +8,6 @@
 
     ~ SPDX-License-Identifier: EPL-2.0
 --%>
-
 <table class="table spdx-table spdx-full" id="editAnnotations">
     <thead>
         <tr>
