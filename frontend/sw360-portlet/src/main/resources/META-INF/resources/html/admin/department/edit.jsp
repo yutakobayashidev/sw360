@@ -71,9 +71,6 @@
                                 </td>
                                 <datalist class="suggestion" id="suggestionsList">
                                 </datalist>
-                                <td>
-                                    <input  class="form-control" disabled class="secGrp" minlength="1" placeholder="<liferay-ui:message key="role" />" title="<liferay-ui:message key="role" />" value="User"/>
-                                </td>
                                 <td class="content-middle">
                                     <svg class="action lexicon-icon delete-btn" data-value="" data-row-id="" onclick="">
                                         <title>Delete</title>

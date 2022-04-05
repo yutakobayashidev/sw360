@@ -64,7 +64,7 @@ public class UserDatabaseHandler {
     private static boolean IMPORT_DEPARTMENT_STATUS = false;
     private List<String> departmentDuplicate;
     private List<String> emailDoNotExist;
-    DateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
+    DateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH);
 
     public UserDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws IOException {
         // Create the connector
@@ -172,7 +172,7 @@ public class UserDatabaseHandler {
         String lastRunningTime = dateFormat.format(calendar.getTime());
         readFileRedmineConfig.writeLastRunningTimeConfig(lastRunningTime);
         try {
-            FileUtil.writeLogToFile("", "START IMPORT DEPARTMENT", "", pathFolderLog);
+            FileUtil.writeLogToFile(TITLE, "START IMPORT DEPARTMENT", "", pathFolderLog);
             Set<String> files = FileUtil.listPathFiles(pathFolder);
             for (String file : files) {
                 String extension = FilenameUtils.getExtension(file);

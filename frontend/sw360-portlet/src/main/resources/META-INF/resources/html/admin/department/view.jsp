@@ -85,7 +85,7 @@
                         </tr>
                     </table>
                     <form class="form mt-3">
-                        <div class="form-group col-auto">
+                        <div class="form-group">
                             <button type="button" class="btn btn-primary" id="departmentIsScheduled"
                                     onclick="window.location.href='<%=scheduleDepartmentURL%>'"
                                     <core_rt:if test="${departmentIsScheduled}">disabled</core_rt:if> >
