@@ -57,7 +57,7 @@ public class UserDatabaseHandler {
     private UserRepository repository;
     private UserSearchHandler userSearchHandler;
     private static final Logger log = LogManager.getLogger(UserDatabaseHandler.class);
-    private ReadFileDepartmentConfig readFileRedmineConfig;
+    private ReadFileDepartmentConfig readFileDepartmentConfig;
     private static final String SUCCESS = "SUCCESS";
     private static final String FAIL = "FAIL";
     private static final String TITLE = "IMPORT";
@@ -71,7 +71,7 @@ public class UserDatabaseHandler {
         db = new DatabaseConnectorCloudant(httpClient, dbName);
         dbConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
         repository = new UserRepository(db);
-        readFileRedmineConfig = new ReadFileDepartmentConfig();
+        readFileDepartmentConfig = new ReadFileDepartmentConfig();
         userSearchHandler = new UserSearchHandler(dbConnector, httpClient);
     }
 
@@ -161,7 +161,7 @@ public class UserDatabaseHandler {
         List<String> listFileSuccess = new ArrayList<>();
         List<String> listFileFail = new ArrayList<>();
         RequestSummary requestSummary = new RequestSummary().setTotalAffectedElements(0).setMessage("");
-        DepartmentConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+        DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
         String pathFolderLog = configDTO.getPathFolderLog();
         Map<String, List<String>> mapArrayList = new HashMap<>();
         if (IMPORT_DEPARTMENT_STATUS) {
@@ -170,7 +170,7 @@ public class UserDatabaseHandler {
         IMPORT_DEPARTMENT_STATUS = true;
         Calendar calendar = Calendar.getInstance(Locale.getDefault());
         String lastRunningTime = dateFormat.format(calendar.getTime());
-        readFileRedmineConfig.writeLastRunningTimeConfig(lastRunningTime);
+        readFileDepartmentConfig.writeLastRunningTimeConfig(lastRunningTime);
         try {
             FileUtil.writeLogToFile(TITLE, "START IMPORT DEPARTMENT", "", pathFolderLog);
             Set<String> files = FileUtil.listPathFiles(pathFolder);

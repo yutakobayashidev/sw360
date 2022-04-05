@@ -46,10 +46,10 @@ public class ReadFileDepartmentConfig {
                 Reader reader = Files.newBufferedReader(Paths.get(getPathConfig()));
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode jsonNode = objectMapper.readTree(reader);
-                JsonNode configRedmine = jsonNode.path("configDepartment");
-                String pathFolder = configRedmine.path("pathFolder").asText();
-                String lastRunningTime = configRedmine.path("lastRunningTime").asText();
-                int showFileLogFrom = configRedmine.path("showFileLogFrom").asInt();
+                JsonNode config = jsonNode.path("configDepartment");
+                String pathFolder = config.path("pathFolder").asText();
+                String lastRunningTime = config.path("lastRunningTime").asText();
+                int showFileLogFrom = config.path("showFileLogFrom").asInt();
                 String pathFolderLog = "";
                 if (!pathFolder.isEmpty()) pathFolderLog = pathFolder + FOLDER_LOG;
                 return new DepartmentConfigDTO(pathFolder, pathFolderLog, lastRunningTime, showFileLogFrom);
@@ -63,18 +63,18 @@ public class ReadFileDepartmentConfig {
     }
 
     public void writePathFolderConfig(String pathFolder) {
-        DepartmentConfigDTO redmineConfigDTO = readFileJson();
+        DepartmentConfigDTO configDTO = readFileJson();
         BufferedWriter writer = null;
         try {
             writer = Files.newBufferedWriter(Paths.get(getPathConfig()));
-            Map<String, Object> configRedmine = new HashMap<>();
+            Map<String, Object> config = new HashMap<>();
             Map<String, Object> map = new HashMap<>();
             map.put("pathFolder", pathFolder);
-            map.put("lastRunningTime", redmineConfigDTO.getLastRunningTime());
-            map.put("showFileLogFrom", redmineConfigDTO.getShowFileLogFrom());
-            configRedmine.put("configDepartment", map);
+            map.put("lastRunningTime", configDTO.getLastRunningTime());
+            map.put("showFileLogFrom", configDTO.getShowFileLogFrom());
+            config.put("configDepartment", map);
             ObjectMapper mapper = new ObjectMapper();
-            writer.write(mapper.writeValueAsString(configRedmine));
+            writer.write(mapper.writeValueAsString(config));
         } catch (FileNotFoundException e) {
             log.error("Error not find the file: {}", e.getMessage());
         } catch (IOException e) {
@@ -89,18 +89,18 @@ public class ReadFileDepartmentConfig {
     }
 
     public void writeLastRunningTimeConfig(String lastRunningTime) {
-        DepartmentConfigDTO redmineConfigDTO = readFileJson();
+        DepartmentConfigDTO configDTO = readFileJson();
         BufferedWriter writer = null;
         try {
             writer = Files.newBufferedWriter(Paths.get(getPathConfig()));
-            Map<String, Object> configRedmine = new HashMap<>();
+            Map<String, Object> config = new HashMap<>();
             Map<String, Object> map = new HashMap<>();
             map.put("lastRunningTime", lastRunningTime);
-            map.put("pathFolder", redmineConfigDTO.getPathFolder());
-            map.put("showFileLogFrom", redmineConfigDTO.getShowFileLogFrom());
-            configRedmine.put("configDepartment", map);
+            map.put("pathFolder", configDTO.getPathFolder());
+            map.put("showFileLogFrom", configDTO.getShowFileLogFrom());
+            config.put("configDepartment", map);
             ObjectMapper mapper = new ObjectMapper();
-            writer.write(mapper.writeValueAsString(configRedmine));
+            writer.write(mapper.writeValueAsString(config));
         } catch (FileNotFoundException e) {
             log.error("Error not find the file: {}", e.getMessage());
         } catch (IOException e) {

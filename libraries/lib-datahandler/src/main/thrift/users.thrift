@@ -15,7 +15,6 @@ namespace php sw360.thrift.users
 typedef sw360.RequestStatus RequestStatus
 typedef sw360.RequestSummary RequestSummary
 typedef sw360.PaginationData PaginationData
-typedef sw360.RedmineConfigDTO RedmineConfigDTO
 
 enum UserGroup {
     USER = 0,

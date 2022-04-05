@@ -45,11 +45,11 @@ public class UserHandler implements UserService.Iface {
     private static final String EXTENSION = ".log";
 
     private UserDatabaseHandler db;
-    private ReadFileDepartmentConfig readFileRedmineConfig;
+    private ReadFileDepartmentConfig readFileDepartmentConfig;
 
     public UserHandler() throws IOException {
         db = new UserDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_USERS);
-        readFileRedmineConfig = new ReadFileDepartmentConfig();
+        readFileDepartmentConfig = new ReadFileDepartmentConfig();
     }
 
     public UserHandler(Supplier<CloudantClient> client, Supplier<HttpClient> httpclient, String userDbName) throws IOException {
@@ -154,7 +154,7 @@ public class UserHandler implements UserService.Iface {
 
     @Override
     public RequestSummary importFileToDB() {
-        DepartmentConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+        DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
         RequestSummary requestSummary = new RequestSummary();
         if (!configDTO.getPathFolder().isEmpty()) {
             requestSummary = db.importFileToDB(configDTO.getPathFolder());
@@ -164,7 +164,7 @@ public class UserHandler implements UserService.Iface {
 
     @Override
     public RequestStatus importDepartmentSchedule() throws TException {
-        DepartmentConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+        DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
         db.importFileToDB(configDTO.getPathFolder());
         return RequestStatus.SUCCESS;
     }
@@ -187,7 +187,7 @@ public class UserHandler implements UserService.Iface {
     @Override
     public Set<String> getListFileLog() {
         try {
-            DepartmentConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+            DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
             if (configDTO != null && !configDTO.getPathFolderLog().isEmpty()) {
                 String path = configDTO.getPathFolderLog();
                 File theDir = new File(path);
@@ -204,7 +204,7 @@ public class UserHandler implements UserService.Iface {
     public Map<String, List<String>> getAllContentFileLog() {
         Map<String, List<String>> listMap = new HashMap<>();
         try {
-            DepartmentConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+            DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
             if (configDTO != null && configDTO.getPathFolderLog().length() > 0) {
                 String path = configDTO.getPathFolderLog();
                 File theDir = new File(path);
@@ -223,7 +223,7 @@ public class UserHandler implements UserService.Iface {
     @Override
     public String getLastModifiedFileName() throws TException {
         try {
-            DepartmentConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+            DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
             if (configDTO != null && !configDTO.getPathFolderLog().isEmpty()) {
                 String path = configDTO.getPathFolderLog();
                 File theDir = new File(path);
@@ -243,7 +243,7 @@ public class UserHandler implements UserService.Iface {
     @Override
     public String getPathConfigDepartment() throws TException {
         try {
-            DepartmentConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+            DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
             if (configDTO != null && !configDTO.getPathFolder().isEmpty()) {
                 return configDTO.getPathFolder();
             }
@@ -255,13 +255,13 @@ public class UserHandler implements UserService.Iface {
 
     @Override
     public void writePathFolderConfig(String pathFolder) throws TException {
-        readFileRedmineConfig.writePathFolderConfig(pathFolder);
+        readFileDepartmentConfig.writePathFolderConfig(pathFolder);
     }
 
     @Override
     public String getLastRunningTime() throws TException {
         try {
-            DepartmentConfigDTO configDTO = readFileRedmineConfig.readFileJson();
+            DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
             if (configDTO != null && !configDTO.getLastRunningTime().isEmpty()) {
                 return configDTO.getLastRunningTime();
             }
