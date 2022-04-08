@@ -27,6 +27,7 @@ typedef sw360.MainlineState MainlineState
 typedef sw360.ProjectReleaseRelationship ProjectReleaseRelationship
 typedef sw360.SW360Exception SW360Exception
 typedef sw360.PaginationData PaginationData
+typedef sw360.ImportBomRequestPreparation ImportBomRequestPreparation
 typedef attachments.Attachment Attachment
 typedef attachments.FilledAttachment FilledAttachment
 typedef users.User User
@@ -828,10 +829,12 @@ service ComponentService {
      */
     string getCyclicLinkedReleasePath(1: Release release, 2: User user);
 
+    ImportBomRequestPreparation prepareImportBom(1: User user, 2:string attachmentContentId);
+
     /**
      * parse a bom file and write the information to SW360
      **/
-    RequestSummary importBomFromAttachmentContent(1: User user, 2:string attachmentContentId);
+    RequestSummary importBomFromAttachmentContent(1: User user, 2:string attachmentContentId, 3:string rdf);
 
     /**
      * split data like releases and attachments from source component to target component.

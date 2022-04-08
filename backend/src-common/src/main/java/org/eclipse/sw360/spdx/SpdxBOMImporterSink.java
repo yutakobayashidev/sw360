@@ -91,6 +91,10 @@ public class SpdxBOMImporterSink {
         return new Response(projectId, AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
     }
 
+    public Release getRelease(String id) throws SW360Exception {
+        return componentDatabaseHandler.getRelease(id, user);
+    }
+
     public static class Response {
         private final String id;
         private final List<Response> childs;

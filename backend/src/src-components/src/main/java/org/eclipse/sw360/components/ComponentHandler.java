@@ -619,10 +619,17 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
-    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws TException {
+    public ImportBomRequestPreparation prepareImportBom(User user, String attachmentContentId) throws TException {
         assertNotNull(attachmentContentId);
         assertUser(user);
-        return handler.importBomFromAttachmentContent(user, attachmentContentId);
+        return handler.prepareImportBom(user, attachmentContentId);
+    }
+
+    @Override
+    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId, String rdfFilePath) throws TException {
+        assertNotNull(attachmentContentId);
+        assertUser(user);
+        return handler.importBomFromAttachmentContent(user, attachmentContentId,rdfFilePath);
     }
 
     @Override

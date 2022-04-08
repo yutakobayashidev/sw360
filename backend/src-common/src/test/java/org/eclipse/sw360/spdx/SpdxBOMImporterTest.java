@@ -22,6 +22,7 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.io.File;
 import java.io.InputStream;
 
 import static org.junit.Assert.assertNotNull;
@@ -31,6 +32,7 @@ import static org.mockito.Mockito.*;
 public class SpdxBOMImporterTest {
 
     private InputStream inputStream;
+    private File file;
     private AttachmentContent attachmentContent;
 
     @Mock
@@ -73,7 +75,7 @@ public class SpdxBOMImporterTest {
 
     @Test
     public void testProject() throws  Exception {
-        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsProject(inputStream, attachmentContent);
+        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsProject(file, attachmentContent);
         assertNotNull(requestSummary);
 
         verify(spdxBOMImporterSink, times(1)).addProject(ArgumentMatchers.any());
@@ -83,7 +85,7 @@ public class SpdxBOMImporterTest {
 
     @Test
     public void testRelease() throws  Exception {
-        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent);
+        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsRelease(file, attachmentContent);
         assertNotNull(requestSummary);
 
         verify(spdxBOMImporterSink, times(4)).addComponent(ArgumentMatchers.any());

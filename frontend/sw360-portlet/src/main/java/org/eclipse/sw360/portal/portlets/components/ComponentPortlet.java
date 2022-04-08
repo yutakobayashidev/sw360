@@ -240,6 +240,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             importBom(request, response);
         } else if (PortalConstants.LICENSE_TO_SOURCE_FILE.equals(action)) {
             serveLicenseToSourceFileMapping(request, response);
+        }  else if (PortalConstants.PREPARE_IMPORT_BOM.equals(action)) {
+            prepareImportBom(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
         } else if (PortalConstants.LOAD_CHANGE_LOGS.equals(action) || PortalConstants.VIEW_CHANGE_LOGS.equals(action)) {
@@ -331,8 +333,9 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         User user = UserCacheHolder.getUserFromRequest(request);
         String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
 
+        String rdfFilePath = request.getParameter(RDF_FILE_PATH);
         try {
-            final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId);
+            final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId,rdfFilePath);
 
             LiferayPortletURL releaseUrl = createDetailLinkTemplate(request);
             releaseUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_RELEASE_DETAIL);
@@ -420,6 +423,19 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     private void serveViewDepartment(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
         PortletUtils.setDepartmentSearchAttribute(request, response);
         include("/html/components/ajax/departmentSearch.jsp", request, response, PortletRequest.RESOURCE_PHASE);
+    }
+
+    private void prepareImportBom(ResourceRequest request, ResourceResponse response) {
+        final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        User user = UserCacheHolder.getUserFromRequest(request);
+        String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
+        try {
+            final ImportBomRequestPreparation importBomRequestPreparation = componentClient.prepareImportBom(user, attachmentContentId);
+            renderRequestPreparation(request, response, importBomRequestPreparation);
+        } catch (TException e) {
+            log.error("Failed to import BOM.", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+        }
     }
 
     private void serveCheckComponentName(ResourceRequest request, ResourceResponse response) throws IOException {
@@ -1029,7 +1045,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             request.setAttribute(COMPONENT, component);
             request.setAttribute(IS_USER_AT_LEAST_ECC_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.ECC_ADMIN, user)
                     || PermissionUtils.isUserAtLeastDesiredRoleInSecondaryGroup(UserGroup.ECC_ADMIN, allSecRoles) ? "Yes" : "No");
-        
+            
         } catch (TException e) {
             if (e instanceof SW360Exception) {
                 SW360Exception sw360Exp = (SW360Exception)e;
@@ -1416,7 +1432,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         }
 
         Map<String, Map<String, String>> displayInformation = new HashMap<>();
-        
+
         addToMap(displayInformation, "mainlineState", releaseTarget.getMainlineState());
         addToMap(displayInformation, "mainlineState", releaseSource.getMainlineState());
         addToMap(displayInformation, "repositorytype", releaseTarget.getRepository() != null ? releaseTarget.getRepository().getRepositorytype() : null);
@@ -1439,7 +1455,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             releaseToNameMap.put(release.getId(), release.getName() + " (" + release.getVersion() + ")");
         }
         displayInformation.put("release", releaseToNameMap);
-        
+
         jsonGenerator.writeStartObject();
 
         // adding common title
@@ -1479,7 +1495,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         usageInformation.put("releaseVulnerabilities", releaseVulnerabilities.size());
         List<ProjectVulnerabilityRating> projectRatings = vulnerabilityClient.getProjectVulnerabilityRatingsByReleaseId(releaseSourceId, sessionUser);
         usageInformation.put("projectRatings", projectRatings.size());
-        
+
         return usageInformation;
     }
 
@@ -1658,7 +1674,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 }
 
                 Map<RequestedAction, Boolean> permissions = release.getPermissions();
-                
+
                 request.setAttribute(PortalConstants.WRITE_ACCESS_USER, permissions.get(RequestedAction.WRITE));
                 if (isNullOrEmpty(id)) {
                     id = release.getComponentId();
