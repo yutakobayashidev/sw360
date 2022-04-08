@@ -33,7 +33,6 @@
                         <input id="<%=PortalConstants.CUSTOM_MAP_VALUE%>${loop1.count}_${loop2.count}" name="<portlet:namespace/><%=PortalConstants.CUSTOM_MAP_VALUE%>${loop1.count}_${loop2.count}" type="email" class="form-control" placeholder="${inputSubtitle}" title="${inputSubtitle}"
                                value="<sw360:out value='${setItem}'/>"/>
                     </td>
-
                     <td class="content-middle">
                         <svg class="action lexicon-icon" data-row-id="mapEditTableRow${loop1.count}_${loop2.count}">
                             <title><liferay-ui:message key="delete" /></title>
@@ -46,9 +45,7 @@
     </core_rt:if>
     </tbody>
 </table>
-
 <button class="btn btn-secondary" data-action="add-row" type="button"><liferay-ui:message key="click.to.add.row.to" /> <liferay-ui:message key="additional.roles" /></button>
-
 <div class="dialogs">
     <div id="deleteMapEditDialog" class="modal fade" tabindex="-1" role="dialog">
 		<div class="modal-dialog modal-lg modal-dialog-centered modal-danger" role="document">
@@ -103,7 +100,6 @@
                 '</tr>';
             $('#mapEditTable tr:last').after(newRowAsString);
         });
-
         $('#mapEditTable').on('click', 'svg[data-row-id]', function(event) {
             var rowId = $(event.currentTarget).data().rowId;
 

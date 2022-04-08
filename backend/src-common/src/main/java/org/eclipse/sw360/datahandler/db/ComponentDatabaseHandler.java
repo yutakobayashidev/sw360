@@ -25,6 +25,7 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
+import org.eclipse.sw360.datahandler.db.spdx.document.SpdxDocumentDatabaseHandler;
 import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
@@ -62,10 +63,21 @@ import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.jetbrains.annotations.NotNull;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
+import org.spdx.tools.SpdxConverter;
+import org.spdx.tools.SpdxConverterException;
+import org.spdx.tools.TagToRDF;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -111,6 +123,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private DatabaseHandlerUtil dbHandlerUtil;
 
     private final AttachmentConnector attachmentConnector;
+    private final SpdxDocumentDatabaseHandler spdxDocumentDatabaseHandler;
     /**
      * Access to moderation
      */
@@ -160,6 +173,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         attachmentConnector = new AttachmentConnector(httpClient, attachmentDbName, durationOf(30, TimeUnit.SECONDS));
         DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
+
+        // Create the spdx document database handler
+        this.spdxDocumentDatabaseHandler = new SpdxDocumentDatabaseHandler(httpClient, DatabaseSettings.COUCH_DB_SPDX);
     }
 
     public ComponentDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String changeLogsDbName, String attachmentDbName, ComponentModerator moderator, ReleaseModerator releaseModerator, ProjectModerator projectModerator) throws MalformedURLException {
@@ -249,7 +265,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public List<Release> getRecentReleases() {
         return releaseRepository.getRecentReleases();
     }
-    
+
     public List<Release> getRecentReleasesWithAccessibility(User user) {
         List<Release> releaseList = releaseRepository.getRecentReleases();
         for (Release release : releaseList) {
@@ -260,7 +276,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         return releaseList;
     }
-    
+
     public List<Component> getSubscribedComponents(String user) {
         return componentRepository.getSubscribedComponents(user);
     }
@@ -281,7 +297,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public List<Release> getAccessibleReleasesFromVendorIds(Set<String> ids, User user) {
         return getAccessibleReleaseList(releaseRepository.getReleasesFromVendorIds(ids), user);
     }
-    
+
     public Set<Release> getReleasesByVendorId(String vendorId) {
         return releaseRepository.getReleasesByVendorId(vendorId);
     }
@@ -303,7 +319,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     ////////////////////////////
     // GET INDIVIDUAL OBJECTS //
     ////////////////////////////
-    
+
     public void addSelectLogs(Component component, User user) {
 
         DatabaseHandlerUtil.addSelectLogs(component, user.getEmail(), attachmentConnector);
@@ -513,12 +529,26 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private boolean isDuplicate(Component component, boolean caseInsenstive){
-        Set<String> duplicates = componentRepository.getComponentIdsByName(component.getName(), caseInsenstive);
-        return duplicates.size()>0;
+        return isDuplicate(component.getName(), caseInsenstive);
     }
 
     private boolean isDuplicate(Release release){
-        List<Release> duplicates = releaseRepository.searchByNameAndVersion(release.getName(), release.getVersion());
+        return isDuplicate(release.getName(), release.getVersion());
+    }
+
+    private boolean isDuplicate(String componentName, boolean caseInsenstive) {
+        if (isNullEmptyOrWhitespace(componentName)) {
+            return false;
+        }
+        Set<String> duplicates = componentRepository.getComponentIdsByName(componentName, caseInsenstive);
+        return duplicates.size()>0;
+    }
+
+    private boolean isDuplicate(String releaseName, String releaseVersion) {
+        if (isNullEmptyOrWhitespace(releaseName)) {
+            return false;
+        }
+        List<Release> duplicates = releaseRepository.searchByNameAndVersion(releaseName, releaseVersion);
         return duplicates.size()>0;
     }
 
@@ -747,7 +777,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 .collect(Collectors.toSet());
         Set<String> releaseIds = Stream.concat(targetComponentReleaseIds.stream(), srcComponentReleaseIds.stream())
                 .collect(Collectors.toSet());
-        
+
         long noOfReleasesNotAllowedToUpdate = getNoOfReleasesNotAllowedToUpdate(srcComponentReleaseIds, sessionUser);
 
         if (!makePermission(mergeTarget, sessionUser).isActionAllowed(RequestedAction.WRITE)
@@ -799,7 +829,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void mergePlainFields(Component mergeSelection, Component mergeTarget, Component mergeSource) {
-        // First handle the creator of the component in a way, that the discarded creator will be on the 
+        // First handle the creator of the component in a way, that the discarded creator will be on the
         // moderator list afterwards. There is nothing to do, if source and target author are the same
         if(!nullToEmpty(mergeTarget.getCreatedBy()).equals(mergeSource.getCreatedBy())) {
             if(nullToEmpty(mergeSelection.getCreatedBy()).equals(nullToEmpty(mergeTarget.getCreatedBy()))) {
@@ -1318,7 +1348,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void mergeReleasePlainFields(Release mergeSelection, Release mergeTarget, Release mergeSource) {
-        // First handle the creator of the release in a way, that the discarded creator will be on the 
+        // First handle the creator of the release in a way, that the discarded creator will be on the
         // moderator list afterwards. There is nothing to do, if source and target author are the same
         if(!nullToEmpty(mergeTarget.getCreatedBy()).equals(mergeSource.getCreatedBy())) {
             if(nullToEmpty(mergeSelection.getCreatedBy()).equals(nullToEmpty(mergeTarget.getCreatedBy()))) {
@@ -1417,7 +1447,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             .add(COTSDetails._Fields.OSS_CONTRACT_SIGNED)
             .add(COTSDetails._Fields.OSS_INFORMATION_URL)
             .add(COTSDetails._Fields.SOURCE_CODE_AVAILABLE)
-            .build());   
+            .build());
     }
 
     private void mergeReleaseAttachments(Release mergeSelection, Release mergeTarget, Release mergeSource) {
@@ -1505,7 +1535,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     attachmentConnector, Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);
         }
     }
-    
+
     private void updateReleaseReferencesInAttachmentUsages(String mergeTargetId, String mergeSourceId) throws TException {
         AttachmentService.Iface attachmentClient = new ThriftClients().makeAttachmentClient();
 
@@ -1520,7 +1550,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             attachmentClient.updateAttachmentUsage(usage);
         }
     }
-    
+
     private void updateReleaseReferencesInReleases(String mergeTargetId, String mergeSourceId, User sessionUser) throws SW360Exception {
         List<Release> releases = getReferencingReleases(mergeSourceId);
         for(Release release : releases) {
@@ -1535,7 +1565,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     attachmentConnector, Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);
         }
     }
-    
+
     private void updateReleaseReferencesInVulnerabilities(String mergeTargetId, String mergeSourceId, User sessionUser) throws TException {
         VulnerabilityService.Iface vulnerabilityService = new ThriftClients().makeVulnerabilityClient();
 
@@ -1550,7 +1580,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
         }
     }
-    
+
     private void updateReleaseReferencesInProjectRatings(String mergeTargetId, String mergeSourceId, User sessionUser) throws TException {
         VulnerabilityService.Iface vulnerabilityService = new ThriftClients().makeVulnerabilityClient();
 
@@ -1679,16 +1709,22 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Component componentBefore = componentRepository.get(release.getComponentId());
             // Remove release id from component
             removeReleaseId(id, release.componentId);
-            Component componentAfter=removeReleaseAndCleanUp(release, user);
-            dbHandlerUtil.addChangeLogs(null, release, user.getEmail(), Operation.DELETE, attachmentConnector,
-                    Lists.newArrayList(), null, null);
-            dbHandlerUtil.addChangeLogs(componentAfter, componentBefore, user.getEmail(), Operation.UPDATE,
-                    attachmentConnector, Lists.newArrayList(), release.getId(), Operation.RELEASE_DELETE);
-            return RequestStatus.SUCCESS;
-        } else {
-            return releaseModerator.deleteRelease(release, user);
+            // Remove spdx if exist
+            String spdxId = release.getSpdxId();
+            if (CommonUtils.isNotNullEmptyOrWhitespace(spdxId)) {
+                spdxDocumentDatabaseHandler.deleteSPDXDocument(spdxId, user);
+                release = releaseRepository.get(id);
+            }
+                Component componentAfter = removeReleaseAndCleanUp(release, user);
+                dbHandlerUtil.addChangeLogs(null, release, user.getEmail(), Operation.DELETE, attachmentConnector,
+                        Lists.newArrayList(), null, null);
+                dbHandlerUtil.addChangeLogs(componentAfter, componentBefore, user.getEmail(), Operation.UPDATE,
+                        attachmentConnector, Lists.newArrayList(), release.getId(), Operation.RELEASE_DELETE);
+                return RequestStatus.SUCCESS;
+            } else {
+                return releaseModerator.deleteRelease(release, user);
+            }
         }
-    }
 
     private void removeReleaseId(String releaseId, String componentId) throws SW360Exception {
         // Remove release id from component
@@ -1736,7 +1772,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         return releaseLinkList;
     }
-    
+
     public boolean isReleaseActionAllowed(Release release, User user, RequestedAction action) {
         boolean isAllowed = false;
         switch (action) {
@@ -1749,7 +1785,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 }
                 isAllowed = isComponentAccessible && makePermission(release, user).isActionAllowed(RequestedAction.READ);
                 break;
-            
+
              default:
                 isAllowed = makePermission(release, user).isActionAllowed(action);
                 break;
@@ -1854,7 +1890,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public List<Release> getAccessibleReleases(Set<String> ids, User user) {
         return getAccessibleReleaseList(releaseRepository.makeSummary(SummaryType.SHORT, ids), user);
     }
-    
+
     private List<Release> getAccessibleReleaseList(List<Release> releaseList, User user) {
         List<Release> resultList = new ArrayList<Release>();
         for (Release release : releaseList) {
@@ -1864,7 +1900,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         return resultList;
     }
-    
+
     public Set<Component> searchComponentsByExternalIds(Map<String, Set<String>> externalIds) {
         return componentRepository.searchByExternalIds(externalIds);
     }
@@ -2062,7 +2098,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         return componentSet;
     }
-    
+
     public Set<Component> getComponentsByDefaultVendorId(String vendorId) {
         return componentRepository.getComponentsByDefaultVendorId(vendorId);
     }
@@ -2167,7 +2203,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         List<Component> componentList = getAccessibleRecentComponentsSummary(-1, user);
         return componentList.size();
     }
-    
+
     public List<Release> getReferencingReleases(String releaseId) {
         return releaseRepository.getReferencingReleases(releaseId);
     }
@@ -2363,19 +2399,185 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 release.getName(), release.getVersion());
     }
 
-    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws SW360Exception {
+    public ImportBomRequestPreparation prepareImportBom(User user, String attachmentContentId) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
         final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
+        String sourceFilePath = null;
+        String targetFilePath = null;
         try {
             final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
             try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
                 final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
                 final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
-                return spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent);
+
+                InputStream spdxInputStream = null;
+                String fileType = getFileType(attachmentContent.getFilename());
+
+                if (!fileType.equals("rdf")) {
+                    final String ext = "." + fileType;
+                    final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(user, inputStream, attachmentContentId, ext);
+                    sourceFilePath = sourceFile.getAbsolutePath();
+                    targetFilePath = sourceFilePath.replace(ext, ".rdf");
+                    File targetFile = null;
+                    try {
+                        if (fileType.equals("spdx")) {
+                            targetFile = convertTagToRdf(sourceFile, targetFilePath);
+                        } else {
+                            SpdxConverter.convert(sourceFilePath, targetFilePath);
+                            targetFile = new File(targetFilePath);
+                        }
+                        spdxInputStream = new FileInputStream(targetFile);
+                    } catch (SpdxConverterException e) {
+                        log.error("Can not convert to RDF \n" + e);
+                        ImportBomRequestPreparation importBomRequestPreparation = new ImportBomRequestPreparation();
+                        importBomRequestPreparation.setRequestStatus(RequestStatus.FAILURE);
+                        importBomRequestPreparation.setMessage("error-convert");
+                        return importBomRequestPreparation;
+
+                    } finally {
+                        Files.delete(Paths.get(sourceFilePath));
+                    }
+                } else {
+                    final String ext = "." + fileType;
+                    final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(user, inputStream, attachmentContentId, ext);
+                    sourceFilePath = sourceFile.getAbsolutePath();
+                    cutFileInformation(sourceFilePath);
+                    File targetFile = new File (sourceFilePath);
+                    spdxInputStream = new  FileInputStream(targetFile);
+                    targetFilePath = sourceFilePath;
+                }
+
+                ImportBomRequestPreparation importBomRequestPreparation = spdxBOMImporter.prepareImportSpdxBOMAsRelease(spdxInputStream, attachmentContent);
+                if (RequestStatus.SUCCESS.equals(importBomRequestPreparation.getRequestStatus())) {
+                    String name = importBomRequestPreparation.getName();
+                    String version = importBomRequestPreparation.getVersion();
+                    if (!isDuplicate(name, true)) {
+                        importBomRequestPreparation.setIsComponentDuplicate(false);
+                        importBomRequestPreparation.setIsReleaseDuplicate(false);
+                    } else if (!isDuplicate(name, version)) {
+                        importBomRequestPreparation.setIsComponentDuplicate(true);
+                        importBomRequestPreparation.setIsReleaseDuplicate(false);
+                    } else {
+                        importBomRequestPreparation.setIsComponentDuplicate(true);
+                        importBomRequestPreparation.setIsReleaseDuplicate(true);
+                    }
+                    importBomRequestPreparation.setMessage(targetFilePath);
+                }
+
+                return importBomRequestPreparation;
             }
         } catch (InvalidSPDXAnalysisException | IOException e) {
             throw new SW360Exception(e.getMessage());
         }
+    }
+
+    private void cutFileInformation(String pathFile) {
+        try {
+            log.info("Run command cut File information from RDF file from line");
+            String command = "file=\"" + pathFile + "\" " +
+            "&& start=$(cat $file | grep -nF \"spdx:hasFile>\" | head -1 | cut -d \":\" -f1) " +
+            "&& end=$(cat $file | grep -nF \"/spdx:hasFile>\" | tail -1 | cut -d \":\" -f1) " +
+            "&& echo $start to $end " +
+            "&& sed -i \"${start},${end}d\" $file ";
+            Process process = Runtime.getRuntime().exec(new String[] { "/bin/bash", "-c", command });
+            printResults(process);
+        } catch (IOException e) {
+            log.error("Error when cut File information");
+            e.printStackTrace();
+        }
+    }
+
+    public static void printResults(Process process) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line = "";
+        while ((line = reader.readLine()) != null) {
+            log.info(line);
+        }
+    }
+
+    private File convertTagToRdf(File sourceFile, String targetFilePath) {
+        FileInputStream spdxTagStream = null;
+
+        try {
+            spdxTagStream = new FileInputStream(sourceFile);
+        } catch (FileNotFoundException e2) {
+            e2.printStackTrace();
+        }
+
+        File spdxRDFFile = new File(targetFilePath);
+        String outputFormat = "RDF/XML";
+		FileOutputStream outStream = null;
+		try {
+			outStream = new FileOutputStream(spdxRDFFile);
+		} catch (FileNotFoundException e1) {
+			try {
+				spdxTagStream.close();
+			} catch (IOException e) {
+                log.error("Warning: Unable to close input file on error.");
+			}
+			log.error("Could not write to the new SPDX RDF file " + spdxRDFFile.getPath() + "due to error " + e1.getMessage());
+        }
+
+		List<String> warnings = new ArrayList<String>();
+		try {
+			TagToRDF.convertTagFileToRdf(spdxTagStream, outStream, outputFormat, warnings);
+			if (!warnings.isEmpty()) {
+				log.warn("The following warnings and or verification errors were found:");
+				for (String warning:warnings) {
+					log.warn("\t" + warning);
+				}
+            }
+		} catch (Exception e) {
+			log.error("Error creating SPDX Analysis: " + e.getMessage());
+		} finally {
+			if (outStream != null) {
+				try {
+					outStream.close();
+				} catch (IOException e) {
+					log.error("Error closing RDF file: " + e.getMessage());
+				}
+			}
+			if (spdxTagStream != null) {
+				try {
+					spdxTagStream.close();
+				} catch (IOException e) {
+					log.error("Error closing Tag/Value file: " + e.getMessage());
+				}
+			}
+		}
+        return spdxRDFFile;
+    }
+
+
+    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws SW360Exception {
+        final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
+        try {
+            InputStream spdxInputStream = null;
+            spdxInputStream = attachmentConnector.unsafeGetAttachmentStream(attachmentContent);
+            final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
+            final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
+            return spdxBOMImporter.importSpdxBOMAsRelease(spdxInputStream, attachmentContent);
+        } catch (IOException e) {
+            throw new SW360Exception(e.getMessage());
+        }
+    }
+
+    private String getFileType(String fileName) {
+        if (isNullEmptyOrWhitespace(fileName) || !fileName.contains(".")) {
+            log.error("Can not get file type from file name - no file extension");
+            return null;
+		}
+		String ext = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+		if ("xml".equals(ext)) {
+			if (fileName.endsWith("rdf.xml")) {
+				ext = "rdf";
+			}
+		}
+		return ext;
+    }
+
+    private boolean isJSONFile(String fileType) {
+        return (!isNullEmptyOrWhitespace(fileType) && fileType.equals("json"));
     }
 
     private void removeLeadingTrailingWhitespace(Release release) {
@@ -2500,7 +2702,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             PaginationData pageData) {
           return componentRepository.getRecentComponentsSummary(user, pageData);
     }
-    
+
     private void checkSuperAttachmentExists(Release release) {
         if (CommonUtils.isNotEmpty(release.getAttachments())) {
             Set<String> attachmentContentIds = release.getAttachments().stream()

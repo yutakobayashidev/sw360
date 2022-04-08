@@ -27,6 +27,7 @@ typedef sw360.MainlineState MainlineState
 typedef sw360.ProjectReleaseRelationship ProjectReleaseRelationship
 typedef sw360.SW360Exception SW360Exception
 typedef sw360.PaginationData PaginationData
+typedef sw360.ImportBomRequestPreparation ImportBomRequestPreparation
 typedef attachments.Attachment Attachment
 typedef attachments.FilledAttachment FilledAttachment
 typedef users.User User
@@ -136,7 +137,7 @@ struct ReleaseClearingStateSummary {
     3: required i32 underClearing,
     4: required i32 reportAvailable,
     5: required i32 approved,
-    6: required i32 scanAvailable, 
+    6: required i32 scanAvailable,
 }
 
 enum ECCStatus {
@@ -272,6 +273,8 @@ struct Release {
     90: optional DocumentState documentState,
 
     200: optional map<RequestedAction, bool> permissions,
+
+    400: optional string spdxId,
     204: optional string modifiedBy, // Last Modified By User Email
     205: optional string modifiedOn, // Last Modified Date YYYY-MM-dd
 }
@@ -431,7 +434,7 @@ service ComponentService {
      * short summary of all accessible releases.
      **/
     list<Release> getAccessibleReleaseSummary(1: User user);
-    
+
     /**
      * search components in database that match subQueryRestrictions
      **/
@@ -657,7 +660,7 @@ service ComponentService {
 
     /**
      * Update the set of releases. Do only use for updating simple fields.
-     */ 
+     */
     RequestSummary updateReleasesDirectly(1: set<Release> releases, 2: User user);
 
     /**
@@ -696,7 +699,7 @@ service ComponentService {
      * get components with accessibility belonging to linked releases of the releases specified by releaseId
      **/
     set <Component> getUsingComponentsWithAccessibilityForComponent(1: set <string> releaseId, 2: User user);
-    
+
     /**
      * get components using the given vendor id
      */
@@ -820,13 +823,18 @@ service ComponentService {
 
     /**
      * Gets releases referencing the given release id
-     */ 
+     */
     list<Release> getReferencingReleases(1: string releaseId);
 
     /**
      * get the cyclic hierarchy of linkedReleases
      */
     string getCyclicLinkedReleasePath(1: Release release, 2: User user);
+
+    // /**
+    //  * parse a bom file and write the information to SW360
+    //  **/
+    ImportBomRequestPreparation prepareImportBom(1: User user, 2:string attachmentContentId);
 
     /**
      * parse a bom file and write the information to SW360

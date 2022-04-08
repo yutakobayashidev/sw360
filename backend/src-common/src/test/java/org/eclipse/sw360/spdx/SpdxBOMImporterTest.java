@@ -41,7 +41,6 @@ public class SpdxBOMImporterTest {
     @Before
     public void before() throws Exception {
         spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
-
         inputStream = getClass()
              .getClassLoader().getResourceAsStream("bom.spdx.rdf");
 
