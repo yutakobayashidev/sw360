@@ -27,6 +27,7 @@ typedef sw360.MainlineState MainlineState
 typedef sw360.ProjectReleaseRelationship ProjectReleaseRelationship
 typedef sw360.SW360Exception SW360Exception
 typedef sw360.PaginationData PaginationData
+typedef sw360.ImportBomRequestPreparation ImportBomRequestPreparation
 typedef attachments.Attachment Attachment
 typedef attachments.FilledAttachment FilledAttachment
 typedef users.User User
@@ -272,6 +273,8 @@ struct Release {
     90: optional DocumentState documentState,
 
     200: optional map<RequestedAction, bool> permissions,
+    
+    400: optional string spdxId,
     204: optional string modifiedBy, // Last Modified By User Email
     205: optional string modifiedOn, // Last Modified Date YYYY-MM-dd
 }
@@ -828,10 +831,15 @@ service ComponentService {
      */
     string getCyclicLinkedReleasePath(1: Release release, 2: User user);
 
+    // /**
+    //  * parse a bom file and write the information to SW360
+    //  **/
+    ImportBomRequestPreparation prepareImportBom(1: User user, 2:string attachmentContentId);
+
     /**
      * parse a bom file and write the information to SW360
      **/
-    RequestSummary importBomFromAttachmentContent(1: User user, 2:string attachmentContentId);
+    RequestSummary importBomFromAttachmentContent(1: User user, 2:string attachmentContentId, 3:string newReleaseVersion, 4:string releaseId, 5:string rdfFilePath);
 
     /**
      * split data like releases and attachments from source component to target component.
@@ -842,6 +850,11 @@ service ComponentService {
      * Gets all releases with complete details
      */
     list<Release> getAllReleasesForUser(1: User user);
+
+    /**
+     * parse a bom file and write the information to SW360
+     **/
+    RequestSummary exportSPDX(1: User user, 2:string releaseId, 3:string outputFormat);
 
     /**
     * Send email to the user once spreadsheet export completed
