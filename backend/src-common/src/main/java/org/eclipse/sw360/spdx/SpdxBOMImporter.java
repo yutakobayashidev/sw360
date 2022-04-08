@@ -1,5 +1,7 @@
 /*
  * Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+ * Copyright TOSHIBA CORPORATION, 2021. Part of the SW360 Portal Project.
+ * Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2021. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -14,12 +16,14 @@ import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
 import org.spdx.rdfparser.SPDXDocumentFactory;
 import org.spdx.rdfparser.model.*;
+import org.spdx.rdfparser.model.pointer.*;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,6 +31,8 @@ import org.apache.logging.log4j.Logger;
 import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.eclipse.sw360.datahandler.common.CommonUtils.isNotNullEmptyOrWhitespace;
 
 public class SpdxBOMImporter {
     private static final Logger log = LogManager.getLogger(SpdxBOMImporter.class);
@@ -36,8 +42,40 @@ public class SpdxBOMImporter {
         this.sink = sink;
     }
 
-    public RequestSummary importSpdxBOMAsRelease(InputStream inputStream, AttachmentContent attachmentContent)
+    public ImportBomRequestPreparation prepareImportSpdxBOMAsRelease(InputStream inputStream, AttachmentContent attachmentContent)
             throws InvalidSPDXAnalysisException, SW360Exception {
+        final ImportBomRequestPreparation requestPreparation = new ImportBomRequestPreparation();
+        final SpdxDocument spdxDocument = openAsSpdx(inputStream);
+        final List<SpdxItem> describedPackages = Arrays.stream(spdxDocument.getDocumentDescribes())
+                .filter(item -> item instanceof SpdxPackage)
+                .collect(Collectors.toList());
+
+        if (describedPackages.size() == 0) {
+            requestPreparation.setMessage("The provided BOM did not contain any top level packages.");
+            requestPreparation.setRequestStatus(RequestStatus.FAILURE);
+            return requestPreparation;
+        } else if (describedPackages.size() > 1) {
+            requestPreparation.setMessage("The provided BOM file contained multiple described top level packages. This is not allowed here.");
+            requestPreparation.setRequestStatus(RequestStatus.FAILURE);
+            return requestPreparation;
+        }
+
+        final SpdxItem spdxItem = describedPackages.get(0);
+        if (spdxItem instanceof SpdxPackage) {
+            final SpdxPackage spdxPackage = (SpdxPackage) spdxItem;
+
+            requestPreparation.setName(spdxPackage.getName());
+            requestPreparation.setVersion(spdxPackage.getVersionInfo());
+            requestPreparation.setRequestStatus(RequestStatus.SUCCESS);
+        } else {
+            requestPreparation.setMessage("Failed to get spdx package from the provided BOM file.");
+            requestPreparation.setRequestStatus(RequestStatus.FAILURE);
+        }
+        return requestPreparation;
+    }
+
+    public RequestSummary importSpdxBOMAsRelease(InputStream inputStream, AttachmentContent attachmentContent)
+            throws SW360Exception {
         return importSpdxBOM(inputStream, attachmentContent, SW360Constants.TYPE_RELEASE);
     }
 
@@ -47,12 +85,18 @@ public class SpdxBOMImporter {
     }
 
     private RequestSummary importSpdxBOM(InputStream inputStream, AttachmentContent attachmentContent, String type)
-            throws InvalidSPDXAnalysisException, SW360Exception {
+            throws SW360Exception {
         final RequestSummary requestSummary = new RequestSummary();
-        final SpdxDocument spdxDocument = openAsSpdx(inputStream);
-        final List<SpdxItem> describedPackages = Arrays.stream(spdxDocument.getDocumentDescribes())
-                .filter(item -> item instanceof SpdxPackage)
-                .collect(Collectors.toList());
+        SpdxDocument spdxDocument = null;
+        List<SpdxItem> describedPackages = new ArrayList<>();
+        try {
+            spdxDocument = openAsSpdx(inputStream);
+            describedPackages =  Arrays.stream(spdxDocument.getDocumentDescribes())
+                    .filter(item -> item instanceof SpdxPackage)
+                    .collect(Collectors.toList());
+        } catch (InvalidSPDXAnalysisException e) {
+            log.error("Can not open file to SpdxDocument " +e);
+        }
 
         if (describedPackages.size() == 0) {
             requestSummary.setTotalAffectedElements(0);
@@ -121,12 +165,44 @@ public class SpdxBOMImporter {
         return release;
     }
 
+    // refer to rangeToStr function of spdx-tools
+    private String[] rangeToStrs(StartEndPointer rangePointer) throws InvalidSPDXAnalysisException {
+        SinglePointer startPointer = rangePointer.getStartPointer();
+        if (startPointer == null) {
+            throw new InvalidSPDXAnalysisException("Missing start pointer");
+        }
+        SinglePointer endPointer = rangePointer.getEndPointer();
+        if (endPointer == null) {
+            throw new InvalidSPDXAnalysisException("Missing end pointer");
+        }
+        String start = null;
+        if (startPointer instanceof ByteOffsetPointer) {
+            start = String.valueOf(((ByteOffsetPointer)startPointer).getOffset());
+        } else if (startPointer instanceof LineCharPointer) {
+            start = String.valueOf(((LineCharPointer)startPointer).getLineNumber());
+        } else {
+            log.error("Unknown pointer type for start pointer "+startPointer.toString());
+            throw new InvalidSPDXAnalysisException("Unknown pointer type for start pointer");
+        }
+        String end = null;
+        if (endPointer instanceof ByteOffsetPointer) {
+            end = String.valueOf(((ByteOffsetPointer)endPointer).getOffset());
+        } else if (endPointer instanceof LineCharPointer) {
+            end = String.valueOf(((LineCharPointer)endPointer).getLineNumber());
+        } else {
+            log.error("Unknown pointer type for start pointer "+startPointer.toString());
+            throw new InvalidSPDXAnalysisException("Unknown pointer type for start pointer");
+        }
+        return new String[] { start, end };
+    }
+
     private Attachment makeAttachmentFromContent(AttachmentContent attachmentContent) {
         Attachment attachment = new Attachment();
         attachment.setAttachmentContentId(attachmentContent.getId());
-        attachment.setAttachmentType(AttachmentType.OTHER);
+        attachment.setAttachmentType(AttachmentType.SBOM);
         attachment.setCreatedComment("Used for SPDX Bom import");
         attachment.setFilename(attachmentContent.getFilename());
+        attachment.setCheckStatus(CheckStatus.NOTCHECKED);
 
         return attachment;
     }
@@ -157,6 +233,7 @@ public class SpdxBOMImporter {
 
 
             final SpdxBOMImporterSink.Response response = sink.addRelease(release);
+
             response.addChild(component);
             return Optional.of(response);
         } else {

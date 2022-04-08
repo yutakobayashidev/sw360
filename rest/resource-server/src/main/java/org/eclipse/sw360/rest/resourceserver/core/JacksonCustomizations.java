@@ -1122,5 +1122,7 @@ public class JacksonCustomizations {
         })
         public static abstract class ProjectProjectRelationshipMixin extends ProjectProjectRelationship {
         }
+
+
     }
 }

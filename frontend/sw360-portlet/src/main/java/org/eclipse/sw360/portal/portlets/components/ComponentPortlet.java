@@ -76,7 +76,6 @@ import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.apache.commons.lang.StringUtils;
-
 import javax.portlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -106,22 +105,22 @@ import static org.eclipse.sw360.portal.common.PortletUtils.setDepartmentSearchAt
 import org.apache.thrift.transport.TTransportException;
 
 @org.osgi.service.component.annotations.Component(
-    immediate = true,
-    properties = {
-            "/org/eclipse/sw360/portal/portlets/base.properties",
-            "/org/eclipse/sw360/portal/portlets/default.properties"
-    },
-    property = {
-        "javax.portlet.name=" + COMPONENT_PORTLET_NAME,
+        immediate = true,
+        properties = {
+                "/org/eclipse/sw360/portal/portlets/base.properties",
+                "/org/eclipse/sw360/portal/portlets/default.properties"
+        },
+        property = {
+                "javax.portlet.name=" + COMPONENT_PORTLET_NAME,
 
-        "javax.portlet.display-name=Components",
-        "javax.portlet.info.short-title=Components",
-        "javax.portlet.info.title=Components",
-        "javax.portlet.resource-bundle=content.Language",
-        "javax.portlet.init-param.view-template=/html/components/view.jsp",
-    },
-    service = Portlet.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE
+                "javax.portlet.display-name=Components",
+                "javax.portlet.info.short-title=Components",
+                "javax.portlet.info.title=Components",
+                "javax.portlet.resource-bundle=content.Language",
+                "javax.portlet.init-param.view-template=/html/components/view.jsp",
+        },
+        service = Portlet.class,
+        configurationPolicy = ConfigurationPolicy.REQUIRE
 )
 public class ComponentPortlet extends FossologyAwarePortlet {
 
@@ -214,13 +213,13 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             serveLinkedReleases(request, response);
         } else if (PortalConstants.PROJECT_SEARCH.equals(action)) {
             serveProjectSearch(request, response);
-        } else if (PortalConstants.UPDATE_VULNERABILITIES_RELEASE.equals(action)){
-            updateVulnerabilitiesRelease(request,response);
-        } else if (PortalConstants.UPDATE_VULNERABILITIES_COMPONENT.equals(action)){
-            updateVulnerabilitiesComponent(request,response);
+        } else if (PortalConstants.UPDATE_VULNERABILITIES_RELEASE.equals(action)) {
+            updateVulnerabilitiesRelease(request, response);
+        } else if (PortalConstants.UPDATE_VULNERABILITIES_COMPONENT.equals(action)) {
+            updateVulnerabilitiesComponent(request, response);
         } else if (PortalConstants.UPDATE_ALL_VULNERABILITIES.equals(action)) {
             updateAllVulnerabilities(request, response);
-        } else if (PortalConstants.UPDATE_VULNERABILITY_VERIFICATION.equals(action)){
+        } else if (PortalConstants.UPDATE_VULNERABILITY_VERIFICATION.equals(action)) {
             updateVulnerabilityVerification(request, response);
         } else if (PortalConstants.EXPORT_TO_EXCEL.equals(action)) {
             exportExcel(request, response);
@@ -236,10 +235,12 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             loadAssessmentSummaryInfo(request, response);
         } else if (PortalConstants.WRITE_SPDX_LICENSE_INFO_INTO_RELEASE.equals(action)) {
             writeSpdxLicenseInfoIntoRelease(request, response);
-        } else if (PortalConstants.IMPORT_BOM.equals(action)) {
+        }else if (PortalConstants.IMPORT_BOM.equals(action)) {
             importBom(request, response);
         } else if (PortalConstants.LICENSE_TO_SOURCE_FILE.equals(action)) {
             serveLicenseToSourceFileMapping(request, response);
+        }  else if (PortalConstants.PREPARE_IMPORT_BOM.equals(action)) {
+            prepareImportBom(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
         } else if (PortalConstants.LOAD_CHANGE_LOGS.equals(action) || PortalConstants.VIEW_CHANGE_LOGS.equals(action)) {
@@ -248,8 +249,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             JSONObject dataForChangeLogs = changeLogsPortletUtilsPortletUtils.serveResourceForChangeLogs(request,
                     response, action);
             writeJSON(request, response, dataForChangeLogs);
-        } else if (PortalConstants.EVALUATE_CLI_ATTACHMENTS.equals(action)) {
-            evaluateCLIAttachments(request, response);
         }
     }
 
@@ -347,7 +346,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         }
     }
 
-
     @Override
     protected void dealWithFossologyAction(ResourceRequest request, ResourceResponse response, String action) throws IOException, PortletException {
         if (PortalConstants.FOSSOLOGY_ACTION_STATUS.equals(action)) {
@@ -422,6 +420,19 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         include("/html/components/ajax/departmentSearch.jsp", request, response, PortletRequest.RESOURCE_PHASE);
     }
 
+    private void prepareImportBom(ResourceRequest request, ResourceResponse response) {
+        final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        User user = UserCacheHolder.getUserFromRequest(request);
+        String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
+        try {
+            final ImportBomRequestPreparation importBomRequestPreparation = componentClient.prepareImportBom(user, attachmentContentId);
+            renderRequestPreparation(request, response, importBomRequestPreparation);
+        } catch (TException e) {
+            log.error("Failed to import BOM.", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+        }
+    }
+
     private void serveCheckComponentName(ResourceRequest request, ResourceResponse response) throws IOException {
         List<Component> resultComponents = new ArrayList<>();
         List<String> errors = new ArrayList<>();
@@ -469,7 +480,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     }
 
     private void respondSimilarComponentsResponseJson(ResourceRequest request, ResourceResponse response,
-            List<Component> similarComponents, List<String> errors) throws IOException {
+                                                      List<Component> similarComponents, List<String> errors) throws IOException {
         response.setContentType(ContentTypes.APPLICATION_JSON);
 
         JsonGenerator jsonGenerator = JSON_FACTORY.createGenerator(response.getWriter());
@@ -745,19 +756,25 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             JsonGenerator jsonGenerator = JSON_FACTORY.createGenerator(response.getWriter());
             jsonGenerator.writeStartObject();
             if (concludedLicenseIds.size() > 0) {
-                jsonGenerator.writeStringField(LICENSE_PREFIX, LanguageUtil.get(resourceBundle,"concluded.license.ids"));
+                jsonGenerator.writeStringField(LICENSE_PREFIX, LanguageUtil.get(resourceBundle, "concluded.license.ids"));
                 jsonGenerator.writeArrayFieldStart(LICENSE_IDS);
-                concludedLicenseIds.forEach(licenseId -> wrapException(() -> { jsonGenerator.writeString(licenseId); }));
+                concludedLicenseIds.forEach(licenseId -> wrapException(() -> {
+                    jsonGenerator.writeString(licenseId);
+                }));
                 jsonGenerator.writeEndArray();
             } else if (CommonUtils.isNotEmpty(mainLicenseNames)) {
-                jsonGenerator.writeStringField(LICENSE_PREFIX, LanguageUtil.get(resourceBundle,"main.license.id"));
+                jsonGenerator.writeStringField(LICENSE_PREFIX, LanguageUtil.get(resourceBundle, "main.license.id"));
                 jsonGenerator.writeArrayFieldStart(LICENSE_IDS);
-                mainLicenseNames.forEach(licenseId -> wrapException(() -> { jsonGenerator.writeString(licenseId); }));
+                mainLicenseNames.forEach(licenseId -> wrapException(() -> {
+                    jsonGenerator.writeString(licenseId);
+                }));
                 jsonGenerator.writeEndArray();
             }
             jsonGenerator.writeStringField("otherLicense", LanguageUtil.get(resourceBundle,"other.license.ids"));
             jsonGenerator.writeArrayFieldStart("otherLicenseIds");
-            otherLicenseNames.forEach(licenseId -> wrapException(() -> { jsonGenerator.writeString(licenseId); }));
+            otherLicenseNames.forEach(licenseId -> wrapException(() -> {
+                jsonGenerator.writeString(licenseId);
+            }));
             jsonGenerator.writeEndArray();
             if (AttachmentType.INITIAL_SCAN_REPORT.equals(attachmentType)) {
                 jsonGenerator.writeStringField(LICENSE_PREFIX, LanguageUtil.get(resourceBundle, "possible.main.license.ids"));
@@ -950,7 +967,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 PortletUtils.setCustomFieldsEdit(request, user, component);
                 setUsingDocs(request, user, null, component.getReleaseIds());
                 setAttachmentsInRequest(request, component);
-                SessionMessages.add(request, "request_processed", LanguageUtil.get(resourceBundle,"new.component"));
+                SessionMessages.add(request, "request_processed", LanguageUtil.get(resourceBundle, "new.component"));
             }
         }
     }
@@ -963,7 +980,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         final User user = UserCacheHolder.getUserFromRequest(request);
         request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_RELEASE);
         request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
-
         if (isNullOrEmpty(id) && isNullOrEmpty(releaseId)) {
             throw new PortletException("Component or Release ID not set!");
         }
@@ -972,7 +988,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             ComponentService.Iface client = thriftClients.makeComponentClient();
             Component component;
             Release release;
-
             if (!isNullOrEmpty(releaseId)) {
                 release = client.getAccessibleReleaseByIdForEdit(releaseId, user);
                 Map<String, String> sortedAdditionalData = getSortedMap(release.getAdditionalData(), true);
@@ -991,11 +1006,10 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     id = release.getComponentId();
                 }
                 component = client.getAccessibleComponentById(id, user);
-
             } else {
                 component = client.getAccessibleComponentById(id, user);
                 release = (Release) request.getAttribute(RELEASE);
-                if(release == null) {
+                if (release == null) {
                     release = new Release();
                     release.setComponentId(id);
                     release.setClearingState(ClearingState.NEW_CLEARING);
@@ -1005,7 +1019,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     putDirectlyLinkedReleaseRelationsWithAccessibilityInRequest(request, release, user);
                     setAttachmentsInRequest(request, release);
                     setUsingDocs(request, null, user, client);
-                    SessionMessages.add(request, "request_processed", LanguageUtil.get(resourceBundle,"new.license"));
+                    SessionMessages.add(request, "request_processed", LanguageUtil.get(resourceBundle, "new.license"));
                 }
             }
 
@@ -1029,7 +1043,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             request.setAttribute(COMPONENT, component);
             request.setAttribute(IS_USER_AT_LEAST_ECC_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.ECC_ADMIN, user)
                     || PermissionUtils.isUserAtLeastDesiredRoleInSecondaryGroup(UserGroup.ECC_ADMIN, allSecRoles) ? "Yes" : "No");
-        
+
         } catch (TException e) {
             if (e instanceof SW360Exception) {
                 SW360Exception sw360Exp = (SW360Exception)e;
@@ -1180,7 +1194,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         jsonGenerator.writeStartObject();
 
         jsonGenerator.writeArrayFieldStart("components");
-        componentSummary.stream().filter( component -> !component.getId().equals(srcId)).forEach(component -> {
+        componentSummary.stream().filter(component -> !component.getId().equals(srcId)).forEach(component -> {
             try {
                 jsonGenerator.writeStartObject();
                 jsonGenerator.writeStringField("id", component.getId());
@@ -1224,7 +1238,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         jsonGenerator.writeStartObject();
 
         // adding common title
-        jsonGenerator.writeRaw("\""+ COMPONENT_SELECTION +"\":" + JSON_THRIFT_SERIALIZER.toString(componentSelection) + ",");
+        jsonGenerator.writeRaw("\"" + COMPONENT_SELECTION + "\":" + JSON_THRIFT_SERIALIZER.toString(componentSelection) + ",");
         jsonGenerator.writeStringField(COMPONENT_SOURCE_ID, componentSourceId);
 
         jsonGenerator.writeEndObject();
@@ -1250,7 +1264,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         // write response JSON
         jsonGenerator.writeStartObject();
         jsonGenerator.writeStringField("redirectUrl", componentUrl.toString());
-        if (status == RequestStatus.IN_USE){
+        if (status == RequestStatus.IN_USE) {
             jsonGenerator.writeStringField("error", "Cannot merge when one of the components has an active moderation request.");
         } else if (status == RequestStatus.ACCESS_DENIED) {
             jsonGenerator.writeStringField("error", "You do not have sufficient permissions.");
@@ -1358,11 +1372,11 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
         ComponentService.Iface cClient = thriftClients.makeComponentClient();
         List<Release> releases = cClient.getReleasesByComponentId(componentId, sessionUser);
-        
+
         jsonGenerator.writeStartObject();
 
         jsonGenerator.writeArrayFieldStart("releases");
-        releases.stream().filter( release -> !release.getId().equals(targetId) ).forEach(release -> {
+        releases.stream().filter(release -> !release.getId().equals(targetId)).forEach(release -> {
             try {
                 jsonGenerator.writeStartObject();
                 jsonGenerator.writeStringField("id", release.getId());
@@ -1392,15 +1406,15 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         boolean matchingPair = false;
         boolean foundSourceAttachments = false;
         Set<String> attachmentHashes = new HashSet<>();
-        for(Attachment attachment : nullToEmptySet(releaseTarget.getAttachments())) {
-            if(attachment.getAttachmentType().equals(AttachmentType.SOURCE) || attachment.getAttachmentType().equals(AttachmentType.SOURCE_SELF)) {
+        for (Attachment attachment : nullToEmptySet(releaseTarget.getAttachments())) {
+            if (attachment.getAttachmentType().equals(AttachmentType.SOURCE) || attachment.getAttachmentType().equals(AttachmentType.SOURCE_SELF)) {
                 attachmentHashes.add(attachment.getSha1());
                 foundSourceAttachments = true;
             }
         }
-        for(Attachment attachment : nullToEmptySet(releaseSource.getAttachments())) {
-            if(attachment.getAttachmentType().equals(AttachmentType.SOURCE) || attachment.getAttachmentType().equals(AttachmentType.SOURCE_SELF)) {
-                if(attachmentHashes.contains(attachment.getSha1())) {
+        for (Attachment attachment : nullToEmptySet(releaseSource.getAttachments())) {
+            if (attachment.getAttachmentType().equals(AttachmentType.SOURCE) || attachment.getAttachmentType().equals(AttachmentType.SOURCE_SELF)) {
+                if (attachmentHashes.contains(attachment.getSha1())) {
                     matchingPair = true;
                     break;
                 }
@@ -1408,7 +1422,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             }
         }
 
-        if(foundSourceAttachments && !matchingPair) {
+        if (foundSourceAttachments && !matchingPair) {
             jsonGenerator.writeStartObject();
             jsonGenerator.writeStringField("error", "Both releases must have at least one pair of same source attachments or no source attachments at all. Otherwise a merge is not possible.");
             jsonGenerator.writeEndObject();
@@ -1416,17 +1430,17 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         }
 
         Map<String, Map<String, String>> displayInformation = new HashMap<>();
-        
+
         addToMap(displayInformation, "mainlineState", releaseTarget.getMainlineState());
         addToMap(displayInformation, "mainlineState", releaseSource.getMainlineState());
         addToMap(displayInformation, "repositorytype", releaseTarget.getRepository() != null ? releaseTarget.getRepository().getRepositorytype() : null);
         addToMap(displayInformation, "repositorytype", releaseSource.getRepository() != null ? releaseSource.getRepository().getRepositorytype() : null);
         addToMap(displayInformation, "eccStatus", releaseTarget.getEccInformation().getEccStatus());
         addToMap(displayInformation, "eccStatus", releaseSource.getEccInformation().getEccStatus());
-        for(Attachment attachment : nullToEmptySet(releaseSource.getAttachments())) {
+        for (Attachment attachment : nullToEmptySet(releaseSource.getAttachments())) {
             addToMap(displayInformation, "attachmentType", attachment.getAttachmentType());
         }
-        for(Attachment attachment : nullToEmptySet(releaseTarget.getAttachments())) {
+        for (Attachment attachment : nullToEmptySet(releaseTarget.getAttachments())) {
             addToMap(displayInformation, "attachmentType", attachment.getAttachmentType());
         }
 
@@ -1435,11 +1449,11 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         releaseIds.addAll(nullToEmptyMap(releaseTarget.getReleaseIdToRelationship()).keySet());
         List<Release> releases = cClient.getReleasesById(releaseIds, sessionUser);
         Map<String, String> releaseToNameMap = new HashMap<String, String>();
-        for(Release release : releases) {
+        for (Release release : releases) {
             releaseToNameMap.put(release.getId(), release.getName() + " (" + release.getVersion() + ")");
         }
         displayInformation.put("release", releaseToNameMap);
-        
+
         jsonGenerator.writeStartObject();
 
         // adding common title
@@ -1453,7 +1467,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
     private <T> void addToMap(Map<String, Map<String, String>> map, String key, TEnum value) {
         Map<String, String> subMap = map.getOrDefault(key, new HashMap<String, String>());
-        if(value != null) {
+        if (value != null) {
             subMap.put(value.getValue() + "", ThriftEnumUtils.enumToString(value));
         }
         map.put(key, subMap);
@@ -1479,7 +1493,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         usageInformation.put("releaseVulnerabilities", releaseVulnerabilities.size());
         List<ProjectVulnerabilityRating> projectRatings = vulnerabilityClient.getProjectVulnerabilityRatingsByReleaseId(releaseSourceId, sessionUser);
         usageInformation.put("projectRatings", projectRatings.size());
-        
+
         return usageInformation;
     }
 
@@ -1493,7 +1507,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         jsonGenerator.writeStartObject();
 
         // adding common title
-        jsonGenerator.writeRaw("\""+ RELEASE_SELECTION +"\":" + JSON_THRIFT_SERIALIZER.toString(releaseSelection) + ",");
+        jsonGenerator.writeRaw("\"" + RELEASE_SELECTION + "\":" + JSON_THRIFT_SERIALIZER.toString(releaseSelection) + ",");
         jsonGenerator.writeStringField(RELEASE_SOURCE_ID, releaseSourceId);
 
         jsonGenerator.writeEndObject();
@@ -1520,7 +1534,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         // write response JSON
         jsonGenerator.writeStartObject();
         jsonGenerator.writeStringField("redirectUrl", releaseUrl.toString());
-        if (status == RequestStatus.IN_USE){
+        if (status == RequestStatus.IN_USE) {
             jsonGenerator.writeStringField("error", "Cannot merge when one of the releases has an active moderation request.");
         } else if (status == RequestStatus.ACCESS_DENIED) {
             jsonGenerator.writeStringField("error", "You do not have sufficient permissions.");
@@ -1658,7 +1672,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 }
 
                 Map<RequestedAction, Boolean> permissions = release.getPermissions();
-                
+
                 request.setAttribute(PortalConstants.WRITE_ACCESS_USER, permissions.get(RequestedAction.WRITE));
                 if (isNullOrEmpty(id)) {
                     id = release.getComponentId();
@@ -1698,7 +1712,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     }
 
     private String createFossologyJobViewLink(ExternalToolProcessStep processStep,
-            Map<String, Set<String>> configKeyToValues, String fossologyJobsViewLink) {
+                                              Map<String, Set<String>> configKeyToValues, String fossologyJobsViewLink) {
         String uploadId = null;
         if (processStep != null) {
             uploadId = processStep.getResult();
@@ -1712,7 +1726,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             URI fossologyRestURI = new URI(url);
             fossologyHostName = fossologyRestURI.getHost();
             fossologyPath = fossologyRestURI.getPath();
-            fossologyPath = fossologyPath.substring(0,fossologyPath.indexOf("/api/v"));
+            fossologyPath = fossologyPath.substring(0, fossologyPath.indexOf("/api/v"));
             protocol = fossologyRestURI.getScheme();
             int port = fossologyRestURI.getPort();
             portStr = port == -1 ? StringUtils.EMPTY : ":" + port;
@@ -1746,7 +1760,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         request.setAttribute(PortalConstants.SPDX_ATTACHMENTS, spdxAttachments);
     }
 
-    private String formatedMessageForVul(List<VerificationStateInfo> infoHistory){
+    private String formatedMessageForVul(List<VerificationStateInfo> infoHistory) {
         return CommonVulnerabilityPortletUtils.formatedMessageForVul(infoHistory,
                 e -> e.getVerificationState().name(),
                 e -> e.getCheckedOn(),
@@ -1767,7 +1781,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         putVulnerabilitiesInRequest(request, vuls, user);
     }
 
-    private void putVulnerabilitiesInRequestComponent(RenderRequest request, String componentId, User user, boolean isVulEditable) throws TException{
+    private void putVulnerabilitiesInRequestComponent(RenderRequest request, String componentId, User user, boolean isVulEditable) throws TException {
         VulnerabilityService.Iface vulClient = thriftClients.makeVulnerabilityClient();
         List<VulnerabilityDTO> vuls;
         if (isVulEditable) {
@@ -1787,14 +1801,14 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
     private void addToVulnerabilityVerifications(Map<String, Map<String, VerificationState>> vulnerabilityVerifications,
                                                  Map<String, Map<String, String>> vulnerabilityTooltips,
-                                                 VulnerabilityDTO vulnerability){
+                                                 VulnerabilityDTO vulnerability) {
         String vulnerabilityId = vulnerability.getExternalId();
         String releaseId = vulnerability.getIntReleaseId();
         Map<String, VerificationState> vulnerabilityVerification = vulnerabilityVerifications.computeIfAbsent(vulnerabilityId, k -> new HashMap<>());
         Map<String, String> vulnerabilityTooltip = vulnerabilityTooltips.computeIfAbsent(vulnerabilityId, k -> new HashMap<>());
         ReleaseVulnerabilityRelation relation = vulnerability.getReleaseVulnerabilityRelation();
 
-        if (! relation.isSetVerificationStateInfo()) {
+        if (!relation.isSetVerificationStateInfo()) {
             vulnerabilityVerification.put(releaseId, VerificationState.NOT_CHECKED);
             vulnerabilityTooltip.put(releaseId, "Not checked yet.");
         } else {
@@ -1813,7 +1827,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         }
 
         long numberOfCorrectVuls = vuls.stream()
-                .filter(vul -> ! VerificationState.INCORRECT.equals(getVerificationState(vul)))
+                .filter(vul -> !VerificationState.INCORRECT.equals(getVerificationState(vul)))
                 .map(VulnerabilityDTO::getExternalId)
                 .collect(Collectors.toSet())
                 .size();
@@ -1831,8 +1845,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             request.setAttribute(NUMBER_OF_INCORRECT_VULNERABILITIES, numberOfIncorrectVuls);
         }
 
-        request.setAttribute(PortalConstants.VULNERABILITY_VERIFICATIONS,vulnerabilityVerifications);
-        request.setAttribute(PortalConstants.VULNERABILITY_VERIFICATION_TOOLTIPS,vulnerabilityTooltips);
+        request.setAttribute(PortalConstants.VULNERABILITY_VERIFICATIONS, vulnerabilityVerifications);
+        request.setAttribute(PortalConstants.VULNERABILITY_VERIFICATION_TOOLTIPS, vulnerabilityTooltips);
     }
 
 
@@ -1921,21 +1935,21 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     String query = new StringBuilder("[%s ").append(PortalConstants.TO).append(" %s]").toString();
                     DateRange range = ThriftEnumUtils.stringToEnum(dateRange, DateRange.class);
                     switch (range) {
-                    case EQUAL:
-                        break;
-                    case LESS_THAN_OR_EQUAL_TO:
-                        parameter = String.format(query, PortalConstants.EPOCH_DATE, parameter);
-                        break;
-                    case GREATER_THAN_OR_EQUAL_TO:
-                        parameter = String.format(query, parameter, upperLimit);
-                        break;
-                    case BETWEEN:
-                        String endDate = request.getParameter(PortalConstants.END_DATE);
-                        if (isNullEmptyOrWhitespace(endDate)) {
-                            endDate = upperLimit;
-                        }
-                        parameter = String.format(query, parameter, endDate);
-                        break;
+                        case EQUAL:
+                            break;
+                        case LESS_THAN_OR_EQUAL_TO:
+                            parameter = String.format(query, PortalConstants.EPOCH_DATE, parameter);
+                            break;
+                        case GREATER_THAN_OR_EQUAL_TO:
+                            parameter = String.format(query, parameter, upperLimit);
+                            break;
+                        case BETWEEN:
+                            String endDate = request.getParameter(PortalConstants.END_DATE);
+                            if (isNullEmptyOrWhitespace(endDate)) {
+                                endDate = upperLimit;
+                            }
+                            parameter = String.format(query, parameter, endDate);
+                            break;
                     }
                 }
                 Set<String> values = CommonUtils.splitToSet(parameter);
@@ -1991,7 +2005,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 setSessionMessage(request, requestStatus, "Component", "update", component.getName());
                 if (RequestStatus.DUPLICATE.equals(requestStatus) || RequestStatus.DUPLICATE_ATTACHMENT.equals(requestStatus) ||
                         RequestStatus.NAMINGERROR.equals(requestStatus)) {
-                    if(RequestStatus.DUPLICATE.equals(requestStatus))
+                    if (RequestStatus.DUPLICATE.equals(requestStatus))
                         setSW360SessionError(request, ErrorMessages.COMPONENT_DUPLICATE);
                     else if (RequestStatus.NAMINGERROR.equals(requestStatus))
                         setSW360SessionError(request, ErrorMessages.COMPONENT_NAMING_ERROR);
@@ -2015,7 +2029,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 AddDocumentRequestSummary summary = client.addComponent(component, user);
 
                 AddDocumentRequestStatus status = summary.getRequestStatus();
-                switch(status){
+                switch (status) {
                     case SUCCESS:
                         String successMsg = "Component " + component.getName() + " added successfully";
                         SessionMessages.add(request, "request_processed", successMsg);
@@ -2084,7 +2098,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     setSessionMessage(request, requestStatus, "Release", "update", printName(release));
                     if (RequestStatus.DUPLICATE.equals(requestStatus) || RequestStatus.DUPLICATE_ATTACHMENT.equals(requestStatus) ||
                             RequestStatus.NAMINGERROR.equals(requestStatus)) {
-                        if(RequestStatus.DUPLICATE.equals(requestStatus))
+                        if (RequestStatus.DUPLICATE.equals(requestStatus))
                             setSW360SessionError(request, ErrorMessages.RELEASE_DUPLICATE);
                         else if (RequestStatus.NAMINGERROR.equals(requestStatus))
                             setSW360SessionError(request, ErrorMessages.RELEASE_NAME_VERSION_ERROR);
@@ -2132,7 +2146,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     AddDocumentRequestSummary summary = client.addRelease(release, user);
 
                     AddDocumentRequestStatus status = summary.getRequestStatus();
-                    switch(status){
+                    switch (status) {
                         case SUCCESS:
                             response.setRenderParameter(RELEASE_ID, summary.getId());
                             String successMsg = "Release " + printName(release) + " added successfully";
@@ -2173,7 +2187,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     }
 
     private void fillVendor(Release release) throws TException {
-        if(!isNullOrEmpty(release.getVendorId()) && release.isSetVendorId()) {
+        if (!isNullOrEmpty(release.getVendorId()) && release.isSetVendorId()) {
             VendorService.Iface client = thriftClients.makeVendorClient();
             Vendor vendor = client.getByID(release.getVendorId());
             release.setVendor(vendor);
@@ -2220,7 +2234,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             JSONObject responseData = PortletUtils.importStatusToJSON(importStatus);
             PrintWriter writer = response.getWriter();
             writer.write(responseData.toString());
-        } catch (TException e){
+        } catch (TException e) {
             log.error("Error updating CVEs for release in backend.", e);
         }
     }
