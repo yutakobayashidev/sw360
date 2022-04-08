@@ -18,9 +18,9 @@
 
 <table class="table label-value-table" id="componentOverview">
     <thead>
-        <tr>
-            <th colspan="2"><liferay-ui:message key="general" /></th>
-        </tr>
+    <tr>
+        <th colspan="2"><liferay-ui:message key="general" /></th>
+    </tr>
     </thead>
     <tr>
         <td><liferay-ui:message key="id" />:</td>
@@ -88,9 +88,9 @@
 
 <table class="table label-value-table" id="releaseAggregateTable">
     <thead>
-        <tr>
-            <th colspan="2"><liferay-ui:message key="release.aggregate.data" /></th>
-        </tr>
+    <tr>
+        <th colspan="2"><liferay-ui:message key="release.aggregate.data" /></th>
+    </tr>
     </thead>
     <tr>
         <td><liferay-ui:message key="vendors" />:</td>

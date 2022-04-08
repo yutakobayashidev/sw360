@@ -10,8 +10,9 @@
  */
 package org.eclipse.sw360.schedule.service;
 
-import org.eclipse.sw360.schedule.timer.ScheduleConstants;
-import org.eclipse.sw360.schedule.timer.Scheduler;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -20,9 +21,8 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.schedule.ScheduleService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.thrift.TException;
+import org.eclipse.sw360.schedule.timer.ScheduleConstants;
+import org.eclipse.sw360.schedule.timer.Scheduler;
 
 import java.util.Date;
 import java.util.Optional;
@@ -43,7 +43,7 @@ public class ScheduleHandler implements ScheduleService.Iface {
         RequestStatus get() throws TException;
     }
 
-    private boolean wrapSupplierException(SupplierThrowingTException body, String serviceName){
+    private boolean wrapSupplierException(SupplierThrowingTException body, String serviceName) {
         Supplier<RequestStatus> wrappedBody = () -> {
             try {
                 return body.get();
@@ -57,7 +57,7 @@ public class ScheduleHandler implements ScheduleService.Iface {
 
     @Override
     public RequestSummary scheduleService(String serviceName) throws TException {
-        if(ScheduleConstants.invalidConfiguredServices.contains(serviceName)){
+        if (ScheduleConstants.invalidConfiguredServices.contains(serviceName)) {
             log.info("Could not schedule " + serviceName + " because of invalid configuration.");
             return new RequestSummary(RequestStatus.FAILURE);
         }
@@ -72,11 +72,14 @@ public class ScheduleHandler implements ScheduleService.Iface {
             case ThriftClients.DELETE_ATTACHMENT_SERVICE:
                 successSync = wrapSupplierException(() -> thriftClients.makeAttachmentClient().deleteOldAttachmentFromFileSystem(), serviceName);
                 break;
+            case ThriftClients.IMPORT_DEPARTMENT_SERVICE:
+                successSync = wrapSupplierException(() -> thriftClients.makeUserClient().importDepartmentSchedule(), serviceName);
+                break;
             default:
                 log.error("Could not schedule service: " + serviceName + ". Reason: service is not registered in ThriftClients.");
         }
 
-        if (successSync){
+        if (successSync) {
             RequestSummary summary = new RequestSummary(RequestStatus.SUCCESS);
             summary.setMessage(SW360Utils.getDateTimeString(Scheduler.getNextSync()));
             return summary;
@@ -123,23 +126,23 @@ public class ScheduleHandler implements ScheduleService.Iface {
                 .setAnswerPositive(answer);
     }
 
-    private RequestStatusWithBoolean failedRequestStatusWithBoolean(){
+    private RequestStatusWithBoolean failedRequestStatusWithBoolean() {
         return new RequestStatusWithBoolean().setRequestStatus(RequestStatus.FAILURE);
     }
 
     @Override
-    public int getFirstRunOffset(String serviceName){
+    public int getFirstRunOffset(String serviceName) {
         return ScheduleConstants.SYNC_FIRST_RUN_OFFSET_SEC.get(serviceName) != null ? ScheduleConstants.SYNC_FIRST_RUN_OFFSET_SEC.get(serviceName) : -1;
     }
 
     @Override
-    public String getNextSync(String serviceName){
+    public String getNextSync(String serviceName) {
         Optional<Date> syncDate = Scheduler.getNextSync(serviceName);
         return syncDate.isPresent() ? syncDate.get().toString() : "";
     }
 
     @Override
-    public int getInterval(String serviceName){
-        return ScheduleConstants.SYNC_INTERVAL_SEC.get(serviceName) != null ? ScheduleConstants.SYNC_INTERVAL_SEC.get(serviceName) : -1 ;
+    public int getInterval(String serviceName) {
+        return ScheduleConstants.SYNC_INTERVAL_SEC.get(serviceName) != null ? ScheduleConstants.SYNC_INTERVAL_SEC.get(serviceName) : -1;
     }
 }
