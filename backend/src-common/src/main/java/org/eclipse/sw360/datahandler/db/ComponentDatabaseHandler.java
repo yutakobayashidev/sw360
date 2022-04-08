@@ -62,10 +62,21 @@ import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.jetbrains.annotations.NotNull;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
+import org.spdx.tools.SpdxConverter;
+import org.spdx.tools.SpdxConverterException;
+import org.spdx.tools.TagToRDF;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -160,6 +171,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         attachmentConnector = new AttachmentConnector(httpClient, attachmentDbName, durationOf(30, TimeUnit.SECONDS));
         DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
+
     }
 
     public ComponentDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String changeLogsDbName, String attachmentDbName, ComponentModerator moderator, ReleaseModerator releaseModerator, ProjectModerator projectModerator) throws MalformedURLException {
@@ -513,12 +525,26 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private boolean isDuplicate(Component component, boolean caseInsenstive){
-        Set<String> duplicates = componentRepository.getComponentIdsByName(component.getName(), caseInsenstive);
-        return duplicates.size()>0;
+        return isDuplicate(component.getName(), caseInsenstive);
     }
 
     private boolean isDuplicate(Release release){
-        List<Release> duplicates = releaseRepository.searchByNameAndVersion(release.getName(), release.getVersion());
+        return isDuplicate(release.getName(), release.getVersion());
+    }
+
+    private boolean isDuplicate(String componentName, boolean caseInsenstive) {
+        if (isNullEmptyOrWhitespace(componentName)) {
+            return false;
+        }
+        Set<String> duplicates = componentRepository.getComponentIdsByName(componentName, caseInsenstive);
+        return duplicates.size()>0;
+    }
+
+    private boolean isDuplicate(String releaseName, String releaseVersion) {
+        if (isNullEmptyOrWhitespace(releaseName)) {
+            return false;
+        }
+        List<Release> duplicates = releaseRepository.searchByNameAndVersion(releaseName, releaseVersion);
         return duplicates.size()>0;
     }
 
@@ -1680,6 +1706,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             // Remove release id from component
             removeReleaseId(id, release.componentId);
             Component componentAfter=removeReleaseAndCleanUp(release, user);
+
             dbHandlerUtil.addChangeLogs(null, release, user.getEmail(), Operation.DELETE, attachmentConnector,
                     Lists.newArrayList(), null, null);
             dbHandlerUtil.addChangeLogs(componentAfter, componentBefore, user.getEmail(), Operation.UPDATE,
@@ -2363,6 +2390,75 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 release.getName(), release.getVersion());
     }
 
+    public ImportBomRequestPreparation prepareImportBom(User user, String attachmentContentId) throws SW360Exception {
+        final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
+        final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
+        String sourceFilePath = null;
+        String targetFilePath = null;
+        try {
+            final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
+            try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
+                final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
+                final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
+
+                InputStream spdxInputStream = null;
+                String fileType = getFileType(attachmentContent.getFilename());
+
+                    final String ext = "." + fileType;
+                    final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(user, inputStream, attachmentContentId, ext);
+                    sourceFilePath = sourceFile.getAbsolutePath();
+                    cutFileInformation(sourceFilePath);
+                    File targetFile = new File (sourceFilePath);
+                    spdxInputStream = new  FileInputStream(targetFile);
+                    targetFilePath = sourceFilePath;
+
+                ImportBomRequestPreparation importBomRequestPreparation = spdxBOMImporter.prepareImportSpdxBOMAsRelease(spdxInputStream, attachmentContent);
+                if (RequestStatus.SUCCESS.equals(importBomRequestPreparation.getRequestStatus())) {
+                    String name = importBomRequestPreparation.getName();
+                    String version = importBomRequestPreparation.getVersion();
+                    if (!isDuplicate(name, true)) {
+                        importBomRequestPreparation.setIsComponentDuplicate(false);
+                        importBomRequestPreparation.setIsReleaseDuplicate(false);
+                    } else if (!isDuplicate(name, version)) {
+                        importBomRequestPreparation.setIsComponentDuplicate(true);
+                        importBomRequestPreparation.setIsReleaseDuplicate(false);
+                    } else {
+                        importBomRequestPreparation.setIsComponentDuplicate(true);
+                        importBomRequestPreparation.setIsReleaseDuplicate(true);
+                    }
+                    importBomRequestPreparation.setMessage(targetFilePath);
+                }
+                return importBomRequestPreparation;
+            }
+        } catch (InvalidSPDXAnalysisException | IOException e) {
+            throw new SW360Exception(e.getMessage());
+        }
+    }
+
+    private void cutFileInformation(String pathFile) {
+        try {
+            log.info("Run command cut File information from RDF file from line");
+            String command = "file=\"" + pathFile + "\" " +
+            "&& start=$(cat $file | grep -nF \"spdx:hasFile>\" | head -1 | cut -d \":\" -f1) " +
+            "&& end=$(cat $file | grep -nF \"/spdx:hasFile>\" | tail -1 | cut -d \":\" -f1) " +
+            "&& echo $start to $end " +
+            "&& sed -i \"${start},${end}d\" $file ";
+            Process process = Runtime.getRuntime().exec(new String[] { "/bin/bash", "-c", command });
+            printResults(process);
+        } catch (IOException e) {
+            log.error("Error when cut File information");
+            e.printStackTrace();
+        }
+    }
+
+    public static void printResults(Process process) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line = "";
+        while ((line = reader.readLine()) != null) {
+            log.info(line);
+        }
+    }
+
     public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
         final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
@@ -2373,9 +2469,27 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
                 return spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent);
             }
-        } catch (InvalidSPDXAnalysisException | IOException e) {
+        } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
         }
+    }
+
+    private String getFileType(String fileName) {
+        if (isNullEmptyOrWhitespace(fileName) || !fileName.contains(".")) {
+            log.error("Can not get file type from file name - no file extension");
+            return null;
+		}
+		String ext = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+		if ("xml".equals(ext)) {
+			if (fileName.endsWith("rdf.xml")) {
+				ext = "rdf";
+			}
+		}
+		return ext;
+    }
+
+    private boolean isJSONFile(String fileType) {
+        return (!isNullEmptyOrWhitespace(fileType) && fileType.equals("json"));
     }
 
     private void removeLeadingTrailingWhitespace(Release release) {

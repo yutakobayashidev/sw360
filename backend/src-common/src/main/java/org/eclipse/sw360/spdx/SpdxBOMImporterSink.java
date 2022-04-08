@@ -22,6 +22,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
+import java.net.MalformedURLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -32,7 +33,7 @@ public class SpdxBOMImporterSink {
     private final ComponentDatabaseHandler componentDatabaseHandler;
     private final User user;
 
-    public SpdxBOMImporterSink(User user, ProjectDatabaseHandler projectDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler) {
+    public SpdxBOMImporterSink(User user, ProjectDatabaseHandler projectDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler) throws MalformedURLException {
         this.projectDatabaseHandler = projectDatabaseHandler;
         this.componentDatabaseHandler = componentDatabaseHandler;
         this.user = user;
@@ -68,6 +69,7 @@ public class SpdxBOMImporterSink {
         return new Response(releaseId, AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
     }
 
+
     public Response addProject(Project project) throws SW360Exception {
         log.debug("create Project { name='" + project.getName() + "', version='" + project.getVersion() + "' }");
 
@@ -89,6 +91,10 @@ public class SpdxBOMImporterSink {
             throw new SW360Exception("Id of added project should not be empty. " + addDocumentRequestSummary.toString());
         }
         return new Response(projectId, AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
+    }
+
+    public Release getRelease(String id) throws SW360Exception {
+        return componentDatabaseHandler.getRelease(id, user);
     }
 
     public static class Response {

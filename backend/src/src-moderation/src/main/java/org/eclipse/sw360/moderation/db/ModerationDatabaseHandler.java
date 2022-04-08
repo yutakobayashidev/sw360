@@ -568,7 +568,7 @@ public class ModerationDatabaseHandler {
         return RequestStatus.SENT_TO_MODERATOR;
     }
 
- public void createRequest(User user) {
+    public void createRequest(User user) {
         // Define moderators
         Set<String> admins = getUsersAtLeast(UserGroup.CLEARING_ADMIN, user.getDepartment());
         ModerationRequest request = createStubRequest(user, false, user.getId(), admins);
@@ -582,7 +582,6 @@ public class ModerationDatabaseHandler {
 
         addOrUpdate(request, user);
     }
-
     private String getDepartmentByUserEmail(String userEmail) throws TException {
         UserService.Iface client = (new ThriftClients()).makeUserClient();
         return client.getDepartmentByEmail(userEmail);

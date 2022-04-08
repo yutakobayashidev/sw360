@@ -239,11 +239,12 @@ public class DatabaseMixInForChangeLog {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties({
-        "node",
-        "distribution",
-        "development",
-        "obligationType"
+            "node",
+            "distribution",
+            "development",
+            "obligationType"
     })
     public static abstract class ObligationMixin extends Obligation {
     }
+
 }

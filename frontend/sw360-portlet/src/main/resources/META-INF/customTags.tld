@@ -1218,6 +1218,12 @@
             <rtexprvalue>true</rtexprvalue>
         </attribute>
         <attribute>
+            <name>hashSet</name>
+            <required>false</required>
+            <type>java.lang.Boolean</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
             <name>maxChar</name>
             <required>false</required>
             <type>java.lang.Integer</type>
@@ -1389,6 +1395,7 @@
 
     <function>
         <name>printUserName</name>
+        <function-class>org.eclipse.sw360.datahandler.common.SW360Utils</function-class>
         <function-class>org.eclipse.sw360.datahandler.common.SW360Utils</function-class>
         <function-signature>java.lang.String printName(org.eclipse.sw360.datahandler.thrift.users.User)</function-signature>
     </function>
