@@ -85,7 +85,7 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
             case TType.STRING:
             case TType.ENUM:
                 if (document instanceof Release && ((field == Release._Fields.NAME || field == Release._Fields.VERSION)
-                    && "Dummy_Value".equals(documentAdditions.getFieldValue(field)))) {
+                        && "Dummy_Value".equals(documentAdditions.getFieldValue(field)))) {
                     break;
                 }
                 document.setFieldValue(field, documentAdditions.getFieldValue(field));

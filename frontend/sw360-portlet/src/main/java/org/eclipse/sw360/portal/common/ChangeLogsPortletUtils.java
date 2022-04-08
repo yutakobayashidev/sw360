@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.ResourceRequest;
@@ -38,6 +39,7 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogsService;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogsService.Iface;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ReferenceDocData;
 import org.eclipse.sw360.datahandler.thrift.users.User;

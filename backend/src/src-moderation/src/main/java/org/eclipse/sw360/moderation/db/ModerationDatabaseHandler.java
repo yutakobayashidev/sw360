@@ -582,7 +582,7 @@ public class ModerationDatabaseHandler {
 
         addOrUpdate(request, user);
     }
-
+    
     private String getDepartmentByUserEmail(String userEmail) throws TException {
         UserService.Iface client = (new ThriftClients()).makeUserClient();
         return client.getDepartmentByEmail(userEmail);

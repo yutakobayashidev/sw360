@@ -2691,8 +2691,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             obligationStatusMap = licenseObligation.getObligationStatusMap();
 
             request.setAttribute(APPROVED_OBLIGATIONS_COUNT, getFulfilledObligationsCount(obligationStatusMap));
-            request.setAttribute(OBLIGATION_FROM_README_OSS, getObligationsFromReadmeOSSCount(obligationStatusMap));
-            
             request.setAttribute(EXCLUDED_RELEASES, excludedReleases);
             request.setAttribute(PROJECT_OBLIGATIONS_INFO_BY_RELEASE, filterAndSortLicenseInfo(licenseObligation.getLicenseInfoResults()));
         } catch (TException e) {
@@ -2735,17 +2733,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
     private int getFulfilledObligationsCount(Map<String, ObligationStatusInfo> obligationStatusMap) {
         if (CommonUtils.isNotEmpty(obligationStatusMap.keySet())) {
-            return Math.toIntExact(
-                    obligationStatusMap.values().stream().filter(obligation -> obligation.getStatus() != null
-                            && !ObligationStatus.OPEN.equals(obligation.getStatus())).count());
-        }
-        return 0;
-    }
-
-    private int getObligationsFromReadmeOSSCount(Map<String, ObligationStatusInfo> obligationStatusMap) {
-        if (CommonUtils.isNotEmpty(obligationStatusMap.keySet())) {
-            return Math.toIntExact(
-                    obligationStatusMap.values().stream().filter(obligation -> obligation.getObligationLevel() == null).count());
+            return Math.toIntExact(obligationStatusMap.values().stream()
+                    .filter(obligation -> ObligationStatus.ACKNOWLEDGED_OR_FULFILLED.equals(obligation.getStatus())).count());
         }
         return 0;
     }

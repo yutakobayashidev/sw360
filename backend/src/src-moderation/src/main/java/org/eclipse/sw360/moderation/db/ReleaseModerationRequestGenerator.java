@@ -25,7 +25,6 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 public class ReleaseModerationRequestGenerator extends ModerationRequestGenerator<Release._Fields, Release> {
 
     private static final String DUMMY_VALUE = "Dummy_Value";
-
     @Override
     public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, Release updateRelease, Release actualRelease){
         updateDocument = updateRelease;
