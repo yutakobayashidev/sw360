@@ -129,6 +129,30 @@ struct VendorAdvisory{
     12: required string url
 }
 
+enum VulnerabilityImpact {
+    NONE = 0,
+    PARTIAL = 1,
+    COMPLETE = 2,
+}
+
+enum VulnerabilityAccessAuthentication {
+    MULTIPLE = 0,
+    SINGLE = 1,
+    NONE = 2,
+}
+
+enum VulnerabilityAccessComplexity {
+    LOW = 0,
+    MEDIUM = 1,
+    HIGH = 2,
+}
+
+enum VulnerabilityAccessVector {
+    LOCAL = 0,
+    ADJACENT_NETWORK = 1,
+    NETWORK = 2,
+}
+
 enum VulnerabilityRatingForProject {
     NOT_CHECKED = 0,
     IRRELEVANT = 1,
@@ -292,4 +316,10 @@ service VulnerabilityService {
      * throws SW360Exception with error code otherwise
      */
     RequestStatus deleteReleaseVulnerabilityRelation(1: ReleaseVulnerabilityRelation releaseVulnerabilityRelation, 2: User user) throws (1: SW360Exception exp);
+
+    /**
+     * Get Vulnerability and return Vulnerability
+     *  throws (1: TException exp)
+     */
+    Vulnerability getVulnerabilityId(1: string id);
 }

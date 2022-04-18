@@ -11,6 +11,7 @@ package org.eclipse.sw360.portal.portlets.components;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
@@ -20,13 +21,14 @@ import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.PortletUtils;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.ResourceRequest;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -189,6 +191,10 @@ public abstract class ComponentPortletUtils {
         PortletUtils.setFieldValue(request, component, field, Component.metaDataMap.get(field), "");
     }
 
+    private static void setFieldValue(PortletRequest request, Vulnerability vulnerability, Vulnerability._Fields field) {
+        PortletUtils.setFieldValue(request, vulnerability, field, Vulnerability.metaDataMap.get(field), "");
+    }
+
     private static void setFieldValue(PortletRequest request, Release release, Release._Fields field) {
         PortletUtils.setFieldValue(request, release, field, Release.metaDataMap.get(field), "");
     }
@@ -227,7 +233,7 @@ public abstract class ComponentPortletUtils {
             try {
                 String deleteCommentEncoded = request.getParameter(PortalConstants.MODERATION_REQUEST_COMMENT);
                 User user = UserCacheHolder.getUserFromRequest(request);
-                if(deleteCommentEncoded != null) {
+                if (deleteCommentEncoded != null) {
                     String deleteComment = new String(Base64.getDecoder().decode(deleteCommentEncoded));
                     user.setCommentMadeDuringModerationRequest(deleteComment);
                 }
@@ -296,7 +302,7 @@ public abstract class ComponentPortletUtils {
             try {
                 String deleteCommentEncoded = request.getParameter(PortalConstants.MODERATION_REQUEST_COMMENT);
                 User user = UserCacheHolder.getUserFromRequest(request);
-                if(deleteCommentEncoded != null) {
+                if (deleteCommentEncoded != null) {
                     String deleteComment = new String(Base64.getDecoder().decode(deleteCommentEncoded));
                     user.setCommentMadeDuringModerationRequest(deleteComment);
                 }
@@ -389,5 +395,192 @@ public abstract class ComponentPortletUtils {
         verificationStateHistory.add(resultInfo);
 
         return dbRelation;
+    }
+
+    /**
+     * Set data add vulnerability
+     *
+     * @param request
+     * @param vulnerability
+     */
+    public static void updateVulnerabilityFromRequest(PortletRequest request, Vulnerability vulnerability) {
+
+        // Format date time
+        String formatDate = "yyyy-MM-dd";
+        String formatTime = "HH:mm:ss";
+
+        setFieldValue(request, vulnerability, Vulnerability._Fields.EXTERNAL_ID);
+        setFieldValue(request, vulnerability, Vulnerability._Fields.TITLE);
+        setFieldValue(request, vulnerability, Vulnerability._Fields.DESCRIPTION);
+        setFieldValue(request, vulnerability, Vulnerability._Fields.PRIORITY);
+        setFieldValue(request, vulnerability, Vulnerability._Fields.PRIORITY_TEXT);
+        setFieldValue(request, vulnerability, Vulnerability._Fields.ACTION);
+        setFieldValue(request, vulnerability, Vulnerability._Fields.LEGAL_NOTICE);
+
+        // CVE
+        String cwe = "CWE-" + request.getParameter(String.valueOf(Vulnerability._Fields.CWE));
+        vulnerability.setCwe(cwe);
+        setFieldValue(request, vulnerability, Vulnerability._Fields.EXTENDED_DESCRIPTION);
+
+        // TODO
+        // CVE futher meta data per source
+        // setFieldValue(request, vulnerability, Vulnerability._Fields.DESCRIPTION);
+
+        // Cvss Score
+        // Get other information from request
+        String cvss = request.getParameter(String.valueOf(Vulnerability._Fields.CVSS));
+        vulnerability.setCvss(Double.parseDouble(cvss));
+        // setFieldValue(request, vulnerability, Vulnerability._Fields.CVSS);
+
+        String cvssDate = request.getParameter(PortalConstants.CVSS_DATE);
+        String cvssTime = request.getParameter(PortalConstants.CVSS_TIME);
+
+        String cvssDateTime = formatDate(cvssDate, cvssTime, formatDate, formatTime);
+        vulnerability.setCvssTime(cvssDateTime);
+
+        String publishDate = request.getParameter(PortalConstants.PUBLISH_DATE);
+        String publishTime = request.getParameter(PortalConstants.PUBLISH_TIME);
+
+        String publishDateTime = formatDate(publishDate, publishTime, formatDate, formatTime);
+        vulnerability.setPublishDate(publishDateTime);
+
+        // Get external update date time from request
+        String externalUpdateDate = request.getParameter(PortalConstants.EXTERNAL_UPDATE_DATE);
+        String externalUpdateTime = request.getParameter(PortalConstants.EXTERNAL_UPDATE_TIME);
+        String externalUpdateDateTime = formatDate(externalUpdateDate, externalUpdateTime, formatDate, formatTime);
+        vulnerability.setLastExternalUpdate(externalUpdateDateTime);
+
+        // Vulnerability Impact
+        String[] impactKeys = request.getParameterValues(PortalConstants.VULNERABILITY_IMPACT_KEY);
+        String[] impactValues = request.getParameterValues(PortalConstants.VULNERABILITY_IMPACT_VALUE);
+        Map<String, String> impacts = convertKeyValFromEnumToMap(impactKeys, impactValues);
+        vulnerability.setImpact(impacts);
+
+        // Vulnerability Access
+        String[] accessKeys = request.getParameterValues(PortalConstants.VULNERABILITY_ACCESS_KEY);
+        String[] accessValues = request.getParameterValues(PortalConstants.VULNERABILITY_ACCESS_VALUE);
+        Map<String, String> accesses = convertKeyValFromEnumToMap(accessKeys, accessValues);
+        vulnerability.setAccess(accesses);
+
+        // Cve Reference
+        Set<CVEReference> cveReferences = new HashSet<>();
+        String[] cveYears = request.getParameterValues(PortalConstants.VULNERABILITY_CVE_YEAR);
+        String[] cveNumbers = request.getParameterValues(PortalConstants.VULNERABILITY_CVE_NUMBER);
+        for (int i = 0; i < cveYears.length; i++) {
+            if (!cveNumbers[i].equals("") || !cveNumbers[i].equals("")) {
+                CVEReference cveReference = new CVEReference();
+                cveReference.setYear(cveYears[i]);
+                cveReference.setNumber(cveNumbers[i]);
+                cveReferences.add(cveReference);
+            }
+        }
+        vulnerability.setCveReferences(cveReferences);
+
+        // Vulnerability Reference
+        Set<String> references = new HashSet<String>();
+        String[] vulnerabilityReference = request.getParameterValues(String.valueOf(Vulnerability._Fields.REFERENCES));
+        for (String reference : vulnerabilityReference) {
+            if (!reference.equals("")) {
+                references.add(reference);
+            }
+        }
+        vulnerability.setReferences(references);
+
+        // Vendor Advisories
+        Set<VendorAdvisory> vendorAdvisories = new HashSet<>();
+        String[] advisoryVendors = request.getParameterValues(PortalConstants.VULNERABILITY_ADVISORY_VENDOR);
+        String[] advisoryNames = request.getParameterValues(PortalConstants.VULNERABILITY_ADVISORY_NAME);
+        String[] advisoryUrls = request.getParameterValues(PortalConstants.VULNERABILITY_ADVISORY_URL);
+        for (int i = 0; i < advisoryVendors.length; i++) {
+            if (!advisoryVendors[i].equals("") || !advisoryNames[i].equals("") || !advisoryUrls[i].equals("")) {
+                VendorAdvisory vendorAdvisory = new VendorAdvisory();
+                vendorAdvisory.setVendor(advisoryVendors[i]);
+                vendorAdvisory.setName(advisoryNames[i]);
+                vendorAdvisory.setUrl(advisoryUrls[i]);
+                vendorAdvisories.add(vendorAdvisory);
+            }
+        }
+        vulnerability.setVendorAdvisories(vendorAdvisories);
+
+        // Vulnerability Configuration
+        String[] configKeys = request.getParameterValues(PortalConstants.VULNERABILITY_CONFIG_KEY);
+        String[] configValues = request.getParameterValues(PortalConstants.VULNERABILITY_CONFIG_VALUE);
+        Map<String, String> configs = convertKeyValFromEnumToMap(configKeys, configValues);
+        vulnerability.setVulnerableConfiguration(configs);
+
+
+    }
+
+    public static RequestStatus deleteVulnerability(PortletRequest request, Logger log) {
+        String vulnerabilityId = request.getParameter(PortalConstants.VULNERABILITY_ID);
+        if (vulnerabilityId != null) {
+            try {
+                User user = UserCacheHolder.getUserFromRequest(request);
+                ThriftClients thriftClients = new ThriftClients();
+
+                VulnerabilityService.Iface vulnerabilityClient = thriftClients.makeVulnerabilityClient();
+                Vulnerability vulnerability = vulnerabilityClient.getVulnerabilityId(vulnerabilityId);
+                VulnerabilityWithReleaseRelations vulnerabilityWithReleaseRelations = vulnerabilityClient
+                        .getVulnerabilityWithReleaseRelationsByExternalId(vulnerability.getExternalId(), user);
+                if (!CommonUtils.isNotEmpty(vulnerabilityWithReleaseRelations.getReleaseRelation())) {
+                    return vulnerabilityClient.deleteVulnerability(vulnerability, user);
+                } else {
+                    return RequestStatus.IN_USE;
+                }
+            } catch (Exception e) {
+                log.error("DeleteVulnerability has error: ", e);
+                return RequestStatus.FAILURE;
+            }
+        }
+        return RequestStatus.FAILURE;
+    }
+
+    /**
+     * Format date string input
+     * @param strDate
+     * @param strTime
+     * @param strFormatDate
+     * @param strFormatTime
+     * @return
+     */
+    public static String formatDate(String strDate, String strTime, String strFormatDate, String strFormatTime) {
+        // Format date time
+        SimpleDateFormat formatDate = new SimpleDateFormat(strFormatDate);
+        SimpleDateFormat formatTime = new SimpleDateFormat(strFormatTime);
+        String date = "";
+        String time = "";
+
+        if (strDate.equals("")) {
+            date = formatDate.format(new Date());
+        }
+
+        if (strTime.equals("")) {
+            time = formatTime.format(new Date());
+        }
+
+        return date + "T" + time + ".00000";
+    }
+
+    /**
+     * Convert data from enum to map
+     * @param keys
+     * @param values
+     * @return Map<String, String>
+     */
+    public static Map<String, String> convertKeyValFromEnumToMap(String[] keys, String[] values) {
+        Map<String, String> result = new HashMap<>();
+
+        if (keys == null || keys.length == 0) {
+            return result;
+        }
+
+        for (int i = 0; i < keys.length; i++) {
+            if (!values[i].equals("") && !values[i].equals("")) {
+                result.put(keys[i], values[i]);
+            }
+        }
+
+        return result;
+
     }
 }

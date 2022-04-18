@@ -61,6 +61,8 @@ public class ErrorMessages {
     public static final String ERROR_GETTING_CLEARING_REQUEST = "Error fetching clearing request from backend.";
     public static final String LICENSE_TYPE_DUPLICATE = "This license type already exists.";
     public static final String LICENSE_TYPE_ACCESS_DENIED = "User does not have the permission to add license type.";
+    public static final String ERROR_VULNERABILITY_USED_BY_RELEASE = "Can not remove vulnerability because it is used by releases";
+    public static final String ERROR_VULNERABILITY_DELETE = "Error when delete vulnerability";
 
     //this map is used in errorKeyToMessage.jspf to generate key-value pairs for the liferay-ui error tag
     public static final ImmutableList<String> allErrorMessages = ImmutableList.<String>builder()

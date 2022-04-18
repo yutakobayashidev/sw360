@@ -577,6 +577,7 @@ public class PortalConstants {
     public static  final String UPDATE_VULNERABILITY_RATINGS = "updateVulnerabilityRatings";
     public static  final String UPDATE_VULNERABILITY_VERIFICATION = "updateVulnerabilityVerification";
     public static  final String LOAD_VULNERABILITIES_PROJECT = "loadVulnerabilitiesProject";
+    public static  final String REMOVE_VULNERABILITY = "removeVulnerability";
 
     public static final String LIST_VULNERABILITY_WITH_VIEW_SIZE_FRIENDLY_URL = "listVulnerabilityWithViewSizeFriendlyUrl";
     public static final String UPDATE_PROJECT_VULNERABILITIES_URL = "updateProjectVulnerabilitiesURL";
@@ -648,6 +649,27 @@ public class PortalConstants {
     public static final String PREDEFINED_TAGS;
     public static final boolean SSO_LOGIN_ENABLED;
     public static final boolean IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED;
+
+    // Vulnerability
+    public static final String VULNERABILITY_IMPACT_KEY = "impactKey";
+    public static final String VULNERABILITY_IMPACT_VALUE = "impactValue";
+    public static final String VULNERABILITY_ACCESS_KEY = "accessKey";
+    public static final String VULNERABILITY_ACCESS_VALUE = "accessValue";
+    public static final String VULNERABILITY_CONFIG_KEY = "configKey";
+    public static final String VULNERABILITY_CONFIG_VALUE = "configValue";
+    public static final String VULNERABILITY_ADVISORY_VENDOR = "advisoryVendor";
+    public static final String VULNERABILITY_ADVISORY_NAME = "advisoryName";
+    public static final String VULNERABILITY_ADVISORY_URL = "advisoryUrl";
+    public static final String VULNERABILITY_CVE_YEAR= "cveYear";
+    public static final String VULNERABILITY_CVE_NUMBER= "cveNumber";
+    public static final String VULNERABILITY_EXTERNAL_ID= "vulnerabilityExternalId";
+    public static final String CVSS_DATE= "cvssDate";
+    public static final String CVSS_TIME= "cvssTime";
+    public static final String EXTERNAL_UPDATE_DATE= "externalUpdateDate";
+    public static final String EXTERNAL_UPDATE_TIME= "externalUpdateTime";
+    public static final String FIND_BY_EXTERNAL_ID = "findByExternalId";
+    public static final String PUBLISH_DATE = "publishDate";
+    public static final String PUBLISH_TIME = "publishTime";
 
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);

@@ -33,6 +33,14 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.VULNERABILITY_LIST%>'/>
 </portlet:resourceURL>
 
+<portlet:renderURL var="addVulnerabilityURL">
+    <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_EDIT%>"/>
+</portlet:renderURL>
+
+<portlet:resourceURL var="deleteAjaxURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.REMOVE_VULNERABILITY%>'/>
+</portlet:resourceURL>
+
 <div class="container" style="display: none;">
 	<div class="row">
 		<div class="col-3 sidebar">
@@ -66,6 +74,9 @@
 				<div class="col-auto">
 					<div class="btn-toolbar" role="toolbar">
 						<div class="btn-group" role="group">
+								<div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-primary" onclick="window.location.href='<%=addVulnerabilityURL%>'"><liferay-ui:message key="vulerability.create" /></button>
+                                </div>
 								<button id="viewSizeBtn" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 									<liferay-ui:message key="show" /> <span data-name="count"></span>
 									<clay:icon symbol="caret-bottom" />
@@ -93,6 +104,7 @@
 		</div>
 	</div>
 </div>
+<div class="dialogs auto-dialogs"></div>
 <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
 
 <%--for javascript library loading --%>
@@ -101,8 +113,12 @@
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
 
-        require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'bridges/jquery-ui'], function($, datatables, quickfilter) {
+        require(['jquery', 'bridges/datatables', 'modules/dialog', 'modules/alert', 'utils/link', 'utils/includes/quickfilter', 'bridges/jquery-ui'], function($, datatables, dialog, alert, linkutil, quickfilter) {
             var vulnerabilityTable;
+            var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
+            var pageName = '<%=PortalConstants.PAGENAME%>';
+            var pageEdit = '<%=PortalConstants.PAGENAME_EDIT%>';
+            var vulnerabilityIdInURL = '<%=PortalConstants.VULNERABILITY_ID%>';
 
             // initializing
             vulnerabilityTable = createVulnerabilityTable();
@@ -144,6 +160,7 @@
 
                 <core_rt:forEach items="${vulnerabilityList}" var="vulnerability">
                     result.push({
+                        id: "${vulnerability.id}",
                         externalId: "${vulnerability.externalId}",
                         title: {
                             text: "<sw360:out value='${vulnerability.title}'  jsQuoting='true'/>",
@@ -158,7 +175,12 @@
                             tooltip: "<sw360:out value='${vulnerability.priorityText}'/>"
                         },
                         publishDate: "<sw360:out value='${vulnerability.publishDate}'/>",
-                        lastExternalUpdate: "<sw360:out value='${vulnerability.lastExternalUpdate}' default='not set'/>"
+                        lastExternalUpdate: "<sw360:out value='${vulnerability.lastExternalUpdate}' default='not set'/>",
+                        action: '<div class="actions">'
+                                 +   '<svg class="edit lexicon-icon" data-vulnerability-id="${vulnerability.id}"><title><liferay-ui:message key="edit" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
+                                 +   '<svg class="delete lexicon-icon" data-vulnerability-id="${vulnerability.id}" data-external-id="<sw360:out value="${vulnerability.externalId}"/>"><title><liferay-ui:message key="delete" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/></svg>'
+                                 + '</div>'
+
                     });
                 </core_rt:forEach>
 
@@ -207,7 +229,6 @@
                         return data.weighting;
                     }
                 }
-
                 table = datatables.create('#vulnerabilitiesTable', {
                     data:result,
                     searching: true,
@@ -216,7 +237,8 @@
                         { title: "<liferay-ui:message key="title" />", data: 'title', render: $.fn.dataTable.render.infoText() },
                         { title: "<liferay-ui:message key="weighting" />", data: 'cvss', render: renderCvss },
                         { title: "<liferay-ui:message key="publish.date" />", data: 'publishDate', default: '' },
-                        { title: "<liferay-ui:message key="last.update" />", data: 'lastExternalUpdate', default: '' }
+                        { title: "<liferay-ui:message key="last.update" />", data: 'lastExternalUpdate', default: '' },
+                        { title: "<liferay-ui:message key="actions" />", data: 'action', default: '' }
                     ],
                     order: [[4, 'desc'],[3, 'desc']],
                     language: {
@@ -226,6 +248,7 @@
                     initComplete: datatables.showPageContainer
                 }, [0, 1, 2, 3, 4]);
 
+
                 return table;
             }
 
@@ -234,6 +257,71 @@
                         .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_DETAIL%>').setParameter('<%=PortalConstants.VULNERABILITY_ID%>', paramVal);
                 return portletURL.toString();
             }
+
+             function createEditURLFromVulnerabilityId (paramVal) {
+                 var portletURL = PortletURL.createURL( baseUrl ).setParameter(pageName, pageEdit).setParameter(vulnerabilityIdInURL, paramVal);
+                 return portletURL.toString();
+            }
+
+             $('#vulnerabilitiesTable').on('click', 'svg.edit', function (event) {
+                var data = $(event.currentTarget).data();
+                console.log(createEditURLFromVulnerabilityId(data.vulnerabilityId));
+                window.location.href = createEditURLFromVulnerabilityId(data.vulnerabilityId);
+            });
+
+            $('#vulnerabilitiesTable').on('click', 'svg.delete', function (event) {
+                var data = $(event.currentTarget).data();
+                deleteVulnerability(data.vulnerabilityId, data.externalId);
+            });
+
+            function deleteVulnerability(id, externalId) {
+                var $dialog;
+                var $container = $("#container");
+                function deleteVulnerabilityInternal(callback) {
+                    jQuery.ajax({
+                        type: 'POST',
+                        url: '<%=deleteAjaxURL%>',
+                        cache: false,
+                        data: {
+                            <portlet:namespace/>vulnerabilityId: id
+                        },
+                        success: function (data) {
+                            callback();
+                            console.log(data);
+                            if (data.result == 'SUCCESS') {
+                                vulnerabilityTable.row('#' + id).remove().draw(false);
+                                $dialog.success('<liferay-ui:message key="vulnerability.deleted" />', true);
+                            } else if (data.result == 'IN_USE') {
+                                $dialog.alert('<liferay-ui:message key="can.not.remove.vulnerability.because.used.by.release" />');
+
+                            } else {
+                                $dialog.alert('<liferay-ui:message key="can.not.remove.vulnerability.because.used.by.release" />');
+                            }
+                        },
+                        error: function () {
+                            callback();
+                            $dialog.alert('<liferay-ui:message key="error.when.remove.vulnerability" />');
+                        }
+                    });
+                }
+
+                $dialog = dialog.confirm(
+                      'danger',
+                      'question-circle',
+                      '<liferay-ui:message key="vulnerability.delete" />?',
+                      '<p><liferay-ui:message key="do.you.really.want.to.delete.the.vulnerability.x" />?</p>',
+                      '<liferay-ui:message key="vulnerability.delete" />',
+                      {
+                            name: externalId,
+                      },
+                      function(submit, callback) {
+                            deleteVulnerabilityInternal(callback);
+                      }
+                );
+            }
+
+
+
         });
     });
  </script>
