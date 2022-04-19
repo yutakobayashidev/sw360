@@ -434,13 +434,12 @@ public abstract class ComponentPortletUtils {
 
         String cvssDate = request.getParameter(PortalConstants.CVSS_DATE);
         String cvssTime = request.getParameter(PortalConstants.CVSS_TIME);
-
         String cvssDateTime = formatDate(cvssDate, cvssTime, formatDate, formatTime);
         vulnerability.setCvssTime(cvssDateTime);
 
+        // Publish Date
         String publishDate = request.getParameter(PortalConstants.PUBLISH_DATE);
         String publishTime = request.getParameter(PortalConstants.PUBLISH_TIME);
-
         String publishDateTime = formatDate(publishDate, publishTime, formatDate, formatTime);
         vulnerability.setPublishDate(publishDateTime);
 
@@ -467,7 +466,7 @@ public abstract class ComponentPortletUtils {
         String[] cveYears = request.getParameterValues(PortalConstants.VULNERABILITY_CVE_YEAR);
         String[] cveNumbers = request.getParameterValues(PortalConstants.VULNERABILITY_CVE_NUMBER);
         for (int i = 0; i < cveYears.length; i++) {
-            if (!cveNumbers[i].equals("") || !cveNumbers[i].equals("")) {
+            if (!"".equals(cveNumbers[i]) || !"".equals(cveNumbers[i])) {
                 CVEReference cveReference = new CVEReference();
                 cveReference.setYear(cveYears[i]);
                 cveReference.setNumber(cveNumbers[i]);
@@ -480,7 +479,7 @@ public abstract class ComponentPortletUtils {
         Set<String> references = new HashSet<String>();
         String[] vulnerabilityReference = request.getParameterValues(String.valueOf(Vulnerability._Fields.REFERENCES));
         for (String reference : vulnerabilityReference) {
-            if (!reference.equals("")) {
+            if (!"".equals(reference)) {
                 references.add(reference);
             }
         }
@@ -492,7 +491,7 @@ public abstract class ComponentPortletUtils {
         String[] advisoryNames = request.getParameterValues(PortalConstants.VULNERABILITY_ADVISORY_NAME);
         String[] advisoryUrls = request.getParameterValues(PortalConstants.VULNERABILITY_ADVISORY_URL);
         for (int i = 0; i < advisoryVendors.length; i++) {
-            if (!advisoryVendors[i].equals("") || !advisoryNames[i].equals("") || !advisoryUrls[i].equals("")) {
+            if (!"".equals(advisoryVendors[i]) || !"".equals(advisoryNames[i]) || !"".equals(advisoryUrls[i])) {
                 VendorAdvisory vendorAdvisory = new VendorAdvisory();
                 vendorAdvisory.setVendor(advisoryVendors[i]);
                 vendorAdvisory.setName(advisoryNames[i]);
@@ -547,14 +546,14 @@ public abstract class ComponentPortletUtils {
         // Format date time
         SimpleDateFormat formatDate = new SimpleDateFormat(strFormatDate);
         SimpleDateFormat formatTime = new SimpleDateFormat(strFormatTime);
-        String date = "";
-        String time = "";
+        String date = strDate;
+        String time = strTime;
 
-        if (strDate.equals("")) {
+        if ("".equals(strDate)) {
             date = formatDate.format(new Date());
         }
 
-        if (strTime.equals("")) {
+        if ("".equals(strTime)) {
             time = formatTime.format(new Date());
         }
 

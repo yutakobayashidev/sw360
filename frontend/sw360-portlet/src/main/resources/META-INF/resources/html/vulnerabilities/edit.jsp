@@ -236,7 +236,7 @@
                                             <label for="publishTime"><liferay-ui:message key="vulnerability.publish.time" /></label>
                                             <input id="publishTime" type="time" step="1" class="form-control spdx-time needs-validation" rule="required"
                                                name="<portlet:namespace/><%=PortalConstants.PUBLISH_TIME%>"
-                                               value = "<sw360:out value="${vulnerability.publishDate.substring(11,19)}"/>">
+                                               value = "<sw360:out value="${vulnerability.publishDate.substring(11,19)}"/>"
                                             <div id="createdTime-error-messages">
                                                  <div class="invalid-feedback" rule="required">
                                                       Invalid format!
@@ -246,15 +246,15 @@
                                     </td>
                                     <td style="width:25%">
                                          <div class="form-group">
-                                             <label for="lastExternalUpdateDate"><liferay-ui:message key="vulnerability.last.external.update.date" /></label>
-                                             <input id="lastExternalUpdateDate" class="form-control datepicker"  type="text" pattern="\d{4}-\d{2}-\d{2}"
-                                               name="<portlet:namespace/><%=PortalConstants.EXTERNAL_UPDATE_DATE%>"
-                                               placeholder="<liferay-ui:message key="enter.vulnerability.last.external.update.date" />"
-                                               value = "<sw360:out value="${vulnerability.lastExternalUpdate.substring(0,10)}"/>"
-                                               />
-                                             <div class="invalid-feedback">
-                                                 <liferay-ui:message key="enter.validate.vulnerability.last.external.update.date" />
-                                             </div>
+                                              <label for="lastExternalUpdateDate"><liferay-ui:message key="vulnerability.last.external.update.date" /></label>
+                                              <input id="lastExternalUpdateDate" class="form-control datepicker"  type="text" pattern="\d{4}-\d{2}-\d{2}"
+                                                name="<portlet:namespace/><%=PortalConstants.EXTERNAL_UPDATE_DATE%>"
+                                                placeholder="<liferay-ui:message key="last.external.update.date.yyyy.mm.dd" />"
+                                                value = "<sw360:out value="${vulnerability.lastExternalUpdate.substring(0,10)}"/>"
+                                                />
+                                              <div class="invalid-feedback">
+                                                  <liferay-ui:message key="please.enter.last.external.update.date" />
+                                              </div>
                                          </div>
                                     </td>
                                     <td style="width:25%">
@@ -361,15 +361,12 @@
                        } else{
                            $('#vulnerabilityEditForm').submit();
                        }
-
                  });
-
             });
 
             require(['jquery', /* jquery-plugins */ 'jquery-ui'], function($) {
                     $(".datepicker").datepicker({changeMonth:true,changeYear:true,dateFormat: "yy-mm-dd"});
             });
-
 
     });
 </script>

@@ -24,6 +24,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.portal.common.CustomFieldHelper;
 import org.eclipse.sw360.portal.common.ErrorMessages;
+import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.portlets.components.ComponentPortletUtils;
@@ -256,10 +257,25 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
     private void addVulnerability(ActionRequest request, ActionResponse response) {
         Vulnerability vulnerability = new Vulnerability();
         final User user = UserCacheHolder.getUserFromRequest(request);
+
+        String cvssDate = request.getParameter(PortalConstants.CVSS_DATE);
+        String cvssTime = request.getParameter(PortalConstants.CVSS_TIME);
+        String publishDate = request.getParameter(PortalConstants.PUBLISH_DATE);
+        String publishTime = request.getParameter(PortalConstants.PUBLISH_TIME);
+        String externalUpdateDate = request.getParameter(PortalConstants.EXTERNAL_UPDATE_DATE);
+        String externalUpdateTime = request.getParameter(PortalConstants.EXTERNAL_UPDATE_TIME);
+        log.info("cvssDate addd: " + cvssDate);
+        log.info("cvssTime addd: " + cvssTime);
+        log.info("publishDate addd: " + publishDate);
+        log.info("publishTime addd: " + publishTime);
+        log.info("externalUpdateDate addd: " + externalUpdateDate);
+        log.info("externalUpdateTime addd: " + externalUpdateTime);
+
         try {
             VulnerabilityService.Iface vulnerabilityClient = thriftClients.makeVulnerabilityClient();
             ComponentPortletUtils.updateVulnerabilityFromRequest(request, vulnerability);
             vulnerability.setIsSetCvss(true);
+            log.info("Object vulnerability addd: " + vulnerability);
             RequestStatus requestStatus = vulnerabilityClient.addVulnerability(vulnerability, user);
             setSessionMessage(request, requestStatus, "Vulnerability", "add", vulnerability.getExternalId());
             removeParamUrl(request, response);
@@ -283,7 +299,6 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
                 }
                 ComponentPortletUtils.updateVulnerabilityFromRequest(request, vulnerability);
                 vulnerability.setIsSetCvss(true);
-
                 RequestStatus requestStatus = vulnerabilityClient.updateVulnerability(vulnerability, user);
                 setSessionMessage(request, requestStatus, "Vulnerability", "update", vulnerability.getExternalId());
                 removeParamUrl(request, response);
@@ -311,19 +326,25 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
     @Override
     public void serveResource(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
         String action = request.getParameter(ACTION);
-        log.info("Call ajax: " + action) ;
+
+        // Remove vulnerability
         if (REMOVE_VULNERABILITY.equals(action)) {
             removeVulnerability(request, response);
         }
 
+        // Check exist external id
         if (FIND_BY_EXTERNAL_ID.equals(action)) {
-
             RequestStatus requestStatus = getVulnerabilityByExternalId(request, response);
-            log.info("requestStatus  ============================" + requestStatus);
             serveRequestStatus(request, response, requestStatus, "", log);
         }
     }
 
+    /**
+     * Check vulnerability external id
+     * @param request
+     * @param response
+     * @return
+     */
     public RequestStatus getVulnerabilityByExternalId(ResourceRequest request, ResourceResponse response) {
         String vulnerabilityExternalId = request.getParameter(VULNERABILITY_EXTERNAL_ID);
         final User user = UserCacheHolder.getUserFromRequest(request);
@@ -339,8 +360,6 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
             log.info("Function  getVulnerabilityByExternalId has error: " + e) ;
             return RequestStatus.SUCCESS;
         }
-
-
     }
 
     @UsedAsLiferayAction
@@ -359,6 +378,12 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
         }
 
     }
+
+    /**
+     * Remove vulnerablity case call ajax
+     * @param request
+     * @param response
+     */
     private void removeVulnerability(ResourceRequest request, ResourceResponse response) {
         log.info("removeVulnerability: Start");
         final RequestStatus requestStatus = ComponentPortletUtils.deleteVulnerability(request, log);

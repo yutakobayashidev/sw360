@@ -75,7 +75,7 @@
 					<div class="btn-toolbar" role="toolbar">
 						<div class="btn-group" role="group">
 								<div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-primary" onclick="window.location.href='<%=addVulnerabilityURL%>'"><liferay-ui:message key="vulerability.create" /></button>
+                                    <button type="button" class="btn btn-primary" onclick="window.location.href='<%=addVulnerabilityURL%>'"><liferay-ui:message key="vulnerability.create" /></button>
                                 </div>
 								<button id="viewSizeBtn" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 									<liferay-ui:message key="show" /> <span data-name="count"></span>
