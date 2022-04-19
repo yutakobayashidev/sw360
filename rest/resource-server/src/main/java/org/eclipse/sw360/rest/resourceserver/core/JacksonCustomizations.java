@@ -999,8 +999,7 @@ public class JacksonCustomizations {
             "setId",
             "setType",
             "setRevision",
-            "setYear",
-            "setNumber",
+            "setYearNumber",
             "type"
         })
         public static abstract class CVEReferenceMixin extends CVEReference {

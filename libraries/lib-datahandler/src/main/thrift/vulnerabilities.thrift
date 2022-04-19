@@ -60,7 +60,7 @@ struct Vulnerability{
     25: optional set<string> references,
 
     //additional from CVE earch data
-    30: optional double cvss,
+    30: optional string cvss,
     31: optional bool isSetCvss,
     32: optional string cvssTime,
     33: optional map<string,string> vulnerableConfiguration,
@@ -113,8 +113,7 @@ struct CVEReference{
     3: optional string type = "cveReference",
 
     // Additional information
-    10: required string year,
-    11: required string number,
+    10: required string yearNumber
 }
 
 struct VendorAdvisory{
