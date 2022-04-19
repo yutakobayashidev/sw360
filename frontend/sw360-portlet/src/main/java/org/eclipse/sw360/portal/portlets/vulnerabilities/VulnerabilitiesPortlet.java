@@ -257,25 +257,10 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
     private void addVulnerability(ActionRequest request, ActionResponse response) {
         Vulnerability vulnerability = new Vulnerability();
         final User user = UserCacheHolder.getUserFromRequest(request);
-
-        String cvssDate = request.getParameter(PortalConstants.CVSS_DATE);
-        String cvssTime = request.getParameter(PortalConstants.CVSS_TIME);
-        String publishDate = request.getParameter(PortalConstants.PUBLISH_DATE);
-        String publishTime = request.getParameter(PortalConstants.PUBLISH_TIME);
-        String externalUpdateDate = request.getParameter(PortalConstants.EXTERNAL_UPDATE_DATE);
-        String externalUpdateTime = request.getParameter(PortalConstants.EXTERNAL_UPDATE_TIME);
-        log.info("cvssDate addd: " + cvssDate);
-        log.info("cvssTime addd: " + cvssTime);
-        log.info("publishDate addd: " + publishDate);
-        log.info("publishTime addd: " + publishTime);
-        log.info("externalUpdateDate addd: " + externalUpdateDate);
-        log.info("externalUpdateTime addd: " + externalUpdateTime);
-
         try {
             VulnerabilityService.Iface vulnerabilityClient = thriftClients.makeVulnerabilityClient();
             ComponentPortletUtils.updateVulnerabilityFromRequest(request, vulnerability);
             vulnerability.setIsSetCvss(true);
-            log.info("Object vulnerability addd: " + vulnerability);
             RequestStatus requestStatus = vulnerabilityClient.addVulnerability(vulnerability, user);
             setSessionMessage(request, requestStatus, "Vulnerability", "add", vulnerability.getExternalId());
             removeParamUrl(request, response);
