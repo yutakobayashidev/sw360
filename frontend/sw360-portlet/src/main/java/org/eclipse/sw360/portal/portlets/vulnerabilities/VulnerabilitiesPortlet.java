@@ -331,7 +331,6 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
         if (REMOVE_VULNERABILITY.equals(action)) {
             removeVulnerabilityToRequestAjax(request, response);
         }
-
         // Check exist external id
         if (FIND_BY_EXTERNAL_ID.equals(action)) {
             RequestStatus requestStatus = getVulnerabilityByExternalId(request, response);

@@ -249,11 +249,11 @@
                                               <label for="lastExternalUpdateDate"><liferay-ui:message key="vulnerability.last.external.update.date" /></label>
                                               <input id="lastExternalUpdateDate" class="form-control datepicker"  type="text" pattern="\d{4}-\d{2}-\d{2}"
                                                 name="<portlet:namespace/><%=PortalConstants.EXTERNAL_UPDATE_DATE%>"
-                                                placeholder="<liferay-ui:message key="last.external.update.date.yyyy.mm.dd" />"
+                                                placeholder="<liferay-ui:message key="enter.validate.vulnerability.last.external.update.date" />"
                                                 value = "<sw360:out value="${vulnerability.lastExternalUpdate.substring(0,10)}"/>"
                                                 />
                                               <div class="invalid-feedback">
-                                                  <liferay-ui:message key="please.enter.last.external.update.date" />
+                                                  <liferay-ui:message key="enter.validate.vulnerability.last.external.update.date" />
                                               </div>
                                          </div>
                                     </td>
