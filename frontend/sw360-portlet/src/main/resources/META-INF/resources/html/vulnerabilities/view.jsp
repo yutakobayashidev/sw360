@@ -160,7 +160,7 @@
 
                 <core_rt:forEach items="${vulnerabilityList}" var="vulnerability">
                     result.push({
-                        id: "${vulnerability.id}",
+                        DT_RowId: "${vulnerability.id}",
                         externalId: "${vulnerability.externalId}",
                         title: {
                             text: "<sw360:out value='${vulnerability.title}'  jsQuoting='true'/>",
@@ -293,7 +293,6 @@
                                 $dialog.success('<liferay-ui:message key="vulnerability.deleted" />', true);
                             } else if (data.result == 'IN_USE') {
                                 $dialog.alert('<liferay-ui:message key="can.not.remove.vulnerability.because.used.by.release" />');
-
                             } else {
                                 $dialog.alert('<liferay-ui:message key="can.not.remove.vulnerability.because.used.by.release" />');
                             }

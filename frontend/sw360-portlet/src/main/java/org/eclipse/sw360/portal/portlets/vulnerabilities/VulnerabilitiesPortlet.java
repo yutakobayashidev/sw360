@@ -329,7 +329,7 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
 
         // Remove vulnerability
         if (REMOVE_VULNERABILITY.equals(action)) {
-            removeVulnerability(request, response);
+            removeVulnerabilityToRequestAjax(request, response);
         }
 
         // Check exist external id
@@ -362,11 +362,16 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
         }
     }
 
+    /**
+     * Remove vulnerability call view edit
+     * @param request
+     * @param response
+     * @throws IOException
+     * @throws PortletException
+     */
     @UsedAsLiferayAction
     public void removeVulnerability(ActionRequest request, ActionResponse response) throws IOException, PortletException {
-        log.info("UsedAsLiferayAction: Start");
         final RequestStatus requestStatus = ComponentPortletUtils.deleteVulnerability(request, log);
-        log.info("UsedAsLiferayAction: status: " + requestStatus);
         if (requestStatus == RequestStatus.SUCCESS) {
             setSessionMessage(request, requestStatus, "Vulnerability", "remove");
         } else if (requestStatus == RequestStatus.IN_USE) {
@@ -380,14 +385,13 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
     }
 
     /**
-     * Remove vulnerablity case call ajax
+     * Remove vulnerablity view list
      * @param request
      * @param response
      */
-    private void removeVulnerability(ResourceRequest request, ResourceResponse response) {
-        log.info("removeVulnerability: Start");
+    private void removeVulnerabilityToRequestAjax(ResourceRequest request, ResourceResponse response) {
         final RequestStatus requestStatus = ComponentPortletUtils.deleteVulnerability(request, log);
-        log.info("removeVulnerability: status: " + requestStatus);
+
         if (requestStatus == RequestStatus.SUCCESS) {
             serveRequestStatus(request, response, requestStatus, "Vulnerability " + request.getParameter(VULNERABILITY_ID) + " has been deleted", log);
         } else if (requestStatus == RequestStatus.IN_USE) {
