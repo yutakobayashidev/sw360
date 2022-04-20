@@ -340,9 +340,11 @@
                  });
 
                  $('.portlet-toolbar button[data-action="save"]').on('click', function() {
-                       let addMode = "${vulnerability.id}";
-                       let cvssScore = $("#vulnerabilityScore").val();
+                      let addMode = "${vulnerability.id}";
+                      let cvssScore = $("#vulnerabilityScore").val();
+                      let newExternalId = $("#vulnerabilityExternalId").val();
                       var cvssScoreValid = true;
+
                       if ( cvssScore > 10.0 || cvssScore < 0){
                            $(".cvss-invalid").css("display", "block");
                            $("#vulnerabilityScore").css("border-color", "#5aca75");
