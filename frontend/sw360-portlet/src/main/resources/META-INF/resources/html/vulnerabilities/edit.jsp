@@ -278,6 +278,9 @@
                         <%@include file="/html/vulnerabilities/includes/vulnerabilityCVEReferences.jsp"%>
                         <br />
                         <br />
+                        <%@include file="/html/vulnerabilities/includes/vulnerabilityExtComponentIds.jsp"%>
+                        <br />
+                        <br />
                         <%@include file="/html/vulnerabilities/includes/vulnerabilityReferences.jsp"%>
                         <br />
                         <br />

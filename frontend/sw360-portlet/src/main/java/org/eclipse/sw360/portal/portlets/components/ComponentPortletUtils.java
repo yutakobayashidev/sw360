@@ -475,6 +475,16 @@ public abstract class ComponentPortletUtils {
         }
         vulnerability.setCveReferences(cveReferences);
 
+        // Assigned External Component Ids
+        Set<String> externalComponentIds = new HashSet<String>();
+        String[] externalComponentIdArray = request.getParameterValues(String.valueOf(Vulnerability._Fields.ASSIGNED_EXT_COMPONENT_IDS));
+        for (String componentId : externalComponentIdArray) {
+            if (!"".equals(componentId)) {
+                externalComponentIds.add(componentId);
+            }
+        }
+        vulnerability.setAssignedExtComponentIds(externalComponentIds);
+
         // Vulnerability Reference
         Set<String> references = new HashSet<String>();
         String[] vulnerabilityReference = request.getParameterValues(String.valueOf(Vulnerability._Fields.REFERENCES));
