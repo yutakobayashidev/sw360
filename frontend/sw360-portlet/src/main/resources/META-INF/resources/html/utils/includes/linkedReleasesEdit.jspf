@@ -104,8 +104,6 @@
                        let oldSelectExisted = releaseWithRelationArray.find(obj => {
                           return obj.releaseId === oldSelect;
                        });
-                       console.log(newSelectExisted);
-                       console.log(oldSelectExisted);
                        if (newSelectExisted == null || newSelectExisted == undefined) {
                            console.log(newSelect);
                            jQuery.ajax({
@@ -130,6 +128,25 @@
                                    if (subLinkedReleaseIds.length > 0) {
                                        await releaseContentFromAjax('<%=PortalConstants.LIST_NEW_LINKED_RELEASES%>', subLinkedReleaseIds, function(result) {
                                            $('#LinkedReleasesInfo tbody').append(result);
+                                             $('.load-release').each(function() {
+                                                  $(this).unbind('click');
+                                             });
+                                             $('.load-release').each(function() {$(this).bind('click',getSubLinkedRelease)});
+
+                                             $('.releaseVersion').each(function() {
+                                                   $(this).unbind('change');
+                                              });
+                                             $('.releaseVersion').each(function() {
+                                                  $(this).unbind('focus');
+                                             });
+                                             $('.releaseVersion').each(function(){
+                                                $(this).bind('change',function(event) {
+                                                      newSelect = $(this).val();
+                                             })});
+                                             $('.releaseVersion').each(function(){
+                                                $(this).bind('focus',function(event) {
+                                                      oldSelect = $(this).val();
+                                             })});
                                        });
                                    }
                                    else {
@@ -184,13 +201,31 @@
                                if (subLinkedReleaseIds.length > 0) {
                                    await releaseContentFromAjax('<%=PortalConstants.LIST_NEW_LINKED_RELEASES%>', subLinkedReleaseIds, function(result) {
                                        $('#LinkedReleasesInfo tbody').append(result);
+                                         $('.load-release').each(function() {
+                                              $(this).unbind('click');
+                                         });
+                                         $('.load-release').each(function() {$(this).bind('click',getSubLinkedRelease)});
+
+                                         $('.releaseVersion').each(function() {
+                                               $(this).unbind('change');
+                                          });
+                                         $('.releaseVersion').each(function() {
+                                              $(this).unbind('focus');
+                                         });
+                                         $('.releaseVersion').each(function(){
+                                            $(this).bind('change',function(event) {
+                                                  newSelect = $(this).val();
+                                         })});
+                                         $('.releaseVersion').each(function(){
+                                            $(this).bind('focus',function(event) {
+                                                  oldSelect = $(this).val();
+                                         })});
                                    });
                                }
                                else {
                                    console.log("Ko co gi ca");
                                }
 
-                               $('.load-release').each(function() {$(this).bind('click',getSubLinkedRelease)});
                             },
                             error: function () {
                                 console.log("ERROR");
@@ -198,11 +233,6 @@
                         });
                    }
                 }
-                  $('.load-release').each(function() {
-                      $(this).unbind('click');
-                      console.log($(this));
-                 });
-                  $('.load-release').each(function() {$(this).bind('click',getSubLinkedRelease)});
             }
 
             function releaseContentFromAjax(what, where, callback) {
