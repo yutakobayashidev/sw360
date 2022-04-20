@@ -299,8 +299,8 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
                 VulnerabilityService.Iface vulnerabilityClient = thriftClients.makeVulnerabilityClient();
                 Vulnerability vulnerability = vulnerabilityClient.getVulnerabilityId(id);
                 if (vulnerability == null) {
-                    log.error("Error fetching vulnerability from backend!");
-                    throw new TException();
+                    log.error("Errorr: Vulnerability id exist: " + id);
+                    throw new TException("Errorr: Vulnerability id exist: " + id);
                 }
                 ComponentPortletUtils.updateVulnerabilityFromRequest(request, vulnerability);
                 vulnerability.setIsSetCvss(true);
@@ -348,7 +348,7 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
 
         // Remove vulnerability
         if (REMOVE_VULNERABILITY.equals(action)) {
-            removeVulnerabilityToRequestAjax(request, response);
+            deleteVulnerabilityToRequestAjax(request, response);
         }
         // Check exist external id
         if (FIND_BY_EXTERNAL_ID.equals(action)) {
@@ -383,6 +383,7 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
 
     /**
      * Remove vulnerability call view edit
+     *
      * @param request
      * @param response
      * @throws IOException
@@ -392,23 +393,23 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
     public void removeVulnerability(ActionRequest request, ActionResponse response) throws IOException, PortletException {
         final RequestStatus requestStatus = ComponentPortletUtils.deleteVulnerability(request, log);
         if (requestStatus == RequestStatus.SUCCESS) {
-            setSessionMessage(request, requestStatus, "Vulnerability", "remove");
+            setSessionMessage(request, requestStatus, "Vulnerability", "delete");
         } else if (requestStatus == RequestStatus.IN_USE) {
             response.setRenderParameter(PAGENAME, PAGENAME_EDIT);
             response.setRenderParameter(VULNERABILITY_ID, request.getParameter(VULNERABILITY_ID));
             setSW360SessionError(request, ErrorMessages.ERROR_VULNERABILITY_USED_BY_RELEASE);
         } else if (requestStatus == RequestStatus.FAILURE) {
-            setSessionMessage(request, requestStatus, "Vulnerability", "remove");
+            setSessionMessage(request, requestStatus, "Vulnerability", "delete");
         }
     }
 
     /**
-     * Remove vulnerablity from list view
+     * Delete vulnerability from list view
      *
      * @param request
      * @param response
      */
-    private void removeVulnerabilityToRequestAjax(ResourceRequest request, ResourceResponse response) {
+    private void deleteVulnerabilityToRequestAjax(ResourceRequest request, ResourceResponse response) {
         final RequestStatus requestStatus = ComponentPortletUtils.deleteVulnerability(request, log);
 
         if (requestStatus == RequestStatus.SUCCESS) {
