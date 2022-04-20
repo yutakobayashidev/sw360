@@ -186,7 +186,7 @@
                                                 class="form-control" placeholder="<liferay-ui:message key="enter.vulnerability.cvss.score" />" value="<sw360:out value="${vulnerability.cvss}"/>"
                                                 name="<portlet:namespace/><%=Vulnerability._Fields.CVSS%>" onKeyPress="if(this.value.length==4) return false;" />
                                             <div class="invalid-feedback">
-                                                <liferay-ui:message key="please.enter.cvss.score" />
+                                                <liferay-ui:message key="enter.vulnerability.cvss.score" />
                                             </div>
                                             <div class="cvss-invalid" style="color:red;display:none;font-weight:bold">
                                                  <liferay-ui:message key="cvss.score.must.be.positive.number.and.smaller.than.10" />
