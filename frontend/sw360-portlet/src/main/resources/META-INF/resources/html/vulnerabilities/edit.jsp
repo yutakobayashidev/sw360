@@ -182,11 +182,14 @@
                                     <td colspan="2">
                                         <div class="form-group">
                                             <label for="vulnerabilityScore"><liferay-ui:message key="vulnerability.cvss.score" /></label>
-                                            <input id="vulnerabilityScore" type="number" step="0.1" onkeydown="return event.keyCode !== 69 && event.keyCode !== 107 && event.keyCode !== 109 && event.keyCode !== 189"
+                                            <input id="vulnerabilityScore" required type="number" step="0.01" onkeydown="return event.keyCode !== 69 && event.keyCode !== 107 && event.keyCode !== 109 && event.keyCode !== 189"
                                                 class="form-control" placeholder="<liferay-ui:message key="enter.vulnerability.cvss.score" />" value="<sw360:out value="${vulnerability.cvss}"/>"
                                                 name="<portlet:namespace/><%=Vulnerability._Fields.CVSS%>" onKeyPress="if(this.value.length==4) return false;" />
                                             <div class="invalid-feedback">
                                                 <liferay-ui:message key="please.enter.cvss.score" />
+                                            </div>
+                                            <div class="cvss-invalid" style="color:red;display:none;font-weight:bold">
+                                                 <liferay-ui:message key="cvss.score.must.be.positive.number.and.smaller.than.10" />
                                             </div>
                                         </div>
                                     </td>
@@ -196,6 +199,7 @@
                                              <input id="vulnerabilityCvssDate" class="form-control datepicker" type="text" pattern="\d{4}-\d{2}-\d{2}"
                                                name="<portlet:namespace/><%=PortalConstants.CVSS_DATE%>"
                                                placeholder="<liferay-ui:message key="enter.vulnerability.cvss.date" />"
+                                               autocomplete="off"
                                                value = "<sw360:out value="${vulnerability.cvssTime.substring(0,10)}"/>"
                                                />
                                              <div class="invalid-feedback">
@@ -224,6 +228,7 @@
                                              <input id="publishDate" class="form-control datepicker"  type="text" pattern="\d{4}-\d{2}-\d{2}"
                                                name="<portlet:namespace/><%=PortalConstants.PUBLISH_DATE%>"
                                                placeholder="<liferay-ui:message key="enter.vulnerability.publish.date" />"
+                                               autocomplete="off"
                                                value = "<sw360:out value="${vulnerability.publishDate.substring(0,10)}"/>"
                                                />
                                              <div class="invalid-feedback">
@@ -250,6 +255,7 @@
                                               <input id="lastExternalUpdateDate" class="form-control datepicker"  type="text" pattern="\d{4}-\d{2}-\d{2}"
                                                 name="<portlet:namespace/><%=PortalConstants.EXTERNAL_UPDATE_DATE%>"
                                                 placeholder="<liferay-ui:message key="enter.validate.vulnerability.last.external.update.date" />"
+                                                autocomplete="off"
                                                 value = "<sw360:out value="${vulnerability.lastExternalUpdate.substring(0,10)}"/>"
                                                 />
                                               <div class="invalid-feedback">
@@ -303,6 +309,7 @@
             var PortletURL = Liferay.PortletURL;
             require(['bridges/datatables', 'modules/dialog', 'utils/includes/quickfilter', 'utils/link', 'modules/validation', 'jquery'], function( datatables, dialog, quickfilter, linkutil, validation, $) {
                  validation.enableForm('#vulnerabilityEditForm');
+                 let oldExternalId = "${vulnerability.externalId}";
                  window.onload = () => {
                       document.getElementById('vulnerabilityScore').onpaste = e => e.preventDefault();;
                  }
@@ -334,7 +341,17 @@
 
                  $('.portlet-toolbar button[data-action="save"]').on('click', function() {
                        let addMode = "${vulnerability.id}";
-                       if (addMode === "" || addMode == undefined ){
+                       let cvssScore = $("#vulnerabilityScore").val();
+                      var cvssScoreValid = true;
+                      if ( cvssScore > 10.0 || cvssScore < 0){
+                           $(".cvss-invalid").css("display", "block");
+                           $("#vulnerabilityScore").css("border-color", "#5aca75");
+                           cvssScoreValid = false;
+                      } else{
+                           $(".cvss-invalid").css("display", "none");
+                      }
+
+                       if (addMode === "" || addMode == undefined || newExternalId != oldExternalId){
                             let externalId = $("#vulnerabilityExternalId").val();
                             let resourceURL = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>';
                             let validateExternalIdURL = Liferay.PortletURL.createURL( resourceURL )
@@ -362,13 +379,16 @@
                             });
 
                        } else{
-                           $('#vulnerabilityEditForm').submit();
+                            if (cvssScoreValid == true){
+                                $('#vulnerabilityEditForm').submit();
+                            }
                        }
                  });
             });
 
             require(['jquery', /* jquery-plugins */ 'jquery-ui'], function($) {
                     $(".datepicker").datepicker({changeMonth:true,changeYear:true,dateFormat: "yy-mm-dd"});
+                    $(".datepicker").keydown(false);
             });
 
     });
