@@ -520,6 +520,13 @@ public abstract class ComponentPortletUtils {
 
     }
 
+    /**
+     * Delete vulnerability
+     *
+     * @param request
+     * @param log
+     * @return
+     */
     public static RequestStatus deleteVulnerability(PortletRequest request, Logger log) {
         String vulnerabilityId = request.getParameter(PortalConstants.VULNERABILITY_ID);
         if (vulnerabilityId != null) {
@@ -546,6 +553,7 @@ public abstract class ComponentPortletUtils {
 
     /**
      * Format date string input
+     *
      * @param strDate
      * @param strTime
      * @param strFormatDate
@@ -572,6 +580,7 @@ public abstract class ComponentPortletUtils {
 
     /**
      * Convert data from enum to map
+     *
      * @param keys
      * @param values
      * @return Map<String, String>
@@ -582,14 +591,11 @@ public abstract class ComponentPortletUtils {
         if (keys == null || keys.length == 0) {
             return result;
         }
-
         for (int i = 0; i < keys.length; i++) {
             if (!values[i].equals("") && !values[i].equals("")) {
                 result.put(keys[i], values[i]);
             }
         }
-
         return result;
-
     }
 }

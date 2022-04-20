@@ -221,6 +221,11 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
         return ImmutableList.of();
     }
 
+    /**
+     * Show view edit before add or update
+     *
+     * @param request
+     */
     private void prepareVulnerabilityEdit(RenderRequest request) {
         // Get user login
         User user = UserCacheHolder.getUserFromRequest(request);
@@ -234,7 +239,7 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
         List<VulnerabilityAccessComplexity> vulnerabilityAccessComplexities = new ArrayList<VulnerabilityAccessComplexity>(Arrays.asList(VulnerabilityAccessComplexity.values()));
         List<VulnerabilityAccessVector> vulnerabilityAccessVectors = new ArrayList<VulnerabilityAccessVector>(Arrays.asList(VulnerabilityAccessVector.values()));
 
-        // Case is update vulnerability
+        // Update vulnerability
         if (id != null) {
             try {
                 // Get vulnerability by id
@@ -254,6 +259,12 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
         request.setAttribute("vulnerabilityAccessVectors", vulnerabilityAccessVectors);
     }
 
+    /**
+     * Create Vulnerability
+     *
+     * @param request
+     * @param response
+     */
     private void addVulnerability(ActionRequest request, ActionResponse response) {
         Vulnerability vulnerability = new Vulnerability();
         final User user = UserCacheHolder.getUserFromRequest(request);
@@ -270,6 +281,15 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
             e.printStackTrace();
         }
     }
+
+    /**
+     * Update vulnerability
+     *
+     * @param request
+     * @param response
+     * @throws PortletException
+     * @throws IOException
+     */
     @UsedAsLiferayAction
     public void updateVulnerability(ActionRequest request, ActionResponse response) throws PortletException, IOException {
         String id = request.getParameter(VULNERABILITY_ID);
@@ -295,6 +315,12 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
         }
     }
 
+    /**
+     * Remove parameter for url
+     *
+     * @param request
+     * @param response
+     */
     public void removeParamUrl(ActionRequest request, ActionResponse response) {
         try {
             String portletId = (String) request.getAttribute(WebKeys.PORTLET_ID);
@@ -308,6 +334,14 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
         }
     }
 
+    /**
+     * Remove vulnerability or check exist external id
+     *
+     * @param request  the resource request
+     * @param response the resource response
+     * @throws IOException
+     * @throws PortletException
+     */
     @Override
     public void serveResource(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
         String action = request.getParameter(ACTION);
@@ -325,6 +359,7 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
 
     /**
      * Check vulnerability external id
+     *
      * @param request
      * @param response
      * @return
@@ -341,7 +376,7 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
                 return RequestStatus.DUPLICATE;
             }
         } catch (TException e) {
-            log.info("Function  getVulnerabilityByExternalId has error: " + e) ;
+            log.info("Function  getVulnerabilityByExternalId has error: " + e);
             return RequestStatus.SUCCESS;
         }
     }
@@ -365,11 +400,11 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
         } else if (requestStatus == RequestStatus.FAILURE) {
             setSessionMessage(request, requestStatus, "Vulnerability", "remove");
         }
-
     }
 
     /**
-     * Remove vulnerablity view list
+     * Remove vulnerablity from list view
+     *
      * @param request
      * @param response
      */
