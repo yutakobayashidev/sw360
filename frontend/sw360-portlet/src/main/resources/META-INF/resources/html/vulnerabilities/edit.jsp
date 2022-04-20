@@ -80,7 +80,7 @@
                                             <input id="vulnerabilityExternalId" required type="text" class="form-control" placeholder="<liferay-ui:message key="enter.vulnerability.external.id" />"  value="<sw360:out value="${vulnerability.externalId}"/>"
                                                 name="<portlet:namespace/><%=Vulnerability._Fields.EXTERNAL_ID%>"/>
                                             <div class="invalid-feedback">
-                                                <liferay-ui:message key="please.enter.external.id" />
+                                                <liferay-ui:message key="enter.vulnerability.external.id" />
                                             </div>
                                             <div class="invalid-feedback" id="externalIdFeedBack">
                                             </div>
