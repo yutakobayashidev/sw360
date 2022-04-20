@@ -1159,8 +1159,10 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             for (Release release : client.getReleasesById(new HashSet<>(Arrays.asList(linkedIds)), user)) {
                 final Vendor vendor = release.getVendor();
                 final String vendorName = vendor != null ? vendor.getShortname() : "";
+                List<Release> releasesWithSameComponent = client.getReleasesByComponentId(release.getComponentId(),user);
                 ReleaseLink linkedRelease = new ReleaseLink(release.getId(), vendorName, release.getName(), release.getVersion(),
                         SW360Utils.printFullname(release), !nullToEmptyMap(release.getReleaseIdToRelationship()).isEmpty());
+                linkedRelease.setReleaseWithSameComponent(releasesWithSameComponent);
                 linkedReleases.add(linkedRelease);
             }
         } catch (TException e) {

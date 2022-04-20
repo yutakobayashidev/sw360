@@ -25,6 +25,7 @@
     </thead>
     <tbody>
         <jsp:include page="/html/utils/ajax/linkedReleasesAjax.jsp" />
+
     </tbody>
 </table>
 

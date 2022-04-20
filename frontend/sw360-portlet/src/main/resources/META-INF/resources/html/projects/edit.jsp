@@ -165,6 +165,7 @@
                             <div id="tab-linkedProjects" class="tab-pane <core_rt:if test="${selectedTab == 'tab-linkedProjects'}">active show</core_rt:if>">
                                 <%@include file="/html/projects/includes/linkedProjectsEdit.jspf" %>
                                 <%@include file="/html/utils/includes/linkedReleasesEdit.jspf" %>
+
                             </div>
                             <core_rt:if test="${not addMode}" >
                                 <div id="tab-Attachments" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Attachments'}">active show</core_rt:if>">

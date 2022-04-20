@@ -367,7 +367,9 @@ struct ReleaseLink{
     101: optional set<string> licenseNames,
     102: optional string comment,
     103: optional set<string> otherLicenseIds,
-    104: optional bool accessible = true
+    104: optional bool accessible = true,
+
+    105: optional list<Release> releaseWithSameComponent,
 }
 
 struct ReleaseClearingStatusData {

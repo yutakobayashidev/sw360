@@ -66,7 +66,7 @@
                     </form>
 				</div>
 			    <div class="modal-footer">
-		        <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="close" /></button>
+		            <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="close" /></button>
 			        <button id="selectReleaseButton" type="button" class="btn btn-primary" title="<liferay-ui:message key="link.releases" />"><liferay-ui:message key="link.releases" /></button>
 			    </div>
 			</div>
@@ -123,6 +123,7 @@
                 });
 
                 releaseContentFromAjax('<%=PortalConstants.LIST_NEW_LINKED_RELEASES%>', releaseIds, function(data) {
+                    console.log(data);
                     $('#LinkedReleasesInfo tbody').append(data);
                 });
 
@@ -152,6 +153,7 @@
             }, undefined, [0]);
             datatables.enableCheckboxForSelection($dataTable, 0);
         }
+
 
         function releaseContentFromAjax(what, where, callback) {
             $dialog.$.find('.spinner').show();
