@@ -356,7 +356,7 @@
                             let resourceURL = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>';
                             let validateExternalIdURL = Liferay.PortletURL.createURL( resourceURL )
                                .setParameter('<%=PortalConstants.ACTION%>', '<%=PortalConstants.FIND_BY_EXTERNAL_ID%>')
-                               .setParameter('<%=PortalConstants.VULNERABILITY_EXTERNAL_ID%>', externalId);
+                               .setParameter('<%=PortalConstants.VULNERABILITY_EXTERNAL_ID%>', newExternalId);
 
                             jQuery.ajax({
                                 type: 'GET',
@@ -367,7 +367,9 @@
                                     if(data.result == 'SUCCESS') {
                                         $("#externalIdFeedBack").css("display", "none");
                                         $("#vulnerabilityExternalId").css("border-color", "#5aca75");
-                                        $('#vulnerabilityEditForm').submit();
+                                        if (cvssScoreValid){
+                                            $('#vulnerabilityEditForm').submit();
+                                        }
                                     } else {
                                         $("#externalIdFeedBack").text("External id has existed");
                                         $("#externalIdFeedBack").css("display", "block");
