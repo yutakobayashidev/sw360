@@ -24,9 +24,9 @@ typedef sw360.DocumentState DocumentState
 typedef sw360.Visibility Visibility
 typedef sw360.ReleaseRelationship ReleaseRelationship
 typedef sw360.MainlineState MainlineState
-typedef sw360.ProjectReleaseRelationship ProjectReleaseRelationship
 typedef sw360.SW360Exception SW360Exception
 typedef sw360.PaginationData PaginationData
+typedef sw360.ProjectReleaseRelationship ProjectReleaseRelationship
 typedef attachments.Attachment Attachment
 typedef attachments.FilledAttachment FilledAttachment
 typedef users.User User
@@ -367,7 +367,39 @@ struct ReleaseLink{
     101: optional set<string> licenseNames,
     102: optional string comment,
     103: optional set<string> otherLicenseIds,
-    104: optional bool accessible = true
+    104: optional bool accessible = true,
+
+    105: optional list<Release> releaseWithSameComponent,
+    106: optional i32 layer,
+    107: optional i32 index,
+    108: optional string defaultValue,
+    109: optional string projectId,
+    110: optional MainlineState releaseMainLineState
+}
+
+
+struct ReleaseLinkJSON {
+     1: required string releaseId,
+     2: required string name,
+     3: optional list<ReleaseLinkJSON> releaseLink,
+     4: optional i32 releaseRelationship,
+     5: optional i32 mainlineState,
+     6: optional bool hasChange = false,
+     7: optional string parentId,
+     8: optional i32 layer,
+     9: optional i32 index,
+     10: optional string comment,
+     11: optional string defaultValue,
+     12: optional string clearingState,
+     13: optional string mainLicenses,
+     14: optional string projectOrigin,
+     15: optional string releaseMainlineState,
+     16: optional string type,
+     17: optional string isAccessible,
+     18: optional string isRelease,
+     19: optional string projectMainlineState,
+     20: optional string relation,
+     21: optional string releaseOrigin
 }
 
 struct ReleaseClearingStatusData {

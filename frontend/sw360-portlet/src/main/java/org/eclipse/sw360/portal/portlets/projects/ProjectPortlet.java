@@ -100,22 +100,22 @@ import static org.eclipse.sw360.portal.common.PortalConstants.*;
 import static org.eclipse.sw360.portal.portlets.projects.ProjectPortletUtils.isUsageEquivalent;
 
 @org.osgi.service.component.annotations.Component(
-    immediate = true,
-    properties = {
-        "/org/eclipse/sw360/portal/portlets/base.properties",
-        "/org/eclipse/sw360/portal/portlets/default.properties",
-    },
-    property = {
-        "javax.portlet.name=" + PROJECT_PORTLET_NAME,
+        immediate = true,
+        properties = {
+                "/org/eclipse/sw360/portal/portlets/base.properties",
+                "/org/eclipse/sw360/portal/portlets/default.properties",
+        },
+        property = {
+                "javax.portlet.name=" + PROJECT_PORTLET_NAME,
 
-        "javax.portlet.display-name=Projects",
-        "javax.portlet.info.short-title=Projects",
-        "javax.portlet.info.title=Projects",
-	    "javax.portlet.resource-bundle=content.Language",
-        "javax.portlet.init-param.view-template=/html/projects/view.jsp",
-    },
-    service = Portlet.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE
+                "javax.portlet.display-name=Projects",
+                "javax.portlet.info.short-title=Projects",
+                "javax.portlet.info.title=Projects",
+                "javax.portlet.resource-bundle=content.Language",
+                "javax.portlet.init-param.view-template=/html/projects/view.jsp",
+        },
+        service = Portlet.class,
+        configurationPolicy = ConfigurationPolicy.REQUIRE
 )
 public class ProjectPortlet extends FossologyAwarePortlet {
 
@@ -237,7 +237,11 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         } else if (PortalConstants.VIEW_CLEARING_REQUEST.equals(action)) {
             showClearingRequest(request, response);
         } else if (PortalConstants.LIST_CLEARING_STATUS.equals(action)) {
-            serveClearingStatusList(request, response);
+            try {
+                serveClearingStatusList(request, response);
+            } catch (TException e) {
+                throw new RuntimeException(e);
+            }
         } else if (PortalConstants.CLEARING_STATUS_ON_LOAD.equals(action)) {
             serveClearingStatusonLoad(request, response);
         } else if (PortalConstants.LICENSE_TO_SOURCE_FILE.equals(action)) {
@@ -251,8 +255,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             JSONObject dataForChangeLogs = changeLogsPortletUtilsPortletUtils.serveResourceForChangeLogs(request,
                     response, action);
             writeJSON(request, response, dataForChangeLogs);
-        }
-        else if ((PortalConstants.LOAD_OBLIGATIONS_EDIT.equals(action)
+        } else if ((PortalConstants.LOAD_OBLIGATIONS_EDIT.equals(action)
                 || PortalConstants.LOAD_OBLIGATIONS_VIEW.equals(action))
                 && PortalConstants.IS_PROJECT_OBLIGATIONS_ENABLED) {
             ObligationList loadLinkedObligations = loadLinkedObligations(request);
@@ -380,11 +383,11 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             obligationStatusInfo.remove(topic);
             status = client.updateLinkedObligations(obligation, user);
         } catch (TException exception) {
-            log.error("Failed to delete obligation: "+ obligationId +" with topic: " + topic, exception);
+            log.error("Failed to delete obligation: " + obligationId + " with topic: " + topic, exception);
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
         }
         serveRequestStatus(request, response, status,
-                "Failed to delete obligation: "+ obligationId +" with topic: " + topic, log);
+                "Failed to delete obligation: " + obligationId + " with topic: " + topic, log);
     }
 
     private void importBom(ResourceRequest request, ResourceResponse response) {
@@ -434,7 +437,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             Integer dateLimit = ModerationPortletUtils.loadPreferredClearingDateLimit(request, user);
             dateLimit = (ClearingRequestPriority.CRITICAL.equals(clearingRequest.getPriority()) && criticalCount < 2) ? 0 : (dateLimit < 1) ? 7 : dateLimit;
             if (!SW360Utils.isValidDate(clearingRequest.getRequestedClearingDate(), DateTimeFormatter.ISO_LOCAL_DATE, Long.valueOf(dateLimit))) {
-                log.warn("Invalid requested clearing date: " + clearingRequest.getRequestedClearingDate() + " is entered, by user: "+ user.getEmail());
+                log.warn("Invalid requested clearing date: " + clearingRequest.getRequestedClearingDate() + " is entered, by user: " + user.getEmail());
                 requestSummary = new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.FAILURE).setMessage("Invalid requested clearing date");
             } else {
                 requestSummary = client.createClearingRequest(clearingRequest, user, projectUrl.toString());
@@ -450,7 +453,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             jsonGenerator.writeStringField(RESULT, requestSummary.getRequestStatus().toString());
             if (!AddDocumentRequestStatus.SUCCESS.equals(requestSummary.getRequestStatus())) {
                 ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
-                jsonGenerator.writeStringField(SW360Constants.MESSAGE, LanguageUtil.get(resourceBundle, requestSummary.getMessage().replace(' ','.').toLowerCase()));
+                jsonGenerator.writeStringField(SW360Constants.MESSAGE, LanguageUtil.get(resourceBundle, requestSummary.getMessage().replace(' ', '.').toLowerCase()));
             } else {
                 jsonGenerator.writeStringField(CLEARING_REQUEST_ID, requestSummary.getId());
             }
@@ -481,7 +484,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 }
             }
         } catch (TException e) {
-            log.error("Error fetching clearing request "+ clearingId +" for project: " + clearingRequest.getProjectId(), e);
+            log.error("Error fetching clearing request " + clearingId + " for project: " + clearingRequest.getProjectId(), e);
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
         }
     }
@@ -565,8 +568,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     Collectors.toMap(AttachmentUsage::getAttachmentContentId, Function.identity(), ProjectPortletUtils::mergeAttachmentUsages);
             BiFunction<List<AttachmentUsage>, UsageData._Fields, Map<String, AttachmentUsage>> filterAttachmentUsages = (attUsages, type) ->
                     attUsages.stream()
-                    .filter(attUsage -> attUsage.getUsageData().getSetField().equals(type))
-                    .collect(attachmentUsageMapCollector);
+                            .filter(attUsage -> attUsage.getUsageData().getSetField().equals(type))
+                            .collect(attachmentUsageMapCollector);
 
             Map<String, AttachmentUsage> licenseInfoUsages = filterAttachmentUsages.apply(attachmentUsages, UsageData._Fields.LICENSE_INFO);
             Map<String, AttachmentUsage> sourcePackageUsages = filterAttachmentUsages.apply(attachmentUsages, UsageData._Fields.SOURCE_PACKAGE);
@@ -587,7 +590,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         String selectedTemplate = request.getParameter("tmplate");
         boolean isOnlyApprovedAttachmentSelected = Boolean.parseBoolean(request.getParameter(PortalConstants.ONLY_APPROVED));
         String fileName = "";
-        if(CommonUtils.isNotNullEmptyOrWhitespace(CLEARING_REPORT_TEMPLATE_TO_FILENAMEMAPPING) && CommonUtils.isNotNullEmptyOrWhitespace(selectedTemplate)) {
+        if (CommonUtils.isNotNullEmptyOrWhitespace(CLEARING_REPORT_TEMPLATE_TO_FILENAMEMAPPING) && CommonUtils.isNotNullEmptyOrWhitespace(selectedTemplate)) {
             Map<String, String> tmplateToFileName = Arrays.stream(PortalConstants.CLEARING_REPORT_TEMPLATE_TO_FILENAMEMAPPING.split(","))
                     .collect(Collectors.toMap(k -> k.split(":")[0], v -> v.split(":")[1]));
             fileName = tmplateToFileName.get(selectedTemplate);
@@ -616,7 +619,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         String extIdsFromRequest = request.getParameter(PortalConstants.EXTERNAL_ID_SELECTED_KEYS);
         String externalIds = Optional.ofNullable(extIdsFromRequest).orElse(StringUtils.EMPTY);
         boolean isLinkedProjectPresent = Boolean.parseBoolean(request.getParameter(PortalConstants.IS_LINKED_PROJECT_PRESENT));
-        List<String> selectedReleaseRelationships =  getSelectedReleaseRationships(request);
+        List<String> selectedReleaseRelationships = getSelectedReleaseRationships(request);
         String[] selectedAttachmentIdsWithPathArray = request.getParameterValues(PortalConstants.LICENSE_INFO_RELEASE_TO_ATTACHMENT);
         String[] includeConcludedLicenseArray = request.getParameterValues(PortalConstants.INCLUDE_CONCLUDED_LICENSE);
         List<String> includeConcludedLicenseList = arrayToList(includeConcludedLicenseArray);
@@ -642,7 +645,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         final Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachmentIdWithPath = ProjectPortletUtils
                 .getExcludedLicensesPerAttachmentIdFromRequest(filteredSelectedAttachmentIdsWithPath, request);
 
-        final Map<String, Map<String,Boolean>> releaseIdsToSelectedAttachmentIds = new HashMap<>();
+        final Map<String, Map<String, Boolean>> releaseIdsToSelectedAttachmentIds = new HashMap<>();
         filteredSelectedAttachmentIdsWithPath.stream().forEach(selectedAttachmentIdWithPath -> {
             String[] pathParts = selectedAttachmentIdWithPath.split(":");
             String releaseId = pathParts[pathParts.length - 4];
@@ -787,8 +790,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
     private void saveSelectedReleaseAndProjectRelations(String projectId,
-            Set<ReleaseRelationship> listOfSelectedRelationships,
-            Set<ProjectRelationship> listOfSelectedProjectRelationships, boolean isLinkedProjectPresent) {
+                                                        Set<ReleaseRelationship> listOfSelectedRelationships,
+                                                        Set<ProjectRelationship> listOfSelectedProjectRelationships, boolean isLinkedProjectPresent) {
         UsedReleaseRelations usedReleaseRelation = new UsedReleaseRelations();
         try {
             ProjectService.Iface client = thriftClients.makeProjectClient();
@@ -815,7 +818,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
     private Set<String> filterSelectedAttachmentIdsWithPath(Set<String> selectedAttachmentIdsWithPath,
-            Set<String> listOfSelectedRelationships) {
+                                                            Set<String> listOfSelectedRelationships) {
         return selectedAttachmentIdsWithPath.stream().filter(selectedAttachmentIdWithPath -> {
             String pathParts[] = selectedAttachmentIdWithPath.split(":");
             String relation = pathParts[pathParts.length - 3];
@@ -838,19 +841,19 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         OutputFormatInfo outputFormatInfo = licenseInfoFile.getOutputFormatInfo();
         String documentVariant = licenseInfoFile.getOutputFormatInfo().getVariant() == OutputFormatVariant.DISCLOSURE ? "LicenseInfo" : "ProjectClearingReport";
         String filename = String.format("%s-%s%s-%s.%s", documentVariant, project.getName(),
-			StringUtils.isBlank(project.getVersion()) ? "" : "-" + project.getVersion(),
-			SW360Utils.getCreatedOnTime().replaceAll("\\s", "_").replace(":", "_"),
-			outputFormatInfo.getFileExtension());
-    	String mimetype = outputFormatInfo.getMimeType();
-    	if (isNullOrEmpty(mimetype)) {
-    		mimetype = URLConnection.guessContentTypeFromName(filename);
-    	}
+                StringUtils.isBlank(project.getVersion()) ? "" : "-" + project.getVersion(),
+                SW360Utils.getCreatedOnTime().replaceAll("\\s", "_").replace(":", "_"),
+                outputFormatInfo.getFileExtension());
+        String mimetype = outputFormatInfo.getMimeType();
+        if (isNullOrEmpty(mimetype)) {
+            mimetype = URLConnection.guessContentTypeFromName(filename);
+        }
         PortletResponseUtil.sendFile(request, response, filename, licenseInfoFile.getGeneratedOutput(), mimetype);
     }
 
     private void saveLicenseInfoAttachmentUsages(Project project, User user, Set<String> selectedAttachmentIdsWithPath,
-            Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachmentIdWithPath,
-            List<String> includeConcludedLicenseList, boolean isOnlyApprovedAttachmentSelected) {
+                                                 Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachmentIdWithPath,
+                                                 List<String> includeConcludedLicenseList, boolean isOnlyApprovedAttachmentSelected) {
         try {
             Function<String, UsageData> usageDataGenerator = attachmentContentId -> {
                 Set<String> licenseIds = CommonUtils
@@ -861,7 +864,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 LicenseInfoUsage licenseInfoUsage = new LicenseInfoUsage(licenseIds);
                 // until second last occurence of ":" (strip releaseId and attachmentId)
                 String splittedAttachmentContentId[] = attachmentContentId.split(":");
-                String projectPath = String.join(":", Arrays.copyOf(splittedAttachmentContentId, splittedAttachmentContentId.length-4));
+                String projectPath = String.join(":", Arrays.copyOf(splittedAttachmentContentId, splittedAttachmentContentId.length - 4));
                 licenseInfoUsage.setProjectPath(projectPath);
                 licenseInfoUsage.setIncludeConcludedLicense(includeConcludedLicenseList.contains(attachmentContentId));
                 return UsageData.licenseInfo(licenseInfoUsage);
@@ -969,7 +972,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private void serveGetClearingStateSummaries(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
         User user = UserCacheHolder.getUserFromRequest(request);
         List<Project> projects;
-        String ids[] = request.getParameterValues(Project._Fields.ID.toString()+"[]");
+        String ids[] = request.getParameterValues(Project._Fields.ID.toString() + "[]");
         if (ids == null || ids.length == 0) {
             JSONArray jsonResponse = createJSONArray();
             writeJSON(request, response, jsonResponse);
@@ -1074,7 +1077,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         String projectId = request.getParameter(PortalConstants.PROJECT_ID);
         String encodedDeleteComment = request.getParameter(PortalConstants.MODERATION_REQUEST_COMMENT);
         final User user = UserCacheHolder.getUserFromRequest(request);
-        if(encodedDeleteComment != null) {
+        if (encodedDeleteComment != null) {
             String deleteComment = new String(Base64.getDecoder().decode(encodedDeleteComment));
             user.setCommentMadeDuringModerationRequest(deleteComment);
         }
@@ -1110,7 +1113,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
     private void serveLinkedReleases(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
         String what = request.getParameter(PortalConstants.WHAT);
-
         String projectId = request.getParameter(PROJECT_ID);
 
         if (PortalConstants.LIST_NEW_LINKED_RELEASES.equals(what)) {
@@ -1121,6 +1123,29 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             serveReleaseSearchResults(request, response, where);
         } else if (PortalConstants.RELEASE_LIST_FROM_LINKED_PROJECTS.equals(what)) {
             serveReleasesFromLinkedProjects(request, response, projectId);
+        } else if (PortalConstants.FIND_SUB_LINKED_RELEASE.equals(what)) {
+            try {
+                serverReleaseRelationDirectlyOfProject(request, response, projectId);
+            } catch (TException e) {
+                throw new RuntimeException(e);
+            }
+        } else if (PortalConstants.CREATE_LINKED_RELEASE_ROW.equals(what)) {
+            String[] where = request.getParameterValues(PortalConstants.WHERE_ARRAY);
+            String[] parentIds = request.getParameterValues(PARENT_NODE_ID);
+            String[] layers = request.getParameterValues(PortalConstants.LAYER);
+            String[] mainlineStates = request.getParameterValues(PortalConstants.MAINLINE_STATE);
+            String[] releaseRelationShips= request.getParameterValues(PortalConstants.RELEASE_RELATION_SHIP);
+            String[] indexes = request.getParameterValues(PortalConstants.INDEXES);
+            String[] comments = request.getParameterValues(PortalConstants.COMMENTS);
+            String[] defaultValues = request.getParameterValues(PortalConstants.DEFAULT_VALUES);
+            serveNewTableRowLinkedRelease(request, response, where, parentIds, layers, mainlineStates, releaseRelationShips, indexes, comments, defaultValues);
+        } else if (PortalConstants.FIND_LINKED_RELEASE_OF_NODE.equals(what)) {
+            String releaseId = request.getParameter(RELEASE_ID);
+            try {
+                serverReleaseRelationNetworkOfNode(request, response, releaseId, projectId);
+            } catch (TException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -1159,8 +1184,10 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             for (Release release : client.getReleasesById(new HashSet<>(Arrays.asList(linkedIds)), user)) {
                 final Vendor vendor = release.getVendor();
                 final String vendorName = vendor != null ? vendor.getShortname() : "";
+                List<Release> releasesWithSameComponent = client.getReleasesByComponentId(release.getComponentId(), user);
                 ReleaseLink linkedRelease = new ReleaseLink(release.getId(), vendorName, release.getName(), release.getVersion(),
                         SW360Utils.printFullname(release), !nullToEmptyMap(release.getReleaseIdToRelationship()).isEmpty());
+                linkedRelease.setReleaseWithSameComponent(releasesWithSameComponent);
                 linkedReleases.add(linkedRelease);
             }
         } catch (TException e) {
@@ -1270,7 +1297,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private void addLicenseInfoResultToJsonSerializableLicensesList(LicenseInfoParsingResult licenseInfoResult,
                                                                     List<Map<String, String>> licenses,
                                                                     BiConsumer<String, LicenseNameWithText> storeLicense) {
-        switch (licenseInfoResult.getStatus()){
+        switch (licenseInfoResult.getStatus()) {
             case SUCCESS:
                 Set<LicenseNameWithText> licenseNamesWithTexts = nullToEmptySet(licenseInfoResult.getLicenseInfo().getLicenseNamesWithTexts());
                 List<Map<String, String>> licensesAsObject = licenseNamesWithTexts.stream()
@@ -1369,7 +1396,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             request.setAttribute(CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT, dateLimit);
             Integer criticalCount = modClient.getCriticalClearingRequestCount();
             request.setAttribute(CRITICAL_CR_COUNT, criticalCount);
-        } catch(TException e) {
+        } catch (TException e) {
             log.error("Error in getting the projectList from backend ", e);
         }
         request.setAttribute(IS_USER_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) ? YES : NO);
@@ -1409,7 +1436,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         Map<PaginationData, List<Project>> ctToProjects = Maps.newHashMap();
         List<Project> projectList;
         try {
-            if (!isNullOrEmpty(id)){ // the presence of the id signals to load linked projects hierarchy instead of using filters
+            if (!isNullOrEmpty(id)) { // the presence of the id signals to load linked projects hierarchy instead of using filters
                 final Collection<ProjectLink> projectLinks = SW360Utils.getLinkedProjectsAsFlatList(id, true, thriftClients, log, user);
                 List<String> linkedProjectIds = projectLinks.stream().map(ProjectLink::getId).collect(Collectors.toList());
                 projectList = projectClient.getProjectsById(linkedProjectIds, user);
@@ -1432,7 +1459,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         ProjectService.Iface projectClient = thriftClients.makeProjectClient();
         List<Project> projectList;
         try {
-            if (!isNullOrEmpty(id)){ // the presence of the id signals to load linked projects hierarchy instead of using filters
+            if (!isNullOrEmpty(id)) { // the presence of the id signals to load linked projects hierarchy instead of using filters
                 final Collection<ProjectLink> projectLinks = SW360Utils.getLinkedProjectsAsFlatList(id, true, thriftClients, log, user);
                 List<String> linkedProjectIds = projectLinks.stream().map(ProjectLink::getId).collect(Collectors.toList());
                 projectList = projectClient.getProjectsById(linkedProjectIds, user);
@@ -1470,7 +1497,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         return filterMap;
     }
 
-    private void addStickyProjectGroupToFilters(PortletRequest request, User user, Map<String, Set<String>> filterMap){
+    private void addStickyProjectGroupToFilters(PortletRequest request, User user, Map<String, Set<String>> filterMap) {
         String stickyGroupFilter = ProjectPortletUtils.loadStickyProjectGroup(request, user);
         if (!isNullOrEmpty(stickyGroupFilter)) {
             String groupFieldName = Project._Fields.BUSINESS_UNIT.getFieldName();
@@ -1656,7 +1683,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                             .filter(Objects::nonNull)
                             .map(licenseNamesWithTexts -> CommonUtils.isNotNullEmptyOrWhitespace(
                                     licenseNamesWithTexts.getLicenseSpdxId()) ? licenseNamesWithTexts.getLicenseSpdxId()
-                                            : licenseNamesWithTexts.getLicenseName())
+                                    : licenseNamesWithTexts.getLicenseName())
                             .filter(CommonUtils::isNotNullEmptyOrWhitespace).collect(Collectors.toSet());
 
                     licenseIds.stream().forEach(licenseId -> {
@@ -1674,8 +1701,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
     private void setReleasesForWhichAttachmentUsageNotSet(ComponentService.Iface componentClient, User user,
-            Map<String, Release> attachmentIdToReleaseMap, Map<String, ProjectReleaseRelationship> releaseIdToUsage,
-            ResourceRequest request) {
+                                                          Map<String, Release> attachmentIdToReleaseMap, Map<String, ProjectReleaseRelationship> releaseIdToUsage,
+                                                          ResourceRequest request) {
         Set<String> releaseIdUsed = attachmentIdToReleaseMap.values().stream().map(release -> release.getId())
                 .collect(Collectors.toSet());
         Set<String> linkedReleaseIds = releaseIdToUsage.keySet();
@@ -1708,8 +1735,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     ProjectPortletUtils::mergeAttachmentUsages);
             BiFunction<List<AttachmentUsage>, UsageData._Fields, Map<String, AttachmentUsage>> filterAttachmentUsages = (
                     attUsages, type) -> attUsages.stream()
-                            .filter(attUsage -> attUsage.getUsageData().getSetField().equals(type))
-                            .collect(attachmentUsageMapCollector);
+                    .filter(attUsage -> attUsage.getUsageData().getSetField().equals(type))
+                    .collect(attachmentUsageMapCollector);
 
             licenseInfoUsages = filterAttachmentUsages.apply(attachmentUsages, UsageData._Fields.LICENSE_INFO);
 
@@ -1742,7 +1769,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 request.setAttribute(PROJECT, project);
                 request.setAttribute(DOCUMENT_ID, id);
 
-                Map<String,String> extIdMap = project.getExternalIds();
+                Map<String, String> extIdMap = project.getExternalIds();
                 if (extIdMap != null) {
                     request.setAttribute("externalIds", extIdMap.keySet());
                 }
@@ -1812,7 +1839,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
     private Set<ProjectRelationship> fetchLinkedProjectRelations(List<ProjectLink> mappedProjectLinks,
-            String projectId) {
+                                                                 String projectId) {
         return mappedProjectLinks.stream().filter(projectLink -> !projectLink.getId().equals(projectId))
                 .map(ProjectLink::getRelation).collect(Collectors.toSet());
     }
@@ -1976,7 +2003,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             vulnerabilityIdToReleaseIdToAction.put(vulnerabilityId, new HashMap<>());
         }
         List<VulnerabilityCheckStatus> vulnerabilityCheckStatusHistory = null;
-        if(vulnerabilityIdToReleaseIdToStatus.containsKey(vulnerabilityId) && vulnerabilityIdToReleaseIdToStatus.get(vulnerabilityId).containsKey(releaseId)) {
+        if (vulnerabilityIdToReleaseIdToStatus.containsKey(vulnerabilityId) && vulnerabilityIdToReleaseIdToStatus.get(vulnerabilityId).containsKey(releaseId)) {
             vulnerabilityCheckStatusHistory = vulnerabilityIdToReleaseIdToStatus.get(vulnerabilityId).get(releaseId);
         }
         if (vulnerabilityCheckStatusHistory != null && vulnerabilityCheckStatusHistory.size() > 0) {
@@ -2059,7 +2086,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
     private void setObligationsFromAdminSection(Map<String, ObligationStatusInfo> obligationStatusMap,
-            PortletRequest request, Project project) throws TException {
+                                                PortletRequest request, Project project) throws TException {
         User user = UserCacheHolder.getUserFromRequest(request);
         List<Obligation> obligations = SW360Utils.getObligations();
         ComponentService.Iface componentClient = thriftClients.makeComponentClient();
@@ -2139,7 +2166,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         request.setAttribute(ORGANIZATIONS, organizations);
 
         if (id != null) {
-
             try {
                 ProjectService.Iface client = thriftClients.makeProjectClient();
                 project = client.getProjectByIdForEdit(id, user);
@@ -2160,13 +2186,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             request.setAttribute(DOCUMENT_ID, id);
 
             setAttachmentsInRequest(request, project);
-            try {
-                putDirectlyLinkedProjectsInRequest(request, project, user);
-                putDirectlyLinkedReleasesWithAccessibilityInRequest(request, project, user);
-            } catch (TException e) {
-                log.error("Could not fetch linked projects or linked releases in projects view.", e);
-                return;
-            }
+            putDirectlyLinkedProjectsInRequest(request, project, user);
+            putLinkedReleasesNetworkWithAccessibilityInRequest(request, project, user);
+
             request.setAttribute(USING_PROJECTS, usingProjects);
             request.setAttribute(ALL_USING_PROJECTS_COUNT, allUsingProjectCount);
             Map<RequestedAction, Boolean> permissions = project.getPermissions();
@@ -2175,22 +2197,18 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
             addEditDocumentMessage(request, permissions, documentState);
         } else {
-            if(request.getAttribute(PROJECT) == null) {
+            if (request.getAttribute(PROJECT) == null) {
                 project = new Project();
                 project.setBusinessUnit(user.getDepartment());
                 request.setAttribute(PROJECT, project);
                 PortletUtils.setCustomFieldsEdit(request, user, project);
                 setAttachmentsInRequest(request, project);
-                try {
-                    putDirectlyLinkedProjectsInRequest(request, project, user);
-                    putDirectlyLinkedReleasesWithAccessibilityInRequest(request, project, user);
-                } catch(TException e) {
-                    log.error("Could not put empty linked projects or linked releases in projects view.", e);
-                }
+                putDirectlyLinkedProjectsInRequest(request, project, user);
+                putLinkedReleasesNetworkWithAccessibilityInRequest(request, project, user);
                 request.setAttribute(USING_PROJECTS, Collections.emptySet());
                 request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
 
-                SessionMessages.add(request, "request_processed", LanguageUtil.get(resourceBundle,"new.project"));
+                SessionMessages.add(request, "request_processed", LanguageUtil.get(resourceBundle, "new.project"));
             }
         }
 
@@ -2230,7 +2248,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 request.setAttribute(PROJECT, project);
                 PortletUtils.setCustomFieldsEdit(request, user, project);
                 putDirectlyLinkedProjectsInRequest(request, project, user);
-                putDirectlyLinkedReleasesWithAccessibilityInRequest(request, project, user);
+                putLinkedReleasesNetworkWithAccessibilityInRequest(request, project, user);
 
                 request.setAttribute(USING_PROJECTS, Collections.emptySet());
                 request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
@@ -2260,6 +2278,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 ProjectPortletUtils.updateProjectFromRequest(request, project);
                 String ModerationRequestCommentMsg = request.getParameter(MODERATION_REQUEST_COMMENT);
                 user.setCommentMadeDuringModerationRequest(ModerationRequestCommentMsg);
+                String releaseRelationNetwork = request.getParameter(Project._Fields.RELEASE_RELATION_NETWORK.toString());
+                project.setReleaseRelationNetwork(releaseRelationNetwork);
 
                 String cyclicLinkedProjectPath = client.getCyclicLinkedProjectPath(project, user);
                 if (!isNullEmptyOrWhitespace(cyclicLinkedProjectPath)) {
@@ -2275,7 +2295,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 }
                 if (RequestStatus.DUPLICATE.equals(requestStatus) || RequestStatus.DUPLICATE_ATTACHMENT.equals(requestStatus) ||
                         RequestStatus.NAMINGERROR.equals(requestStatus)) {
-                    if(RequestStatus.DUPLICATE.equals(requestStatus))
+                    if (RequestStatus.DUPLICATE.equals(requestStatus))
                         setSW360SessionError(request, ErrorMessages.PROJECT_DUPLICATE);
                     else if (RequestStatus.NAMINGERROR.equals(requestStatus))
                         setSW360SessionError(request, ErrorMessages.PROJECT_NAMING_ERROR);
@@ -2318,7 +2338,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     copyAttachmentUsagesForClonedProject(request, sourceProjectId, newProjectId);
                 }
 
-                switch(status) {
+                switch (status) {
                     case SUCCESS:
                         String successMsg = "Project " + printName(project) + " added successfully";
                         SessionMessages.add(request, "request_processed", successMsg);
@@ -2370,7 +2390,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
                 if (newOsi.getReleaseIdToAcceptedCLISize() < 1 && isDeleteAllOrphanObligations
                         && (newOsi.getObligationLevel() == null
-                                || newOsi.getObligationLevel() == ObligationLevel.LICENSE_OBLIGATION)) {
+                        || newOsi.getObligationLevel() == ObligationLevel.LICENSE_OBLIGATION)) {
                     obligationStatusInfo.remove(topic);
                     return;
                 }
@@ -2504,9 +2524,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         final ProjectService.Iface projectClient = thriftClients.makeProjectClient();
         Project project = null;
         try {
-            project=projectClient.getProjectById(docId, user);
-        }
-        catch(TException e) {
+            project = projectClient.getProjectById(docId, user);
+        } catch (TException e) {
             log.error("Could not retrieve Project from backend.", e);
             return null;
         }
@@ -2515,22 +2534,21 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         ObligationList obligation = new ObligationList();
         Map<String, ObligationStatusInfo> obligationStatusMap = Maps.newHashMap();
 
-        boolean obligationPresent=true;
+        boolean obligationPresent = true;
         try {
             releases = getLinkedReleases(CommonUtils.getNullToEmptyKeyset(project.getReleaseIdToUsage()), user);
-                if (CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId())) {
-                    obligation = projectClient.getLinkedObligations(project.getLinkedObligationId(), user);
-                    obligationStatusMap = CommonUtils.nullToEmptyMap(obligation.getLinkedObligationStatus());
-                    setObligationsFromAdminSection(obligationStatusMap, request, project);
-                    if (!CommonUtils.isNotEmpty(releases)) {
-                        return null;
-                    }
-                    releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(obligationStatusMap));
+            if (CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId())) {
+                obligation = projectClient.getLinkedObligations(project.getLinkedObligationId(), user);
+                obligationStatusMap = CommonUtils.nullToEmptyMap(obligation.getLinkedObligationStatus());
+                setObligationsFromAdminSection(obligationStatusMap, request, project);
+                if (!CommonUtils.isNotEmpty(releases)) {
+                    return null;
                 }
-                else {
-                    setObligationsFromAdminSection(new HashMap(), request, project);
-                }
-                obligation.setLinkedObligationStatus(setLicenseInfoWithObligations(request, obligationStatusMap, releaseIdToAcceptedCLI, releases, user));
+                releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(obligationStatusMap));
+            } else {
+                setObligationsFromAdminSection(new HashMap(), request, project);
+            }
+            obligation.setLinkedObligationStatus(setLicenseInfoWithObligations(request, obligationStatusMap, releaseIdToAcceptedCLI, releases, user));
         } catch (TException e) {
             log.error(String.format("error loading linked obligations for project: %s ", project.getId()), e);
         }
@@ -2538,8 +2556,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
     private Map<String, ObligationStatusInfo> setLicenseInfoWithObligations(PortletRequest request,
-            Map<String, ObligationStatusInfo> obligationStatusMap, Map<String, String> releaseIdToAcceptedCLI,
-            List<Release> releases, User user) {
+                                                                            Map<String, ObligationStatusInfo> obligationStatusMap, Map<String, String> releaseIdToAcceptedCLI,
+                                                                            List<Release> releases, User user) {
 
         final Set<Release> excludedReleases = Sets.newHashSet();
         final List<LicenseInfoParsingResult> licenseInfoWithObligations = Lists.newArrayList();
@@ -2584,7 +2602,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
             request.setAttribute(APPROVED_OBLIGATIONS_COUNT, getFulfilledObligationsCount(obligationStatusMap));
             request.setAttribute(OBLIGATION_FROM_README_OSS, getObligationsFromReadmeOSSCount(obligationStatusMap));
-            
+
             request.setAttribute(EXCLUDED_RELEASES, excludedReleases);
             request.setAttribute(PROJECT_OBLIGATIONS_INFO_BY_RELEASE, filterAndSortLicenseInfo(licenseObligation.getLicenseInfoResults()));
         } catch (TException e) {
@@ -2603,7 +2621,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         // filtering all license without obligations and license name unknown or n/a
         Predicate<LicenseNameWithText> filterLicense = license -> (license.isSetObligationsAtProject()
                 && !(SW360Constants.LICENSE_NAME_UNKNOWN.equals(license.getLicenseName())
-                        && SW360Constants.NA.equalsIgnoreCase(license.getLicenseName())));
+                && SW360Constants.NA.equalsIgnoreCase(license.getLicenseName())));
 
         licenseInfos.stream()
                 .sorted(Comparator.comparing(LicenseInfoParsingResult::getName, String.CASE_INSENSITIVE_ORDER))
@@ -2649,23 +2667,17 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         ComponentService.Iface compClient = thriftClients.makeComponentClient();
         ProjectService.Iface client = thriftClients.makeProjectClient();
         Project project = null;
-        try {
 
+        try {
             project = client.getProjectById(id, user);
             project = getWithFilledClearingStateSummary(project, user);
         } catch (TException exp) {
             log.error("Error while fetching Project id : " + id, exp);
             return;
         }
-
         List<ProjectLink> mappedProjectLinks = createLinkedProjects(project, user);
         mappedProjectLinks = sortProjectLink(mappedProjectLinks);
         request.setAttribute(PROJECT_LIST, mappedProjectLinks);
-        request.setAttribute("projectReleaseRelation", project.getReleaseIdToUsage());
-        Set<String> releaseIds = mappedProjectLinks.stream().map(ProjectLink::getLinkedReleases)
-                .filter(CommonUtils::isNotEmpty).flatMap(rList -> rList.stream()).filter(Objects::nonNull)
-                .map(ReleaseLink::getId).collect(Collectors.toSet());
-        request.setAttribute("relMainLineState", fillMainLineState(releaseIds, compClient, user));
         include("/html/utils/ajax/linkedProjectsRows.jsp", request, response, PortletRequest.RESOURCE_PHASE);
     }
 
@@ -2746,7 +2758,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         }
     }
 
-    private void serveClearingStatusList(ResourceRequest request, ResourceResponse response) {
+    private void serveClearingStatusList(ResourceRequest request, ResourceResponse response) throws TException {
         ProjectService.Iface client = thriftClients.makeProjectClient();
         User user = UserCacheHolder.getUserFromRequest(request);
         String projectId = request.getParameter(DOCUMENT_ID);
@@ -2979,7 +2991,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
     private JSONObject buildResponse(Project srcProject, Project destnProj, String errorMsg, boolean successFlag,
-            boolean writeAcess) {
+                                     boolean writeAcess) {
         JSONObject jsonObject = createJSONObject();
         jsonObject.put("success", successFlag);
         jsonObject.put("writeAccess", writeAcess);
@@ -3038,5 +3050,110 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             }
         }
         return businessUnit;
+    }
+
+
+    private void serverReleaseRelationDirectlyOfProject(ResourceRequest request, ResourceResponse response, String projectId) throws TException {
+        ComponentService.Iface releaseClient = thriftClients.makeComponentClient();
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+        User user = UserCacheHolder.getUserFromRequest(request);
+        JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+        Project project = projectClient.getProjectById(projectId,user);
+        String releaseRelationTree = project.getReleaseRelationNetwork();
+        if (!"".equals(projectId)) {
+            if (releaseRelationTree == null) {
+                Map<String, ProjectReleaseRelationship> linkedReleases = project.getReleaseIdToUsage();
+                List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
+
+                for (Map.Entry<String, ProjectReleaseRelationship> linkedRelease : linkedReleases.entrySet()) {
+                    Release release = releaseClient.getAccessibleReleaseById(linkedRelease.getKey(),user);
+                    ReleaseLinkJSON releaseLinkJSON = new ReleaseLinkJSON(linkedRelease.getKey(), (release.getName() + " (" + release.getVersion() + ")"));
+                    releaseLinkJSON.setReleaseLink(new ArrayList<ReleaseLinkJSON>());
+                    releaseLinkJSON.setReleaseRelationship(linkedRelease.getValue().getReleaseRelation().getValue());
+                    releaseLinkJSON.setMainlineState(linkedRelease.getValue().getMainlineState().getValue());
+                    releaseLinkJSON.setDefaultValue(linkedRelease.getKey());
+                    releaseLinkJSON.setComment("");
+                    releaseLinkJSON.setProjectOrigin(project.getName() + " (" + project.getVersion() + ")");
+
+                    String relationName = ThriftEnumUtils.enumToString(linkedRelease.getValue().getReleaseRelation());
+                    String projectMainLineStateName= ThriftEnumUtils.enumToString(linkedRelease.getValue().getMainlineState());
+                    releaseLinkJSON.setRelation(relationName);
+                    releaseLinkJSON.setProjectMainlineState(projectMainLineStateName);
+                    releaseLinkJSONS.add(releaseLinkJSON);
+                }
+                if (releaseLinkJSONS.size() > 0) {
+                    jsonObject.put(PortalConstants.RESULT, releaseLinkJSONS);
+                } else {
+                    jsonObject.put(PortalConstants.RESULT, "[]");
+                }
+            } else {
+                jsonObject.put(PortalConstants.RESULT, project.getReleaseRelationNetwork());
+            }
+            try {
+                writeJSON(request, response, jsonObject);
+            } catch (IOException e) {
+                log.error("Problem rendering ReleaseRelationTree", e);
+            }
+        } else {
+            jsonObject.put(PortalConstants.RESULT, "[]");
+        }
+    }
+
+    private void serverReleaseRelationNetworkOfNode(ResourceRequest request, ResourceResponse response, String releaseId, String projectId) throws TException {
+        ComponentService.Iface releaseClient = thriftClients.makeComponentClient();
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+        User user = UserCacheHolder.getUserFromRequest(request);
+        Project project = projectClient.getProjectById(projectId,user);
+        String projectName = project.getName() + " (" + project.getVersion() + ")";
+        JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+        Release release = releaseClient.getAccessibleReleaseById(releaseId,user);
+        List<Release> releases = new ArrayList<Release>();
+        releases.add(release);
+        List<ReleaseLinkJSON> releaseLinkJSONS = getNetworkLinkedRelease(releases, user, projectName);
+        jsonObject.put(PortalConstants.RESULT, releaseLinkJSONS);
+        try {
+            writeJSON(request, response, jsonObject);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void serveNewTableRowLinkedRelease(ResourceRequest request, ResourceResponse response, String[] linkedIds, String[] parentIds, String[] layers, String[] mainlineStates, String[] releaseRelationShips,
+                                               String[] indexes, String[] comments, String[] defaultValues) throws IOException, PortletException {
+        final User user = UserCacheHolder.getUserFromRequest(request);
+        request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
+
+        List<ReleaseLink> linkedReleases = new ArrayList<>();
+        ComponentService.Iface client = thriftClients.makeComponentClient();
+        try {
+            List<Release> releases = new ArrayList<>();
+            for (String linkedId : linkedIds) {
+                Set<String> linkedIdMap = new HashSet<>();
+                linkedIdMap.add(linkedId);
+                releases.addAll(client.getReleasesById(linkedIdMap, user));
+            }
+
+            for (int index = 0; index < releases.size(); index++) {
+                final Vendor vendor = releases.get(index).getVendor();
+                final String vendorName = vendor != null ? vendor.getShortname() : "";
+                List<Release> releasesWithSameComponent = client.getReleasesByComponentId(releases.get(index).getComponentId(), user);
+                ReleaseLink linkedRelease = new ReleaseLink(releases.get(index).getId(), vendorName, releases.get(index).getName(), releases.get(index).getVersion(),
+                        SW360Utils.printFullname(releases.get(index)), !nullToEmptyMap(releases.get(index).getReleaseIdToRelationship()).isEmpty());
+                linkedRelease.setReleaseWithSameComponent(releasesWithSameComponent);
+                linkedRelease.setLayer(Integer.parseInt(layers[index]));
+                linkedRelease.setParentNodeId(parentIds[index]);
+                linkedRelease.setMainlineState(MainlineState.findByValue(Integer.parseInt(mainlineStates[index])));
+                linkedRelease.setReleaseRelationship(ReleaseRelationship.findByValue(Integer.parseInt(releaseRelationShips[index])));
+                linkedRelease.setIndex(Integer.parseInt(indexes[index]));
+                linkedRelease.setComment(comments[index]);
+                linkedRelease.setDefaultValue(defaultValues[index]);
+                linkedReleases.add(linkedRelease);
+            }
+        } catch (TException e) {
+            log.error("Error getting releases!", e);
+            throw new PortletException("cannot get releases " + Arrays.toString(linkedIds), e);
+        }
+        request.setAttribute(RELEASE_LIST, linkedReleases);
+        include("/html/utils/ajax/linkedReleasesAjax.jsp", request, response, PortletRequest.RESOURCE_PHASE);
     }
 }

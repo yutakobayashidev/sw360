@@ -508,6 +508,9 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         } else if (PortalConstants.RELEASE_SEARCH.equals(what)) {
             String where = request.getParameter(PortalConstants.WHERE);
             serveReleaseSearchResults(request, response, where);
+        } else if (PortalConstants.CREATE_LINKED_RELEASE_ROW.equals(what)){
+            String[] where = request.getParameterValues(PortalConstants.WHERE_ARRAY);
+            serveNewTableRowLinkedRelease(request, response, where);
         }
     }
 

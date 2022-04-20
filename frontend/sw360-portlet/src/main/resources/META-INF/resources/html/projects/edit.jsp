@@ -165,6 +165,7 @@
                             <div id="tab-linkedProjects" class="tab-pane <core_rt:if test="${selectedTab == 'tab-linkedProjects'}">active show</core_rt:if>">
                                 <%@include file="/html/projects/includes/linkedProjectsEdit.jspf" %>
                                 <%@include file="/html/utils/includes/linkedReleasesEdit.jspf" %>
+
                             </div>
                             <core_rt:if test="${not addMode}" >
                                 <div id="tab-Attachments" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Attachments'}">active show</core_rt:if>">
@@ -230,7 +231,6 @@
 <core_rt:set var="enableSearchForReleasesFromLinkedProjects" value="${true}" scope="request"/>
 
 <jsp:include page="/html/projects/includes/searchProjects.jsp" />
-<jsp:include page="/html/utils/includes/searchReleases.jsp" />
 <jsp:include page="/html/utils/includes/searchAndSelectUsers.jsp" />
 <jsp:include page="/html/utils/includes/searchUsers.jsp" />
 <%@include file="/html/components/includes/vendors/searchVendor.jspf" %>

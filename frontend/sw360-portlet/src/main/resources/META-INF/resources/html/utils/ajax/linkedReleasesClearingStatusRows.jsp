@@ -28,7 +28,12 @@
         <core_rt:when test="${releaseLink.accessible}">
             <tr data-tt-id="${releaseLink.nodeId}" data-tt-branch="${releaseLink.hasSubreleases}" data-is-release-row="true"
                 <core_rt:if test="${true}">data-tt-parent-id="${parent_branch_id}"</core_rt:if>
-                <core_rt:if test="${empty parent_branch_id and not empty releaseLink.parentNodeId}">data-tt-parent-id="${releaseLink.parentNodeId}"</core_rt:if>>
+                <core_rt:if test="${not empty releaseLink.parentNodeId}">data-parent-release="${releaseLink.parentNodeId}"</core_rt:if>
+                <core_rt:if test="${not empty releaseLink.layer}">data-layer="${releaseLink.layer}"</core_rt:if>
+                <core_rt:if test="${not empty releaseLink.projectId}">data-project-id="${releaseLink.projectId}"</core_rt:if>
+                <core_rt:if test="${not empty releaseLink.index}">data-index="${releaseLink.index}"</core_rt:if>
+                <core_rt:if test="${not empty releaseLink.id}">data-release-id="${releaseLink.id}"</core_rt:if>
+                >
                 <td style="white-space: nowrap">
                     <a href="<sw360:DisplayReleaseLink releaseId="${releaseLink.id}" bare="true" scopeGroupId="${concludedScopeGroupId}" />">
                         <sw360:out value="${releaseLink.name} ${releaseLink.version}" maxChar="60" />
@@ -51,14 +56,13 @@
                 </td>
                 <td data-releaseclearingstate='<sw360:DisplayEnum value="${releaseLink.clearingState}" bare="true"/>' class="releaseClearingState"></td>
                 <td>
-                    ${requestScope["relMainLineState"][releaseLink.id]}
+                    <sw360:DisplayEnum value='${releaseLink.releaseMainLineState}'/>
                 </td>
                 <td>
-                    <core_rt:if test='${not empty requestScope["projectReleaseRelation"][releaseLink.id]}'>
-                        <sw360:DisplayEnum value='${requestScope["projectReleaseRelation"][releaseLink.id]["mainlineState"]}' />
-                    </core_rt:if>
+                    <sw360:DisplayEnum value='${releaseLink.mainlineState}'/>
                 </td>
                 <td>
+                    <sw360:out value='${releaseLink.comment}'/>
                 </td>
                 <td class="editAction" data-releaseid="${releaseLink.id}"></td>
             </tr>

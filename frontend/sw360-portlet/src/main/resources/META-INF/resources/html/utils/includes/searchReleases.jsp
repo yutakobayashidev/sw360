@@ -14,6 +14,11 @@
 <liferay-theme:defineObjects/>
 
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.MainlineState" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.ReleaseRelationship" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.components.ReleaseLink" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
 <jsp:useBean id="project" class="org.eclipse.sw360.datahandler.thrift.projects.Project" scope="request" />
 
 <portlet:resourceURL var="viewReleaseURL">
@@ -66,7 +71,7 @@
                     </form>
 				</div>
 			    <div class="modal-footer">
-		        <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="close" /></button>
+		            <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="close" /></button>
 			        <button id="selectReleaseButton" type="button" class="btn btn-primary" title="<liferay-ui:message key="link.releases" />"><liferay-ui:message key="link.releases" /></button>
 			    </div>
 			</div>
@@ -121,11 +126,17 @@
                 $('#releaseSearchResultsTable').find(':checked').each(function () {
                     releaseIds.push(this.value);
                 });
-
-                releaseContentFromAjax('<%=PortalConstants.LIST_NEW_LINKED_RELEASES%>', releaseIds, function(data) {
-                    $('#LinkedReleasesInfo tbody').append(data);
-                });
-
+                for (let releaseId of releaseIds) {
+                    let toArray = [];
+                    toArray.push(releaseId);
+                    addReleaseToTable('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', toArray, "", 0, function(data) {
+                          $('#LinkedReleasesInfo tbody').append(data);
+                          $('#LinkedReleasesInfo').find('tr').last().find('#projectReleaseVersion').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>');
+                          $('#LinkedReleasesInfo').find('tr').last().find('#projectReleaseRelation').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>');
+                          $('#LinkedReleasesInfo').find('tr').last().find('#mainlineState').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.MAINLINE_STATE%>');
+                          $('#LinkedReleasesInfo').find('tr').last().find('#releaseComment').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.COMMENT%>');
+                    });
+                }
                 callback(true);
             }, function() {
                 this.$.find('.spinner').hide();
@@ -153,6 +164,7 @@
             datatables.enableCheckboxForSelection($dataTable, 0);
         }
 
+
         function releaseContentFromAjax(what, where, callback) {
             $dialog.$.find('.spinner').show();
             $dialog.$.find('#releaseSearchResultsTable').hide();
@@ -174,6 +186,25 @@
                     $dialog.$.find('#releaseSearchResultsTable').show();
                     $dialog.$.find('#searchbuttonrelease').prop('disabled', false);
                     $dialog.$.find('#linkedReleasesButton').prop('disabled', false);
+                },
+                error: function() {
+                    $dialog.alert('<liferay-ui:message key="cannot.link.to.release" />');
+                }
+            });
+        }
+
+        function addReleaseToTable(what, where, parentId, layer, callback){
+            jQuery.ajax({
+                type: 'POST',
+                url: '<%=viewReleaseURL%>',
+                data: {
+                    '<portlet:namespace/><%=PortalConstants.WHAT%>': what,
+                    '<portlet:namespace/><%=PortalConstants.WHERE%>': where,
+                    '<portlet:namespace/><%=PortalConstants.PARENT_BRANCH_ID%>': parentId,
+                    '<portlet:namespace/><%=PortalConstants.LAYER%>': layer
+                },
+                success: function (data) {
+                    callback(data);
                 },
                 error: function() {
                     $dialog.alert('<liferay-ui:message key="cannot.link.to.release" />');

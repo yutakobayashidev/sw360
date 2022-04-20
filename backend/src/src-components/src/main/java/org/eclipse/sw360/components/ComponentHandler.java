@@ -562,8 +562,14 @@ public class ComponentHandler implements ComponentService.Iface {
     @Override
     public List<ReleaseLink> getLinkedReleasesWithAccessibility(Map<String, ProjectReleaseRelationship> relations, User user) throws TException {
         assertNotNull(relations);
-
-        return handler.getLinkedReleasesWithAccessibility(relations, user);
+        List<ReleaseLink> releaseLinks = handler.getLinkedReleasesWithAccessibility(relations, user);
+        for (ReleaseLink releaseLink : releaseLinks){
+            Release release = getReleaseById(releaseLink.getId(),user);
+            List<Release> releasesWithSameComponent = getReleasesByComponentId(release.getComponentId(),user);
+            releaseLink.setReleaseWithSameComponent(releasesWithSameComponent);
+        }
+        System.out.println(releaseLinks.toString());
+        return releaseLinks;
     }
     
     @Override

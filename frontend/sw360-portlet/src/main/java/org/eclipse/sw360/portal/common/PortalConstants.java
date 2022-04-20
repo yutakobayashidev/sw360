@@ -169,6 +169,8 @@ public class PortalConstants {
     public static final String RELEASE_IDS = "releaseIds";
     public static final String CLEARING_TEAM = "clearingTeam";
     public static final String RELEASE = "release";
+    public static final String FIND_SUB_LINKED_RELEASE = "findSubLinkedRelease";
+
     public static final String ACTUAL_RELEASE = "actual_release";
     public static final String PAGENAME_RELEASE_DETAIL = "detailRelease";
     public static final String PAGENAME_EDIT_RELEASE = "editRelease";
@@ -501,6 +503,8 @@ public class PortalConstants {
     public static final String LIST_NEW_LINKED_PROJECTS = "add_to_linked_projects";
     public static final String VIEW_LINKED_RELEASES = "view_linked_releases";
     public static final String LIST_NEW_LINKED_RELEASES = "add_to_linked_releases";
+
+    public static final String LIST_SUB_LINKED_RELEASES = "listSubLinkedReleases";
     public static final String DOWNLOAD_LICENSE_INFO = "DownloadLicenseInfo";
     public static final String DOWNLOAD_SOURCE_CODE_BUNDLE = "DownloadSourceCodeBundle";
     public static final String GET_LICENCES_FROM_ATTACHMENT = "GetLicensesFromAttachment";
@@ -648,6 +652,26 @@ public class PortalConstants {
     public static final String PREDEFINED_TAGS;
     public static final boolean SSO_LOGIN_ENABLED;
     public static final boolean IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED;
+    public static final String CREATE_LINKED_RELEASE_ROW = "createLinkedReleaseRow";
+    public static final String LAYER = "layer[]";
+
+    public static final String FIND_LINKED_RELEASE_OF_NODE = "findLinkedReleaseOfNode";
+
+    public static final String RELEASE_NETWORK = "releaseNetwork";
+
+    public static final String RELEASE_RELATION_SHIP = "releaseRelationShip[]";
+
+    public static final String MAINLINE_STATE = "mainlineState[]";
+
+    public static final String INDEXES = "indexes[]";
+
+    public static final String PARENT_NODE_ID = "parentNodeIds[]";
+
+    public static final String COMMENTS = "comments[]";
+
+    public static final String DEFAULT_VALUES = "defaultValues[]";
+
+    public static final String RELEASE_ID_ARRAY = "releaseIdArray[]";
 
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);

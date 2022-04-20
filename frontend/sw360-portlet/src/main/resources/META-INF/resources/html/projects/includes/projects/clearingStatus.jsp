@@ -23,7 +23,7 @@
 
 <portlet:resourceURL var="loadLinkedProjectsRowsURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_LINKED_PROJECTS_ROWS%>'/>
-    <portlet:param name="<%=PortalConstants.LOAD_LINKED_RELEASES_ROWS%>" value='true'/>
+    <portlet:param name="<%=PortalConstants.LOAD_LINKED_RELEASES_ROWS%>" value='false'/>
 </portlet:resourceURL>
 
 <portlet:resourceURL var="clearingStatuslisturl">
@@ -43,6 +43,11 @@
 <portlet:resourceURL var="addLicenseToReleaseUrl">
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.ADD_LICENSE_TO_RELEASE%>"/>
     <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${docid}"/>
+</portlet:resourceURL>
+
+<portlet:resourceURL var="viewReleaseURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.VIEW_LINKED_RELEASES%>"/>
+    <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${project.id}"/>
 </portlet:resourceURL>
 
 <c:set var="pageName" value="<%= request.getParameter("pagename") %>" />
@@ -153,7 +158,7 @@ AUI().use('liferay-portlet-url', function () {
     require(['jquery', 'modules/ajax-treetable', 'utils/render', 'bridges/datatables', 'modules/dialog'], function($, ajaxTreeTable, render, datatables, dialog) {
         var clearingStatuslisturl= '<%=clearingStatuslisturl%>';
         var emptyMsg = '<liferay-ui:message key="no.linked.releases.or.projects" />';
-
+        var projectId = "${docid}";
         $.ajax({url: clearingStatuslisturl,
                 type: 'GET',
                 dataType: 'json'
@@ -210,6 +215,7 @@ AUI().use('liferay-portlet-url', function () {
         }
 
         function showRow(value, $thiz) {
+            //
             let parentId = $thiz.data().ttParentId;
             while (parentId) {
                 let $parentRow = $('#LinkedProjectsInfo tbody tr[data-tt-id='+parentId+']');
@@ -334,7 +340,7 @@ AUI().use('liferay-portlet-url', function () {
                     {title: "<liferay-ui:message key="release.mainline.state" />", data : "releaseMainlineState", "defaultContent": ""},
                     {title: "<liferay-ui:message key="project.mainline.state" />", data : "projectMainlineState", "defaultContent": ""},
                     {title: "<liferay-ui:message key="comment" />",  data: "comment", "defaultContent": "", render: $.fn.dataTable.render.ellipsis},
-                    {title: "<liferay-ui:message key="actions" />",  data: "id", "orderable": false, "defaultContent": "", render: {display: renderActions}, className: "two actions" }
+                    {title: "<liferay-ui:message key="actions" />",  data: "releaseId", "orderable": false, "defaultContent": "", render: {display: renderActions}, className: "two actions" }
                 ],
                 "columnDefs": [
                     {
@@ -385,7 +391,7 @@ AUI().use('liferay-portlet-url', function () {
             if(row.isAccessible === "true"){
             let url;
             if(row.isRelease === "true"){
-                url = makeReleaseViewUrl(row.id);
+                url = makeReleaseViewUrl(row.releaseId);
             }
             else {
                 url = makeProjectViewUrl(row.id);
@@ -549,7 +555,6 @@ AUI().use('liferay-portlet-url', function () {
         }
 
         var config = $('#LinkedProjectsInfo').data();
-
         function dataCallbackTreeTable(table, node) {
             var data = {};
             data[config.portletNamespace + config.parentBranchKey] = node.id;
@@ -561,6 +566,21 @@ AUI().use('liferay-portlet-url', function () {
                 let isReleaseRow=$(this).attr("data-is-release-row");
                 if(isReleaseRow !== null && isReleaseRow !== undefined) {
                     data[config.portletNamespace + 'overrideToRelease'] = true;
+                    data[config.portletNamespace + 'projectId'] = $(this).attr("data-project-id");
+
+                    let releaseLayer = $(this).attr("data-layer");
+                    let parentId = $(this).attr("data-parent-release");
+                    let currentIndex = $(this).attr("data-index");
+                    let trace = [];
+                    trace.unshift(currentIndex);
+                    if (releaseLayer > 0) {
+                        for (let layer = releaseLayer - 1; layer >= 0; layer--) {
+                            trace.unshift($(this).prevAll('tr[data-layer="'+layer+'"][data-release-id="'+parentId+'"]').first().attr('data-index'));
+                            parentId = $(this).prevAll('tr[data-layer="'+layer+'"][data-release-id="'+parentId+'"]').first().attr('data-parent-release');
+                        }
+                    }
+                    console.log(trace);
+                    data[config.portletNamespace + 'trace[]'] = trace;
                     return;
                 }
             });
@@ -569,6 +589,7 @@ AUI().use('liferay-portlet-url', function () {
 
         function renderCallbackTreeTable(table, node, result) {
             var rows = $(result).filter("tr");
+            console.log(rows);
             $(rows).each(function(){
                 $(this).find(".editAction:eq(0)").each(function(){
                     $(this).html(createActions(makeReleaseUrl($(this).data("releaseid"))));
@@ -607,6 +628,7 @@ AUI().use('liferay-portlet-url', function () {
 
         var clearingStatuslistOnloadurl= '<%=clearingStatuslistOnloadurl%>';
         $.ajax({url: clearingStatuslistOnloadurl, success: function(resultTreeView){
+            console.log(resultTreeView);
             if(resultTreeView.trim().length===0) {
                 $("#noRecordRow").removeClass("d-none");
             }
