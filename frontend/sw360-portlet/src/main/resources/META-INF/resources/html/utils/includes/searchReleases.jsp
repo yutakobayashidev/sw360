@@ -123,7 +123,6 @@
                 });
 
                 releaseContentFromAjax('<%=PortalConstants.LIST_NEW_LINKED_RELEASES%>', releaseIds, function(data) {
-                    console.log(data);
                     $('#LinkedReleasesInfo tbody').append(data);
                 });
 

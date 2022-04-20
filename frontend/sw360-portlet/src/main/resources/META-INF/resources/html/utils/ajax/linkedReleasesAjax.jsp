@@ -39,7 +39,7 @@
                 </td>
                 <td>
                     <div class="form-group">
-                        <select id="releaseVersion" class="form-control" style="width:88%;display:inline-block" name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>">>
+                        <select id="releaseVersion" class="form-control releaseVersion" style="width:88%;display:inline-block" name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>">
                             <core_rt:forEach items="${releaseLink.releaseWithSameComponent}" var="release">
                                 <core_rt:if test = "${releaseLink.id == release.id}">
                                     <option value="<sw360:out value="${release.id}"/>" selected >
@@ -53,8 +53,8 @@
                                 </core_rt:if>
                             </core_rt:forEach>
                         </select>
-                        <svg class="action lexicon-icon" style="width:10%;">
-                            <title><liferay-ui:message key="reload" /></title>
+                        <svg class="action lexicon-icon load-release" style="width:10%;">
+                            <title><liferay-ui:message key="load" /></title>
                             <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#check-circle-full"/>
                         </svg>
                     </div>

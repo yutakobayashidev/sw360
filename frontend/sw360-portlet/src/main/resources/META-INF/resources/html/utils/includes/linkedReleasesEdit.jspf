@@ -11,6 +11,12 @@
 <%@ page import="org.eclipse.sw360.datahandler.thrift.MainlineState" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.ReleaseRelationship" %>
 
+
+<portlet:resourceURL var="viewReleaseURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.VIEW_LINKED_RELEASES%>"/>
+    <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${project.id}"/>
+</portlet:resourceURL>
+
 <h4 class="mt-4"><liferay-ui:message key="linked.releases" /></h4>
 <table class="table edit-table five-columns-with-actions" id="LinkedReleasesInfo">
     <thead>
@@ -59,17 +65,165 @@
 </div>
 
 <script>
-    require(['jquery', 'modules/dialog'], function($, dialog) {
-        $('#LinkedReleasesInfo').on('click', 'svg[data-row-id]', function(event) {
-            var rowId = $(event.currentTarget).data().rowId,
-                release = $(event.currentTarget).data().releaseName;
-
-            dialog.open('#deleteLinkedReleaseDialog', {
-                release: release
-            }, function(submit, callback) {
-                $('#' + rowId).remove();
-                callback(true);
+    AUI().use('liferay-portlet-url', function () {
+        var PortletURL = Liferay.PortletURL;
+        var releaseWithRelationArray = [];
+        var oldSelect = "";
+        var newSelect = "";
+        require(['jquery', 'modules/dialog'], function($, dialog) {
+            $('#LinkedReleasesInfo').on('click', 'svg[data-row-id]', function(event) {
+                var rowId = $(event.currentTarget).data().rowId,
+                    release = $(event.currentTarget).data().releaseName;
+                dialog.open('#deleteLinkedReleaseDialog', {
+                    release: release
+                }, function(submit, callback) {
+                    $('#' + rowId).remove();
+                    callback(true);
+                });
             });
+
+            $('.releaseVersion').on('focus',function(event) {
+                oldSelect = $(this).val();
+            });
+            $('.releaseVersion').on('change',function(event) {
+                newSelect = $(this).val();
+            });
+
+            $('.load-release').on('click', getSubLinkedRelease);
+
+            function getSubLinkedRelease() {
+               let releaseId = $(this).closest('tr').find('select').eq(0).val();
+               let displayingRelease=[];
+               $('.releaseVersion').each(function() { displayingRelease.push($(this).val()); });
+               if(oldSelect != "" && newSelect != "") {
+                   if (oldSelect != newSelect) {
+                       let newSelectExisted = releaseWithRelationArray.find(obj => {
+                          return obj.releaseId === releaseId;
+                       });
+
+                       let oldSelectExisted = releaseWithRelationArray.find(obj => {
+                          return obj.releaseId === oldSelect;
+                       });
+                       console.log(newSelectExisted);
+                       console.log(oldSelectExisted);
+                       if (newSelectExisted == null || newSelectExisted == undefined) {
+                           console.log(newSelect);
+                           jQuery.ajax({
+                                type: 'POST',
+                                url: '<%=viewReleaseURL%>',
+                                data: {
+                                    '<portlet:namespace/><%=PortalConstants.WHAT%>': '<%=PortalConstants.FIND_SUB_LINKED_RELEASE%>',
+                                    '<portlet:namespace/><%=PortalConstants.RELEASE_ID%>': releaseId,
+                                },
+                                cache: false,
+                                success: async function (body) {
+                                   let subLinkedReleaseIds = [];
+                                   subLinkedReleaseIds = body.result;
+                                   let releaseWithRelation = {
+                                        "releaseId": newSelect,
+                                        "subLinkedReleaseIds": subLinkedReleaseIds
+                                   };
+                                   if(subLinkedReleaseIds.length > 0) {
+                                       releaseWithRelationArray.push(releaseWithRelation);
+                                   }
+                                   console.log(releaseWithRelationArray);
+                                   if (subLinkedReleaseIds.length > 0) {
+                                       await releaseContentFromAjax('<%=PortalConstants.LIST_NEW_LINKED_RELEASES%>', subLinkedReleaseIds, function(result) {
+                                           $('#LinkedReleasesInfo tbody').append(result);
+                                       });
+                                   }
+                                   else {
+                                       console.log("Ko co gi ca");
+                                   }
+                                },
+                                error: function () {
+                                    console.log("ERROR");
+                                }
+                            });
+                       }
+
+                       if (oldSelectExisted != null || oldSelectExisted != undefined) {
+                            let isOnScreen = displayingRelease.filter((obj) => obj == oldSelect).length;
+                            console.log("================="+isOnScreen);
+                            if (isOnScreen == 0) {
+                                for (let temp of oldSelectExisted.subLinkedReleaseIds){
+                                    $('#releaseVersion option[value="'+temp+'"][selected]').closest('tr').remove();
+                                    releaseWithRelationArray = releaseWithRelationArray.filter(function( obj ) {
+                                           return obj.releaseId !== oldSelectExisted.releaseId;
+                                    });
+                                }
+                            }
+                       }
+                   }
+                }
+                else if (oldSelect == "" && newSelect == "") {
+                   let releaseId = $(this).closest('tr').find('select').eq(0).val();
+                   let existed = releaseWithRelationArray.find(obj => {
+                          return obj.releaseId === releaseId;
+                   });
+                   if (existed == undefined || existed == null) {
+                       jQuery.ajax({
+                            type: 'POST',
+                            url: '<%=viewReleaseURL%>',
+                            data: {
+                                '<portlet:namespace/><%=PortalConstants.WHAT%>': '<%=PortalConstants.FIND_SUB_LINKED_RELEASE%>',
+                                '<portlet:namespace/><%=PortalConstants.RELEASE_ID%>': releaseId,
+                            },
+                            cache: false,
+                            success: async function (body) {
+                               let subLinkedReleaseIds = [];
+                               subLinkedReleaseIds = body.result;
+                               let releaseWithRelation = {
+                                    "releaseId": releaseId,
+                                    "subLinkedReleaseIds": subLinkedReleaseIds
+                               };
+                               if(subLinkedReleaseIds.length > 0) {
+                                    releaseWithRelationArray.push(releaseWithRelation);
+                               }
+                               console.log(releaseWithRelationArray);
+                               if (subLinkedReleaseIds.length > 0) {
+                                   await releaseContentFromAjax('<%=PortalConstants.LIST_NEW_LINKED_RELEASES%>', subLinkedReleaseIds, function(result) {
+                                       $('#LinkedReleasesInfo tbody').append(result);
+                                   });
+                               }
+                               else {
+                                   console.log("Ko co gi ca");
+                               }
+
+                               $('.load-release').each(function() {$(this).bind('click',getSubLinkedRelease)});
+                            },
+                            error: function () {
+                                console.log("ERROR");
+                            }
+                        });
+                   }
+                }
+                  $('.load-release').each(function() {
+                      $(this).unbind('click');
+                      console.log($(this));
+                 });
+                  $('.load-release').each(function() {$(this).bind('click',getSubLinkedRelease)});
+            }
+
+            function releaseContentFromAjax(what, where, callback) {
+                return new Promise(function(resolve, reject) {
+                    jQuery.ajax({
+                        type: 'POST',
+                        url: '<%=viewReleaseURL%>',
+                        data: {
+                            '<portlet:namespace/><%=PortalConstants.WHAT%>': what,
+                            '<portlet:namespace/><%=PortalConstants.WHERE%>': where
+                        },
+                        success: function (data) {
+                            callback(data);
+                            resolve(data);
+                        },
+                        error: function() {
+                            reject("error");
+                        }
+                    });
+                });
+            }
         });
     });
 </script>

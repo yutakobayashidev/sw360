@@ -169,6 +169,8 @@ public class PortalConstants {
     public static final String RELEASE_IDS = "releaseIds";
     public static final String CLEARING_TEAM = "clearingTeam";
     public static final String RELEASE = "release";
+    public static final String FIND_SUB_LINKED_RELEASE = "findSubLinkedRelease";
+
     public static final String ACTUAL_RELEASE = "actual_release";
     public static final String PAGENAME_RELEASE_DETAIL = "detailRelease";
     public static final String PAGENAME_EDIT_RELEASE = "editRelease";
