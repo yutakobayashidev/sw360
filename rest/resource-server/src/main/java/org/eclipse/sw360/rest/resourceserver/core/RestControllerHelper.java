@@ -10,6 +10,7 @@
 package org.eclipse.sw360.rest.resourceserver.core;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.resourcelists.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
@@ -20,7 +21,9 @@ import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.CVEReference;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityApiDTO;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentController;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.license.LicenseController;
@@ -75,6 +78,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.*;
+import java.util.regex.Pattern;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
@@ -105,6 +109,8 @@ public class RestControllerHelper<T> {
     private static final String PAGINATION_KEY_NEXT = "next";
     private static final String PAGINATION_KEY_LAST = "last";
     private static final String PAGINATION_PARAM_PAGE = "page";
+    private static final double MIN_CVSS = 0;
+    private static final double MAX_CVSS = 10;
     public static final String PAGINATION_PARAM_PAGE_ENTRIES = "page_entries";
     public static final ImmutableSet<ProjectReleaseRelationship._Fields> SET_OF_PROJECTRELEASERELATION_FIELDS_TO_IGNORE = ImmutableSet
             .of(ProjectReleaseRelationship._Fields.CREATED_ON, ProjectReleaseRelationship._Fields.CREATED_BY);
@@ -574,6 +580,93 @@ public class RestControllerHelper<T> {
         embeddedVulnerability.setId(vulnerability.getId());
         embeddedVulnerability.setTitle(vulnerability.getTitle());
         return embeddedVulnerability;
+    }
+
+    public boolean setDataForVulnerability(VulnerabilityApiDTO vulnerabilityApiDTO, Vulnerability vulnerability) {
+        for (Vulnerability._Fields field : Vulnerability._Fields.values()) {
+            if (field.equals(Vulnerability._Fields.REVISION) || field.equals(Vulnerability._Fields.ID) || field.equals(Vulnerability._Fields.TYPE)) {
+                continue;
+            }
+            for (VulnerabilityApiDTO._Fields fieldDTO : VulnerabilityApiDTO._Fields.values()) {
+                if (field.getThriftFieldId() == fieldDTO.getThriftFieldId()) {
+                    if (vulnerabilityApiDTO.getFieldValue(fieldDTO) == null) {
+                        break;
+                    }
+                    if (fieldDTO.equals(VulnerabilityApiDTO._Fields.CVSS)) {
+                        if (!setDataCVSS(vulnerabilityApiDTO.getCvss(), vulnerability)) {
+                            throw new RuntimeException(new SW360Exception("Invalid cvss: property 'cvss' should be a valid cvss.")
+                                    .setErrorCode(org.apache.http.HttpStatus.SC_BAD_REQUEST));
+                        }
+                    } else if (fieldDTO.equals(VulnerabilityApiDTO._Fields.IS_SET_CVSS)) {
+                        if(!setDataIsSetCvss(vulnerabilityApiDTO.getIsSetCvss(), vulnerability)) {
+                            throw new RuntimeException(new SW360Exception("Invalid isSetCvss: property 'isSetCvss' should be a valid isSetCvss.")
+                                    .setErrorCode(org.apache.http.HttpStatus.SC_BAD_REQUEST));
+                        }
+                    } else if (fieldDTO.equals(VulnerabilityApiDTO._Fields.CVE_REFERENCES)) {
+                        setDataCveReferences(vulnerabilityApiDTO.getCveReferences(), vulnerability);
+                    } else {
+                        vulnerability.setFieldValue(field, vulnerabilityApiDTO.getFieldValue(fieldDTO));
+                    }
+                }
+            }
+        }
+        vulnerability.setLastUpdateDate(SW360Utils.getCreatedOn());
+        return true;
+    }
+
+    private boolean setDataCVSS(String cvss, Vulnerability vulnerability) {
+        try {
+            double m_cvss = Double.parseDouble(cvss);
+            if (m_cvss < MIN_CVSS || m_cvss > MAX_CVSS) {
+                return false;
+            }
+            vulnerability.setCvss(m_cvss);
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
+        return true;
+    }
+
+    private boolean setDataIsSetCvss(String isSetCvss, Vulnerability vulnerability) {
+        boolean m_isSetCvss;
+        if (isSetCvss == null) {
+            return false;
+        }
+        if (isSetCvss.equals("true")) {
+            m_isSetCvss = true;
+        } else if (isSetCvss.equals("false")) {
+            m_isSetCvss = false;
+        } else {
+            return false;
+        }
+        vulnerability.setIsSetCvss(m_isSetCvss);
+        return true;
+    }
+
+    private void setDataCveReferences(Set<String> cveReferences, Vulnerability vulnerability) {
+        if (cveReferences != null) {
+            Set<CVEReference> cveReferenceList = new HashSet<CVEReference>();
+            for (String cveReference : cveReferences) {
+                if (CommonUtils.isNullEmptyOrWhitespace(cveReference)) {
+                    throw new RuntimeException(new SW360Exception("Invalid yearNumber: property 'yearNumber' cannot be null, empty or whitespace.")
+                            .setErrorCode(org.apache.http.HttpStatus.SC_BAD_REQUEST));
+                }
+                if (Pattern.matches("\\d{4}-\\d{1}", cveReference)) {
+                    throw new RuntimeException(new SW360Exception("Invalid yearNumber: property 'yearNumber' is wrong format")
+                            .setErrorCode(org.apache.http.HttpStatus.SC_BAD_REQUEST));
+                }
+                String[] yearAndNumber = cveReference.split("-");
+                if (yearAndNumber.length != 2) {
+                    throw new RuntimeException(new SW360Exception("Invalid yearNumber: property 'yearNumber' is wrong format")
+                            .setErrorCode(org.apache.http.HttpStatus.SC_BAD_REQUEST));
+                }
+                CVEReference m_cVEReference = new CVEReference();
+                m_cVEReference.setYear(yearAndNumber[0]);
+                m_cVEReference.setNumber(yearAndNumber[1]);
+                cveReferenceList.add(m_cVEReference);
+            }
+            vulnerability.setCveReferences(cveReferenceList);
+        }
     }
 
     /**
