@@ -33,6 +33,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.eclipse.sw360.rest.resourceserver.project.ProjectController;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
@@ -580,6 +581,43 @@ public class RestControllerHelper<T> {
         embeddedVulnerability.setId(vulnerability.getId());
         embeddedVulnerability.setTitle(vulnerability.getTitle());
         return embeddedVulnerability;
+    }
+
+    public boolean setDataVulApiDTO(VulnerabilityApiDTO vulnerabilityApiDTO, Vulnerability vulnerability, Set<Release> releaseList) {
+        for (Vulnerability._Fields field : Vulnerability._Fields.values()) {
+            for (VulnerabilityApiDTO._Fields fieldDTO : VulnerabilityApiDTO._Fields.values()) {
+                if (field.getThriftFieldId() == fieldDTO.getThriftFieldId()) {
+                    if (vulnerability.getFieldValue(field) == null) {
+                        break;
+                    }
+                    if (field.equals(Vulnerability._Fields.CVSS)) {
+                        vulnerabilityApiDTO.setCvss(String.valueOf(vulnerability.getCvss()));
+                    } else if (field.equals(Vulnerability._Fields.IS_SET_CVSS)) {
+                        vulnerabilityApiDTO.setIsSetCvss(String.valueOf(vulnerability.isSetCvss()));
+                    } else if (field.equals(Vulnerability._Fields.CVE_REFERENCES)) {
+                        Set<CVEReference> cveReferences = vulnerability.getCveReferences();
+                        if (cveReferences.size() > 0) {
+                            vulnerabilityApiDTO.setCveReferences(convertCVEReferenceString(cveReferences));
+                        }
+                    } else {
+                        vulnerabilityApiDTO.setFieldValue(fieldDTO, vulnerability.getFieldValue(field));
+                    }
+                }
+            }
+        }
+        if (releaseList.size() > 0) {
+            vulnerabilityApiDTO.setReleases(releaseList);
+        }
+        return true;
+    }
+
+    private Set<String> convertCVEReferenceString(Set<CVEReference> cveReferences) {
+        Set<String> cveReferenceString = new HashSet<String>();
+        for (CVEReference cveReference :cveReferences) {
+            String cveInfo = cveReference.getYear() + "-" + cveReference.getNumber();
+            cveReferenceString.add(cveInfo);
+        }
+        return cveReferenceString;
     }
 
     public boolean setDataForVulnerability(VulnerabilityApiDTO vulnerabilityApiDTO, Vulnerability vulnerability) {

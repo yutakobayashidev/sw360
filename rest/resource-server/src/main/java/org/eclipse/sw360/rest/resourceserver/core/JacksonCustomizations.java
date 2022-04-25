@@ -824,6 +824,7 @@ public class JacksonCustomizations {
                 "cveFurtherMetaDataPerSourceSize",
                 "setCvss",
                 "setCwe",
+                "releasesIterator",
                 "setIsSetCvss",
                 "setCvssTime",
                 "setAccess",

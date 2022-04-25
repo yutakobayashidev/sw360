@@ -9,6 +9,7 @@
  */
 include "sw360.thrift"
 include "users.thrift"
+include "components.thrift"
 
 namespace java org.eclipse.sw360.datahandler.thrift.vulnerabilities
 namespace php sw360.thrift.vulnerabilities
@@ -18,6 +19,7 @@ typedef users.User User
 typedef sw360.SW360Exception SW360Exception
 typedef sw360.RequestStatus RequestStatus
 typedef sw360.VerificationStateInfo VerificationStateInfo
+typedef components.Release Release
 
 struct ReleaseVulnerabilityRelation{
     // Basic information
@@ -60,13 +62,51 @@ struct Vulnerability{
     25: optional set<string> references,
 
     //additional from CVE earch data
-    30: optional string cvss,
+    30: optional double cvss,
     31: optional bool isSetCvss,
     32: optional string cvssTime,
     33: optional map<string,string> vulnerableConfiguration,
     34: optional map<string,string> access,
     35: optional string cwe,
     36: optional map<string, map<string, string>> cveFurtherMetaDataPerSource;
+}
+
+struct VulnerabilityApiDTO{
+    // WILL NOT BE SAVED IN DB, only for api
+    // General information
+    1: optional string id,
+    2: optional string revision,
+    3: optional string type = "vulnerabilityapidto",
+    4: optional string lastUpdateDate,
+
+    // Additional information
+    10: required string externalId,
+    11: optional string title,
+    12: optional string description,
+    13: optional string publishDate,
+    14: optional string lastExternalUpdate,
+    15: optional string priority,
+    16: optional string priorityText,
+    17: optional string action,
+    19: optional map<string, string> impact,
+    20: optional string legalNotice,
+    21: optional set<string> assignedExtComponentIds,
+    22: optional set<string> cveReferences,
+    23: optional set<VendorAdvisory> vendorAdvisories,
+    24: optional string extendedDescription,
+    25: optional set<string> references,
+
+    //additional from CVE earch data
+    30: optional string cvss,
+    31: optional string isSetCvss,
+    32: optional string cvssTime,
+    33: optional map<string,string> vulnerableConfiguration,
+    34: optional map<string,string> access,
+    35: optional string cwe,
+    36: optional map<string, map<string, string>> cveFurtherMetaDataPerSource,
+
+    //additional info for Releases
+    37: optional set<Release> releases;
 }
 
 struct VulnerabilityDTO{
@@ -113,7 +153,8 @@ struct CVEReference{
     3: optional string type = "cveReference",
 
     // Additional information
-    10: required string yearNumber
+    10: required string year,
+    11: required string number,
 }
 
 struct VendorAdvisory{
