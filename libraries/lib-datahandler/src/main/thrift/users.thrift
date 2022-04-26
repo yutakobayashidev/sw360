@@ -73,6 +73,13 @@ struct RestApiToken {
     5: optional set<string> authorities,
 }
 
+struct DepartmentConfigDTO {
+    1: optional string pathFolder,
+    2: optional string pathFolderLog,
+    3: optional string lastRunningTime,
+    4: optional i32 showFileLogFrom,
+}
+
 service UserService {
 
     /**
@@ -163,11 +170,11 @@ service UserService {
 
     string getLastRunningTime();
 
-     list<User> getAllUserByListEmail(1: list<string> emails)
+    list<User> getAllUserByEmails(1: list<string> emails)
 
-     string searchUsersByDepartmentToJson(1: string department)
+    string convertUsersByDepartmentToJson(1: string department)
 
-     string getAllEmailOtherDepartmentToJson(1: string department)
+    string convertEmailsOtherDepartmentToJson(1: string department)
 
     void updateDepartmentToListUser(1: list<User> users, 2: string department)
 

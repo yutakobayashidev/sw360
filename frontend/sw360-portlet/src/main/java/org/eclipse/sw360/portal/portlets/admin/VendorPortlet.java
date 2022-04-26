@@ -56,22 +56,22 @@ import static org.eclipse.sw360.datahandler.common.SW360Constants.CONTENT_TYPE_O
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 
 @org.osgi.service.component.annotations.Component(
-    immediate = true,
-    properties = {
-            "/org/eclipse/sw360/portal/portlets/base.properties",
-            "/org/eclipse/sw360/portal/portlets/admin.properties"
-    },
-    property = {
-        "javax.portlet.name=" + VENDOR_PORTLET_NAME,
+        immediate = true,
+        properties = {
+                "/org/eclipse/sw360/portal/portlets/base.properties",
+                "/org/eclipse/sw360/portal/portlets/admin.properties"
+        },
+        property = {
+                "javax.portlet.name=" + VENDOR_PORTLET_NAME,
 
-        "javax.portlet.display-name=Vendor Administration",
-        "javax.portlet.info.short-title=Vendors",
-        "javax.portlet.info.title=Vendor Administration",
-        "javax.portlet.resource-bundle=content.Language",
-        "javax.portlet.init-param.view-template=/html/admin/vendors/view.jsp",
-    },
-    service = Portlet.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE
+                "javax.portlet.display-name=Vendor Administration",
+                "javax.portlet.info.short-title=Vendors",
+                "javax.portlet.info.title=Vendor Administration",
+                "javax.portlet.resource-bundle=content.Language",
+                "javax.portlet.init-param.view-template=/html/admin/vendors/view.jsp",
+        },
+        service = Portlet.class,
+        configurationPolicy = ConfigurationPolicy.REQUIRE
 )
 public class VendorPortlet extends Sw360Portlet {
 
@@ -217,7 +217,6 @@ public class VendorPortlet extends Sw360Portlet {
 
     @UsedAsLiferayAction
     public void removeVendor(ActionRequest request, ActionResponse response) throws IOException, PortletException {
-        log.info("UsedAsLiferayAction--------------------removeVendor");
         final RequestStatus requestStatus = ComponentPortletUtils.deleteVendor(request, log);
         setSessionMessage(request, requestStatus, "Vendor", "delete");
         response.setRenderParameter(PAGENAME, PAGENAME_VIEW);
@@ -240,7 +239,7 @@ public class VendorPortlet extends Sw360Portlet {
         vendorUrl.setParameter(PAGENAME, PAGENAME_VIEW);
 
         PortalUtil.addPortletBreadcrumbEntry(PortalUtil.getOriginalServletRequest(PortalUtil.getHttpServletRequest(request)),
-            vendor.getFullname(), vendorUrl.toString());
+                vendor.getFullname(), vendorUrl.toString());
     }
 
     @UsedAsLiferayAction
@@ -265,7 +264,7 @@ public class VendorPortlet extends Sw360Portlet {
                     mergeVendorsForWizardStep3(request, jsonGenerator);
                     break;
                 default:
-                throw new SW360Exception("Step with id <" + stepId + "> not supported!");
+                    throw new SW360Exception("Step with id <" + stepId + "> not supported!");
             }
 
             jsonGenerator.close();
@@ -345,7 +344,7 @@ public class VendorPortlet extends Sw360Portlet {
         // perform the real merge, update merge target and delete merge source
         User sessionUser = UserCacheHolder.getUserFromRequest(request);
         RequestStatus status = vendorClient.mergeVendors(vendorSelection.getId(), vendorSourceId, vendorSelection, sessionUser);
-        
+
         // write response JSON
         jsonGenerator.writeStartObject();
 

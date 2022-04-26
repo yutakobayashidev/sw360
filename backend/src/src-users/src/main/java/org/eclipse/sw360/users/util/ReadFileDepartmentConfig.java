@@ -14,7 +14,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.users.dto.DepartmentConfigDTO;
+import org.eclipse.sw360.datahandler.thrift.users.DepartmentConfigDTO;
+//import org.eclipse.sw360.users.dto.DepartmentConfigDTO;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -42,6 +43,7 @@ public class ReadFileDepartmentConfig {
     public DepartmentConfigDTO readFileJson() {
         try {
             File file = new File(getPathConfig());
+            DepartmentConfigDTO departmentConfigDTO=new DepartmentConfigDTO();
             if (file.exists()) {
                 Reader reader = Files.newBufferedReader(Paths.get(getPathConfig()));
                 ObjectMapper objectMapper = new ObjectMapper();
@@ -52,7 +54,12 @@ public class ReadFileDepartmentConfig {
                 int showFileLogFrom = config.path("showFileLogFrom").asInt();
                 String pathFolderLog = "";
                 if (!pathFolder.isEmpty()) pathFolderLog = pathFolder + FOLDER_LOG;
-                return new DepartmentConfigDTO(pathFolder, pathFolderLog, lastRunningTime, showFileLogFrom);
+
+                departmentConfigDTO.setPathFolder(pathFolder);
+                departmentConfigDTO.setPathFolderLog(pathFolderLog);
+                departmentConfigDTO.setLastRunningTime(lastRunningTime);
+                departmentConfigDTO.setShowFileLogFrom(showFileLogFrom);
+                return departmentConfigDTO;
             }
         } catch (FileNotFoundException e) {
             log.error("Error not find the file: {}", e.getMessage());
@@ -83,7 +90,7 @@ public class ReadFileDepartmentConfig {
             try {
                 if (writer != null) writer.close();
             } catch (Exception e) {
-                e.printStackTrace();
+                log.info("Error close the file!" + e);
             }
         }
     }
@@ -109,7 +116,7 @@ public class ReadFileDepartmentConfig {
             try {
                 if (writer != null) writer.close();
             } catch (Exception e) {
-                e.printStackTrace();
+                log.info("Error close the file!" + e);
             }
         }
     }

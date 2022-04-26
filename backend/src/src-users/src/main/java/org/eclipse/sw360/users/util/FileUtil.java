@@ -10,6 +10,10 @@
  */
 package org.eclipse.sw360.users.util;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.users.UserHandler;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -31,7 +35,7 @@ public class FileUtil {
     private static final String EXTENSION = ".log";
     private static final DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final long dayMTimeMillis = 24 * 60 * 60 * 1000;
-
+    private static final Logger log = LogManager.getLogger(FileUtil.class);
     private FileUtil() {
     }
 
@@ -55,13 +59,13 @@ public class FileUtil {
             }
             writer.newLine();
         } catch (Exception e) {
-            e.printStackTrace();
+           log.error("Write log to file failed!"+e);
         } finally {
             try {
                 if (writer != null) writer.close();
                 if (fileWriter != null) fileWriter.close();
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("Close file failed!"+e);
             }
         }
     }
@@ -87,8 +91,8 @@ public class FileUtil {
         Path path = Paths.get(filePath);
         try {
             contentLog = Files.readAllLines(path);
-        } catch (IOException ex) {
-            ex.printStackTrace();
+        } catch (IOException e) {
+          log.error("Read file log failed!"+e);
         }
         return contentLog;
     }

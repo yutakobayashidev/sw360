@@ -25,10 +25,10 @@ import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.UserRepository;
 import org.eclipse.sw360.datahandler.db.UserSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.users.DepartmentConfigDTO;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.users.dto.DepartmentConfigDTO;
 import org.eclipse.sw360.users.util.FileUtil;
 import org.eclipse.sw360.users.util.ReadFileDepartmentConfig;
 import org.ektorp.http.HttpClient;
@@ -155,7 +155,7 @@ public class UserDatabaseHandler {
         return repository.getEmailsByDepartmentName(departmentKey);
     }
 
-    public RequestSummary importFileToDB(String pathFolder) {
+    public RequestSummary importFileToDB(String pathFolder)  {
         departmentDuplicate = new ArrayList<>();
         emailDoNotExist = new ArrayList<>();
         List<String> listFileSuccess = new ArrayList<>();
@@ -331,7 +331,7 @@ public class UserDatabaseHandler {
         return listMap;
     }
 
-    public String searchUsersByDepartmentToJson(String departmentKey) {
+    public String convertUsersByDepartmentToJson(String departmentKey) {
         Set<String> emails = repository.getEmailsByDepartmentName(departmentKey);
         JsonArray departmentJsonArray = new JsonArray();
         for (String email : emails) {
@@ -355,7 +355,7 @@ public class UserDatabaseHandler {
         return emailOtherDepartment;
     }
 
-    public String getAllEmailOtherDepartmentToJson(String departmentKey) {
+    public String convertEmailsOtherDepartmentToJson(String departmentKey) {
         JsonArray emailJsonArray = new JsonArray();
         List<String> emailOtherDepartment = getAllEmailOtherDepartment(departmentKey);
         for (String email : emailOtherDepartment) {
@@ -400,7 +400,7 @@ public class UserDatabaseHandler {
         repository.update(user);
     }
 
-    public void updateDepartmentToListUser(List<User> users, String department) {
+    public void updateDepartmentToUsers(List<User> users, String department) {
         users.forEach(u -> {
             User user = repository.getByEmail(u.getEmail());
             updateDepartmentToUser(user, department);
@@ -421,13 +421,13 @@ public class UserDatabaseHandler {
     }
 
 
-    public void deleteDepartmentByListUser(List<User> users, String departmentKey) {
+    public void deleteDepartmentByUsers(List<User> users, String departmentKey) {
         for (User user : users) {
             deleteDepartmentByUser(user, departmentKey);
         }
     }
 
-    public List<User> getAllUserByListEmail(List<String> emails) {
+    public List<User> getAllUserByEmails(List<String> emails) {
         List<User> users = new ArrayList<>();
         for (String email : emails) {
             if (getByEmail(email) != null) {
@@ -438,4 +438,3 @@ public class UserDatabaseHandler {
     }
 
 }
-

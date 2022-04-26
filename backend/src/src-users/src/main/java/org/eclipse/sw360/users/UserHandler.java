@@ -18,10 +18,10 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.thrift.users.DepartmentConfigDTO;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.users.db.UserDatabaseHandler;
-import org.eclipse.sw360.users.dto.DepartmentConfigDTO;
 import org.eclipse.sw360.users.util.FileUtil;
 import org.eclipse.sw360.users.util.ReadFileDepartmentConfig;
 import org.ektorp.http.HttpClient;
@@ -153,7 +153,7 @@ public class UserHandler implements UserService.Iface {
 
 
     @Override
-    public RequestSummary importFileToDB() {
+    public RequestSummary importFileToDB()  {
         DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
         RequestSummary requestSummary = new RequestSummary();
         if (!configDTO.getPathFolder().isEmpty()) {
@@ -163,7 +163,7 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
-    public RequestStatus importDepartmentSchedule() throws TException {
+    public RequestStatus importDepartmentSchedule()  {
         DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
         db.importFileToDB(configDTO.getPathFolder());
         return RequestStatus.SUCCESS;
@@ -175,13 +175,13 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
-    public String searchUsersByDepartmentToJson(String department) throws TException {
-        return db.searchUsersByDepartmentToJson(department);
+    public String convertUsersByDepartmentToJson(String department) throws TException {
+        return db.convertUsersByDepartmentToJson(department);
     }
 
     @Override
-    public String getAllEmailOtherDepartmentToJson(String department) throws TException {
-        return db.getAllEmailOtherDepartmentToJson(department);
+    public String convertEmailsOtherDepartmentToJson(String department) throws TException {
+        return db.convertEmailsOtherDepartmentToJson(department);
     }
 
     @Override
@@ -195,7 +195,7 @@ public class UserHandler implements UserService.Iface {
                 return FileUtil.listFileNames(path);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Can't get file log: {}", e.getMessage());
         }
         return Collections.emptySet();
     }
@@ -215,7 +215,7 @@ public class UserHandler implements UserService.Iface {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Can't get file log: {}", e.getMessage());
         }
         return listMap;
     }
@@ -235,9 +235,9 @@ public class UserHandler implements UserService.Iface {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Read file failed!!"+e);
         }
-        return "";
+            return "";
     }
 
     @Override
@@ -248,7 +248,7 @@ public class UserHandler implements UserService.Iface {
                 return configDTO.getPathFolder();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+           log.error("Read file failed!!"+e);
         }
         return "";
     }
@@ -266,24 +266,24 @@ public class UserHandler implements UserService.Iface {
                 return configDTO.getLastRunningTime();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Read file failed!!"+e);
         }
         return "";
     }
 
     @Override
     public void updateDepartmentToListUser(List<User> users, String department) throws TException {
-        db.updateDepartmentToListUser(users, department);
+        db.updateDepartmentToUsers(users, department);
     }
 
     @Override
     public void deleteDepartmentByListUser(List<User> users, String department) throws TException {
-        db.deleteDepartmentByListUser(users, department);
+        db.deleteDepartmentByUsers(users, department);
     }
 
     @Override
-    public List<User> getAllUserByListEmail(List<String> emails) throws TException {
-        return db.getAllUserByListEmail(emails);
+    public List<User> getAllUserByEmails(List<String> emails) throws TException {
+        return db.getAllUserByEmails(emails);
     }
 
 }

@@ -181,7 +181,7 @@ public abstract class ComponentPortletUtils {
             for (String email : parts) {
                 emails.add(handlerEmails(email));
             }
-            users = client.getAllUserByListEmail(emails);
+            users = client.getAllUserByEmails(emails);
             return users;
         }
     }
@@ -201,7 +201,7 @@ public abstract class ComponentPortletUtils {
             for (String email : parts) {
                 emails.add(handlerEmails(email));
             }
-            users = client.getAllUserByListEmail(emails);
+            users = client.getAllUserByEmails(emails);
             return users;
         }
     }

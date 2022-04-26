@@ -172,8 +172,8 @@ public class DepartmentPortlet extends Sw360Portlet {
         if (!isNullOrEmpty(key)) {
             try {
                 UserService.Iface userClient = thriftClients.makeUserClient();
-                String jsonEmailsByDepartment = userClient.searchUsersByDepartmentToJson(key);
-                String jsonEmailsOtherDepartment = userClient.getAllEmailOtherDepartmentToJson(key);
+                String jsonEmailsByDepartment = userClient.convertUsersByDepartmentToJson(key);
+                String jsonEmailsOtherDepartment = userClient.convertEmailsOtherDepartmentToJson(key);
                 request.setAttribute(EMAIL_OTHER_DEPARTMENT_JSON, jsonEmailsOtherDepartment);
                 request.setAttribute(EMAIL_BY_DEPARTMENT_JSON, jsonEmailsByDepartment);
                 request.setAttribute(PortalConstants.DEPARTMENT_KEY, key);
@@ -215,7 +215,7 @@ public class DepartmentPortlet extends Sw360Portlet {
             case PortalConstants.IMPORT_DEPARTMENT_MANUALLY:
                 try {
                     importDepartmentManually(request, response);
-                } catch (TException e) {
+                } catch (TException | IOException e) {
                     log.error("Something went wrong with the department", e);
                 }
                 break;
@@ -224,7 +224,7 @@ public class DepartmentPortlet extends Sw360Portlet {
         }
     }
 
-    private void importDepartmentManually(ResourceRequest request, ResourceResponse response) throws TException {
+    private void importDepartmentManually(ResourceRequest request, ResourceResponse response) throws TException, IOException {
         UserService.Iface userClient = thriftClients.makeUserClient();
         RequestSummary requestSummary = userClient.importFileToDB();
         renderRequestSummary(request, response, requestSummary);

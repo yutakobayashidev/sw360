@@ -42,7 +42,7 @@ public class ScheduleConstants {
     public static final String DELETE_ATTACHMENT_INTERVAL_PROPERTY_NAME = "schedule.delete.attachment.interval.seconds";
     public static final String DEPARTMENT_OFFSET_PROPERTY_NAME = "schedule.department.firstOffset.seconds";
     public static final String DEPARTMENT_INTERVAL_PROPERTY_NAME = "schedule.department.interval.seconds";
-    public static final String DEPARTMENT_OFFSET_DEFAULT  = 0 + "" ; // default 00:00 am, in seconds
+     public static final String DEPARTMENT_OFFSET_DEFAULT  = "0" ; // default 00:00 am, in seconds
 
     // scheduler properties
     public static final ConcurrentHashMap<String, Integer> SYNC_FIRST_RUN_OFFSET_SEC = new ConcurrentHashMap<>();
