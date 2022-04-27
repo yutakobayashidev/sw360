@@ -503,6 +503,8 @@ public class PortalConstants {
     public static final String LIST_NEW_LINKED_PROJECTS = "add_to_linked_projects";
     public static final String VIEW_LINKED_RELEASES = "view_linked_releases";
     public static final String LIST_NEW_LINKED_RELEASES = "add_to_linked_releases";
+
+    public static final String LIST_SUB_LINKED_RELEASES = "listSubLinkedReleases";
     public static final String DOWNLOAD_LICENSE_INFO = "DownloadLicenseInfo";
     public static final String DOWNLOAD_SOURCE_CODE_BUNDLE = "DownloadSourceCodeBundle";
     public static final String GET_LICENCES_FROM_ATTACHMENT = "GetLicensesFromAttachment";

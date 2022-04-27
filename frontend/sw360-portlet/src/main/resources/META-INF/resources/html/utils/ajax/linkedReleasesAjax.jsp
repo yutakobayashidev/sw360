@@ -39,7 +39,9 @@
                 </td>
                 <td>
                     <div class="form-group">
-                        <select id="releaseVersion" class="form-control releaseVersion" style="width:88%;display:inline-block" name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>">
+                        <select id="releaseVersion" class="form-control releaseVersion" style="width:88%;display:inline-block"
+                        data-old="<sw360:out value="${releaseLink.id}"/>"
+                        name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>">
                             <core_rt:forEach items="${releaseLink.releaseWithSameComponent}" var="release">
                                 <core_rt:if test = "${releaseLink.id == release.id}">
                                     <option value="<sw360:out value="${release.id}"/>" selected >

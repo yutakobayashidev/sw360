@@ -9,6 +9,11 @@
  */
 package org.eclipse.sw360.portal.portlets;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
@@ -20,6 +25,7 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLinkJSON;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
@@ -33,16 +39,9 @@ import javax.portlet.PortletRequest;
 import javax.portlet.ResourceRequest;
 import javax.portlet.ResourceResponse;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -54,6 +53,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.PARENT_BRANCH_ID;
 import static org.eclipse.sw360.portal.common.PortalConstants.PROJECT_LIST;
 import static org.eclipse.sw360.portal.common.PortalConstants.RELEASE_LIST;
 import static org.eclipse.sw360.portal.common.PortalConstants.TOTAL_INACCESSIBLE_ROWS;
+import static sun.jvm.hotspot.runtime.VMOps.Dummy;
 
 /**
  * linked releases and projects-aware portlet implementation
@@ -71,7 +71,6 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
     public LinkedReleasesAndProjectsAwarePortlet(ThriftClients thriftClients) {
         super(thriftClients);
     }
-
 
     protected boolean isLinkedObjectsAwareAction(String action) {
         return action.startsWith(PortalConstants.LINKED_OBJECTS_PREFIX);
@@ -110,31 +109,32 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         List<ReleaseLink> linkedReleaseRelations = SW360Utils.getLinkedReleaseRelations(release, thriftClients, log);
         linkedReleaseRelations = linkedReleaseRelations.stream().filter(Objects::nonNull).sorted(Comparator.comparing(
                 rl -> SW360Utils.getVersionedName(nullToEmptyString(rl.getName()), rl.getVersion()), String.CASE_INSENSITIVE_ORDER)
-                ).collect(Collectors.toList());
+        ).collect(Collectors.toList());
         request.setAttribute(RELEASE_LIST, linkedReleaseRelations);
     }
 
     protected void putDirectlyLinkedReleaseRelationsWithAccessibilityInRequest(PortletRequest request, Release release, User user) {
+
         List<ReleaseLink> linkedReleaseRelations = SW360Utils.getLinkedReleaseRelationsWithAccessibility(release, thriftClients, log, user);
         linkedReleaseRelations = linkedReleaseRelations.stream().filter(Objects::nonNull).sorted(Comparator.comparing(
                 rl -> rl.isAccessible() ? SW360Utils.getVersionedName(nullToEmptyString(rl.getName()), rl.getVersion()) : "~", String.CASE_INSENSITIVE_ORDER)
-                ).collect(Collectors.toList());
+        ).collect(Collectors.toList());
         request.setAttribute(RELEASE_LIST, linkedReleaseRelations);
-        
+
         int totalInaccessibleRow = 0;
         for (ReleaseLink link : linkedReleaseRelations) {
             if (!link.isAccessible()) {
                 totalInaccessibleRow++;
             }
-        }               
+        }
         request.setAttribute(TOTAL_INACCESSIBLE_ROWS, totalInaccessibleRow);
     }
-    
+
     protected void putDirectlyLinkedReleasesInRequest(PortletRequest request, Project project) throws TException {
         List<ReleaseLink> linkedReleases = SW360Utils.getLinkedReleases(project, thriftClients, log);
         linkedReleases = linkedReleases.stream().filter(Objects::nonNull).sorted(Comparator.comparing(
                 rl -> SW360Utils.getVersionedName(nullToEmptyString(rl.getName()), rl.getVersion()), String.CASE_INSENSITIVE_ORDER)
-                ).collect(Collectors.toList());
+        ).collect(Collectors.toList());
         request.setAttribute(RELEASE_LIST, linkedReleases);
     }
 
@@ -142,18 +142,32 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         List<ReleaseLink> linkedReleases = SW360Utils.getLinkedReleasesWithAccessibility(project, thriftClients, log, user);
         linkedReleases = linkedReleases.stream().filter(Objects::nonNull).sorted(Comparator.comparing(
                 rl -> rl.isAccessible() ? SW360Utils.getVersionedName(nullToEmptyString(rl.getName()), rl.getVersion()) : "~", String.CASE_INSENSITIVE_ORDER)
-                ).collect(Collectors.toList());
+        ).collect(Collectors.toList());
         request.setAttribute(RELEASE_LIST, linkedReleases);
-        
+
+        List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
+        for (ReleaseLink releaseLink : linkedReleases) {
+            ReleaseLinkJSON r = new ReleaseLinkJSON(releaseLink.getId(), releaseLink.getName());
+            releaseLinkJSONS.add(r);
+        }
+        for (int i = 0; i < releaseLinkJSONS.size(); i++) {
+            releaseLinkJSONS.set(i, getReleaseLinkJSONS(releaseLinkJSONS.get(i), user));
+        }
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            log.info(objectMapper.writeValueAsString(releaseLinkJSONS));
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
         int totalInaccessibleRow = 0;
         for (ReleaseLink link : linkedReleases) {
             if (!link.isAccessible()) {
                 totalInaccessibleRow++;
             }
-        }               
+        }
         request.setAttribute(TOTAL_INACCESSIBLE_ROWS, totalInaccessibleRow);
     }
-    
+
     protected List<ProjectLink> createLinkedProjects(Project project, User user) {
         return createLinkedProjects(project, Function.identity(), user);
     }
@@ -163,14 +177,14 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
     }
 
     protected List<ProjectLink> createLinkedProjects(Project project, Function<ProjectLink, ProjectLink> projectLinkMapper, boolean deep,
-            User user) {
+                                                     User user) {
         final Collection<ProjectLink> linkedProjects = SW360Utils.getLinkedProjectsAsFlatList(project, deep, thriftClients, log, user);
         return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
     }
 
     protected List<ProjectLink> createLinkedProjects(Project project,
-            Function<ProjectLink, ProjectLink> projectLinkMapper, boolean deep, User user,
-            Set<ProjectRelationship> selectedProjectRelationAsList) {
+                                                     Function<ProjectLink, ProjectLink> projectLinkMapper, boolean deep, User user,
+                                                     Set<ProjectRelationship> selectedProjectRelationAsList) {
         final Collection<ProjectLink> linkedProjects = SW360Utils.getLinkedProjectsAsFlatList(project, deep,
                 thriftClients, log, user, selectedProjectRelationAsList);
         return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
@@ -187,7 +201,7 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         request.setAttribute(PROJECT_LIST, secondLevelLinks);
     }
 
-    public Function<ProjectLink, ProjectLink> createProjectLinkMapper(Function<ReleaseLink, ReleaseLink> releaseLinkMapper){
+    public Function<ProjectLink, ProjectLink> createProjectLinkMapper(Function<ReleaseLink, ReleaseLink> releaseLinkMapper) {
         return (projectLink) -> {
             List<ReleaseLink> mappedReleaseLinks = nullToEmptyList(projectLink
                     .getLinkedReleases())
@@ -299,5 +313,43 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
             relMainLineState.put(releaseId, ThriftEnumUtils.enumToString(releaseMainlineState));
         }));
         return relMainLineState;
+    }
+
+    protected  List<ReleaseLinkJSON> getTreeLinkedRelease(List<Release> releases, User user){
+        List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
+        for (Release release : releases) {
+            ReleaseLinkJSON r = new ReleaseLinkJSON(release.getId(), release.getName());
+            releaseLinkJSONS.add(r);
+        }
+        for (int i = 0; i < releaseLinkJSONS.size(); i++) {
+            releaseLinkJSONS.set(i, getReleaseLinkJSONS(releaseLinkJSONS.get(i), user));
+        }
+        return releaseLinkJSONS;
+    }
+    public ReleaseLinkJSON getReleaseLinkJSONS(ReleaseLinkJSON releaseLinkJSON, User user) {
+        ComponentService.Iface client = thriftClients.makeComponentClient();
+        Release releaseById = null;
+        List<Release> releasesWithSameComponent = null;
+        try {
+            releaseById = client.getAccessibleReleaseById(releaseLinkJSON.getReleaseId(), user);
+            releasesWithSameComponent = client.getReleasesByComponentId(releaseById.getComponentId(), user);
+
+            List<Release> releaseList = client.getReleasesById(releaseById.getReleaseIdToRelationship().keySet().stream().collect(Collectors.toSet()), user);
+            List<ReleaseLinkJSON> linkedReleasesJSON = new ArrayList<>();
+
+            List<String> releaseIdsWithSameComponent = releasesWithSameComponent
+                    .stream()
+                    .map(Release::getId)
+                    .collect(Collectors.toList());
+            releaseLinkJSON.setReleaseWithSameComponent(releaseIdsWithSameComponent);
+            for (Release release : releaseList) {
+                ReleaseLinkJSON rj = new ReleaseLinkJSON(release.getId(), release.getName());
+                linkedReleasesJSON.add(getReleaseLinkJSONS(rj, user));
+            }
+            releaseLinkJSON.setReleaseLink(linkedReleasesJSON);
+            return releaseLinkJSON;
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

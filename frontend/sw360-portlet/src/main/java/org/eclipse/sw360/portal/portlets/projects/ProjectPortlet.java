@@ -1121,10 +1121,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         } else if (PortalConstants.RELEASE_LIST_FROM_LINKED_PROJECTS.equals(what)) {
             serveReleasesFromLinkedProjects(request, response, projectId);
         } else if (PortalConstants.FIND_SUB_LINKED_RELEASE.equals(what)) {
-            String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
-            log.info(releaseId);
             try {
-                serverSubLinkedReleaseFromRelease(request, response, releaseId);
+                serverSubLinkedReleaseFromRelease(request, response, projectId);
             } catch (TException e) {
                 throw new RuntimeException(e);
             }
@@ -2672,6 +2670,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         Set<String> releaseIds = mappedProjectLinks.stream().map(ProjectLink::getLinkedReleases)
                 .filter(CommonUtils::isNotEmpty).flatMap(rList -> rList.stream()).filter(Objects::nonNull)
                 .map(ReleaseLink::getId).collect(Collectors.toSet());
+        log.info(releaseIds);
         request.setAttribute("relMainLineState", fillMainLineState(releaseIds, compClient, user));
         include("/html/utils/ajax/linkedProjectsRows.jsp", request, response, PortletRequest.RESOURCE_PHASE);
     }
@@ -3048,15 +3047,17 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
 
-    private void serverSubLinkedReleaseFromRelease(ResourceRequest request, ResourceResponse response, String releaseId) throws IOException, PortletException, TException {
+    private void serverSubLinkedReleaseFromRelease(ResourceRequest request, ResourceResponse response, String projectId) throws IOException, PortletException, TException {
         ComponentService.Iface releaseClient = thriftClients.makeComponentClient();
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
         User user = UserCacheHolder.getUserFromRequest(request);
-        Release release = releaseClient.getAccessibleReleaseById(releaseId, user);
-        Map<String, ReleaseRelationship> mapRelease = release.getReleaseIdToRelationship();
-        Set<String> releaseIds = mapRelease.keySet();
-        String[] releaseIdsArray = releaseIds.toArray(new String[releaseIds.size()]);
+
+        Project project = projectClient.getProjectById(projectId,user);
+        List<Release> releases = releaseClient.getAccessibleReleasesById(project.getReleaseIdToUsage().keySet().stream().collect(Collectors.toSet()), user);
+        List<ReleaseLinkJSON> releaseLinkJSONS = getTreeLinkedRelease(releases,user);
+
         JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
-        jsonObject.put(PortalConstants.RESULT, releaseIdsArray);
+        jsonObject.put(PortalConstants.RESULT, releaseLinkJSONS);
         try {
             writeJSON(request, response, jsonObject);
         } catch (IOException e) {

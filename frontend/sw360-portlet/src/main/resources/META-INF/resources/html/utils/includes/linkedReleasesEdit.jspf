@@ -72,6 +72,54 @@
             let oldSelect = "";
             let newSelect = "";
             let releaseId = "";
+            let projectId = "${project.id}";
+            let releaseWithRelations = [];
+
+            function getContent() {
+                return new Promise(function(resolve, reject) {
+                    jQuery.ajax({
+                           type: 'POST',
+                           url: '<%=viewReleaseURL%>',
+                           data: {
+                               '<portlet:namespace/><%=PortalConstants.WHAT%>': '<%=PortalConstants.FIND_SUB_LINKED_RELEASE%>',
+                               '<portlet:namespace/><%=PortalConstants.PROJECT_ID%>': projectId,
+                           },
+                           cache: false,
+                           success: function (body) {
+                              resolve(body.result);
+                           },
+                           error: function () {
+                               console.log("ERROR");
+                           }
+                    });
+                });
+            }
+
+            $( document ).ready(async function(event){
+                releaseWithRelations = await(getContent());
+                console.log(releaseWithRelations);
+                for(let releaseObj of releaseWithRelations) {
+                    let parentId = releaseObj.releaseId;
+                    let releases = releaseObj.releaseLink;
+                    DQEnter(parentId,releases);
+                }
+                async function DQEnter(parentId, releases){
+                    let releaseIds = [];
+                    for (let release of releases) {
+                        releaseIds.push(release.releaseId);
+                    }
+                    await releaseContentFromAjax('<%=PortalConstants.LIST_NEW_LINKED_RELEASES%>', releaseIds, function(result) {
+                           let newRow = '<tbody class="parent'+parentId+'" data-parent-id='+parentId+'"> </tbody>'
+                           $("#LinkedReleasesInfo").append(newRow);
+                           $('.parent'+parentId).append(result);
+                    });
+                    for (let release of releases) {
+                        DQEnter(release.releaseId, release.releaseLink);
+                    }
+                }
+            });
+
+
             $('#LinkedReleasesInfo').on('click', 'svg[data-row-id]', function(event) {
                 var rowId = $(event.currentTarget).data().rowId,
                     release = $(event.currentTarget).data().releaseName;
@@ -98,39 +146,6 @@
                }
                $(this).prop('data-old',newSelect);
                DQ(newSelect);
-            }
-
-            function DQ(parentId) {
-               jQuery.ajax({
-                   type: 'POST',
-                   url: '<%=viewReleaseURL%>',
-                   data: {
-                       '<portlet:namespace/><%=PortalConstants.WHAT%>': '<%=PortalConstants.FIND_SUB_LINKED_RELEASE%>',
-                       '<portlet:namespace/><%=PortalConstants.RELEASE_ID%>': parentId,
-                   },
-                   cache: false,
-                   success: async function (body) {
-                      let subLinkedReleaseIds = [];
-                      subLinkedReleaseIds = body.result;
-                      if (subLinkedReleaseIds.length > 0) {
-                          await releaseContentFromAjax('<%=PortalConstants.LIST_NEW_LINKED_RELEASES%>', subLinkedReleaseIds, function(result) {
-                              if($('.parent-node-'+parentId).length == 0) {
-                                  $('.child-' + releaseId).append(result);
-                                  $('.child-' + releaseId + ' tr').each(function(){$(this).addClass('parent-node-'+parentId)});
-                                  $('.child-' + releaseId + ' tr td').each(function(){$(this).css( "background-color", "#f48989" )});
-                                  $('.child-' + releaseId+' .releaseVersion').each(function(){$(this).prop( "disabled", true )});
-                                  $('.child-' + releaseId+' .load-release').each(function(){$(this).css( "display", "none" )});
-                              }
-                          });
-                      }
-                      for (let id of subLinkedReleaseIds) {
-                         DQ(id);
-                      }
-                   },
-                   error: function () {
-                       console.log("ERROR");
-                   }
-               });
             }
 
             function releaseContentFromAjax(what, where, callback) {

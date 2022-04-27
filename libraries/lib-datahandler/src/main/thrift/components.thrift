@@ -372,6 +372,14 @@ struct ReleaseLink{
     105: optional list<Release> releaseWithSameComponent,
 }
 
+
+struct ReleaseLinkJSON {
+     1: required string releaseId,
+     2: required string name,
+     3: optional list<ReleaseLinkJSON> releaseLink;
+     4: optional list<string> releaseWithSameComponent,
+}
+
 struct ReleaseClearingStatusData {
     1: required Release release,
     2: optional ComponentType componentType,
