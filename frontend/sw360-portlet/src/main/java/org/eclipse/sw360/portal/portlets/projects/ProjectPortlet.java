@@ -1126,6 +1126,11 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             } catch (TException e) {
                 throw new RuntimeException(e);
             }
+        } else if (PortalConstants.CREATE_LINKED_RELEASE_ROW.equals(what)) {
+            String[] where = request.getParameterValues(PortalConstants.WHERE_ARRAY);
+            String parentId = request.getParameter(PARENT_BRANCH_ID);
+            String layer = request.getParameter(PortalConstants.LAYER);
+            serveNewTableRowLinkedRelease(request, response, where, parentId, Integer.parseInt(layer));
         }
     }
 
@@ -1167,7 +1172,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 List<Release> releasesWithSameComponent = client.getReleasesByComponentId(release.getComponentId(), user);
                 ReleaseLink linkedRelease = new ReleaseLink(release.getId(), vendorName, release.getName(), release.getVersion(),
                         SW360Utils.printFullname(release), !nullToEmptyMap(release.getReleaseIdToRelationship()).isEmpty());
-                linkedRelease.setReleaseWithSameComponent(releasesWithSameComponent);
                 linkedReleases.add(linkedRelease);
             }
         } catch (TException e) {
@@ -3063,6 +3067,32 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         } catch (IOException e) {
             log.error("Problem rendering RemoveModerationRequestStatus", e);
         }
+    }
+
+    private void serveNewTableRowLinkedRelease(ResourceRequest request, ResourceResponse response, String[] linkedIds, String parentId, int layer) throws IOException, PortletException {
+        final User user = UserCacheHolder.getUserFromRequest(request);
+        request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
+
+        List<ReleaseLink> linkedReleases = new ArrayList<>();
+        try {
+            ComponentService.Iface client = thriftClients.makeComponentClient();
+            for (Release release : client.getReleasesById(new HashSet<>(Arrays.asList(linkedIds)), user)) {
+                final Vendor vendor = release.getVendor();
+                final String vendorName = vendor != null ? vendor.getShortname() : "";
+                List<Release> releasesWithSameComponent = client.getReleasesByComponentId(release.getComponentId(), user);
+                ReleaseLink linkedRelease = new ReleaseLink(release.getId(), vendorName, release.getName(), release.getVersion(),
+                        SW360Utils.printFullname(release), !nullToEmptyMap(release.getReleaseIdToRelationship()).isEmpty());
+                linkedRelease.setReleaseWithSameComponent(releasesWithSameComponent);
+                linkedRelease.setLayer(layer);
+                linkedRelease.setParentNodeId(parentId);
+                linkedReleases.add(linkedRelease);
+            }
+        } catch (TException e) {
+            log.error("Error getting releases!", e);
+            throw new PortletException("cannot get releases " + Arrays.toString(linkedIds), e);
+        }
+        request.setAttribute(RELEASE_LIST, linkedReleases);
+        include("/html/utils/ajax/linkedReleasesAjax.jsp", request, response, PortletRequest.RESOURCE_PHASE);
     }
 
 }

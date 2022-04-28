@@ -29,7 +29,7 @@
         <core_rt:when test="${releaseLink.accessible}">
 
             <core_rt:set var="uuid" value="${releaseLink.id}"/>
-            <tr id="releaseLinkRow${uuid}" >
+            <tr id="releaseLinkRow${uuid}" parent-node="${releaseLink.parentNodeId}" data-layer="${releaseLink.layer}">
                 <td>
                     <div class="form-group">
                         <input type="hidden" value="${releaseLink.id}" />

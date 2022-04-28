@@ -652,6 +652,8 @@ public class PortalConstants {
     public static final String PREDEFINED_TAGS;
     public static final boolean SSO_LOGIN_ENABLED;
     public static final boolean IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED;
+    public static final String CREATE_LINKED_RELEASE_ROW = "createLinkedReleaseRow";
+    public static final String LAYER = "layer";
 
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);

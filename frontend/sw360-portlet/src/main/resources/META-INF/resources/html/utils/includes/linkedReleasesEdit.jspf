@@ -74,7 +74,7 @@
             let releaseId = "";
             let projectId = "${project.id}";
             let releaseWithRelations = [];
-
+            let layer = 1;
             function getContent() {
                 return new Promise(function(resolve, reject) {
                     jQuery.ajax({
@@ -97,24 +97,26 @@
 
             $( document ).ready(async function(event){
                 releaseWithRelations = await(getContent());
-                console.log(releaseWithRelations);
+                if (typeof releaseWithRelations == "string") {
+                    releaseWithRelations = JSON.parse(releaseWithRelations);
+                }
                 for(let releaseObj of releaseWithRelations) {
                     let parentId = releaseObj.releaseId;
                     let releases = releaseObj.releaseLink;
-                    DQEnter(parentId,releases);
+                    layer = 1;
+                    DQEnter(layer, parentId, releases);
                 }
-                async function DQEnter(parentId, releases){
+                async function DQEnter(layer, parentId, releases){
                     let releaseIds = [];
                     for (let release of releases) {
                         releaseIds.push(release.releaseId);
                     }
-                    await releaseContentFromAjax('<%=PortalConstants.LIST_NEW_LINKED_RELEASES%>', releaseIds, function(result) {
-                           let newRow = '<tbody class="parent'+parentId+'" data-parent-id='+parentId+'"> </tbody>'
-                           $("#LinkedReleasesInfo").append(newRow);
-                           $('.parent'+parentId).append(result);
+                    await releaseContentFromAjax('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', releaseIds, parentId, layer function(result) {
+                           $("#releaseLinkRow"+parentId).last().after(newRow);
                     });
+                    layer++;
                     for (let release of releases) {
-                        DQEnter(release.releaseId, release.releaseLink);
+                        DQEnter(layer, release.releaseId, release.releaseLink);
                     }
                 }
             });
@@ -148,14 +150,16 @@
                DQ(newSelect);
             }
 
-            function releaseContentFromAjax(what, where, callback) {
+            function releaseContentFromAjax(what, where, parentId, layer, callback) {
                 return new Promise(function(resolve, reject) {
                     jQuery.ajax({
                         type: 'POST',
                         url: '<%=viewReleaseURL%>',
                         data: {
                             '<portlet:namespace/><%=PortalConstants.WHAT%>': what,
-                            '<portlet:namespace/><%=PortalConstants.WHERE%>': where
+                            '<portlet:namespace/><%=PortalConstants.WHERE%>': where,
+                            '<portlet:namespace/><%=PortalConstants.PARENT_BRANCH_ID%>': parentId,
+                            '<portlet:namespace/><%=PortalConstants.LAYER%>': layer
                         },
                         success: function (data) {
                             callback(data);

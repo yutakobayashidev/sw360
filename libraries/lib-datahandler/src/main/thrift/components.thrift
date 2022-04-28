@@ -370,14 +370,16 @@ struct ReleaseLink{
     104: optional bool accessible = true,
 
     105: optional list<Release> releaseWithSameComponent,
+    106: optional i32 layer,
 }
 
 
 struct ReleaseLinkJSON {
      1: required string releaseId,
      2: required string name,
-     3: optional list<ReleaseLinkJSON> releaseLink;
-     4: optional list<string> releaseWithSameComponent,
+     3: optional list<ReleaseLinkJSON> releaseLink,
+     4: optional ProjectReleaseRelationship projectReleaseRelationship,
+     5: optional MainlineState mainlineState,
 }
 
 struct ReleaseClearingStatusData {
