@@ -3057,8 +3057,16 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         Project project = projectClient.getProjectById(projectId,user);
         String releaseRelationTree = project.getReleaseRelationTree();
         if (releaseRelationTree == null) {
-            List<Release> releases = releaseClient.getAccessibleReleasesById(project.getReleaseIdToUsage().keySet().stream().collect(Collectors.toSet()), user);
-            List<ReleaseLinkJSON> releaseLinkJSONS = getTreeLinkedRelease(releases, user);
+            Map<String, ProjectReleaseRelationship> linkedReleases = project.getReleaseIdToUsage();
+            List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
+
+            for (Map.Entry<String, ProjectReleaseRelationship> linkedRelease : linkedReleases.entrySet()) {
+                ReleaseLinkJSON releaseLinkJSON = new ReleaseLinkJSON();
+                releaseLinkJSON.setReleaseLink(new ArrayList<ReleaseLinkJSON>());
+                releaseLinkJSON.setReleaseId(linkedRelease.getKey());
+                releaseLinkJSON.setProjectReleaseRelationship(linkedRelease.getValue());
+                releaseLinkJSONS.add(releaseLinkJSON);
+            }
             if (releaseLinkJSONS.size() > 0) {
                 jsonObject.put(PortalConstants.RESULT, releaseLinkJSONS);
             } else {
