@@ -14,6 +14,11 @@
 <liferay-theme:defineObjects/>
 
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.MainlineState" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.ReleaseRelationship" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.components.ReleaseLink" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
 <jsp:useBean id="project" class="org.eclipse.sw360.datahandler.thrift.projects.Project" scope="request" />
 
 <portlet:resourceURL var="viewReleaseURL">
@@ -121,11 +126,18 @@
                 $('#releaseSearchResultsTable').find(':checked').each(function () {
                     releaseIds.push(this.value);
                 });
-
-                releaseContentFromAjax('<%=PortalConstants.LIST_NEW_LINKED_RELEASES%>', releaseIds, function(data) {
-                    $('#LinkedReleasesInfo tbody').append(data);
-                });
-
+                for (let releaseId of releaseIds) {
+                    let toArray = [];
+                    toArray.push(releaseId);
+                    addReleaseToTable('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', temp, "", 0, function(data) {
+                          $('#LinkedReleasesInfo tbody').append(data);
+                          $('#LinkedReleasesInfo tbody').append(result);
+                          $('#LinkedReleasesInfo').find('tr').last().find('#releaseVersion').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>');
+                          $('#LinkedReleasesInfo').find('tr').last().find('#releaseRelation').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>');
+                          $('#LinkedReleasesInfo').find('tr').last().find('#mainlineState').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.MAINLINE_STATE%>');
+                          $('#LinkedReleasesInfo').find('tr').last().find('#releaseComment').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.COMMENT%>');
+                    });
+                }
                 callback(true);
             }, function() {
                 this.$.find('.spinner').hide();
@@ -178,6 +190,26 @@
                 },
                 error: function() {
                     $dialog.alert('<liferay-ui:message key="cannot.link.to.release" />');
+                }
+            });
+        }
+
+        function addReleaseToTable(what, where, parentId, layer, callback){
+            jQuery.ajax({
+                type: 'POST',
+                url: '<%=viewReleaseURL%>',
+                data: {
+                    '<portlet:namespace/><%=PortalConstants.WHAT%>': what,
+                    '<portlet:namespace/><%=PortalConstants.WHERE%>': where,
+                    '<portlet:namespace/><%=PortalConstants.PARENT_BRANCH_ID%>': parentId,
+                    '<portlet:namespace/><%=PortalConstants.LAYER%>': layer
+                },
+                success: function (data) {
+                    callback(data);
+                    resolve(data);
+                },
+                error: function() {
+                    reject("error");
                 }
             });
         }

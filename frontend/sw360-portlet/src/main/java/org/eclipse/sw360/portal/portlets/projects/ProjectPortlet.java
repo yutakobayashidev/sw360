@@ -1122,7 +1122,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             serveReleasesFromLinkedProjects(request, response, projectId);
         } else if (PortalConstants.FIND_SUB_LINKED_RELEASE.equals(what)) {
             try {
-                serverSubLinkedReleaseFromRelease(request, response, projectId);
+                serverReleaseRelationTreeOfProject(request, response, projectId);
             } catch (TException e) {
                 throw new RuntimeException(e);
             }
@@ -3049,7 +3049,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
 
-    private void serverSubLinkedReleaseFromRelease(ResourceRequest request, ResourceResponse response, String projectId) throws IOException, PortletException, TException {
+    private void serverReleaseRelationTreeOfProject(ResourceRequest request, ResourceResponse response, String projectId) throws IOException, PortletException, TException {
         ComponentService.Iface releaseClient = thriftClients.makeComponentClient();
         ProjectService.Iface projectClient = thriftClients.makeProjectClient();
         User user = UserCacheHolder.getUserFromRequest(request);
