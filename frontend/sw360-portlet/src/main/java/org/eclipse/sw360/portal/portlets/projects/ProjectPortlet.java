@@ -1131,6 +1131,13 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             String parentId = request.getParameter(PARENT_BRANCH_ID);
             String layer = request.getParameter(PortalConstants.LAYER);
             serveNewTableRowLinkedRelease(request, response, where, parentId, Integer.parseInt(layer));
+        } else if (PortalConstants.FIND_LINKED_RELEASE_OF_NODE.equals(what)) {
+            String releaseId = request.getParameter(RELEASE_ID);
+            try {
+                serverReleaseRelationTreeOfNode(request, response, releaseId);
+            } catch (TException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -3049,7 +3056,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
 
-    private void serverReleaseRelationTreeOfProject(ResourceRequest request, ResourceResponse response, String projectId) throws IOException, PortletException, TException {
+    private void serverReleaseRelationTreeOfProject(ResourceRequest request, ResourceResponse response, String projectId) throws TException {
         ComponentService.Iface releaseClient = thriftClients.makeComponentClient();
         ProjectService.Iface projectClient = thriftClients.makeProjectClient();
         User user = UserCacheHolder.getUserFromRequest(request);
@@ -3079,6 +3086,22 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             writeJSON(request, response, jsonObject);
         } catch (IOException e) {
             log.error("Problem rendering ReleaseRelationTree", e);
+        }
+    }
+
+    private void serverReleaseRelationTreeOfNode(ResourceRequest request, ResourceResponse response, String releaseId) throws TException {
+        ComponentService.Iface releaseClient = thriftClients.makeComponentClient();
+        User user = UserCacheHolder.getUserFromRequest(request);
+        JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+        Release release = releaseClient.getAccessibleReleaseById(releaseId,user);
+        List<Release> releases = new ArrayList<Release>();
+        releases.add(release);
+        List<ReleaseLinkJSON> releaseLinkJSONS = getTreeLinkedRelease(releases, user);
+        jsonObject.put(PortalConstants.RESULT, releaseLinkJSONS);
+        try {
+            writeJSON(request, response, jsonObject);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

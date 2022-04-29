@@ -655,6 +655,8 @@ public class PortalConstants {
     public static final String CREATE_LINKED_RELEASE_ROW = "createLinkedReleaseRow";
     public static final String LAYER = "layer";
 
+    public static final String FIND_LINKED_RELEASE_OF_NODE = "findLinkedReleaseOfNode";
+
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 

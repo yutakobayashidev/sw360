@@ -91,6 +91,7 @@
                               resolve(body.result);
                            },
                            error: function () {
+                               reject("ERROR");
                                console.log("ERROR");
                            }
                     });
@@ -99,43 +100,49 @@
 
             $( document ).ready(async function(event){
                 releaseWithRelations = await(getContent());
-                console.log(releaseWithRelations);
                 if (typeof releaseWithRelations == "string") {
                     releaseWithRelations = JSON.parse(releaseWithRelations);
                 }
                 releaseWithRelationsString = JSON.stringify(releaseWithRelations);
                 $('#releaseRelationTree').val(releaseWithRelationsString);
+                displayReleaseRelationShip();
+            });
 
+            async function displayReleaseRelationShip() {
                 for(let releaseObj of releaseWithRelations) {
                     let temp = [];
                     temp.push(releaseObj.releaseId);
-                    await releaseContentFromAjax('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', temp, "", 0, function(result) {
-                          $('#LinkedReleasesInfo tbody').append(result);
-                          $('#LinkedReleasesInfo').find('tr').last().find('#releaseVersion').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>');
-                          $('#LinkedReleasesInfo').find('tr').last().find('#releaseRelation').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>');
-                          $('#LinkedReleasesInfo').find('tr').last().find('#mainlineState').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.MAINLINE_STATE%>');
-                          $('#LinkedReleasesInfo').find('tr').last().find('#releaseComment').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.COMMENT%>');
-                    });
+                    let newRow = await releaseContentFromAjax('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', temp, "", 0);
+                    $('#LinkedReleasesInfo tbody').append(newRow);
+                    $('#LinkedReleasesInfo').find('tr').last().find('#releaseVersion').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>');
+                    $('#LinkedReleasesInfo').find('tr').last().find('#releaseRelation').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>');
+                    $('#LinkedReleasesInfo').find('tr').last().find('#mainlineState').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.MAINLINE_STATE%>');
+                    $('#LinkedReleasesInfo').find('tr').last().find('#releaseComment').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.COMMENT%>');
+                    $('#LinkedReleasesInfo').find('tr').last().find('.load-release').bind('click',displayRelationOfNode);
+
                     let parentId = releaseObj.releaseId;
                     let releases = releaseObj.releaseLink;
                     layer = 1;
                     DQEnter(layer, parentId, releases);
                 }
-                async function DQEnter(layer, parentId, releases){
-                    let releaseIds = [];
-                    for (let release of releases) {
-                        releaseIds.push(release.releaseId);
-                    }
-                    await releaseContentFromAjax('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', releaseIds, parentId, layer, function(result) {
-                           $("#releaseLinkRow"+parentId).last().after(result);
-                    });
-                    layer++;
-                    for (let release of releases) {
-                        DQEnter(layer, release.releaseId, release.releaseLink);
-                    }
-                }
-            });
+            }
 
+            async function DQEnter(layer, parentId, releases){
+
+                for (let release of releases) {
+                    let releaseIds = [];
+                    releaseIds.push(release.releaseId);
+                    console.log(release.name);
+                    let newRow = await releaseContentFromAjax('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', releaseIds, parentId, layer);
+                    $("#releaseLinkRow"+parentId).last().after(newRow);
+                    $('#releaseLinkRow'+releaseIds[0]+'[parent-node="'+parentId+'"][data-layer="'+layer+'"]').find('.load-release').bind('click',displayRelationOfNode);
+                }
+
+                layer++;
+                for (let release of releases) {
+                    DQEnter(layer, release.releaseId, release.releaseLink);
+                }
+            }
 
             $('#LinkedReleasesInfo').on('click', 'svg[data-row-id]', function(event) {
                 var rowId = $(event.currentTarget).data().rowId,
@@ -148,24 +155,47 @@
                 });
             });
 
-            $('.releaseVersion').on('change',getSubLinkedRelease);
+            $('.load-release').on('click',displayRelationOfNode);
 
-            function getSubLinkedRelease() {
-               releaseId = $(this).closest('tr').find('select').eq(0).val();
-               newSelect = $(this).val();
-               oldSelect = $(this).prop('data-old');
-               if (oldSelect != undefined) {
-                   $('.child-' + oldSelect).remove();
-               }
-               if($('.child-'+newSelect).length == 0) {
-                   let newLayer = '<tbody class="child-'+newSelect+'" style="width:100%"></tbody>';
-                   $('#LinkedReleasesInfo').append(newLayer);
-               }
-               $(this).prop('data-old',newSelect);
-               DQ(newSelect);
+            async function displayRelationOfNode() {
+               let newSelect = $(this).closest('tr').find('select').eq(0).val();
+               let oldSelect = $(this).closest('tr').find('select').eq(0).attr('data-old');
+               let currentLayer =  $(this).closest('tr').attr('data-layer');
+               let parentNode = $(this).closest('tr').attr('parent-node');
+
+                let newNode = await getLinkedReleaseOfNode('<%=PortalConstants.FIND_LINKED_RELEASE_OF_NODE%>',newSelect);
+                let i=0;
+                let trace = [];
+                trace.unshift(oldSelect);
+
+                for(let layer = currentLayer - 1; layer >= 0; layer-- ) {
+                    console.log('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]');
+                    trace.unshift($('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').find('select').eq(0).val());
+                    parentNode = $('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').attr('parent-node');
+                }
+                console.log(trace);
+                replaceNode(releaseWithRelations, i, trace, newNode[0]);
+                $('#LinkedReleasesInfo tbody').empty();
+                console.log(releaseWithRelations);
+                displayReleaseRelationShip();
             }
 
-            function releaseContentFromAjax(what, where, parentId, layer, callback) {
+
+            function replaceNode(releaseWithRelations, i, trace, newNode){
+                for(let index = 0; index < releaseWithRelations.length; index++){
+                    if(releaseWithRelations[index].releaseId === trace[i]){
+                        if(i === (trace.length - 1)) {
+                           releaseWithRelations[index] = newNode;
+                           return;
+                        }
+                        i++;
+                        replaceNode(releaseWithRelations[index].releaseLink, i, trace, newNode);
+                        break;
+                    }
+                }
+            }
+
+            function releaseContentFromAjax(what, where, parentId, layer) {
                 return new Promise(function(resolve, reject) {
                     jQuery.ajax({
                         type: 'POST',
@@ -177,11 +207,31 @@
                             '<portlet:namespace/><%=PortalConstants.LAYER%>': layer
                         },
                         success: function (data) {
-                            callback(data);
                             resolve(data);
                         },
                         error: function() {
-                            reject("error");
+                            console.log("error");
+                            reject("");
+                        }
+                    });
+                });
+            }
+
+            function getLinkedReleaseOfNode(what, releaseId){
+                return new Promise(function(resolve, reject) {
+                    jQuery.ajax({
+                        type: 'POST',
+                        url: '<%=viewReleaseURL%>',
+                        data: {
+                            '<portlet:namespace/><%=PortalConstants.WHAT%>': what,
+                            '<portlet:namespace/><%=PortalConstants.RELEASE_ID%>': releaseId
+                        },
+                        success: function (body) {
+                            resolve(body.result);
+                        },
+                        error: function() {
+                            console.log("error");
+                            reject("ERROR");
                         }
                     });
                 });
