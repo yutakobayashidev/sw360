@@ -144,21 +144,6 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
                 rl -> rl.isAccessible() ? SW360Utils.getVersionedName(nullToEmptyString(rl.getName()), rl.getVersion()) : "~", String.CASE_INSENSITIVE_ORDER)
         ).collect(Collectors.toList());
         request.setAttribute(RELEASE_LIST, linkedReleases);
-
-        List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
-        for (ReleaseLink releaseLink : linkedReleases) {
-            ReleaseLinkJSON r = new ReleaseLinkJSON(releaseLink.getId(), releaseLink.getName());
-            releaseLinkJSONS.add(r);
-        }
-        for (int i = 0; i < releaseLinkJSONS.size(); i++) {
-            releaseLinkJSONS.set(i, getReleaseLinkJSONS(releaseLinkJSONS.get(i), user));
-        }
-        ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            log.info(objectMapper.writeValueAsString(releaseLinkJSONS));
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
         int totalInaccessibleRow = 0;
         for (ReleaseLink link : linkedReleases) {
             if (!link.isAccessible()) {
@@ -341,7 +326,6 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
                     .stream()
                     .map(Release::getId)
                     .collect(Collectors.toList());
-            releaseLinkJSON.setReleaseWithSameComponent(releaseIdsWithSameComponent);
             for (Release release : releaseList) {
                 ReleaseLinkJSON rj = new ReleaseLinkJSON(release.getId(), release.getName());
                 linkedReleasesJSON.add(getReleaseLinkJSONS(rj, user));
@@ -351,5 +335,12 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         } catch (TException e) {
             throw new RuntimeException(e);
         }
+    }
+
+
+    protected void putLinkedReleasesWithAccessibilityInRequest(PortletRequest request, Project project, User user){
+        request.setAttribute(RELEASE_LIST, new ArrayList<ReleaseLink>());
+        int totalInaccessibleRow = 0;
+        request.setAttribute(TOTAL_INACCESSIBLE_ROWS, totalInaccessibleRow);
     }
 }

@@ -160,6 +160,8 @@ struct Project {
     201: optional map<string, string> externalUrls,
     202: optional Vendor vendor,
     203: optional string vendorId,
+
+    204: optional string releaseRelationTree,
 }
 
 struct ProjectLink {

@@ -10,7 +10,8 @@
 
 <%@ page import="org.eclipse.sw360.datahandler.thrift.MainlineState" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.ReleaseRelationship" %>
-
+<%@ page import="org.eclipse.sw360.datahandler.thrift.components.ReleaseLink" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship" %>
 
 <portlet:resourceURL var="viewReleaseURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.VIEW_LINKED_RELEASES%>"/>
@@ -31,7 +32,7 @@
     </thead>
     <tbody>
         <jsp:include page="/html/utils/ajax/linkedReleasesAjax.jsp" />
-
+        <input type="hidden" id="releaseRelationTree" name="<portlet:namespace/><%=Project._Fields.RELEASE_RELATION_TREE%>" />
     </tbody>
 </table>
 
@@ -75,6 +76,7 @@
             let projectId = "${project.id}";
             let releaseWithRelations = [];
             let layer = 1;
+            let releaseWithRelationsString = "";
             function getContent() {
                 return new Promise(function(resolve, reject) {
                     jQuery.ajax({
@@ -97,10 +99,24 @@
 
             $( document ).ready(async function(event){
                 releaseWithRelations = await(getContent());
+                console.log(releaseWithRelations);
                 if (typeof releaseWithRelations == "string") {
                     releaseWithRelations = JSON.parse(releaseWithRelations);
                 }
+                releaseWithRelationsString = JSON.stringify(releaseWithRelations);
+                $('#releaseRelationTree').val(releaseWithRelationsString);
+
                 for(let releaseObj of releaseWithRelations) {
+                    let temp = [];
+                    temp.push(releaseObj.releaseId);
+                    await releaseContentFromAjax('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', temp, "", 0, function(result) {
+                          $('#LinkedReleasesInfo tbody').append(result);
+                          $('#LinkedReleasesInfo').find('tr').last().find('#releaseVersion').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>');
+                          $('#LinkedReleasesInfo').find('tr').last().find('#releaseRelation').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>');
+                          $('#LinkedReleasesInfo').find('tr').last().find('#mainlineState').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.MAINLINE_STATE%>');
+                          $('#LinkedReleasesInfo').find('tr').last().find('#releaseComment').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.COMMENT%>');
+                          console.log(result);
+                    });
                     let parentId = releaseObj.releaseId;
                     let releases = releaseObj.releaseLink;
                     layer = 1;
@@ -111,8 +127,8 @@
                     for (let release of releases) {
                         releaseIds.push(release.releaseId);
                     }
-                    await releaseContentFromAjax('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', releaseIds, parentId, layer function(result) {
-                           $("#releaseLinkRow"+parentId).last().after(newRow);
+                    await releaseContentFromAjax('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', releaseIds, parentId, layer, function(result) {
+                           $("#releaseLinkRow"+parentId).last().after(result);
                     });
                     layer++;
                     for (let release of releases) {

@@ -40,8 +40,7 @@
                 <td>
                     <div class="form-group">
                         <select id="releaseVersion" class="form-control releaseVersion" style="width:88%;display:inline-block"
-                        data-old="<sw360:out value="${releaseLink.id}"/>"
-                        name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>">
+                        data-old="<sw360:out value="${releaseLink.id}"/>">
                             <core_rt:forEach items="${releaseLink.releaseWithSameComponent}" var="release">
                                 <core_rt:if test = "${releaseLink.id == release.id}">
                                     <option value="<sw360:out value="${release.id}"/>" selected >
@@ -63,9 +62,7 @@
                 </td>
                 <td>
                     <div class="form-group">
-                        <select id="releaseRelation"
-                                name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>"
-                                class="form-control">
+                        <select id="releaseRelation" class="form-control">
                             <sw360:DisplayEnumOptions type="<%=ReleaseRelationship.class%>" selected="${releaseLink.releaseRelationship}"/>
                         </select>
                     </div>
@@ -73,7 +70,6 @@
                 <td>
                     <div class="form-group">
                         <select class="form-control" id="mainlineState"
-                                name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.MAINLINE_STATE%>"
                                 <core_rt:if test="${not isUserAtLeastClearingAdmin and not mainlineStateEnabledForUserRole}" >
                                     disabled="disabled"
                                 </core_rt:if>
@@ -84,7 +80,7 @@
                 </td>
                 <td>
                     <div class="form-group">
-                        <input id="releaseComment" name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.COMMENT%>"
+                        <input id="releaseComment"
                         type="text" placeholder="<liferay-ui:message key="enter.comment" />" class="form-control"
                             value="<sw360:out value="${releaseLink.comment}"/>"/>
                     </div>

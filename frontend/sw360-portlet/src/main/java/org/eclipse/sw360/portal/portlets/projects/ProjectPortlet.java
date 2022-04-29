@@ -1172,6 +1172,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 List<Release> releasesWithSameComponent = client.getReleasesByComponentId(release.getComponentId(), user);
                 ReleaseLink linkedRelease = new ReleaseLink(release.getId(), vendorName, release.getName(), release.getVersion(),
                         SW360Utils.printFullname(release), !nullToEmptyMap(release.getReleaseIdToRelationship()).isEmpty());
+                linkedRelease.setReleaseWithSameComponent(releasesWithSameComponent);
                 linkedReleases.add(linkedRelease);
             }
         } catch (TException e) {
@@ -2150,7 +2151,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         request.setAttribute(ORGANIZATIONS, organizations);
 
         if (id != null) {
-
             try {
                 ProjectService.Iface client = thriftClients.makeProjectClient();
                 project = client.getProjectByIdForEdit(id, user);
@@ -2171,13 +2171,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             request.setAttribute(DOCUMENT_ID, id);
 
             setAttachmentsInRequest(request, project);
-            try {
-                putDirectlyLinkedProjectsInRequest(request, project, user);
-                putDirectlyLinkedReleasesWithAccessibilityInRequest(request, project, user);
-            } catch (TException e) {
-                log.error("Could not fetch linked projects or linked releases in projects view.", e);
-                return;
-            }
+            putDirectlyLinkedProjectsInRequest(request, project, user);
+            putLinkedReleasesWithAccessibilityInRequest(request, project, user);
+
             request.setAttribute(USING_PROJECTS, usingProjects);
             request.setAttribute(ALL_USING_PROJECTS_COUNT, allUsingProjectCount);
             Map<RequestedAction, Boolean> permissions = project.getPermissions();
@@ -2271,6 +2267,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 ProjectPortletUtils.updateProjectFromRequest(request, project);
                 String ModerationRequestCommentMsg = request.getParameter(MODERATION_REQUEST_COMMENT);
                 user.setCommentMadeDuringModerationRequest(ModerationRequestCommentMsg);
+                String releaseRelationTree = request.getParameter(Project._Fields.RELEASE_RELATION_TREE.toString());
+                project.setReleaseRelationTree(releaseRelationTree);
 
                 String cyclicLinkedProjectPath = client.getCyclicLinkedProjectPath(project, user);
                 if (!isNullEmptyOrWhitespace(cyclicLinkedProjectPath)) {
@@ -3055,17 +3053,24 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         ComponentService.Iface releaseClient = thriftClients.makeComponentClient();
         ProjectService.Iface projectClient = thriftClients.makeProjectClient();
         User user = UserCacheHolder.getUserFromRequest(request);
-
-        Project project = projectClient.getProjectById(projectId,user);
-        List<Release> releases = releaseClient.getAccessibleReleasesById(project.getReleaseIdToUsage().keySet().stream().collect(Collectors.toSet()), user);
-        List<ReleaseLinkJSON> releaseLinkJSONS = getTreeLinkedRelease(releases,user);
-
         JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
-        jsonObject.put(PortalConstants.RESULT, releaseLinkJSONS);
+        Project project = projectClient.getProjectById(projectId,user);
+        String releaseRelationTree = project.getReleaseRelationTree();
+        if (releaseRelationTree == null) {
+            List<Release> releases = releaseClient.getAccessibleReleasesById(project.getReleaseIdToUsage().keySet().stream().collect(Collectors.toSet()), user);
+            List<ReleaseLinkJSON> releaseLinkJSONS = getTreeLinkedRelease(releases, user);
+            if (releaseLinkJSONS.size() > 0) {
+                jsonObject.put(PortalConstants.RESULT, releaseLinkJSONS);
+            } else {
+                jsonObject.put(PortalConstants.RESULT, "[]");
+            }
+        } else {
+            jsonObject.put(PortalConstants.RESULT, project.getReleaseRelationTree());
+        }
         try {
             writeJSON(request, response, jsonObject);
         } catch (IOException e) {
-            log.error("Problem rendering RemoveModerationRequestStatus", e);
+            log.error("Problem rendering ReleaseRelationTree", e);
         }
     }
 
