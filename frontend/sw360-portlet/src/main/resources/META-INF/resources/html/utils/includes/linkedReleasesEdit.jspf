@@ -116,8 +116,7 @@
                     $('#LinkedReleasesInfo').find('tr').last().find('#releaseRelation').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>');
                     $('#LinkedReleasesInfo').find('tr').last().find('#mainlineState').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.MAINLINE_STATE%>');
                     $('#LinkedReleasesInfo').find('tr').last().find('#releaseComment').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.COMMENT%>');
-                   // $('#LinkedReleasesInfo').find('tr').last().find('.load-release').bind('click',displayRelationOfNode);
-                   // $('#LinkedReleasesInfo').find('tr').last().find('.releaseVersion').bind('click',changeReleaseIdInNode);
+
                     let parentId = releaseObj.releaseId;
                     let releases = releaseObj.releaseLink;
                     layer = 1;
