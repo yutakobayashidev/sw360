@@ -380,6 +380,7 @@ struct ReleaseLinkJSON {
      3: optional list<ReleaseLinkJSON> releaseLink,
      4: optional ProjectReleaseRelationship projectReleaseRelationship,
      5: optional MainlineState mainlineState,
+     6: optional bool hasChange = false
 }
 
 struct ReleaseClearingStatusData {

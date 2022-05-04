@@ -30,12 +30,11 @@
 
             <core_rt:set var="uuid" value="${releaseLink.id}"/>
             <tr id="releaseLinkRow${uuid}" parent-node="${releaseLink.parentNodeId}" data-layer="${releaseLink.layer}">
-                <td>
-                    <div class="form-group">
-                        <input type="hidden" value="${releaseLink.id}" />
-                        <input id="releaseName" type="text" placeholder="<liferay-ui:message key="enter.release" />" class="form-control"
-                            value="<sw360:out value="${releaseLink.name}"/>" readonly/>
-                    </div>
+                <td style="vertical-align:middle;font-size:1rem">
+                    <core_rt:forEach begin="0" end="${releaseLink.layer}" var="val">
+                          &nbsp;&nbsp;&nbsp;&nbsp;
+                    </core_rt:forEach>
+                    <sw360:out value="${releaseLink.name}"/>
                 </td>
                 <td>
                     <div class="form-group">
