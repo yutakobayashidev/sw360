@@ -24,9 +24,9 @@ typedef sw360.DocumentState DocumentState
 typedef sw360.Visibility Visibility
 typedef sw360.ReleaseRelationship ReleaseRelationship
 typedef sw360.MainlineState MainlineState
-typedef sw360.ProjectReleaseRelationship ProjectReleaseRelationship
 typedef sw360.SW360Exception SW360Exception
 typedef sw360.PaginationData PaginationData
+typedef sw360.ProjectReleaseRelationship ProjectReleaseRelationship
 typedef attachments.Attachment Attachment
 typedef attachments.FilledAttachment FilledAttachment
 typedef users.User User
@@ -378,8 +378,8 @@ struct ReleaseLinkJSON {
      1: required string releaseId,
      2: required string name,
      3: optional list<ReleaseLinkJSON> releaseLink,
-     4: optional ProjectReleaseRelationship projectReleaseRelationship,
-     5: optional MainlineState mainlineState,
+     4: optional i32 releaseRelationship,
+     5: optional i32 mainlineState,
      6: optional bool hasChange = false
 }
 

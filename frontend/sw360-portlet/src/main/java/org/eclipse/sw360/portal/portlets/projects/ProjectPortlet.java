@@ -2275,6 +2275,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 String ModerationRequestCommentMsg = request.getParameter(MODERATION_REQUEST_COMMENT);
                 user.setCommentMadeDuringModerationRequest(ModerationRequestCommentMsg);
                 String releaseRelationTree = request.getParameter(Project._Fields.RELEASE_RELATION_TREE.toString());
+                log.info(releaseRelationTree);
                 project.setReleaseRelationTree(releaseRelationTree);
 
                 String cyclicLinkedProjectPath = client.getCyclicLinkedProjectPath(project, user);
@@ -3071,7 +3072,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 ReleaseLinkJSON releaseLinkJSON = new ReleaseLinkJSON();
                 releaseLinkJSON.setReleaseLink(new ArrayList<ReleaseLinkJSON>());
                 releaseLinkJSON.setReleaseId(linkedRelease.getKey());
-                releaseLinkJSON.setProjectReleaseRelationship(linkedRelease.getValue());
+                releaseLinkJSON.setReleaseRelationship(linkedRelease.getValue().getReleaseRelation().getValue());
+                releaseLinkJSON.setMainlineState(linkedRelease.getValue().getMainlineState().getValue());
                 releaseLinkJSONS.add(releaseLinkJSON);
             }
             if (releaseLinkJSONS.size() > 0) {

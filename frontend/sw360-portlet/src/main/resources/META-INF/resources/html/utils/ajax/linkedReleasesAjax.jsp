@@ -38,7 +38,7 @@
                 </td>
                 <td>
                     <div class="form-group">
-                        <select id="releaseVersion" class="form-control releaseVersion" style="width:88%;display:inline-block"
+                        <select id="projectReleaseVersion" class="form-control releaseVersion" style="width:88%;display:inline-block"
                         data-old="<sw360:out value="${releaseLink.id}"/>">
                             <core_rt:forEach items="${releaseLink.releaseWithSameComponent}" var="release">
                                 <core_rt:if test = "${releaseLink.id == release.id}">
@@ -61,14 +61,14 @@
                 </td>
                 <td>
                     <div class="form-group">
-                        <select id="releaseRelation" class="form-control">
+                        <select id="projectReleaseRelation" class="form-control projectReleaseRelation">
                             <sw360:DisplayEnumOptions type="<%=ReleaseRelationship.class%>" selected="${releaseLink.releaseRelationship}"/>
                         </select>
                     </div>
                 </td>
                 <td>
                     <div class="form-group">
-                        <select class="form-control" id="mainlineState"
+                        <select class="form-control mainlineState" id="mainlineState"
                                 <core_rt:if test="${not isUserAtLeastClearingAdmin and not mainlineStateEnabledForUserRole}" >
                                     disabled="disabled"
                                 </core_rt:if>

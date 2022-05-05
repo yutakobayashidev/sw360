@@ -131,8 +131,8 @@
                     toArray.push(releaseId);
                     addReleaseToTable('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', toArray, "", 0, function(data) {
                           $('#LinkedReleasesInfo tbody').append(data);
-                          $('#LinkedReleasesInfo').find('tr').last().find('#releaseVersion').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>');
-                          $('#LinkedReleasesInfo').find('tr').last().find('#releaseRelation').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>');
+                          $('#LinkedReleasesInfo').find('tr').last().find('#projectReleaseVersion').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>');
+                          $('#LinkedReleasesInfo').find('tr').last().find('#projectReleaseRelation').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>');
                           $('#LinkedReleasesInfo').find('tr').last().find('#mainlineState').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.MAINLINE_STATE%>');
                           $('#LinkedReleasesInfo').find('tr').last().find('#releaseComment').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.COMMENT%>');
                     });

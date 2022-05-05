@@ -326,8 +326,11 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
                     .stream()
                     .map(Release::getId)
                     .collect(Collectors.toList());
+
             for (Release release : releaseList) {
                 ReleaseLinkJSON rj = new ReleaseLinkJSON(release.getId(), release.getName());
+                rj.setReleaseRelationship(releaseById.getReleaseIdToRelationship().get(release.getId()).getValue());
+                rj.setMainlineState(MainlineState.OPEN.getValue());
                 linkedReleasesJSON.add(getReleaseLinkJSONS(rj, user));
             }
             releaseLinkJSON.setReleaseLink(linkedReleasesJSON);
