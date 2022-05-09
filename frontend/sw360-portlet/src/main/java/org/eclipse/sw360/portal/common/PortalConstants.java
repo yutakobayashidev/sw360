@@ -657,6 +657,11 @@ public class PortalConstants {
 
     public static final String FIND_LINKED_RELEASE_OF_NODE = "findLinkedReleaseOfNode";
 
+    public static final String RELEASE_NETWORK = "releaseNetwork";
+
+    public static final String RELEASE_RELATION_SHIP = "releaseRelationShip[]";
+
+    public static final String MAINLINE_STATE = "mainlineState[]";
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 

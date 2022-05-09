@@ -14,6 +14,8 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
@@ -21,6 +23,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
+import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -300,7 +303,7 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         return relMainLineState;
     }
 
-    protected  List<ReleaseLinkJSON> getTreeLinkedRelease(List<Release> releases, User user){
+    protected  List<ReleaseLinkJSON> getNetworkLinkedRelease(List<Release> releases, User user){
         List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
         for (Release release : releases) {
             ReleaseLinkJSON r = new ReleaseLinkJSON(release.getId(), release.getName());
@@ -341,9 +344,7 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
     }
 
 
-    protected void putLinkedReleasesWithAccessibilityInRequest(PortletRequest request, Project project, User user){
-        request.setAttribute(RELEASE_LIST, new ArrayList<ReleaseLink>());
-        int totalInaccessibleRow = 0;
-        request.setAttribute(TOTAL_INACCESSIBLE_ROWS, totalInaccessibleRow);
+    protected void putLinkedReleasesNetworkWithAccessibilityInRequest(PortletRequest request, Project project, User user){
+        request.setAttribute(PortalConstants.RELEASE_LIST, new ArrayList<ReleaseLink>());
     }
 }

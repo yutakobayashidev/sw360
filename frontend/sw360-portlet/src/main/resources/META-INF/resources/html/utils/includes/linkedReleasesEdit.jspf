@@ -35,10 +35,9 @@
         </tr>
     </thead>
     <tbody>
-        <jsp:include page="/html/utils/ajax/linkedReleasesAjax.jsp" />
     </tbody>
 </table>
-<input type="hidden" id="releaseRelationTree" name="<portlet:namespace/><%=Project._Fields.RELEASE_RELATION_TREE%>" />
+<input type="hidden" id="releaseRelationTree" name="<portlet:namespace/><%=Project._Fields.RELEASE_RELATION_NETWORK%>" />
 <button type="button" class="btn btn-secondary" id="addLinkedReleasesToReleaseButton"><liferay-ui:message key="add.releases" /></button>
 
 <div class="dialogs">
@@ -129,7 +128,7 @@
                 $dialog;
             let releaseId = "";
             var releaseWithRelations = [];
-            let projectId = "${project.id}";
+            let projectId = '${project.id}';
             let layer = 1;
             let releaseWithRelationsString = "[]";
             function getContent() {
@@ -168,9 +167,14 @@
 
             async function displayReleaseRelationShip() {
                 for(let releaseObj of releaseWithRelations) {
-                    let temp = [];
-                    temp.push(releaseObj.releaseId);
-                    let newRow = await releaseRelationFromAjax('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', temp, "", 0);
+                    let releaseIds = [];
+                    let mainlineStates = [];
+                    let releaseRelationShips = [];
+                    releaseIds.push(releaseObj.releaseId);
+                    mainlineStates.push(releaseObj.mainlineState);
+                    releaseRelationShips.push(releaseObj.releaseRelationship);
+
+                    let newRow = await releaseRelationFromAjax('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', releaseIds, "", 0, mainlineStates, releaseRelationShips);
                     $('#LinkedReleasesInfo tbody').append(newRow);
                     $('#LinkedReleasesInfo').find('tr').last().find('#projectReleaseVersion').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>');
                     $('#LinkedReleasesInfo').find('tr').last().find('#projectReleaseRelation').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>');
@@ -180,20 +184,24 @@
                     let parentId = releaseObj.releaseId;
                     let releases = releaseObj.releaseLink;
                     layer = 1;
-                    recursiveTree(layer, parentId, releases);
+                    recursiveNetwork(layer, parentId, releases);
                 }
             }
 
-            async function recursiveTree(layer, parentId, releases){
+            async function recursiveNetwork(layer, parentId, releases){
                 let releaseIds = [];
+                let mainlineStates = [];
+                let releaseRelationShips = [];
                 for (let release of releases) {
                     releaseIds.push(release.releaseId);
+                    mainlineStates.push(release.mainlineState);
+                    releaseRelationShips.push(release.releaseRelationship)
                 }
-                let newRows = await releaseRelationFromAjax('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', releaseIds, parentId, layer);
+                let newRows = await releaseRelationFromAjax('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', releaseIds, parentId, layer, mainlineStates, releaseRelationShips);
                 $('#releaseLinkRow'+parentId+'[data-layer="'+(layer-1)+'"]').last().after(newRows);
                 layer++;
                 for (let release of releases) {
-                    recursiveTree(layer, release.releaseId, release.releaseLink);
+                    recursiveNetwork(layer, release.releaseId, release.releaseLink);
                 }
             }
 
@@ -244,7 +252,6 @@
                                     hasSameId.push(pos);
                                 }
                             }
-                            console.log(hasSameId);
                             releasesLinked[hasSameId[0]] = newNode;
                             hasSameId.shift();
                             if(hasSameId.length >= 1) {
@@ -313,6 +320,7 @@
                }
                replaceValueOfNode(releaseWithRelations, i, trace, "", "", value, "mainLineState");
                $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
+               console.log(releaseRelations);
             }
 
 
@@ -333,7 +341,7 @@
                             } else if (type == "releaseRelation") {
                                 releaseWithRelations[index].releaseRelationship = value;
                             } else if (type == "mainLineState") {
-                                releaseWithRelations[index].mainLineState = value;
+                                releaseWithRelations[index].mainlineState = value;
                             }
                         }
                         i++;
@@ -343,7 +351,7 @@
                 }
             }
 
-            function releaseRelationFromAjax(what, where, parentId, layer) {
+            function releaseRelationFromAjax(what, where, parentId, layer, mainLineState, releaseRelation) {
                 return new Promise(function(resolve, reject) {
                     jQuery.ajax({
                         type: 'POST',
@@ -352,7 +360,9 @@
                             '<portlet:namespace/><%=PortalConstants.WHAT%>': what,
                             '<portlet:namespace/><%=PortalConstants.WHERE%>': where,
                             '<portlet:namespace/><%=PortalConstants.PARENT_BRANCH_ID%>': parentId,
-                            '<portlet:namespace/><%=PortalConstants.LAYER%>': layer
+                            '<portlet:namespace/><%=PortalConstants.LAYER%>': layer,
+                            '<portlet:namespace/><%=PortalConstants.MAINLINE_STATE%>': mainLineState,
+                            '<portlet:namespace/><%=PortalConstants.RELEASE_RELATION_SHIP%>': releaseRelation
                         },
                         success: function (data) {
                             resolve(data);
@@ -430,7 +440,7 @@
                     for (let releaseId of releaseIds) {
                         let toArray = [];
                         toArray.push(releaseId);
-                        addReleaseToTable('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', toArray, "", 0, function(data) {
+                        addReleaseToTable('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', toArray, "", 0, [0], [0],function(data) {
                               $('#LinkedReleasesInfo tbody').append(data);
                               $('#LinkedReleasesInfo').find('tr').last().find('#projectReleaseVersion').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>');
                               $('#LinkedReleasesInfo').find('tr').last().find('#projectReleaseRelation').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>');
@@ -512,7 +522,7 @@
                 });
              }
 
-            function addReleaseToTable(what, where, parentId, layer, callback){
+            function addReleaseToTable(what, where, parentId, layer, mainLineState, releaseRelation, callback){
                 jQuery.ajax({
                     type: 'POST',
                     url: '<%=viewReleaseURL%>',
@@ -520,7 +530,9 @@
                         '<portlet:namespace/><%=PortalConstants.WHAT%>': what,
                         '<portlet:namespace/><%=PortalConstants.WHERE%>': where,
                         '<portlet:namespace/><%=PortalConstants.PARENT_BRANCH_ID%>': parentId,
-                        '<portlet:namespace/><%=PortalConstants.LAYER%>': layer
+                        '<portlet:namespace/><%=PortalConstants.LAYER%>': layer,
+                        '<portlet:namespace/><%=PortalConstants.MAINLINE_STATE%>': mainLineState,
+                        '<portlet:namespace/><%=PortalConstants.RELEASE_RELATION_SHIP%>': releaseRelation
                     },
                     success: function (data) {
                         callback(data);
