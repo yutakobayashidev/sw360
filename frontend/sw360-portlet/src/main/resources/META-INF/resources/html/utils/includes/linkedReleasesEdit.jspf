@@ -206,13 +206,24 @@
             }
 
             $('#LinkedReleasesInfo').on('click', 'svg[data-row-id]', function(event) {
-                var rowId = $(event.currentTarget).data().rowId,
-                    release = $(event.currentTarget).data().releaseName;
+                let current = $(this).closest('tr').find('select').eq(0).val();
+                let currentLayer =  $(this).closest('tr').attr('data-layer');
+                let parentNode = $(this).closest('tr').attr('parent-node');
+                let i=0;
+                let trace = [];
+                trace.unshift(current);
+
+                for(let layer = currentLayer - 1; layer >= 0; layer-- ) {
+                      trace.unshift($(this).closest('tr').siblings('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').find('select').eq(0).val());
+                      parentNode =  $(this).closest('tr').siblings('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').attr('parent-node');
+                }
                 dialog.open('#deleteLinkedReleaseDialog', {
-                    release: release
+                    release: current
                 }, function(submit, callback) {
-                    $('#' + rowId).remove();
-                    callback(true);
+                     removeNodeFromNetwork(releaseWithRelations, i, trace);
+                     $('#LinkedReleasesInfo tbody').empty();
+                     displayReleaseRelationShip();
+                     callback(true);
                 });
             });
 
@@ -320,7 +331,6 @@
                }
                replaceValueOfNode(releaseWithRelations, i, trace, "", "", value, "mainLineState");
                $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
-               console.log(releaseRelations);
             }
 
 
@@ -346,6 +356,21 @@
                         }
                         i++;
                         replaceValueOfNode(releaseWithRelations[index].releaseLink, i, trace, newSelect, oldSelect, value, type);
+                        break;
+                    }
+                }
+            }
+
+            function removeNodeFromNetwork(releasesLinked, i, trace) {
+                for(let index = 0; index < releasesLinked.length; index++){
+                    if(releasesLinked[index].releaseId === trace[i]){
+                        if(i === (trace.length - 1)) {
+                            releasesLinked.splice(index,1);
+                            console.log(releasesLinked);
+                            return;
+                        }
+                        i++;
+                        removeNodeFromNetwork(releasesLinked[index].releaseLink, i, trace);
                         break;
                     }
                 }
