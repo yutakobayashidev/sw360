@@ -231,7 +231,6 @@
 <core_rt:set var="enableSearchForReleasesFromLinkedProjects" value="${true}" scope="request"/>
 
 <jsp:include page="/html/projects/includes/searchProjects.jsp" />
-<jsp:include page="/html/utils/includes/searchReleases.jsp" />
 <jsp:include page="/html/utils/includes/searchAndSelectUsers.jsp" />
 <jsp:include page="/html/utils/includes/searchUsers.jsp" />
 <%@include file="/html/components/includes/vendors/searchVendor.jspf" %>

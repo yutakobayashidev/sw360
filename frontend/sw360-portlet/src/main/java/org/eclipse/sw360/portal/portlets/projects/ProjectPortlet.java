@@ -3081,7 +3081,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             } else {
                 jsonObject.put(PortalConstants.RESULT, "[]");
             }
-        } else {
+        } else if("[]".equals(releaseRelationTree)){
+            jsonObject.put(PortalConstants.RESULT, "[]");
+        } else{
             jsonObject.put(PortalConstants.RESULT, project.getReleaseRelationTree());
         }
         try {
