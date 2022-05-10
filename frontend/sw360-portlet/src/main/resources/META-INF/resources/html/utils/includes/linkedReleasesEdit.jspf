@@ -225,12 +225,13 @@
                       trace.unshift($(this).closest('tr').siblings('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').attr('data-index'));
                       parentNode =  $(this).closest('tr').siblings('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').attr('parent-node');
                 }
-                console.log(trace);
+                console.log(releaseWithRelations);
                 dialog.open('#deleteLinkedReleaseDialog', {
                     release: current
                 }, function(submit, callback) {
                      removeNodeFromNetwork(releaseWithRelations, i, trace);
                      $('#LinkedReleasesInfo tbody').empty();
+                     $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
                      displayReleaseRelationShip();
                      callback(true);
                 });
