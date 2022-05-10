@@ -1132,10 +1132,11 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             String layer = request.getParameter(PortalConstants.LAYER);
             String[] mainlineStates = request.getParameterValues(PortalConstants.MAINLINE_STATE);
             String[] releaseRelationShips= request.getParameterValues(PortalConstants.RELEASE_RELATION_SHIP);
+            String[] indexes = request.getParameterValues(PortalConstants.INDEXES);
             log.info(Arrays.toString(where));
             log.info(Arrays.toString(releaseRelationShips));
             log.info(Arrays.toString(mainlineStates));
-            serveNewTableRowLinkedRelease(request, response, where, parentId, Integer.parseInt(layer), mainlineStates, releaseRelationShips);
+            serveNewTableRowLinkedRelease(request, response, where, parentId, Integer.parseInt(layer), mainlineStates, releaseRelationShips, indexes);
         } else if (PortalConstants.FIND_LINKED_RELEASE_OF_NODE.equals(what)) {
             String releaseId = request.getParameter(RELEASE_ID);
             try {
@@ -3111,14 +3112,20 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         }
     }
 
-    private void serveNewTableRowLinkedRelease(ResourceRequest request, ResourceResponse response, String[] linkedIds, String parentId, int layer, String[] mainlineStates, String[] releaseRelationShips) throws IOException, PortletException {
+    private void serveNewTableRowLinkedRelease(ResourceRequest request, ResourceResponse response, String[] linkedIds, String parentId, int layer, String[] mainlineStates, String[] releaseRelationShips, String[] indexes) throws IOException, PortletException {
         final User user = UserCacheHolder.getUserFromRequest(request);
         request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
 
         List<ReleaseLink> linkedReleases = new ArrayList<>();
         ComponentService.Iface client = thriftClients.makeComponentClient();
         try {
-            List<Release> releases = client.getReleasesById(new HashSet<>(Arrays.asList(linkedIds)), user);
+            List<Release> releases = new ArrayList<>();
+            for(String linkedId: linkedIds){
+                Set<String> linkedIdMap = new HashSet<>();
+                linkedIdMap.add(linkedId);
+                releases.addAll(client.getReleasesById(linkedIdMap, user));
+            }
+
             for (int index = 0; index < releases.size(); index++) {
                 final Vendor vendor = releases.get(index).getVendor();
                 final String vendorName = vendor != null ? vendor.getShortname() : "";
@@ -3130,6 +3137,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 linkedRelease.setParentNodeId(parentId);
                 linkedRelease.setMainlineState(MainlineState.findByValue(Integer.parseInt(mainlineStates[index])));
                 linkedRelease.setReleaseRelationship(ReleaseRelationship.findByValue(Integer.parseInt(releaseRelationShips[index])));
+                linkedRelease.setIndex(Integer.parseInt(indexes[index]));
                 linkedReleases.add(linkedRelease);
             }
         } catch (TException e) {
@@ -3137,6 +3145,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             throw new PortletException("cannot get releases " + Arrays.toString(linkedIds), e);
         }
         request.setAttribute(RELEASE_LIST, linkedReleases);
+        log.info(linkedReleases);
         include("/html/utils/ajax/linkedReleasesAjax.jsp", request, response, PortletRequest.RESOURCE_PHASE);
     }
 

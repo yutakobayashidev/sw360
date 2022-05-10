@@ -160,29 +160,33 @@
                 if(releaseWithRelations == undefined) {
                     releaseWithRelations = [];
                 }
+                console.log(releaseWithRelations);
                 releaseWithRelationsString = JSON.stringify(releaseWithRelations);
                 $('#releaseRelationTree').val(releaseWithRelationsString);
                 displayReleaseRelationShip();
             });
 
             async function displayReleaseRelationShip() {
-                for(let releaseObj of releaseWithRelations) {
+                for(let index = 0 ; index < releaseWithRelations.length ; index++) {
                     let releaseIds = [];
                     let mainlineStates = [];
                     let releaseRelationShips = [];
-                    releaseIds.push(releaseObj.releaseId);
-                    mainlineStates.push(releaseObj.mainlineState);
-                    releaseRelationShips.push(releaseObj.releaseRelationship);
+                    let indexes = [];
 
-                    let newRow = await releaseRelationFromAjax('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', releaseIds, "", 0, mainlineStates, releaseRelationShips);
+                    releaseIds.push(releaseWithRelations[index].releaseId);
+                    mainlineStates.push(releaseWithRelations[index].mainlineState);
+                    releaseRelationShips.push(releaseWithRelations[index].releaseRelationship);
+                    indexes.push(index);
+
+                    let newRow = await releaseRelationFromAjax('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', releaseIds, "", 0, mainlineStates, releaseRelationShips, indexes);
                     $('#LinkedReleasesInfo tbody').append(newRow);
                     $('#LinkedReleasesInfo').find('tr').last().find('#projectReleaseVersion').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>');
                     $('#LinkedReleasesInfo').find('tr').last().find('#projectReleaseRelation').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>');
                     $('#LinkedReleasesInfo').find('tr').last().find('#mainlineState').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.MAINLINE_STATE%>');
                     $('#LinkedReleasesInfo').find('tr').last().find('#releaseComment').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.COMMENT%>');
 
-                    let parentId = releaseObj.releaseId;
-                    let releases = releaseObj.releaseLink;
+                    let parentId = releaseWithRelations[index].releaseId;
+                    let releases = releaseWithRelations[index].releaseLink;
                     layer = 1;
                     recursiveNetwork(layer, parentId, releases);
                 }
@@ -192,12 +196,15 @@
                 let releaseIds = [];
                 let mainlineStates = [];
                 let releaseRelationShips = [];
-                for (let release of releases) {
-                    releaseIds.push(release.releaseId);
-                    mainlineStates.push(release.mainlineState);
-                    releaseRelationShips.push(release.releaseRelationship)
+                let indexes = [];
+                for(let index = 0 ; index < releases.length ; index++) {
+                    console.log(releases[index].releaseId);
+                    releaseIds.push(releases[index].releaseId);
+                    mainlineStates.push(releases[index].mainlineState);
+                    releaseRelationShips.push(releases[index].releaseRelationship);
+                    indexes.push(index);
                 }
-                let newRows = await releaseRelationFromAjax('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', releaseIds, parentId, layer, mainlineStates, releaseRelationShips);
+                let newRows = await releaseRelationFromAjax('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', releaseIds, parentId, layer, mainlineStates, releaseRelationShips, indexes);
                 $('#releaseLinkRow'+parentId+'[data-layer="'+(layer-1)+'"]').last().after(newRows);
                 layer++;
                 for (let release of releases) {
@@ -209,14 +216,16 @@
                 let current = $(this).closest('tr').find('select').eq(0).val();
                 let currentLayer =  $(this).closest('tr').attr('data-layer');
                 let parentNode = $(this).closest('tr').attr('parent-node');
+                let currentIndex = $(this).closest('tr').attr('data-index');
                 let i=0;
                 let trace = [];
-                trace.unshift(current);
+                trace.unshift(currentIndex);
 
                 for(let layer = currentLayer - 1; layer >= 0; layer-- ) {
-                      trace.unshift($(this).closest('tr').siblings('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').find('select').eq(0).val());
+                      trace.unshift($(this).closest('tr').siblings('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').attr('data-index'));
                       parentNode =  $(this).closest('tr').siblings('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').attr('parent-node');
                 }
+                console.log(trace);
                 dialog.open('#deleteLinkedReleaseDialog', {
                     release: current
                 }, function(submit, callback) {
@@ -237,45 +246,44 @@
                let oldSelect = $(this).closest('tr').find('select').eq(0).attr('data-old');
                let currentLayer =  $(this).closest('tr').attr('data-layer');
                let parentNode = $(this).closest('tr').attr('parent-node');
+               let currentIndex = $(this).closest('tr').attr('data-index');
 
                let newNode = await getLinkedReleaseOfNode('<%=PortalConstants.FIND_LINKED_RELEASE_OF_NODE%>',newSelect);
                let i=0;
                let trace = [];
-               trace.unshift(newSelect);
+               trace.unshift(currentIndex);
                for(let layer = currentLayer - 1; layer >= 0; layer-- ) {
-                    trace.unshift($(this).closest('tr').siblings('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').find('select').eq(0).val());
+                    trace.unshift($(this).closest('tr').siblings('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').attr('data-index'));
                     parentNode =  $(this).closest('tr').siblings('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').attr('parent-node');
                }
+                console.log(trace);
                replaceNode(releaseWithRelations, i, trace, newNode[0], newSelect, oldSelect);
+
                $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
+               console.log(releaseWithRelations);
                $('#LinkedReleasesInfo tbody').empty();
                displayReleaseRelationShip();
             }
 
             function replaceNode(releasesLinked, i, trace, newNode, newSelect, oldSelect){
-                for(let index = 0; index < releasesLinked.length; index++){
-                    if(releasesLinked[index].releaseId === trace[i]){
-                       if(i === (trace.length - 1)) {
-                            let hasSameId=[];
-                            console.log(newSelect)
-                            for(let pos = 0; pos < releasesLinked.length; pos++) {
-                                if(releasesLinked[pos].releaseId == trace[trace.length-1]){
-                                    hasSameId.push(pos);
-                                }
-                            }
-                            releasesLinked[hasSameId[0]] = newNode;
-                            hasSameId.shift();
-                            if(hasSameId.length >= 1) {
-                                for(let pos of hasSameId) {
-                                     releasesLinked.splice(pos,1);
-                                }
-                            }
-                            return;
-                       }
-                        i++;
-                        replaceNode(releasesLinked[index].releaseLink, i, trace, newNode, newSelect, oldSelect);
-                        break;
-                    }
+                let index = trace[i];
+                if(i === (trace.length - 1)) {
+                     let hasSameId = [];
+                     releasesLinked[index] = newNode;
+
+                     for (let pos =0; pos < releasesLinked.length; pos++) {
+                        if (releasesLinked[pos].hasChange == false && releasesLinked[pos].releaseId == releasesLinked[index].releaseId){
+                            hasSameId.push(pos);
+                        }
+                     }
+                     for (let pos =0; pos < hasSameId.length-1; pos++) {
+                        releasesLinked.splice(hasSameId[pos], 1);
+                     }
+                     return;
+                }
+                else{
+                    i++;
+                    replaceNode(releasesLinked[index].releaseLink, i, trace, newNode, newSelect, oldSelect);
                 }
             }
 
@@ -284,17 +292,19 @@
                let oldSelect = $(this).closest('tr').find('select').eq(0).attr('data-old');
                let currentLayer =  $(this).closest('tr').attr('data-layer');
                let parentNode = $(this).closest('tr').attr('parent-node');
+               let currentIndex = $(this).closest('tr').attr('data-index');
 
                let i=0;
                let trace = [];
-               trace.unshift(oldSelect);
+               trace.unshift(currentIndex);
 
                for(let layer = currentLayer - 1; layer >= 0; layer-- ) {
-                    trace.unshift($(this).closest('tr').siblings('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').find('select').eq(0).val());
+                    trace.unshift($(this).closest('tr').siblings('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').attr('data-index'));
                     parentNode =  $(this).closest('tr').siblings('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').attr('parent-node');
                }
-
+               console.log("----------"+trace);
                replaceValueOfNode(releaseWithRelations, i, trace, newSelect, oldSelect, "", "releaseId");
+               console.log(releaseWithRelations);
                $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
                $(this).closest('tr').find('select').eq(0).attr('data-old',newSelect);
             }
@@ -304,12 +314,14 @@
                let currentLayer =  $(this).closest('tr').attr('data-layer');
                let parentNode = $(this).closest('tr').attr('parent-node');
                let value = $(this).closest('tr').find('select').eq(1).val();
+               let currentIndex = $(this).closest('tr').attr('data-index');
+
                let i=0;
                let trace = [];
-               trace.unshift(newSelect);
+               trace.unshift(currentIndex);
 
                for(let layer = currentLayer - 1; layer >= 0; layer-- ) {
-                    trace.unshift($(this).closest('tr').siblings('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').find('select').eq(0).val());
+                    trace.unshift($(this).closest('tr').siblings('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').attr('data-index'));
                     parentNode =  $(this).closest('tr').siblings('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').attr('parent-node');
                }
                replaceValueOfNode(releaseWithRelations, i, trace, "", "", value, "releaseRelation");
@@ -321,62 +333,55 @@
                let currentLayer =  $(this).closest('tr').attr('data-layer');
                let parentNode = $(this).closest('tr').attr('parent-node');
                let value = $(this).closest('tr').find('select').eq(2).val();
+               let currentIndex = $(this).closest('tr').attr('data-index');
+
                let i=0;
                let trace = [];
-               trace.unshift(newSelect);
+               trace.unshift(currentIndex);
 
                for(let layer = currentLayer - 1; layer >= 0; layer-- ) {
-                    trace.unshift($(this).closest('tr').siblings('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').find('select').eq(0).val());
+                    trace.unshift($(this).closest('tr').siblings('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').attr('data-index'));
                     parentNode =  $(this).closest('tr').siblings('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').attr('parent-node');
                }
                replaceValueOfNode(releaseWithRelations, i, trace, "", "", value, "mainLineState");
+               console.log(releaseWithRelations);
                $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
             }
 
 
-            function replaceValueOfNode(releaseWithRelations, i, trace, newSelect, oldSelect, value, type) {
-                for(let index = 0; index < releaseWithRelations.length; index++){
-                    if(releaseWithRelations[index].releaseId === trace[i]){
-                        if(i === (trace.length - 1)) {
-                            if (type == "releaseId") {
-                                if(newSelect != oldSelect) {
-                                    releaseWithRelations[index].releaseId = newSelect;
-                                    releaseWithRelations[index].hasChange = true;
-                                    return;
-                                } else {
-                                    releaseWithRelations[index].releaseId = oldSelect;
-                                    releaseWithRelations[index].hasChange = false;
-                                    return;
-                                }
-                            } else if (type == "releaseRelation") {
-                                releaseWithRelations[index].releaseRelationship = value;
-                            } else if (type == "mainLineState") {
-                                releaseWithRelations[index].mainlineState = value;
-                            }
-                        }
-                        i++;
-                        replaceValueOfNode(releaseWithRelations[index].releaseLink, i, trace, newSelect, oldSelect, value, type);
-                        break;
+            function replaceValueOfNode(releasesLinked, i, trace, newSelect, oldSelect, value, type) {
+                let index = trace[i];
+                if(i === (trace.length - 1)) {
+                    if (type == "releaseId") {
+                        console.log(releasesLinked[index]);
+                        releasesLinked[index].releaseId = newSelect;
+                        releasesLinked[index].hasChange = true;
+                    } else if (type == "releaseRelation") {
+                        releasesLinked[index].releaseRelationship = value;
+                    } else if (type == "mainLineState") {
+                        releasesLinked[index].mainlineState = value;
                     }
+                    return;
+                }
+                else {
+                    i++;
+                    replaceValueOfNode(releasesLinked[index].releaseLink, i, trace, newSelect, oldSelect, value, type);
                 }
             }
 
             function removeNodeFromNetwork(releasesLinked, i, trace) {
-                for(let index = 0; index < releasesLinked.length; index++){
-                    if(releasesLinked[index].releaseId === trace[i]){
-                        if(i === (trace.length - 1)) {
-                            releasesLinked.splice(index,1);
-                            console.log(releasesLinked);
-                            return;
-                        }
-                        i++;
-                        removeNodeFromNetwork(releasesLinked[index].releaseLink, i, trace);
-                        break;
-                    }
+                let index = trace[i];
+                if (i === (trace.length - 1)) {
+                    releasesLinked.splice(index,1);
+                    return;
+                }
+                else {
+                    i++;
+                    removeNodeFromNetwork(releasesLinked[index].releaseLink, i, trace);
                 }
             }
 
-            function releaseRelationFromAjax(what, where, parentId, layer, mainLineState, releaseRelation) {
+            function releaseRelationFromAjax(what, where, parentId, layer, mainLineState, releaseRelation, indexes) {
                 return new Promise(function(resolve, reject) {
                     jQuery.ajax({
                         type: 'POST',
@@ -387,7 +392,8 @@
                             '<portlet:namespace/><%=PortalConstants.PARENT_BRANCH_ID%>': parentId,
                             '<portlet:namespace/><%=PortalConstants.LAYER%>': layer,
                             '<portlet:namespace/><%=PortalConstants.MAINLINE_STATE%>': mainLineState,
-                            '<portlet:namespace/><%=PortalConstants.RELEASE_RELATION_SHIP%>': releaseRelation
+                            '<portlet:namespace/><%=PortalConstants.RELEASE_RELATION_SHIP%>': releaseRelation,
+                            '<portlet:namespace/><%=PortalConstants.INDEXES%>': indexes
                         },
                         success: function (data) {
                             resolve(data);
@@ -547,7 +553,7 @@
                 });
              }
 
-            function addReleaseToTable(what, where, parentId, layer, mainLineState, releaseRelation, callback){
+            function addReleaseToTable(what, where, parentId, layer, mainLineState, releaseRelation, indexes, callback){
                 jQuery.ajax({
                     type: 'POST',
                     url: '<%=viewReleaseURL%>',
@@ -557,7 +563,8 @@
                         '<portlet:namespace/><%=PortalConstants.PARENT_BRANCH_ID%>': parentId,
                         '<portlet:namespace/><%=PortalConstants.LAYER%>': layer,
                         '<portlet:namespace/><%=PortalConstants.MAINLINE_STATE%>': mainLineState,
-                        '<portlet:namespace/><%=PortalConstants.RELEASE_RELATION_SHIP%>': releaseRelation
+                        '<portlet:namespace/><%=PortalConstants.RELEASE_RELATION_SHIP%>': releaseRelation,
+                        '<portlet:namespace/><%=PortalConstants.INDEXES%>': indexes
                     },
                     success: function (data) {
                         callback(data);

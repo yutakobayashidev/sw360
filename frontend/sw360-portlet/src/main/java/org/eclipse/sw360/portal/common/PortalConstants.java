@@ -662,6 +662,9 @@ public class PortalConstants {
     public static final String RELEASE_RELATION_SHIP = "releaseRelationShip[]";
 
     public static final String MAINLINE_STATE = "mainlineState[]";
+
+    public static final String INDEXES = "indexes[]";
+
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 

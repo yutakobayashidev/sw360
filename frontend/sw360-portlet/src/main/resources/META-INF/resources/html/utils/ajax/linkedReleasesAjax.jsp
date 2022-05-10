@@ -29,7 +29,7 @@
         <core_rt:when test="${releaseLink.accessible}">
 
             <core_rt:set var="uuid" value="${releaseLink.id}"/>
-            <tr id="releaseLinkRow${uuid}" parent-node="${releaseLink.parentNodeId}" data-layer="${releaseLink.layer}">
+            <tr id="releaseLinkRow${uuid}" parent-node="${releaseLink.parentNodeId}" data-layer="${releaseLink.layer}" data-index="${releaseLink.index}">
                 <td style="vertical-align:middle;font-size:1rem">
                     <core_rt:forEach begin="0" end="${releaseLink.layer}" var="val">
                           &nbsp;&nbsp;&nbsp;&nbsp;

@@ -371,6 +371,7 @@ struct ReleaseLink{
 
     105: optional list<Release> releaseWithSameComponent,
     106: optional i32 layer,
+    107: optional i32 index;
 }
 
 
