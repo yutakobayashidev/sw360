@@ -669,6 +669,8 @@ public class PortalConstants {
 
     public static final String COMMENTS = "comments[]";
 
+    public static final String DEFAULT_VALUES = "defaultValues[]";
+
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 

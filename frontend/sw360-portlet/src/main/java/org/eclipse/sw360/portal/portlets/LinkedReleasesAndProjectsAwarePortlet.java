@@ -317,23 +317,16 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
     public ReleaseLinkJSON getReleaseLinkJSONS(ReleaseLinkJSON releaseLinkJSON, User user) {
         ComponentService.Iface client = thriftClients.makeComponentClient();
         Release releaseById = null;
-        List<Release> releasesWithSameComponent = null;
         try {
             releaseById = client.getAccessibleReleaseById(releaseLinkJSON.getReleaseId(), user);
-            releasesWithSameComponent = client.getReleasesByComponentId(releaseById.getComponentId(), user);
-
             List<Release> releaseList = client.getReleasesById(releaseById.getReleaseIdToRelationship().keySet().stream().collect(Collectors.toSet()), user);
             List<ReleaseLinkJSON> linkedReleasesJSON = new ArrayList<>();
-
-            List<String> releaseIdsWithSameComponent = releasesWithSameComponent
-                    .stream()
-                    .map(Release::getId)
-                    .collect(Collectors.toList());
-
+            releaseLinkJSON.setDefaultValue(releaseLinkJSON.getReleaseId());
             for (Release release : releaseList) {
                 ReleaseLinkJSON rj = new ReleaseLinkJSON(release.getId(), release.getName());
                 rj.setReleaseRelationship(releaseById.getReleaseIdToRelationship().get(release.getId()).getValue());
                 rj.setMainlineState(MainlineState.OPEN.getValue());
+                rj.setDefaultValue(release.getId());
                 linkedReleasesJSON.add(getReleaseLinkJSONS(rj, user));
             }
             releaseLinkJSON.setReleaseLink(linkedReleasesJSON);

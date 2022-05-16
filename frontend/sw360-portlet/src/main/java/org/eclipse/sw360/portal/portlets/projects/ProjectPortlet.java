@@ -1134,8 +1134,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             String[] releaseRelationShips= request.getParameterValues(PortalConstants.RELEASE_RELATION_SHIP);
             String[] indexes = request.getParameterValues(PortalConstants.INDEXES);
             String[] comments = request.getParameterValues(PortalConstants.COMMENTS);
-
-            serveNewTableRowLinkedRelease(request, response, where, parentIds, layers, mainlineStates, releaseRelationShips, indexes, comments);
+            String[] defaultValues = request.getParameterValues(PortalConstants.DEFAULT_VALUES);
+            serveNewTableRowLinkedRelease(request, response, where, parentIds, layers, mainlineStates, releaseRelationShips, indexes, comments, defaultValues);
         } else if (PortalConstants.FIND_LINKED_RELEASE_OF_NODE.equals(what)) {
             String releaseId = request.getParameter(RELEASE_ID);
             try {
@@ -3075,6 +3075,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     releaseLinkJSON.setReleaseId(linkedRelease.getKey());
                     releaseLinkJSON.setReleaseRelationship(linkedRelease.getValue().getReleaseRelation().getValue());
                     releaseLinkJSON.setMainlineState(linkedRelease.getValue().getMainlineState().getValue());
+                    releaseLinkJSON.setDefaultValue(linkedRelease.getKey());
                     releaseLinkJSONS.add(releaseLinkJSON);
                 }
                 if (releaseLinkJSONS.size() > 0) {
@@ -3111,7 +3112,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         }
     }
 
-    private void serveNewTableRowLinkedRelease(ResourceRequest request, ResourceResponse response, String[] linkedIds, String[] parentIds, String[] layers, String[] mainlineStates, String[] releaseRelationShips, String[] indexes, String[] comments) throws IOException, PortletException {
+    private void serveNewTableRowLinkedRelease(ResourceRequest request, ResourceResponse response, String[] linkedIds, String[] parentIds, String[] layers, String[] mainlineStates, String[] releaseRelationShips,
+                                               String[] indexes, String[] comments, String[] defaultValues) throws IOException, PortletException {
         final User user = UserCacheHolder.getUserFromRequest(request);
         request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
 
@@ -3138,6 +3140,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 linkedRelease.setReleaseRelationship(ReleaseRelationship.findByValue(Integer.parseInt(releaseRelationShips[index])));
                 linkedRelease.setIndex(Integer.parseInt(indexes[index]));
                 linkedRelease.setComment(comments[index]);
+                linkedRelease.setDefaultValue(defaultValues[index]);
                 linkedReleases.add(linkedRelease);
             }
         } catch (TException e) {

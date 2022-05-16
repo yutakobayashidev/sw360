@@ -38,21 +38,27 @@
                 </td>
                 <td>
                     <div class="form-group">
-                        <select id="projectReleaseVersion" class="form-control releaseVersion" style="width:88%;display:inline-block"
-                        data-old="<sw360:out value="${releaseLink.id}"/>">
-                            <core_rt:forEach items="${releaseLink.releaseWithSameComponent}" var="release">
-                                <core_rt:if test = "${releaseLink.id == release.id}">
-                                    <option value="<sw360:out value="${release.id}"/>" selected >
-                                        <sw360:out value="${release.version}"/>
-                                    </option>
-                                </core_rt:if>
-                                <core_rt:if test = "${releaseLink.id != release.id}">
-                                    <option value="<sw360:out value="${release.id}"/>">
-                                        <sw360:out value="${release.version}"/>
-                                    </option>
-                                </core_rt:if>
-                            </core_rt:forEach>
-                        </select>
+                        <core_rt:if test = "${releaseLink.id != releaseLink.defaultValue}">
+                            <select id="projectReleaseVersion" class="form-control releaseVersion" style="width:80%;display:inline-block; background-color: pink"
+                                 data-old="<sw360:out value="${releaseLink.id}"/>">
+                        </core_rt:if>
+                        <core_rt:if test = "${releaseLink.id == releaseLink.defaultValue}">
+                            <select id="projectReleaseVersion" class="form-control releaseVersion" style="width:80%;display:inline-block"
+                                 data-old="<sw360:out value="${releaseLink.id}"/>">
+                        </core_rt:if>
+                                <core_rt:forEach items="${releaseLink.releaseWithSameComponent}" var="release">
+                                    <core_rt:if test = "${releaseLink.id == release.id}">
+                                        <option value="<sw360:out value="${release.id}"/>" selected >
+                                            <sw360:out value="${release.version}"/>
+                                        </option>
+                                    </core_rt:if>
+                                    <core_rt:if test = "${releaseLink.id != release.id}">
+                                        <option value="<sw360:out value="${release.id}"/>">
+                                            <sw360:out value="${release.version}"/>
+                                        </option>
+                                    </core_rt:if>
+                                </core_rt:forEach>
+                            </select>
                         <svg class="action lexicon-icon load-release" style="width:10%;">
                             <title><liferay-ui:message key="load" /></title>
                             <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#check-circle-full"/>

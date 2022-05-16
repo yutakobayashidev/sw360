@@ -133,12 +133,14 @@
             let releaseWithRelationsString = "[]";
 
             let flattenArray = [];
-            let listReleaseId = [];
-            let listMainlineStates = [];
-            let listReleaseRelationShips = [];
-            let listLayer = [];
-            let listIndexes = [];
-            let listParentId = [];
+            let releaseIds = [];
+            let mainlineStates = [];
+            let releaseRelationShips = [];
+            let layers = [];
+            let indexes = [];
+            let parentIds = [];
+            let comments = [];
+            let defaultValues = [];
 
             function getContent() {
                 return new Promise(function(resolve, reject) {
@@ -186,11 +188,13 @@
                  indexes = [];
                  parentIds = [];
                  comments = [];
+                 defaultValues = [];
 
                  for(let index = 0 ; index < releaseWithRelations.length ; index++) {
                     releaseIds.push(releaseWithRelations[index].releaseId);
                     mainlineStates.push(releaseWithRelations[index].mainlineState);
                     releaseRelationShips.push(releaseWithRelations[index].releaseRelationship);
+                    defaultValues.push(releaseWithRelations[index].defaultValue);
                     if(releaseWithRelations[index].comment != null) {
                         comments.push(releaseWithRelations[index].comment);
                     } else {
@@ -217,6 +221,7 @@
                      releaseIds.push(releases[index].releaseId);
                      mainlineStates.push(releases[index].mainlineState);
                      releaseRelationShips.push(releases[index].releaseRelationship);
+                     defaultValues.push(releases[index].defaultValue);
                      if(releases[index].comment != null) {
                         comments.push(releases[index].comment);
                      } else {
@@ -236,7 +241,7 @@
             }
 
             async function displayReleaseRelationShip() {
-                let newRow = await releaseRelationFromAjax('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', releaseIds, parentIds, layers, mainlineStates, releaseRelationShips, indexes, comments);
+                let newRow = await releaseRelationFromAjax('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', releaseIds, parentIds, layers, mainlineStates, releaseRelationShips, indexes, comments, defaultValues);
                 $('#LinkedReleasesInfo tbody').append(newRow);
                 $('#LinkedReleasesInfo tr[data-layer="0"]').each(function(){
                     $(this).find('#projectReleaseVersion').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>');
@@ -424,7 +429,7 @@
                 }
             }
 
-            function releaseRelationFromAjax(what, where, parentIds, layers, mainLineState, releaseRelation, indexes, comments) {
+            function releaseRelationFromAjax(what, where, parentIds, layers, mainLineState, releaseRelation, indexes, comments, defaultValues) {
                 return new Promise(function(resolve, reject) {
                     jQuery.ajax({
                         type: 'POST',
@@ -437,7 +442,8 @@
                             '<portlet:namespace/><%=PortalConstants.MAINLINE_STATE%>': mainLineState,
                             '<portlet:namespace/><%=PortalConstants.RELEASE_RELATION_SHIP%>': releaseRelation,
                             '<portlet:namespace/><%=PortalConstants.INDEXES%>': indexes,
-                            '<portlet:namespace/><%=PortalConstants.COMMENTS%>': comments
+                            '<portlet:namespace/><%=PortalConstants.COMMENTS%>': comments,
+                            '<portlet:namespace/><%=PortalConstants.DEFAULT_VALUES%>': defaultValues
                         },
                         success: function (data) {
                             resolve(data);
@@ -517,7 +523,7 @@
                         let toArray = [];
                         toArray.push(releaseId);
                         let indexOfNode = numberOfRootExisted + index;
-                        addReleaseToTable('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', toArray, [""], [0], [0], [0], [indexOfNode], [""], function(result){
+                        addReleaseToTable('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', toArray, [""], [0], [0], [0], [indexOfNode], [""], [releaseId], function(result){
                             $('#LinkedReleasesInfo tbody').append(result);
                             $('#LinkedReleasesInfo').find('tr').last().find('#projectReleaseVersion').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>');
                             $('#LinkedReleasesInfo').find('tr').last().find('#projectReleaseRelation').attr('name','<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>');
@@ -538,7 +544,8 @@
                               "setMainlineState": false,
                               "name": "component111",
                               "setReleaseId": true,
-                              "mainlineState": 0
+                              "mainlineState": 0,
+                              "defaultValue": releaseId
                         }
                         releaseWithRelations.push(selectedRelease);
                     }
@@ -597,7 +604,7 @@
                 });
              }
 
-            function addReleaseToTable(what, where, parentIds, layers, mainLineState, releaseRelation, indexes, comments, callback){
+            function addReleaseToTable(what, where, parentIds, layers, mainLineState, releaseRelation, indexes, comments, defaultValues, callback){
                 jQuery.ajax({
                     type: 'POST',
                     url: '<%=viewReleaseURL%>',
@@ -609,7 +616,8 @@
                         '<portlet:namespace/><%=PortalConstants.MAINLINE_STATE%>': mainLineState,
                         '<portlet:namespace/><%=PortalConstants.RELEASE_RELATION_SHIP%>': releaseRelation,
                         '<portlet:namespace/><%=PortalConstants.INDEXES%>': indexes,
-                        '<portlet:namespace/><%=PortalConstants.COMMENTS%>': comments
+                        '<portlet:namespace/><%=PortalConstants.COMMENTS%>': comments,
+                        '<portlet:namespace/><%=PortalConstants.DEFAULT_VALUES%>': defaultValues
                     },
                     success: function (data) {
                         callback(data);

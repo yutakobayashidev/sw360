@@ -371,7 +371,8 @@ struct ReleaseLink{
 
     105: optional list<Release> releaseWithSameComponent,
     106: optional i32 layer,
-    107: optional i32 index;
+    107: optional i32 index,
+    108: optional string defaultValue
 }
 
 
@@ -385,7 +386,8 @@ struct ReleaseLinkJSON {
      7: optional string parentId,
      8: optional i32 layer,
      9: optional i32 index,
-     10: optional string comment
+     10: optional string comment,
+     11: optional string defaultValue
 }
 
 struct ReleaseClearingStatusData {
