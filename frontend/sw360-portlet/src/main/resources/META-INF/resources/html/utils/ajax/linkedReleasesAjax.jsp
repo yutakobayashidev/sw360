@@ -80,7 +80,7 @@
                 <td>
                     <div class="form-group">
                         <input id="releaseComment"
-                        type="text" placeholder="<liferay-ui:message key="enter.comment" />" class="form-control"
+                        type="text" placeholder="<liferay-ui:message key="enter.comment" />" class="form-control releaseComment"
                             value="<sw360:out value="${releaseLink.comment}"/>"/>
                     </div>
                 </td>
