@@ -671,6 +671,8 @@ public class PortalConstants {
 
     public static final String DEFAULT_VALUES = "defaultValues[]";
 
+    public static final String RELEASE_ID_ARRAY = "releaseIdArray[]";
+
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 

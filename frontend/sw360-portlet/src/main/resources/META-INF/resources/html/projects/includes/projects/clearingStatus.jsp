@@ -45,6 +45,11 @@
     <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${docid}"/>
 </portlet:resourceURL>
 
+<portlet:resourceURL var="viewReleaseURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.VIEW_LINKED_RELEASES%>"/>
+    <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${project.id}"/>
+</portlet:resourceURL>
+
 <c:set var="pageName" value="<%= request.getParameter("pagename") %>" />
 
 <core_rt:if test='${not isCrDisabledForProjectBU}'>
@@ -153,15 +158,71 @@ AUI().use('liferay-portlet-url', function () {
     require(['jquery', 'modules/ajax-treetable', 'utils/render', 'bridges/datatables', 'modules/dialog'], function($, ajaxTreeTable, render, datatables, dialog) {
         var clearingStatuslisturl= '<%=clearingStatuslisturl%>';
         var emptyMsg = '<liferay-ui:message key="no.linked.releases.or.projects" />';
+        var projectId = "${docid}";
+        var releaseWithRelations = [];
+        var flattenArray = [];
+        var releaseIds = [];
 
-        $.ajax({url: clearingStatuslisturl,
-                type: 'GET',
-                dataType: 'json'
-               }).done(function(result){
-            createClearingStatusTable(result);
-            $("#clearingStatusSpinner").addClass("d-none");
-            $("#clearingStatusTable").removeClass("d-none");
-          });
+        function getContent() {
+            return new Promise(function(resolve, reject) {
+                jQuery.ajax({
+                       type: 'POST',
+                       url: '<%=viewReleaseURL%>',
+                       data: {
+                           '<portlet:namespace/><%=PortalConstants.WHAT%>': '<%=PortalConstants.FIND_SUB_LINKED_RELEASE%>'
+                       },
+                       cache: false,
+                       success: function (body) {
+                          resolve(body.result);
+                       },
+                       error: function () {
+                           reject("ERROR");
+                       }
+                });
+            });
+        }
+
+        $( document ).ready(async function(event){
+            releaseWithRelations = await(getContent());
+            if (typeof releaseWithRelations == "string") {
+                releaseWithRelations = JSON.parse(releaseWithRelations);
+            }
+            if(releaseWithRelations == undefined) {
+                releaseWithRelations = [];
+            }
+            releaseWithRelationsString = JSON.stringify(releaseWithRelations);
+            $('#releaseRelationTree').val(releaseWithRelationsString);
+            flattenRecursiveNetwork();
+            jQuery.ajax({
+                   type: 'GET',
+                   url: clearingStatuslisturl,
+                   data: {
+                       '<portlet:namespace/><%=PortalConstants.RELEASE_ID_ARRAY%>': releaseIds
+                   },
+                   cache: false,
+                   success: function (body) {
+                      let data = body.result;
+                      for(let [index, object] of data.entries()) {
+                          flattenArray[index].clearingState = object.clearingState;
+                          flattenArray[index].isAccessible = object.isAccessible;
+                          flattenArray[index].isRelease = object.isRelease;
+                          flattenArray[index].mainLicenses = object.mainLicenses;
+                          flattenArray[index].name = object.name;
+                          flattenArray[index].releaseMainlineState = object.releaseMainlineState;
+                          flattenArray[index].type = object.type;
+                      }
+                      console.log(flattenArray);
+                      let dataForTableView = {"data" : flattenArray};
+                      createClearingStatusTable(dataForTableView);
+                      $("#clearingStatusSpinner").addClass("d-none");
+                      $("#clearingStatusTable").removeClass("d-none");
+                   },
+                   error: function () {
+                       console.log("ERROR");
+                   }
+                });
+        });
+
 
         $('#search_table').on('input', function() {
             $("div#stateFilterForTT #dropdownmenu input[type=checkbox]:checked").each(function() {
@@ -306,6 +367,7 @@ AUI().use('liferay-portlet-url', function () {
         }
 
         function createClearingStatusTable(clearingStatusJsonData) {
+            console.log(clearingStatusJsonData);
             var clearingStatusTable;
             clearingStatusTable = datatables.create('#clearingStatusTable', {
                 data: clearingStatusJsonData.data.map(function(row){
@@ -334,7 +396,7 @@ AUI().use('liferay-portlet-url', function () {
                     {title: "<liferay-ui:message key="release.mainline.state" />", data : "releaseMainlineState", "defaultContent": ""},
                     {title: "<liferay-ui:message key="project.mainline.state" />", data : "projectMainlineState", "defaultContent": ""},
                     {title: "<liferay-ui:message key="comment" />",  data: "comment", "defaultContent": "", render: $.fn.dataTable.render.ellipsis},
-                    {title: "<liferay-ui:message key="actions" />",  data: "id", "orderable": false, "defaultContent": "", render: {display: renderActions}, className: "two actions" }
+                    {title: "<liferay-ui:message key="actions" />",  data: "releaseId", "orderable": false, "defaultContent": "", render: {display: renderActions}, className: "two actions" }
                 ],
                 "columnDefs": [
                     {
@@ -757,6 +819,65 @@ AUI().use('liferay-portlet-url', function () {
                         addLicenseToLinkedReleaseInternal(callback);
                     }
                 );
+        }
+
+        function flattenRecursiveNetwork() {
+             flattenArray = [];
+             releaseIds = [];
+
+             for(let index = 0 ; index < releaseWithRelations.length ; index++) {
+                releaseIds.push(releaseWithRelations[index].releaseId);
+                let releaseOrigin = "";
+                releaseWithRelations[index] = removeUnnecessaryField(releaseWithRelations[index]);
+                let releaseRelationElement = Object.assign({},releaseWithRelations[index]);
+                releaseRelationElement.parentId = "";
+                releaseRelationElement.releaseLink = [];
+                releaseRelationElement.releaseOrigin = releaseOrigin;
+                flattenArray.push(releaseRelationElement);
+
+                let parentId = releaseWithRelations[index].releaseId;
+                let releases = releaseWithRelations[index].releaseLink;
+                layer = 1;
+                recursiveNetwork(layer, parentId, releases, index, (releaseOrigin + releaseWithRelations[index].name));
+             }
+        }
+
+        function recursiveNetwork(layer, parentId, releases, parentIndex, releaseOrigin){
+             for(let index = 0 ; index < releases.length ; index++) {
+                 releaseIds.push(releases[index].releaseId);
+                 releases[index] = removeUnnecessaryField(releases[index]);
+                 let releaseRelationElement = Object.assign({},releases[index]);
+                 releaseRelationElement.parentId = parentId;
+                 releaseRelationElement.releaseLink = [];
+                 releaseRelationElement.releaseOrigin = releaseOrigin;
+                 flattenArray.push(releaseRelationElement);
+                 let nextLayer = layer + 1;
+                 recursiveNetwork(nextLayer, releases[index].releaseId, releases[index].releaseLink, index, (releaseOrigin + " -> " + releases[index].name));
+             }
+        }
+
+        function removeUnnecessaryField(jsonObject) {
+             delete jsonObject.setComment;
+             delete jsonObject.setDefaultValue;
+             delete jsonObject.setHasChange;
+             delete jsonObject.setIndex;
+             delete jsonObject.setLayer;
+             delete jsonObject.setName;
+             delete jsonObject.setParentId;
+             delete jsonObject.setReleaseId;
+             delete jsonObject.setReleaseLink;
+             delete jsonObject.setReleaseRelationship;
+             delete jsonObject.releaseLinkIterator;
+             delete jsonObject.setMainlineState;
+             delete jsonObject.releaseLinkSize;
+             delete jsonObject.setClearingState;
+             delete jsonObject.setIsAccessible;
+             delete jsonObject.setIsRelease;
+             delete jsonObject.setMainLicenses;
+             delete jsonObject.setProjectOrigin;
+             delete jsonObject.setReleaseMainlineState;
+             delete jsonObject.setType;
+             return jsonObject;
         }
     });
 });

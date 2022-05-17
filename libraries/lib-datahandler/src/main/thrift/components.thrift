@@ -387,7 +387,17 @@ struct ReleaseLinkJSON {
      8: optional i32 layer,
      9: optional i32 index,
      10: optional string comment,
-     11: optional string defaultValue
+     11: optional string defaultValue,
+     12: optional string clearingState,
+     13: optional string mainLicenses,
+     14: optional string projectOrigin,
+     15: optional string releaseMainlineState,
+     16: optional string type,
+     17: optional string isAccessible,
+     18: optional string isRelease,
+     19: optional string projectMainlineState,
+     20: optional string relation,
+     21: optional string releaseOrigin
 }
 
 struct ReleaseClearingStatusData {
