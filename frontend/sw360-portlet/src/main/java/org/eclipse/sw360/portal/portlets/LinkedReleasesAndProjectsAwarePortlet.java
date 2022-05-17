@@ -24,6 +24,7 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -303,18 +304,18 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         return relMainLineState;
     }
 
-    protected  List<ReleaseLinkJSON> getNetworkLinkedRelease(List<Release> releases, User user){
+    protected  List<ReleaseLinkJSON> getNetworkLinkedRelease(List<Release> releases, User user, String projectName){
         List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
         for (Release release : releases) {
-            ReleaseLinkJSON r = new ReleaseLinkJSON(release.getId(), release.getName());
+            ReleaseLinkJSON r = new ReleaseLinkJSON(release.getId(), (release.getName() + " (" + release.getVersion() + ")"));
             releaseLinkJSONS.add(r);
         }
         for (int i = 0; i < releaseLinkJSONS.size(); i++) {
-            releaseLinkJSONS.set(i, getReleaseLinkJSONS(releaseLinkJSONS.get(i), user));
+            releaseLinkJSONS.set(i, getReleaseLinkJSONS(releaseLinkJSONS.get(i), user, projectName));
         }
         return releaseLinkJSONS;
     }
-    public ReleaseLinkJSON getReleaseLinkJSONS(ReleaseLinkJSON releaseLinkJSON, User user) {
+    public ReleaseLinkJSON getReleaseLinkJSONS(ReleaseLinkJSON releaseLinkJSON, User user, String projectName) {
         ComponentService.Iface client = thriftClients.makeComponentClient();
         Release releaseById = null;
         try {
@@ -322,12 +323,23 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
             List<Release> releaseList = client.getReleasesById(releaseById.getReleaseIdToRelationship().keySet().stream().collect(Collectors.toSet()), user);
             List<ReleaseLinkJSON> linkedReleasesJSON = new ArrayList<>();
             releaseLinkJSON.setDefaultValue(releaseLinkJSON.getReleaseId());
+            releaseLinkJSON.setMainlineState(MainlineState.OPEN.getValue());
+            releaseLinkJSON.setDefaultValue(releaseLinkJSON.getReleaseId());
+            releaseLinkJSON.setComment("");
+            releaseLinkJSON.setProjectOrigin(projectName);
+            releaseLinkJSON.setRelation("Open");
+            releaseLinkJSON.setProjectMainlineState("Contained");
             for (Release release : releaseList) {
-                ReleaseLinkJSON rj = new ReleaseLinkJSON(release.getId(), release.getName());
+                ReleaseLinkJSON rj = new ReleaseLinkJSON(release.getId(), (release.getName() + " (" + release.getVersion() + ")"));
                 rj.setReleaseRelationship(releaseById.getReleaseIdToRelationship().get(release.getId()).getValue());
                 rj.setMainlineState(MainlineState.OPEN.getValue());
+                rj.setReleaseRelationship(ReleaseRelationship.CONTAINED.getValue());
+                rj.setRelation("Open");
+                rj.setProjectMainlineState("Contained");
                 rj.setDefaultValue(release.getId());
-                linkedReleasesJSON.add(getReleaseLinkJSONS(rj, user));
+                rj.setComment("");
+                rj.setProjectOrigin(projectName);
+                linkedReleasesJSON.add(getReleaseLinkJSONS(rj, user, projectName));
             }
             releaseLinkJSON.setReleaseLink(linkedReleasesJSON);
             return releaseLinkJSON;
