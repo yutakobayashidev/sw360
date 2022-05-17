@@ -367,7 +367,6 @@ AUI().use('liferay-portlet-url', function () {
         }
 
         function createClearingStatusTable(clearingStatusJsonData) {
-            console.log(clearingStatusJsonData);
             var clearingStatusTable;
             clearingStatusTable = datatables.create('#clearingStatusTable', {
                 data: clearingStatusJsonData.data.map(function(row){
