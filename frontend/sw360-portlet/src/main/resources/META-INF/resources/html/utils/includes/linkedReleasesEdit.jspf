@@ -171,11 +171,9 @@
                 if(releaseWithRelations == undefined) {
                     releaseWithRelations = [];
                 }
-
+                flattenRecursiveNetwork();
                 releaseWithRelationsString = JSON.stringify(releaseWithRelations);
                 $('#releaseRelationTree').val(releaseWithRelationsString);
-
-                flattenRecursiveNetwork();
                 console.log(releaseWithRelations);
                 console.log(flattenArray);
                 displayReleaseRelationShip();
@@ -265,6 +263,9 @@
                  delete jsonObject.setProjectOrigin;
                  delete jsonObject.setReleaseMainlineState;
                  delete jsonObject.setType;
+                 delete jsonObject.setReleaseOrigin;
+                 delete jsonObject.setRelation;
+                 delete jsonObject.setProjectMainlineState;
                  return jsonObject;
             }
 
@@ -298,8 +299,8 @@
                 }, function(submit, callback) {
                      removeNodeFromNetwork(releaseWithRelations, i, trace);
                      $('#LinkedReleasesInfo tbody').empty();
-                     $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
                      flattenRecursiveNetwork();
+                     $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
                      displayReleaseRelationShip();
                      callback(true);
                 });

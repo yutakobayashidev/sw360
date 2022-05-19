@@ -70,6 +70,7 @@
                 <core_rt:if test="${loop.index==0 and not empty parent_branch_id}">data-tt-parent-id="${parent_branch_id}"</core_rt:if>
                 <core_rt:if test="${empty parent_branch_id and not empty releaseLink.parentNodeId}">data-tt-parent-id="${releaseLink.parentNodeId}"</core_rt:if>
                 <core_rt:if test="${loop.index!=0 and empty releaseLink.parentNodeId}">data-tt-parent-id="${projectLink.nodeId}"</core_rt:if>
+                data-layer="${releaseLink.layer}"
             >
                 <td style="white-space: nowrap">
                     <a href="<sw360:DisplayReleaseLink releaseId="${releaseLink.id}" bare="true" scopeGroupId="${concludedScopeGroupId}" />">

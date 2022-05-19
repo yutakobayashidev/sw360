@@ -12,6 +12,8 @@ package org.eclipse.sw360.portal.portlets.projects;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Predicate;
@@ -2668,6 +2670,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         ComponentService.Iface compClient = thriftClients.makeComponentClient();
         ProjectService.Iface client = thriftClients.makeProjectClient();
         Project project = null;
+
         try {
 
             project = client.getProjectById(id, user);
@@ -2676,7 +2679,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             log.error("Error while fetching Project id : " + id, exp);
             return;
         }
-
         List<ProjectLink> mappedProjectLinks = createLinkedProjects(project, user);
         mappedProjectLinks = sortProjectLink(mappedProjectLinks);
         request.setAttribute(PROJECT_LIST, mappedProjectLinks);
@@ -2684,7 +2686,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         Set<String> releaseIds = mappedProjectLinks.stream().map(ProjectLink::getLinkedReleases)
                 .filter(CommonUtils::isNotEmpty).flatMap(rList -> rList.stream()).filter(Objects::nonNull)
                 .map(ReleaseLink::getId).collect(Collectors.toSet());
-        log.info(releaseIds);
         request.setAttribute("relMainLineState", fillMainLineState(releaseIds, compClient, user));
         include("/html/utils/ajax/linkedProjectsRows.jsp", request, response, PortletRequest.RESOURCE_PHASE);
     }
@@ -2767,34 +2768,57 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
     private void serveClearingStatusList(ResourceRequest request, ResourceResponse response) throws TException {
-        String[] releaseIds = request.getParameterValues(RELEASE_ID_ARRAY);
+        ProjectService.Iface client = thriftClients.makeProjectClient();
         User user = UserCacheHolder.getUserFromRequest(request);
-        log.info(releaseIds);
-        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
-        List<Map<String, String>> releasesInformation = new ArrayList<>();
-        for (String releaseId : releaseIds) {
-            Release release = componentClient.getAccessibleReleaseById(releaseId, user);
-            Component component = componentClient.getAccessibleComponentById(release.getComponentId(), user);
-            Map<String, String> row = new HashMap<>();
-            Set<String> collectedLicIds = CommonUtils.nullToEmptySet(release.getMainLicenseIds());
-            row.put("name", SW360Utils.printName(release));
-            row.put("type", ThriftEnumUtils.enumToString(component.getComponentType()));
-            row.put("mainLicenses", String.join(",", collectedLicIds));
-            row.put("isRelease", "true");
-            row.put("releaseMainlineState", ThriftEnumUtils.enumToString(release.getMainlineState()));
-            row.put("clearingState", ThriftEnumUtils.enumToString(release.getClearingState()));
-            row.put("isAccessible", "true");
-            releasesInformation.add(row);
+        String projectId = request.getParameter(DOCUMENT_ID);
+        List<Map<String, String>> clearingStatusList = new ArrayList<Map<String, String>>();
+        try {
+            clearingStatusList = client.getAccessibleClearingStateInformationForListView(projectId, user);
+        } catch (TException e) {
+            log.error("Problem getting flat view of Clearing Status", e);
         }
-
+        JSONArray clearingStatusData = createJSONArray();
+        for (int i = 0; i < clearingStatusList.size(); i++) {
+            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+            clearingStatusList.get(i).entrySet().stream()
+                    .forEach(entry -> jsonObject.put(entry.getKey(), entry.getValue()));
+            clearingStatusData.put(jsonObject);
+        }
         JSONObject jsonResult = createJSONObject();
-        log.info(releasesInformation);
-        jsonResult.put(RESULT, releasesInformation);
+        jsonResult.put("data", clearingStatusData);
         try {
             writeJSON(request, response, jsonResult);
         } catch (IOException e) {
             log.error("Problem rendering Clearing Status", e);
         }
+//        String[] releaseIds = request.getParameterValues(RELEASE_ID_ARRAY);
+//        User user = UserCacheHolder.getUserFromRequest(request);
+//        log.info(releaseIds);
+//        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+//        List<Map<String, String>> releasesInformation = new ArrayList<>();
+//        for (String releaseId : releaseIds) {
+//            Release release = componentClient.getAccessibleReleaseById(releaseId, user);
+//            Component component = componentClient.getAccessibleComponentById(release.getComponentId(), user);
+//            Map<String, String> row = new HashMap<>();
+//            Set<String> collectedLicIds = CommonUtils.nullToEmptySet(release.getMainLicenseIds());
+//            row.put("name", SW360Utils.printName(release));
+//            row.put("type", ThriftEnumUtils.enumToString(component.getComponentType()));
+//            row.put("mainLicenses", String.join(",", collectedLicIds));
+//            row.put("isRelease", "true");
+//            row.put("releaseMainlineState", ThriftEnumUtils.enumToString(release.getMainlineState()));
+//            row.put("clearingState", ThriftEnumUtils.enumToString(release.getClearingState()));
+//            row.put("isAccessible", "true");
+//            releasesInformation.add(row);
+//        }
+//
+//        JSONObject jsonResult = createJSONObject();
+//        log.info(releasesInformation);
+//        jsonResult.put(RESULT, releasesInformation);
+//        try {
+//            writeJSON(request, response, jsonResult);
+//        } catch (IOException e) {
+//            log.error("Problem rendering Clearing Status", e);
+//        }
     }
 
     private void serveProjectList(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
@@ -3170,4 +3194,22 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         include("/html/utils/ajax/linkedReleasesAjax.jsp", request, response, PortletRequest.RESOURCE_PHASE);
     }
 
+    private  List<ReleaseLinkJSON> flattenRelease(ReleaseLinkJSON node, List<ReleaseLinkJSON> flatList) {
+
+        if (node != null) {
+            // ReleaseLinkJSON n = new ReleaseLinkJSON(node.getKey(),node.getNodeId(), node.getParentId(), node.getEntryTest());
+            flatList.add(node);
+        }
+
+        List<ReleaseLinkJSON> children = node.getReleaseLink();
+        for (ReleaseLinkJSON child : children) {
+            if(child.getReleaseLink() != null) {
+                flattenRelease(child, flatList);
+            } else {
+                flatList.add(node);
+            }
+        }
+
+        return flatList;
+    }
 }

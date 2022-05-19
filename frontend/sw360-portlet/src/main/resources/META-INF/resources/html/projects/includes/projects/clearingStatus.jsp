@@ -23,7 +23,7 @@
 
 <portlet:resourceURL var="loadLinkedProjectsRowsURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_LINKED_PROJECTS_ROWS%>'/>
-    <portlet:param name="<%=PortalConstants.LOAD_LINKED_RELEASES_ROWS%>" value='true'/>
+    <portlet:param name="<%=PortalConstants.LOAD_LINKED_RELEASES_ROWS%>" value='false'/>
 </portlet:resourceURL>
 
 <portlet:resourceURL var="clearingStatuslisturl">
@@ -162,67 +162,15 @@ AUI().use('liferay-portlet-url', function () {
         var releaseWithRelations = [];
         var flattenArray = [];
         var releaseIds = [];
-
-        function getContent() {
-            return new Promise(function(resolve, reject) {
-                jQuery.ajax({
-                       type: 'POST',
-                       url: '<%=viewReleaseURL%>',
-                       data: {
-                           '<portlet:namespace/><%=PortalConstants.WHAT%>': '<%=PortalConstants.FIND_SUB_LINKED_RELEASE%>'
-                       },
-                       cache: false,
-                       success: function (body) {
-                          resolve(body.result);
-                       },
-                       error: function () {
-                           reject("ERROR");
-                       }
-                });
-            });
-        }
-
-        $( document ).ready(async function(event){
-            releaseWithRelations = await(getContent());
-            if (typeof releaseWithRelations == "string") {
-                releaseWithRelations = JSON.parse(releaseWithRelations);
-            }
-            if(releaseWithRelations == undefined) {
-                releaseWithRelations = [];
-            }
-            releaseWithRelationsString = JSON.stringify(releaseWithRelations);
-            $('#releaseRelationTree').val(releaseWithRelationsString);
-            flattenRecursiveNetwork();
-            jQuery.ajax({
-                   type: 'GET',
-                   url: clearingStatuslisturl,
-                   data: {
-                       '<portlet:namespace/><%=PortalConstants.RELEASE_ID_ARRAY%>': releaseIds
-                   },
-                   cache: false,
-                   success: function (body) {
-                      let data = body.result;
-                      for(let [index, object] of data.entries()) {
-                          flattenArray[index].clearingState = object.clearingState;
-                          flattenArray[index].isAccessible = object.isAccessible;
-                          flattenArray[index].isRelease = object.isRelease;
-                          flattenArray[index].mainLicenses = object.mainLicenses;
-                          flattenArray[index].name = object.name;
-                          flattenArray[index].releaseMainlineState = object.releaseMainlineState;
-                          flattenArray[index].type = object.type;
-                      }
-                      console.log(flattenArray);
-                      let dataForTableView = {"data" : flattenArray};
-                      createClearingStatusTable(dataForTableView);
-                      $("#clearingStatusSpinner").addClass("d-none");
-                      $("#clearingStatusTable").removeClass("d-none");
-                   },
-                   error: function () {
-                       console.log("ERROR");
-                   }
-                });
-        });
-
+        $.ajax({url: clearingStatuslisturl,
+                        type: 'GET',
+                        dataType: 'json'
+                       }).done(function(result){
+                    console.log(result);
+                    createClearingStatusTable(result);
+                    $("#clearingStatusSpinner").addClass("d-none");
+                    $("#clearingStatusTable").removeClass("d-none");
+                  });
 
         $('#search_table').on('input', function() {
             $("div#stateFilterForTT #dropdownmenu input[type=checkbox]:checked").each(function() {
@@ -271,6 +219,7 @@ AUI().use('liferay-portlet-url', function () {
         }
 
         function showRow(value, $thiz) {
+            //
             let parentId = $thiz.data().ttParentId;
             while (parentId) {
                 let $parentRow = $('#LinkedProjectsInfo tbody tr[data-tt-id='+parentId+']');
@@ -625,6 +574,8 @@ AUI().use('liferay-portlet-url', function () {
                     return;
                 }
             });
+            console.log(node);
+            console.log(data);
             return data;
         }
 
@@ -651,6 +602,8 @@ AUI().use('liferay-portlet-url', function () {
                     renderLicenses($(this));
                 });
             });
+            console.log(rows);
+            console.log(node);
             table.treetable("loadBranch", node, rows);
         }
 
@@ -668,6 +621,7 @@ AUI().use('liferay-portlet-url', function () {
 
         var clearingStatuslistOnloadurl= '<%=clearingStatuslistOnloadurl%>';
         $.ajax({url: clearingStatuslistOnloadurl, success: function(resultTreeView){
+            console.log(resultTreeView);
             if(resultTreeView.trim().length===0) {
                 $("#noRecordRow").removeClass("d-none");
             }
@@ -818,65 +772,6 @@ AUI().use('liferay-portlet-url', function () {
                         addLicenseToLinkedReleaseInternal(callback);
                     }
                 );
-        }
-
-        function flattenRecursiveNetwork() {
-             flattenArray = [];
-             releaseIds = [];
-
-             for(let index = 0 ; index < releaseWithRelations.length ; index++) {
-                releaseIds.push(releaseWithRelations[index].releaseId);
-                let releaseOrigin = "";
-                releaseWithRelations[index] = removeUnnecessaryField(releaseWithRelations[index]);
-                let releaseRelationElement = Object.assign({},releaseWithRelations[index]);
-                releaseRelationElement.parentId = "";
-                releaseRelationElement.releaseLink = [];
-                releaseRelationElement.releaseOrigin = releaseOrigin;
-                flattenArray.push(releaseRelationElement);
-
-                let parentId = releaseWithRelations[index].releaseId;
-                let releases = releaseWithRelations[index].releaseLink;
-                layer = 1;
-                recursiveNetwork(layer, parentId, releases, index, (releaseOrigin + releaseWithRelations[index].name));
-             }
-        }
-
-        function recursiveNetwork(layer, parentId, releases, parentIndex, releaseOrigin){
-             for(let index = 0 ; index < releases.length ; index++) {
-                 releaseIds.push(releases[index].releaseId);
-                 releases[index] = removeUnnecessaryField(releases[index]);
-                 let releaseRelationElement = Object.assign({},releases[index]);
-                 releaseRelationElement.parentId = parentId;
-                 releaseRelationElement.releaseLink = [];
-                 releaseRelationElement.releaseOrigin = releaseOrigin;
-                 flattenArray.push(releaseRelationElement);
-                 let nextLayer = layer + 1;
-                 recursiveNetwork(nextLayer, releases[index].releaseId, releases[index].releaseLink, index, (releaseOrigin + " -> " + releases[index].name));
-             }
-        }
-
-        function removeUnnecessaryField(jsonObject) {
-             delete jsonObject.setComment;
-             delete jsonObject.setDefaultValue;
-             delete jsonObject.setHasChange;
-             delete jsonObject.setIndex;
-             delete jsonObject.setLayer;
-             delete jsonObject.setName;
-             delete jsonObject.setParentId;
-             delete jsonObject.setReleaseId;
-             delete jsonObject.setReleaseLink;
-             delete jsonObject.setReleaseRelationship;
-             delete jsonObject.releaseLinkIterator;
-             delete jsonObject.setMainlineState;
-             delete jsonObject.releaseLinkSize;
-             delete jsonObject.setClearingState;
-             delete jsonObject.setIsAccessible;
-             delete jsonObject.setIsRelease;
-             delete jsonObject.setMainLicenses;
-             delete jsonObject.setProjectOrigin;
-             delete jsonObject.setReleaseMainlineState;
-             delete jsonObject.setType;
-             return jsonObject;
         }
     });
 });
