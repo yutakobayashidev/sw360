@@ -203,11 +203,11 @@ public class RestControllerHelper<T> {
 
     private Comparator<T> comparatorFromPageable(Pageable pageable, String resourceClassName) throws ResourceClassNotFoundException {
         Sort.Order order = firstOrderFromPageable(pageable);
-        if(order == null) {
+        if (order == null) {
             return resourceComparatorGenerator.generateComparator(resourceClassName);
         }
         Comparator<T> comparator = resourceComparatorGenerator.generateComparator(resourceClassName, order.getProperty());
-        if(order.isDescending()) {
+        if (order.isDescending()) {
             comparator = comparator.reversed();
         }
         return comparator;
@@ -215,11 +215,11 @@ public class RestControllerHelper<T> {
 
     private Sort.Order firstOrderFromPageable(Pageable pageable) {
         Sort sort = pageable.getSort();
-        if(sort == null) {
+        if (sort == null) {
             return null;
         }
         Iterator<Sort.Order> orderIterator = sort.iterator();
-        if(orderIterator.hasNext()) {
+        if (orderIterator.hasNext()) {
             return orderIterator.next();
         } else {
             return null;
@@ -392,9 +392,9 @@ public class RestControllerHelper<T> {
     }
 
     public Component updateComponent(Component componentToUpdate, Component requestBodyComponent) {
-        for(Component._Fields field:Component._Fields.values()) {
+        for (Component._Fields field : Component._Fields.values()) {
             Object fieldValue = requestBodyComponent.getFieldValue(field);
-            if(fieldValue != null) {
+            if (fieldValue != null) {
                 componentToUpdate.setFieldValue(field, fieldValue);
             }
         }
@@ -454,10 +454,10 @@ public class RestControllerHelper<T> {
     public Component convertToEmbeddedComponent(Component component, List<String> fields) {
         Component embeddedComponent = this.convertToEmbeddedComponent(component);
         if (fields != null) {
-            for(String fieldName:fields) {
+            for (String fieldName : fields) {
                 String thriftField = PropertyKeyMapping.componentThriftKeyFromJSONKey(fieldName);
                 Component._Fields componentField = Component._Fields.findByName(thriftField);
-                if(componentField != null) {
+                if (componentField != null) {
                     embeddedComponent.setFieldValue(componentField, component.getFieldValue(componentField));
                 }
             }
@@ -485,10 +485,10 @@ public class RestControllerHelper<T> {
     public Release convertToEmbeddedRelease(Release release, List<String> fields) {
         Release embeddedRelease = this.convertToEmbeddedRelease(release);
         if (fields != null) {
-            for(String fieldName:fields) {
+            for (String fieldName : fields) {
                 String thriftField = PropertyKeyMapping.releaseThriftKeyFromJSONKey(fieldName);
                 Release._Fields releaseField = Release._Fields.findByName(thriftField);
-                if(releaseField != null) {
+                if (releaseField != null) {
                     embeddedRelease.setFieldValue(releaseField, release.getFieldValue(releaseField));
                 }
             }
@@ -538,7 +538,7 @@ public class RestControllerHelper<T> {
             halObligation.add(obligationSelfLink);
             return halObligation;
         } catch (Exception e) {
-            LOGGER.error("cannot create self link for obligation with id: " +obligation.getId());
+            LOGGER.error("cannot create self link for obligation with id: " + obligation.getId());
         }
         return null;
     }
@@ -782,7 +782,7 @@ public class RestControllerHelper<T> {
         }
     }
 
-    public void addEmbeddedFields(String relation,Object value,HalResource<? extends TBase> halResource) {
+    public void addEmbeddedFields(String relation, Object value, HalResource<? extends TBase> halResource) {
         if (value instanceof String) {
             if (CommonUtils.isNotNullEmptyOrWhitespace((String) value)) {
                 halResource.addEmbeddedResource(relation, value);
