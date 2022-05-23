@@ -599,7 +599,7 @@ public class RestControllerHelper<T> {
                     if (field.equals(Vulnerability._Fields.CVSS)) {
                         vulnerabilityApiDTO.setCvss(String.valueOf(vulnerability.getCvss()));
                     } else if (field.equals(Vulnerability._Fields.IS_SET_CVSS)) {
-                        vulnerabilityApiDTO.setIsSetCvss(String.valueOf(vulnerability.isSetCvss()));
+                        vulnerabilityApiDTO.setIsSetCvss(String.valueOf(vulnerability.isIsSetCvss()));
                     } else if (field.equals(Vulnerability._Fields.CVE_REFERENCES)) {
                         Set<CVEReference> cveReferences = vulnerability.getCveReferences();
                         if (cveReferences.size() > 0) {

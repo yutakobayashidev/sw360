@@ -169,7 +169,7 @@
                 <core_rt:forEach items="${vulnerabilityList}" var="vulnerability">
                     result.push({
                         DT_RowId: "${vulnerability.id}",
-                        externalId: "${vulnerability.externalId}",
+                        externalId: "<sw360:out value='${vulnerability.externalId}'  jsQuoting='true'/>",
                         title: {
                             text: "<sw360:out value='${vulnerability.title}'  jsQuoting='true'/>",
                             tooltip: "<sw360:out value='${vulnerability.description}' jsQuoting='true'/>"
@@ -193,6 +193,7 @@
 
                 function renderDetailURL(data, type, row, meta) {
                     var $link;
+                    data = data.toString().replace(/&gt;/g, '>').replace(/&lt;/g, '<').replace(/&#039;/g, "'").replace(/&#034;/g, '"').replace(/&amp;/,'&');
 
                     if(type === 'display') {
                         $link = $('<a/>', {

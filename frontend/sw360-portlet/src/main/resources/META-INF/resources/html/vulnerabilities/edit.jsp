@@ -417,7 +417,7 @@
             var PortletURL = Liferay.PortletURL;
             require(['bridges/datatables', 'modules/dialog', 'utils/includes/quickfilter', 'utils/link', 'modules/validation', 'jquery'], function( datatables, dialog, quickfilter, linkutil, validation, $) {
                  validation.enableForm('#vulnerabilityEditForm');
-                 let oldExternalId = "${vulnerability.externalId}";
+                 let oldExternalId = $("#vulnerabilityExternalId").val();
                  window.onload = () => {
                       document.getElementById('vulnerabilityScore').onpaste = e => e.preventDefault();
                  }
@@ -451,8 +451,8 @@
                        let addMode = "${vulnerability.id}";
                        let cvssScore = $("#vulnerabilityScore").val().trim();
                        let newExternalId = $("#vulnerabilityExternalId").val().trim();
-                       var cvssScoreValid = true;
-
+                       let cvssScoreValid = true;
+                       let cveYearValid = true;
                        if (cvssScore > 10.0 || cvssScore < 0){
                             $(".cvss-invalid").css("display", "block");
                             $("#vulnerabilityScore").css("border-color", "#5aca75");
@@ -460,7 +460,17 @@
                        } else{
                             $(".cvss-invalid").css("display", "none");
                        }
-
+                       $(".cve-year").each(function() {
+                            let value = $(this).val();
+                            if(parseInt(value) <= 0) {
+                                $(this).closest('td').find('.cve-year-invalid').css("display","block");
+                                $(this).css("border-color", "#5aca75");
+                                cveYearValid = false;
+                            }
+                            else {
+                                $(this).closest('td').find('.cve-year-invalid').css("display","none");
+                            }
+                       });
                        if (addMode === "" || addMode == undefined || newExternalId != oldExternalId){
                             let externalId = $("#vulnerabilityExternalId").val();
                             let resourceURL = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>';
@@ -476,7 +486,7 @@
                                     if (data.result == 'SUCCESS') {
                                         $("#externalIdFeedBack").css("display", "none");
                                         $("#vulnerabilityExternalId").css("border-color", "#5aca75");
-                                        if (cvssScoreValid == true){
+                                        if (cvssScoreValid == true && cveYearValid == true){
                                             trimValue();
                                             $('#vulnerabilityEditForm').submit();
                                         }
@@ -491,7 +501,7 @@
                             });
                        }
                        else {
-                            if (cvssScoreValid == true){
+                            if (cvssScoreValid == true && cveYearValid == true){
                                 trimValue();
                                 $('#vulnerabilityEditForm').submit();
                             }
