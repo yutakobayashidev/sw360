@@ -12,8 +12,6 @@ package org.eclipse.sw360.portal.portlets.projects;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Predicate;
@@ -1115,7 +1113,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
     private void serveLinkedReleases(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
         String what = request.getParameter(PortalConstants.WHAT);
-        log.info(what);
         String projectId = request.getParameter(PROJECT_ID);
 
         if (PortalConstants.LIST_NEW_LINKED_RELEASES.equals(what)) {
@@ -2672,7 +2669,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         Project project = null;
 
         try {
-
             project = client.getProjectById(id, user);
             project = getWithFilledClearingStateSummary(project, user);
         } catch (TException exp) {
@@ -2682,11 +2678,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         List<ProjectLink> mappedProjectLinks = createLinkedProjects(project, user);
         mappedProjectLinks = sortProjectLink(mappedProjectLinks);
         request.setAttribute(PROJECT_LIST, mappedProjectLinks);
-        request.setAttribute("projectReleaseRelation", project.getReleaseIdToUsage());
-        Set<String> releaseIds = mappedProjectLinks.stream().map(ProjectLink::getLinkedReleases)
-                .filter(CommonUtils::isNotEmpty).flatMap(rList -> rList.stream()).filter(Objects::nonNull)
-                .map(ReleaseLink::getId).collect(Collectors.toSet());
-        request.setAttribute("relMainLineState", fillMainLineState(releaseIds, compClient, user));
         include("/html/utils/ajax/linkedProjectsRows.jsp", request, response, PortletRequest.RESOURCE_PHASE);
     }
 
@@ -2791,34 +2782,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         } catch (IOException e) {
             log.error("Problem rendering Clearing Status", e);
         }
-//        String[] releaseIds = request.getParameterValues(RELEASE_ID_ARRAY);
-//        User user = UserCacheHolder.getUserFromRequest(request);
-//        log.info(releaseIds);
-//        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
-//        List<Map<String, String>> releasesInformation = new ArrayList<>();
-//        for (String releaseId : releaseIds) {
-//            Release release = componentClient.getAccessibleReleaseById(releaseId, user);
-//            Component component = componentClient.getAccessibleComponentById(release.getComponentId(), user);
-//            Map<String, String> row = new HashMap<>();
-//            Set<String> collectedLicIds = CommonUtils.nullToEmptySet(release.getMainLicenseIds());
-//            row.put("name", SW360Utils.printName(release));
-//            row.put("type", ThriftEnumUtils.enumToString(component.getComponentType()));
-//            row.put("mainLicenses", String.join(",", collectedLicIds));
-//            row.put("isRelease", "true");
-//            row.put("releaseMainlineState", ThriftEnumUtils.enumToString(release.getMainlineState()));
-//            row.put("clearingState", ThriftEnumUtils.enumToString(release.getClearingState()));
-//            row.put("isAccessible", "true");
-//            releasesInformation.add(row);
-//        }
-//
-//        JSONObject jsonResult = createJSONObject();
-//        log.info(releasesInformation);
-//        jsonResult.put(RESULT, releasesInformation);
-//        try {
-//            writeJSON(request, response, jsonResult);
-//        } catch (IOException e) {
-//            log.error("Problem rendering Clearing Status", e);
-//        }
     }
 
     private void serveProjectList(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
@@ -3192,24 +3155,5 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         }
         request.setAttribute(RELEASE_LIST, linkedReleases);
         include("/html/utils/ajax/linkedReleasesAjax.jsp", request, response, PortletRequest.RESOURCE_PHASE);
-    }
-
-    private  List<ReleaseLinkJSON> flattenRelease(ReleaseLinkJSON node, List<ReleaseLinkJSON> flatList) {
-
-        if (node != null) {
-            // ReleaseLinkJSON n = new ReleaseLinkJSON(node.getKey(),node.getNodeId(), node.getParentId(), node.getEntryTest());
-            flatList.add(node);
-        }
-
-        List<ReleaseLinkJSON> children = node.getReleaseLink();
-        for (ReleaseLinkJSON child : children) {
-            if(child.getReleaseLink() != null) {
-                flattenRelease(child, flatList);
-            } else {
-                flatList.add(node);
-            }
-        }
-
-        return flatList;
     }
 }

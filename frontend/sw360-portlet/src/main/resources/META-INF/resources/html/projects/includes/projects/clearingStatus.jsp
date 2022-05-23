@@ -159,18 +159,14 @@ AUI().use('liferay-portlet-url', function () {
         var clearingStatuslisturl= '<%=clearingStatuslisturl%>';
         var emptyMsg = '<liferay-ui:message key="no.linked.releases.or.projects" />';
         var projectId = "${docid}";
-        var releaseWithRelations = [];
-        var flattenArray = [];
-        var releaseIds = [];
         $.ajax({url: clearingStatuslisturl,
-                        type: 'GET',
-                        dataType: 'json'
-                       }).done(function(result){
-                    console.log(result);
-                    createClearingStatusTable(result);
-                    $("#clearingStatusSpinner").addClass("d-none");
-                    $("#clearingStatusTable").removeClass("d-none");
-                  });
+                type: 'GET',
+                dataType: 'json'
+               }).done(function(result){
+            createClearingStatusTable(result);
+            $("#clearingStatusSpinner").addClass("d-none");
+            $("#clearingStatusTable").removeClass("d-none");
+          });
 
         $('#search_table').on('input', function() {
             $("div#stateFilterForTT #dropdownmenu input[type=checkbox]:checked").each(function() {
@@ -559,7 +555,6 @@ AUI().use('liferay-portlet-url', function () {
         }
 
         var config = $('#LinkedProjectsInfo').data();
-
         function dataCallbackTreeTable(table, node) {
             var data = {};
             data[config.portletNamespace + config.parentBranchKey] = node.id;
@@ -571,16 +566,30 @@ AUI().use('liferay-portlet-url', function () {
                 let isReleaseRow=$(this).attr("data-is-release-row");
                 if(isReleaseRow !== null && isReleaseRow !== undefined) {
                     data[config.portletNamespace + 'overrideToRelease'] = true;
+                    data[config.portletNamespace + 'projectId'] = $(this).attr("data-project-id");
+
+                    let releaseLayer = $(this).attr("data-layer");
+                    let parentId = $(this).attr("data-parent-release");
+                    let currentIndex = $(this).attr("data-index");
+                    let trace = [];
+                    trace.unshift(currentIndex);
+                    if (releaseLayer > 0) {
+                        for (let layer = releaseLayer - 1; layer >= 0; layer--) {
+                            trace.unshift($(this).prevAll('tr[data-layer="'+layer+'"][data-release-id="'+parentId+'"]').first().attr('data-index'));
+                            parentId = $(this).prevAll('tr[data-layer="'+layer+'"][data-release-id="'+parentId+'"]').first().attr('data-parent-release');
+                        }
+                    }
+                    console.log(trace);
+                    data[config.portletNamespace + 'trace[]'] = trace;
                     return;
                 }
             });
-            console.log(node);
-            console.log(data);
             return data;
         }
 
         function renderCallbackTreeTable(table, node, result) {
             var rows = $(result).filter("tr");
+            console.log(rows);
             $(rows).each(function(){
                 $(this).find(".editAction:eq(0)").each(function(){
                     $(this).html(createActions(makeReleaseUrl($(this).data("releaseid"))));
@@ -602,8 +611,6 @@ AUI().use('liferay-portlet-url', function () {
                     renderLicenses($(this));
                 });
             });
-            console.log(rows);
-            console.log(node);
             table.treetable("loadBranch", node, rows);
         }
 

@@ -836,11 +836,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     ObjectMapper mapper = new ObjectMapper();
                     List<ReleaseLinkJSON> listReleaseLinkJson;
                     List<ReleaseLink> linkedReleases = new ArrayList<>();
-                    log.info("Json: " + releaseNetwork);
                     try {
                         listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
                         });
-                        log.info(listReleaseLinkJson);
+                        int index = 0;
                         for (ReleaseLinkJSON release : listReleaseLinkJson) {
                             Release releaseById = componentDatabaseHandler.getAccessibleRelease(release.getReleaseId(), user);
                             Component componentById = componentDatabaseHandler.getAccessibleComponent(releaseById.getComponentId(), user);
@@ -865,21 +864,24 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                             releaseLink.setOtherLicenseIds(releaseById.getOtherLicenseIds());
                             releaseLink.setAccessible(true);
                             releaseLink.setNodeId(releaseById.getId() + "_" + UUID.randomUUID());
-                            releaseLink.setLayer(1);
+                            releaseLink.setParentNodeId("");
+                            releaseLink.setLayer(0);
+                            releaseLink.setProjectId(projectLink.getId());
+                            releaseLink.setIndex(index);
+                            releaseLink.setReleaseMainLineState(releaseById.getMainlineState());
                             if(releaseById.getVendor() != null) {
                                 releaseLink.setVendor(releaseById.getVendor().getFullname());
                             }
                             else {
                                 releaseLink.setVendor("");
                             }
+                            index++;
                             linkedReleases.add(releaseLink);
                         }
                     } catch (JsonProcessingException e) {
-                        log.info("JsonProcessingException: " + e);
+                        log.error("JsonProcessingException: " + e);
                     } catch (SW360Exception e) {
-                        throw new RuntimeException(e);
-                    } catch (TException e) {
-                        throw new RuntimeException(e);
+                        throw new RuntimeException(e.getMessage());
                     }
                     fillMainlineStates(linkedReleases, project.getReleaseIdToUsage());
                     projectLink.setLinkedReleases(nullToEmptyList(linkedReleases));
@@ -1504,13 +1506,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         String releaseNetwork = projectById.getReleaseRelationNetwork();
         ObjectMapper mapper = new ObjectMapper();
         List<ReleaseLinkJSON> listReleaseLinkJson;
-        log.info("Json: " + releaseNetwork);
         try {
             listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
             });
             flattenClearingStatusForReleases(listReleaseLinkJson, projectOrigin, releaseOrigin, clearingStatusList, user, isInaccessibleLinkMasked);
         } catch (JsonProcessingException e) {
-            log.info("JsonProcessingException: " + e);
+            log.error("JsonProcessingException: " + e);
         }
 
         if (linkedProjects != null && !linkedProjects.isEmpty()) {
@@ -1691,22 +1692,70 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return repository.searchByType(type, user);
     }
 
-    private  List<ReleaseLinkJSON> flattenRelease(ReleaseLinkJSON node, List<ReleaseLinkJSON> flatList) {
-
-        if (node != null) {
-            // ReleaseLinkJSON n = new ReleaseLinkJSON(node.getKey(),node.getNodeId(), node.getParentId(), node.getEntryTest());
-            flatList.add(node);
-        }
-
-        List<ReleaseLinkJSON> children = node.getReleaseLink();
-        for (ReleaseLinkJSON child : children) {
-            if(child.getReleaseLink() != null) {
-                flattenRelease(child, flatList);
-            } else {
-                flatList.add(node);
+    /*
+     * This function will get list ReleaseLink from release network of project with trace from root to clicked release on screen
+     * Trace is list index of each node.
+     */
+    public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(List<String> trace, String projectId, User user){
+        Project project = repository.get(projectId);
+        String releaseNetwork = project.getReleaseRelationNetwork();
+        ObjectMapper mapper = new ObjectMapper();
+        List<ReleaseLinkJSON> listReleaseLinkJson;
+        List<ReleaseLink> linkedReleases = new ArrayList<>();
+        try {
+            listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
+            });
+            ReleaseLinkJSON previousNode = listReleaseLinkJson.get(Integer.parseInt(trace.get(0)));
+            for (int i=1; i < trace.size(); i++){
+                previousNode = previousNode.getReleaseLink().get(Integer.parseInt(trace.get(i)));
             }
+            linkedReleases = convertFromReleaseLinkJSONToReleaseLink(previousNode.getReleaseLink(), projectId, user, previousNode.getReleaseId(), trace.size());
+        } catch (JsonProcessingException | TException e) {
+            log.error("JsonProcessingException: " + e);
         }
+        return linkedReleases;
+    }
 
-        return flatList;
+    protected List<ReleaseLink> convertFromReleaseLinkJSONToReleaseLink(List<ReleaseLinkJSON> releaseLinkJSONs, String projectId, User user, String parentId, int layer) throws TException {
+        List<ReleaseLink> releaseLinks = new ArrayList<>();
+        int index = 0;
+        for (ReleaseLinkJSON releaseLinkJSON : releaseLinkJSONs) {
+            Release releaseById = componentDatabaseHandler.getAccessibleRelease(releaseLinkJSON.getReleaseId(), user);
+            Component componentById = componentDatabaseHandler.getAccessibleComponent(releaseById.getComponentId(), user);
+
+            ReleaseLink releaseLink = new ReleaseLink();
+            releaseLink.setId(releaseLinkJSON.getReleaseId());
+            releaseLink.setReleaseRelationship(ReleaseRelationship.findByValue(releaseLinkJSON.getReleaseRelationship()));
+            releaseLink.setMainlineState(MainlineState.findByValue(releaseLinkJSON.getMainlineState()));
+            releaseLink.setComment(releaseLinkJSON.getComment());
+            if (releaseLinkJSON.getReleaseLink().size() > 0) {
+                releaseLink.setHasSubreleases(true);
+            } else {
+                releaseLink.setHasSubreleases(false);
+            }
+            releaseLink.setName(releaseById.getName());
+            releaseLink.setVersion(releaseById.getVersion());
+            releaseLink.setLongName(releaseById.getName() + " (" + releaseById.getVersion() + ")");
+            releaseLink.setClearingState(releaseById.getClearingState());
+            releaseLink.setComponentType(componentById.getComponentType());
+            releaseLink.setLicenseIds(releaseById.getMainLicenseIds());
+            releaseLink.setOtherLicenseIds(releaseById.getOtherLicenseIds());
+            releaseLink.setAccessible(true);
+            releaseLink.setNodeId(releaseById.getId() + "_" + UUID.randomUUID());
+            releaseLink.setParentNodeId(parentId);
+            releaseLink.setLayer(layer);
+            releaseLink.setProjectId(projectId);
+            releaseLink.setIndex(index);
+            releaseLink.setReleaseMainLineState(releaseById.getMainlineState());
+
+            if (releaseById.getVendor() != null) {
+                releaseLink.setVendor(releaseById.getVendor().getFullname());
+            } else {
+                releaseLink.setVendor("");
+            }
+            index++;
+            releaseLinks.add(releaseLink);
+        }
+        return releaseLinks;
     }
 }

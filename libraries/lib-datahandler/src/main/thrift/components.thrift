@@ -372,7 +372,9 @@ struct ReleaseLink{
     105: optional list<Release> releaseWithSameComponent,
     106: optional i32 layer,
     107: optional i32 index,
-    108: optional string defaultValue
+    108: optional string defaultValue,
+    109: optional string projectId,
+    110: optional MainlineState releaseMainLineState
 }
 
 

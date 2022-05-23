@@ -503,4 +503,9 @@ service ProjectService {
     * get accessible projects count
     */
     i32 getMyAccessibleProjectCounts(1: User user);
+
+    /**
+    * get ReleaseLink in release network of project by project id and trace
+    */
+    list<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(1: string projectId, 2: list<string> trace, 3: User user);
 }

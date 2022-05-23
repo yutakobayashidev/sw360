@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import org.apache.logging.log4j.LogManager;
@@ -26,10 +27,7 @@ import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseLinkJSON;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
@@ -90,15 +88,19 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         if (super.isGenericAction(action)) {
             super.dealWithGenericAction(request, response, action);
         } else {
-            dealWithLinkedObjects(request, response, action);
+            try {
+                dealWithLinkedObjects(request, response, action);
+            } catch (TException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
-    protected void dealWithLinkedObjects(ResourceRequest request, ResourceResponse response, String action) throws PortletException, IOException {
+    protected void dealWithLinkedObjects(ResourceRequest request, ResourceResponse response, String action) throws PortletException, IOException, TException {
         if (PortalConstants.LOAD_LINKED_PROJECTS_ROWS.equals(action)) {
             boolean overrideToRelease = Boolean.parseBoolean(request.getParameter("overrideToRelease"));
             if (overrideToRelease) {
-                loadLinkedReleasesRows(request, response);
+                loadLinkedReleaseLayerOfProject(request, response);
                 include("/html/utils/ajax/linkedReleasesClearingStatusRows.jsp", request, response,
                         PortletRequest.RESOURCE_PHASE);
                 return;
@@ -348,8 +350,35 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         }
     }
 
-
     protected void putLinkedReleasesNetworkWithAccessibilityInRequest(PortletRequest request, Project project, User user){
         request.setAttribute(PortalConstants.RELEASE_LIST, new ArrayList<ReleaseLink>());
+    }
+
+    protected void loadLinkedReleaseLayerOfProject(ResourceRequest request, ResourceResponse response) throws TException {
+        String projectId = request.getParameter("projectId");
+        String[] trace = request.getParameterValues("trace[]");
+        String branchId = request.getParameter(PARENT_BRANCH_ID);
+        final User user = UserCacheHolder.getUserFromRequest(request);
+
+        ComponentService.Iface client = thriftClients.makeComponentClient();
+        try {
+            ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+            List<ReleaseLink> linkedReleases = projectClient.getReleaseLinksOfProjectNetWorkByTrace(projectId, Arrays.asList(trace), user);
+            log.info(linkedReleases);
+            request.setAttribute(PARENT_BRANCH_ID, branchId);
+            request.setAttribute(PortalConstants.PARENT_SCOPE_GROUP_ID, request.getParameter(PortalConstants.PARENT_SCOPE_GROUP_ID));
+            request.setAttribute(RELEASE_LIST, linkedReleases);
+            int totalInaccessibleRow = 0;
+            for (ReleaseLink link : linkedReleases) {
+                if (!link.isAccessible()) {
+                    totalInaccessibleRow++;
+                }
+            }
+            request.setAttribute(TOTAL_INACCESSIBLE_ROWS, totalInaccessibleRow);
+        } catch (TException e) {
+            log.error("Error getting projects!", e);
+        }
+
+
     }
 }
