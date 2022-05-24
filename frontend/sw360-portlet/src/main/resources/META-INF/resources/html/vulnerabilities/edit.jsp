@@ -536,6 +536,7 @@
                 $("#vulnerabilityCwe").val(vulnerabilityCwe);
                 $("#vulnerabilityExtendedDescription").val(vulnerabilityExtendedDescription);
 
+                $('.reference-link').each(function() {$(this).val($(this).val().trim())});
                 $('.advisory-vendor').each(function() {$(this).val($(this).val().trim())});
                 $('.advisory-name').each(function() {$(this).val($(this).val().trim())});
                 $('.advisory-url').each(function() {$(this).val($(this).val().trim())});
