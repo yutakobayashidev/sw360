@@ -1162,7 +1162,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 releaseIdToProjects.put(release.getReleaseId(), new ProjectWithReleaseRelationTuple(project, relation));
             }
         } catch (JsonProcessingException e) {
-            log.error("release id to projects has error: " + e);
+            log.error("release id to projects has error: " + e.getMessage());
         }
 
         Map<String, ProjectProjectRelationship> linkedProjects = project.getLinkedProjects();
