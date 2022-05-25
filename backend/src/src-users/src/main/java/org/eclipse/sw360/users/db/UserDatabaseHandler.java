@@ -206,7 +206,7 @@ public class UserDatabaseHandler {
             requestSummary.setTotalAffectedElements(listFileSuccess.size());
             requestSummary.setTotalElements(listFileSuccess.size() + listFileFail.size());
             requestSummary.setRequestStatus(RequestStatus.SUCCESS);
-        } catch (Exception e) {
+        } catch (IOException e) {
             IMPORT_DEPARTMENT_STATUS = false;
             String msg = "Failed to import department";
             requestSummary.setMessage(msg);
@@ -285,12 +285,12 @@ public class UserDatabaseHandler {
                 departmentDuplicate.add(mapTemp);
             }
             listMap.put(mapTemp, emailExcel);
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             log.error("Can't read file excel: {}", ex.getMessage());
         } finally {
             try {
                 if (wb != null) wb.close();
-            } catch (Exception e) {
+            } catch (IOException e) {
                 log.error(e.getMessage());
             }
         }

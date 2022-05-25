@@ -75,9 +75,10 @@ public class DepartmentPortlet extends Sw360Portlet {
     }
 
     private void prepareStandardView(RenderRequest request) {
+        User user = UserCacheHolder.getUserFromRequest(request);
+        ScheduleService.Iface scheduleClient = new ThriftClients().makeScheduleClient();
+        UserService.Iface userClient = thriftClients.makeUserClient();
         try {
-            User user = UserCacheHolder.getUserFromRequest(request);
-            ScheduleService.Iface scheduleClient = new ThriftClients().makeScheduleClient();
             boolean isDepartmentScheduled = isDepartmentScheduled(scheduleClient, user);
             request.setAttribute(PortalConstants.DEPARTMENT_IS_SCHEDULED, isDepartmentScheduled);
             int offsetInSeconds = scheduleClient.getFirstRunOffset(ThriftClients.IMPORT_DEPARTMENT_SERVICE);
@@ -86,8 +87,6 @@ public class DepartmentPortlet extends Sw360Portlet {
             request.setAttribute(PortalConstants.DEPARTMENT_INTERVAL, CommonUtils.formatTime(intervalInSeconds));
             String nextSync = scheduleClient.getNextSync(ThriftClients.IMPORT_DEPARTMENT_SERVICE);
             request.setAttribute(PortalConstants.DEPARTMENT_NEXT_SYNC, nextSync);
-
-            UserService.Iface userClient = thriftClients.makeUserClient();
             Map<String, List<User>> listMap = userClient.getAllUserByDepartment();
             request.setAttribute(PortalConstants.DEPARTMENT_LIST, listMap);
             Map<String, List<String>> listContentFileLog = userClient.getAllContentFileLog()

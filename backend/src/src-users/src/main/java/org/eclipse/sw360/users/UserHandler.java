@@ -27,6 +27,7 @@ import org.eclipse.sw360.users.util.ReadFileDepartmentConfig;
 import org.ektorp.http.HttpClient;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Supplier;
@@ -194,7 +195,7 @@ public class UserHandler implements UserService.Iface {
                 if (!theDir.exists()) theDir.mkdirs();
                 return FileUtil.listFileNames(path);
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             log.error("Can't get file log: {}", e.getMessage());
         }
         return Collections.emptySet();
@@ -214,7 +215,7 @@ public class UserHandler implements UserService.Iface {
                     listMap.put(FilenameUtils.getName(fileName).replace(EXTENSION, ""), FileUtil.readFileLog(fileName));
                 }
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             log.error("Can't get file log: {}", e.getMessage());
         }
         return listMap;
@@ -235,20 +236,16 @@ public class UserHandler implements UserService.Iface {
                 }
             }
         } catch (IOException e) {
-            log.error("Read file failed!!"+e);
+            log.error("Read file failed!", e.getMessage());
         }
-            return "";
+        return "";
     }
 
     @Override
     public String getPathConfigDepartment() throws TException {
-        try {
-            DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
-            if (configDTO != null && !configDTO.getPathFolder().isEmpty()) {
-                return configDTO.getPathFolder();
-            }
-        } catch (Exception e) {
-           log.error("Read file failed!!"+e);
+        DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
+        if (configDTO != null && !configDTO.getPathFolder().isEmpty()) {
+            return configDTO.getPathFolder();
         }
         return "";
     }
@@ -260,13 +257,9 @@ public class UserHandler implements UserService.Iface {
 
     @Override
     public String getLastRunningTime() throws TException {
-        try {
-            DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
-            if (configDTO != null && !configDTO.getLastRunningTime().isEmpty()) {
-                return configDTO.getLastRunningTime();
-            }
-        } catch (Exception e) {
-            log.error("Read file failed!!"+e);
+        DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
+        if (configDTO != null && !configDTO.getLastRunningTime().isEmpty()) {
+            return configDTO.getLastRunningTime();
         }
         return "";
     }

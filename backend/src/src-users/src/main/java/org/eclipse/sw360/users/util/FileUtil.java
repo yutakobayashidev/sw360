@@ -58,14 +58,14 @@ public class FileUtil {
                 writer.write(contentLog);
             }
             writer.newLine();
-        } catch (Exception e) {
-           log.error("Write log to file failed!"+e);
+        } catch (IOException e) {
+            log.error("Write log to file failed!", e.getMessage());
         } finally {
             try {
                 if (writer != null) writer.close();
                 if (fileWriter != null) fileWriter.close();
-            } catch (Exception e) {
-                log.error("Close file failed!"+e);
+            } catch (IOException e) {
+                log.error("Close file failed!" ,e.getMessage());
             }
         }
     }
@@ -92,7 +92,7 @@ public class FileUtil {
         try {
             contentLog = Files.readAllLines(path);
         } catch (IOException e) {
-          log.error("Read file log failed!"+e);
+            log.error("Read file log failed!" ,e.getMessage());
         }
         return contentLog;
     }

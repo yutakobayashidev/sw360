@@ -43,7 +43,6 @@ public class ReadFileDepartmentConfig {
     public DepartmentConfigDTO readFileJson() {
         try {
             File file = new File(getPathConfig());
-            DepartmentConfigDTO departmentConfigDTO=new DepartmentConfigDTO();
             if (file.exists()) {
                 Reader reader = Files.newBufferedReader(Paths.get(getPathConfig()));
                 ObjectMapper objectMapper = new ObjectMapper();
@@ -54,7 +53,7 @@ public class ReadFileDepartmentConfig {
                 int showFileLogFrom = config.path("showFileLogFrom").asInt();
                 String pathFolderLog = "";
                 if (!pathFolder.isEmpty()) pathFolderLog = pathFolder + FOLDER_LOG;
-
+                DepartmentConfigDTO departmentConfigDTO=new DepartmentConfigDTO();
                 departmentConfigDTO.setPathFolder(pathFolder);
                 departmentConfigDTO.setPathFolderLog(pathFolderLog);
                 departmentConfigDTO.setLastRunningTime(lastRunningTime);
@@ -89,8 +88,8 @@ public class ReadFileDepartmentConfig {
         } finally {
             try {
                 if (writer != null) writer.close();
-            } catch (Exception e) {
-                log.info("Error close the file!" + e);
+            } catch (IOException e) {
+                log.info("Error close the file!" , e.getMessage());
             }
         }
     }
@@ -115,8 +114,8 @@ public class ReadFileDepartmentConfig {
         } finally {
             try {
                 if (writer != null) writer.close();
-            } catch (Exception e) {
-                log.info("Error close the file!" + e);
+            } catch (IOException e) {
+                log.info("Error close the file!" ,e.getMessage());
             }
         }
     }
