@@ -399,7 +399,9 @@ struct ReleaseLinkJSON {
      18: optional string isRelease,
      19: optional string projectMainlineState,
      20: optional string relation,
-     21: optional string releaseOrigin
+     21: optional string releaseOrigin,
+     22: optional string createdOn,
+     23: optional string createdBy
 }
 
 struct ReleaseClearingStatusData {
