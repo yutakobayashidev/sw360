@@ -32,6 +32,7 @@ import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.portlets.components.ComponentPortletUtils;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
+import org.springframework.security.access.AccessDeniedException;
 
 import javax.portlet.*;
 import java.io.IOException;
@@ -227,18 +228,24 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
 
     private List<Release> getReleasesFromRelations(User user, VulnerabilityWithReleaseRelations vulnerabilityWithReleaseRelations) {
         if (vulnerabilityWithReleaseRelations != null) {
+            List<Release> releases = new ArrayList<>();
+            ComponentService.Iface client = thriftClients.makeComponentClient();
             List<ReleaseVulnerabilityRelation> relations = vulnerabilityWithReleaseRelations.getReleaseRelation();
 
             Set<String> ids = relations.stream()
                     .map(ReleaseVulnerabilityRelation::getReleaseId)
                     .collect(Collectors.toSet());
-
-            try {
-                ComponentService.Iface client = thriftClients.makeComponentClient();
-                return client.getReleasesById(ids, user);
-            } catch (TException e) {
-                log.error("Error fetching releases from backend!", e);
-            }
+            ids.stream().forEach(id -> {
+                try {
+                    Release release = client.getReleaseById(id, user);
+                    if (release != null) {
+                        releases.add(release);
+                    }
+                } catch (TException e) {
+                    log.error("Error fetching releases from backend!", e.getMessage());
+                }
+            });
+            return releases;
         }
         return ImmutableList.of();
     }
@@ -528,16 +535,38 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
                 User user = UserCacheHolder.getUserFromRequest(request);
                 ThriftClients thriftClients = new ThriftClients();
                 VulnerabilityService.Iface vulnerabilityClient = thriftClients.makeVulnerabilityClient();
+                ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+
                 Vulnerability vulnerability = vulnerabilityClient.getById(vulnerabilityId);
                 VulnerabilityWithReleaseRelations vulnerabilityWithReleaseRelations = vulnerabilityClient
                         .getVulnerabilityWithReleaseRelationsByExternalId(vulnerability.getExternalId(), user);
                 if (!CommonUtils.isNotEmpty(vulnerabilityWithReleaseRelations.getReleaseRelation())) {
                     return vulnerabilityClient.deleteVulnerability(vulnerability, user);
                 } else {
-                    return RequestStatus.IN_USE;
+                    List<Release> releasesInRelation = new ArrayList<>();
+                    Set<String> releaseIdsInRelation = vulnerabilityWithReleaseRelations.getReleaseRelation().stream()
+                            .map(ReleaseVulnerabilityRelation::getReleaseId)
+                            .collect(Collectors.toSet());
+
+                    releaseIdsInRelation.stream().forEach(releaseId -> {
+                        try {
+                            Release release = componentClient.getReleaseById(releaseId, user);
+                            if (release != null) {
+                                releasesInRelation.add(release);
+                            }
+                        } catch (TException e) {
+                            log.error("Error when get release: " + releaseId + ". " + e.getMessage());
+                        }
+                    });
+
+                    if (releasesInRelation.size() == 0) {
+                        return vulnerabilityClient.deleteVulnerability(vulnerability, user);
+                    } else {
+                        return RequestStatus.IN_USE;
+                    }
                 }
             } catch (Exception e) {
-                log.error("Cannot find vulnerability from DB", e);
+                log.error("Cannot find vulnerability from DB", e.getMessage());
                 return RequestStatus.FAILURE;
             }
         }
