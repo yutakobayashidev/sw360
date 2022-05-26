@@ -805,7 +805,7 @@ public class JacksonCustomizations {
                 //"isSetCvss",
                 //"cvssTime",
                 //"vulnerableConfiguration",
-                "access",
+                //"access",
                 //"cveFurtherMetaDataPerSource",
                 "setLastUpdateDate",
                 "setPriorityText",

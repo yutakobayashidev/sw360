@@ -247,7 +247,7 @@
                         { title: "<liferay-ui:message key="weighting" />", data: 'cvss', render: renderCvss },
                         { title: "<liferay-ui:message key="publish.date" />", data: 'publishDate', default: '' },
                         { title: "<liferay-ui:message key="last.update" />", data: 'lastExternalUpdate', default: '' },
-                        { title: "<liferay-ui:message key="actions" />", data: 'action', default: '' }
+                        { title: "<liferay-ui:message key="actions" />", data: 'action', default: '', orderable: false}
                     ],
                     order: [[4, 'desc'],[3, 'desc']],
                     language: {
