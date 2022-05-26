@@ -40,6 +40,10 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.LICENSE_TO_SOURCE_FILE%>"/>
 </portlet:resourceURL>
 
+<portlet:resourceURL var="loadSpdxLicenseInfoUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_SPDX_LICENSE_INFO%>'/>
+</portlet:resourceURL>
+
 <portlet:resourceURL var="addLicenseToReleaseUrl">
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.ADD_LICENSE_TO_RELEASE%>"/>
     <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${docid}"/>
@@ -152,6 +156,7 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <%@ include file="/html/utils/includes/licenseToSrcMapping.jspf" %>
+<%@ include file="/html/utils/includes/scannerFindings.jspf" %>
 <script>
 AUI().use('liferay-portlet-url', function () {
     var PortletURL = Liferay.PortletURL;
@@ -321,7 +326,7 @@ AUI().use('liferay-portlet-url', function () {
                 	return row;
                 }),
                 columns: [
-                    {title: "<liferay-ui:message key="name" />", data : "name", "defaultContent": "", render: {display: detailUrl}},
+                    {title: "<liferay-ui:message key="name" />", data : "name", "defaultContent": "", render: {display: detailUrl} },
                     {title: "<liferay-ui:message key="type" />", data : "type", "defaultContent": ""},
                     {title: "<liferay-ui:message key="project.path" />", data : "projectOrigin", "defaultContent": "", render: $.fn.dataTable.render.text() },
                     {title: "<liferay-ui:message key="release.path" />", data : "releaseOrigin", "defaultContent": "", render: $.fn.dataTable.render.text() },
@@ -396,8 +401,12 @@ AUI().use('liferay-portlet-url', function () {
             else {
                 url = makeProjectViewUrl(row.id);
             }
-            let viewUrl = $("<a></a>").attr("href",url).css("word-break","break-word").text(name);
-            return viewUrl[0].outerHTML;
+            let viewUrl = $("<a></a>").attr("href",url).css("word-break","break-word").text(name),
+                $infoIcon = '';
+            if (row.clearingState === 'Scan available') {
+                $infoIcon = "<span class='actions'><svg class='cursor lexicon-icon m-2 isr' data-doc-id="+ row.id +"> <title><liferay-ui:message key='view.scanner.findings.license'/></title> <use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle'/></svg></span>";
+            }
+            return viewUrl[0].outerHTML + $infoIcon;
             } else {
                 return "<liferay-ui:message key="inaccessible.release" />";
             }
@@ -451,7 +460,7 @@ AUI().use('liferay-portlet-url', function () {
 
         function renderState(data, type, row) {
             if(row.isRelease==="true") {
-                return renderClearingStateBox(row.clearingState);
+                return renderClearingStateBox(row.clearingState, row.id);
             }
             return renderProjectStateBox(row.projectState,row.clearingState)
         }
@@ -472,7 +481,7 @@ AUI().use('liferay-portlet-url', function () {
             return $state[0].outerHTML;
         }
 
-        function renderClearingStateBox(stateVal) {
+        function renderClearingStateBox(stateVal, docId) {
             var $state = $('<div>', {
                 'class': 'content-center'
             });
@@ -604,7 +613,7 @@ AUI().use('liferay-portlet-url', function () {
                 });
 
                 $(this).find(".releaseClearingState:eq(0)").each(function(){
-                    $(this).html(renderClearingStateBox($(this).data("releaseclearingstate")));
+                    $(this).html(renderClearingStateBox($(this).data("releaseclearingstate"), $(this).data("releaseid")));
                 });
 
                 $(this).find("td.actions").each(function() {
@@ -650,7 +659,7 @@ AUI().use('liferay-portlet-url', function () {
                 });
 
                 $('#LinkedProjectsInfo').find(".releaseClearingState").each(function(){
-                    $(this).html(renderClearingStateBox($(this).data("releaseclearingstate")));
+                    $(this).html(renderClearingStateBox($(this).data("releaseclearingstate"), $(this).data("releaseid")));
                 });
                 $('#LinkedProjectsInfo tr').find("td.actions").each(function() {
                     renderLicenses($(this));

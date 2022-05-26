@@ -122,7 +122,7 @@ public abstract class FossologyAwarePortlet extends LinkedReleasesAndProjectsAwa
                 Predicate<Attachment> isApprovedCLI = attachment -> CheckStatus.ACCEPTED.equals(attachment.getCheckStatus());
                 filteredAttachments = filteredAttachments.stream().filter(isApprovedCLI).collect(Collectors.toList());
             }
-            if (filteredAttachments.size() == 1 && filteredAttachments.get(0).getFilename().endsWith(".xml")) {
+            if (filteredAttachments.size() == 1 && filteredAttachments.get(0).getFilename().endsWith(PortalConstants.XML_FILE_EXTENSION)) {
                 final Attachment filteredAttachment = filteredAttachments.get(0);
                 final String attachmentContentId = filteredAttachment.getAttachmentContentId();
 
@@ -233,7 +233,7 @@ public abstract class FossologyAwarePortlet extends LinkedReleasesAndProjectsAwa
         JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
         try {
             ExternalToolProcess fossologyProcess = fossologyClient.process(releaseId,
-                    UserCacheHolder.getUserFromRequest(request));
+                    UserCacheHolder.getUserFromRequest(request), "");
             fillJsonObjectFromFossologyProcess(jsonObject, Stream.of(fossologyProcess).collect(Collectors.toSet()));
         } catch (TException e) {
             jsonObject.put("error", "Could not determine FOSSology state for this release!");

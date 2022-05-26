@@ -436,4 +436,8 @@ public class ProjectHandler implements ProjectService.Iface {
     public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(String projectId, List<String> trace, User user) throws TException {
         return handler.getReleaseLinksOfProjectNetWorkByTrace(trace, projectId, user);
     }
+    @Override
+    public void sendExportSpreadsheetSuccessMail(String url, String recepient) throws TException {
+        handler.sendExportSpreadsheetSuccessMail(url, recepient);
+    }
 }

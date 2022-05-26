@@ -95,6 +95,7 @@ import static com.liferay.portal.kernel.json.JSONFactoryUtil.createJSONObject;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.CONTENT_TYPE_OPENXML_SPREADSHEET;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapException;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 import static org.eclipse.sw360.portal.portlets.projects.ProjectPortletUtils.isUsageEquivalent;
@@ -206,8 +207,12 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             updateVulnerabilitiesProject(request, response);
         } else if (PortalConstants.UPDATE_VULNERABILITY_RATINGS.equals(action)) {
             updateVulnerabilityRating(request, response);
+        } else if (PortalConstants.EMAIL_EXPORTED_EXCEL.equals(action)) {
+            exportExcelWithEmail(request, response);
         } else if (PortalConstants.EXPORT_TO_EXCEL.equals(action)) {
             exportExcel(request, response);
+        } else if (PortalConstants.DOWNLOAD_EXCEL.equals(action)) {
+            downloadExcel(request, response);
         } else if (PortalConstants.EXPORT_CLEARING_TO_EXCEL.equals(action)) {
             exportReleasesSpreadsheet(request, response);
         } else if (PortalConstants.DOWNLOAD_LICENSE_INFO.equals(action)) {
@@ -237,17 +242,19 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         } else if (PortalConstants.VIEW_CLEARING_REQUEST.equals(action)) {
             showClearingRequest(request, response);
         } else if (PortalConstants.LIST_CLEARING_STATUS.equals(action)) {
-            try {
+//            try {
                 serveClearingStatusList(request, response);
-            } catch (TException e) {
-                throw new RuntimeException(e);
-            }
+//            } catch (TException e) {
+//                throw new RuntimeException(e);
+//            }
         } else if (PortalConstants.CLEARING_STATUS_ON_LOAD.equals(action)) {
             serveClearingStatusonLoad(request, response);
         } else if (PortalConstants.LICENSE_TO_SOURCE_FILE.equals(action)) {
             serveLicenseToSourceFileMapping(request, response);
         } else if (PortalConstants.ADD_LICENSE_TO_RELEASE.equals(action)) {
             addLicenseToLinkedReleases(request, response);
+        } else if (PortalConstants.LOAD_SPDX_LICENSE_INFO.equals(action)) {
+            loadSpdxLicenseInfo(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
         } else if (PortalConstants.LOAD_CHANGE_LOGS.equals(action) || PortalConstants.VIEW_CHANGE_LOGS.equals(action)) {
@@ -287,6 +294,25 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             serveViewVendor(request, response);
         } else if (ADD_VENDOR.equals(action)) {
             serveAddVendor(request, response);
+        }
+    }
+
+    private void downloadExcel(ResourceRequest request, ResourceResponse response) {
+        final User user = UserCacheHolder.getUserFromRequest(request);
+        final String token = request.getParameter("token");
+        String filename = null;
+
+        try {
+            boolean extendedByReleases = Boolean.valueOf(request.getParameter(PortalConstants.EXTENDED_EXCEL_EXPORT));
+            ProjectExporter exporter = new ProjectExporter(thriftClients.makeComponentClient(),
+                    thriftClients.makeProjectClient(), user, extendedByReleases);
+            filename = String.format("projects-%s.xlsx", SW360Utils.getCreatedOn());
+            PortletResponseUtil.sendFile(request, response, filename, exporter.downloadExcelSheet(token),
+                    CONTENT_TYPE_OPENXML_SPREADSHEET);
+        } catch (IOException | TException e) {
+            log.error("An error occurred while generating the Excel export", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE,
+                    Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
         }
     }
 
@@ -1027,9 +1053,26 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         String filename = String.format("projects-%s.xlsx", SW360Utils.getCreatedOn());
         try {
             boolean extendedByReleases = Boolean.valueOf(request.getParameter(PortalConstants.EXTENDED_EXCEL_EXPORT));
-            List<Project> projects = getFilteredProjectList(request);
+            ProjectService.Iface client = thriftClients.makeProjectClient();
+            int total = client.getMyAccessibleProjectCounts(user);
+            PaginationData pageData = new PaginationData();
+            pageData.setAscending(true);
+            Map<PaginationData, List<Project>> pageDtToProjects;
+            Set<Project> projects = new HashSet<>();
+            int displayStart = 0;
+            int rowsPerPage = 500;
+            while (0 < total) {
+                pageData.setDisplayStart(displayStart);
+                pageData.setRowsPerPage(rowsPerPage);
+                displayStart = displayStart + rowsPerPage;
+                pageDtToProjects = getFilteredProjectList(request, pageData);
+                projects.addAll(pageDtToProjects.entrySet().iterator().next().getValue());
+                total = total - rowsPerPage;
+            }
+
+            List<Project> listOfProjects = new ArrayList<Project>(projects);
             if (!isNullOrEmpty(projectId)) {
-                Project project = projects.stream().filter(p -> p.getId().equals(projectId)).findFirst().get();
+                Project project = listOfProjects.stream().filter(p -> p.getId().equals(projectId)).findFirst().get();
                 fillVendor(project);
                 filename = String.format("project-%s-%s-%s.xlsx", project.getName(), project.getVersion(), SW360Utils.getCreatedOn());
             }
@@ -1037,10 +1080,66 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     thriftClients.makeComponentClient(),
                     thriftClients.makeProjectClient(),
                     user,
-                    projects,
+                    listOfProjects,
                     extendedByReleases);
-            PortletResponseUtil.sendFile(request, response, filename, exporter.makeExcelExport(projects), CONTENT_TYPE_OPENXML_SPREADSHEET);
-        } catch (IOException | SW360Exception e) {
+            PortletResponseUtil.sendFile(request, response, filename, exporter.makeExcelExport(listOfProjects), CONTENT_TYPE_OPENXML_SPREADSHEET);
+        } catch (IOException | TException e) {
+            log.error("An error occurred while generating the Excel export", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE,
+                    Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+        }
+    }
+
+    private void exportExcelWithEmail(ResourceRequest request, ResourceResponse response) {
+        final User user = UserCacheHolder.getUserFromRequest(request);
+        final String projectId = request.getParameter(Project._Fields.ID.toString());
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        String token = null;
+
+        try {
+            setSessionMessage(request, LanguageUtil.get(resourceBundle,"excel.report.generation.has.started.we.will.send.you.an.email.with.download.link.once.completed"));
+            ProjectService.Iface client = thriftClients.makeProjectClient();
+            boolean extendedByReleases = Boolean.valueOf(request.getParameter(PortalConstants.EXTENDED_EXCEL_EXPORT));
+            int total = client.getMyAccessibleProjectCounts(user);
+            PaginationData pageData = new PaginationData();
+            pageData.setAscending(true);
+            Map<PaginationData, List<Project>> pageDtToProjects;
+            Set<Project> projects = new HashSet<>();
+            int displayStart = 0;
+            int rowsPerPage = 500;
+            while (0 < total) {
+                pageData.setDisplayStart(displayStart);
+                pageData.setRowsPerPage(rowsPerPage);
+                displayStart = displayStart + rowsPerPage;
+                pageDtToProjects = getFilteredProjectList(request, pageData);
+                projects.addAll(pageDtToProjects.entrySet().iterator().next().getValue());
+                total = total - rowsPerPage;
+            }
+
+            List<Project> listOfProjects = new ArrayList<Project>(projects);
+            if (!isNullOrEmpty(projectId)) {
+                Project project = listOfProjects.stream().filter(p -> p.getId().equals(projectId)).findFirst().get();
+                fillVendor(project);
+            }
+            ProjectExporter exporter = new ProjectExporter(thriftClients.makeComponentClient(),
+                    thriftClients.makeProjectClient(), user, listOfProjects, extendedByReleases);
+
+            token = exporter.makeExcelExportForProject(listOfProjects, user);
+
+            String portletId = (String) request.getAttribute(WebKeys.PORTLET_ID);
+            ThemeDisplay tD = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
+            long plid = tD.getPlid();
+
+            LiferayPortletURL projectUrl = PortletURLFactoryUtil.create(request, portletId, plid,
+                    PortletRequest.RESOURCE_PHASE);
+            projectUrl.setParameter("action", PortalConstants.DOWNLOAD_EXCEL);
+            projectUrl.setParameter("token", token);
+            projectUrl.setParameter(PortalConstants.EXTENDED_EXCEL_EXPORT, String.valueOf(extendedByReleases));
+
+            if(!CommonUtils.isNullEmptyOrWhitespace(token)) {
+                client.sendExportSpreadsheetSuccessMail(projectUrl.toString(), user.getEmail());
+            }
+        } catch (IOException | TException | PortletException e) {
             log.error("An error occurred while generating the Excel export", e);
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE,
                     Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
@@ -1440,6 +1539,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 final Collection<ProjectLink> projectLinks = SW360Utils.getLinkedProjectsAsFlatList(id, true, thriftClients, log, user);
                 List<String> linkedProjectIds = projectLinks.stream().map(ProjectLink::getId).collect(Collectors.toList());
                 projectList = projectClient.getProjectsById(linkedProjectIds, user);
+                ctToProjects.put(pageData.setTotalRowCount(projectList.size()), projectList);
             } else {
                 if (filterMap.isEmpty()) {
                     ctToProjects = projectClient.getAccessibleProjectsSummaryWithPagination(user, pageData);
@@ -2718,14 +2818,14 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                                     && !license.getLicenseName().equalsIgnoreCase(SW360Constants.NA)
                                     && !license.getLicenseName().equalsIgnoreCase(SW360Constants.NO_ASSERTION)) // exclude unknown, n/a and noassertion
                             .collect(Collectors.toList());
-                    if (attachmentName.endsWith(".rdf")) {
+                    if (attachmentName.endsWith(PortalConstants.RDF_FILE_EXTENSION)) {
                         mainLicenses.addAll(licenseInfoResult.stream()
                                 .filter(filterConcludedLicense)
                                 .flatMap(singleResult -> singleResult.getLicenseInfo().getConcludedLicenseIds().stream())
                                 .collect(Collectors.toSet()));
                         otherLicenses.addAll(licenseWithTexts.stream().map(LicenseNameWithText::getLicenseName).collect(Collectors.toSet()));
                         otherLicenses.removeAll(mainLicenses);
-                    } else if (attachmentName.endsWith(".xml")) {
+                    } else if (attachmentName.endsWith(PortalConstants.XML_FILE_EXTENSION)) {
                         mainLicenses.addAll(licenseWithTexts.stream()
                                 .filter(filterLicense)
                                 .map(LicenseNameWithText::getLicenseName).collect(Collectors.toSet()));
@@ -2757,8 +2857,97 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             log.error("Error sending response for license info to linked releases message", e);
         }
     }
+    private void loadSpdxLicenseInfo(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
+        final User user = UserCacheHolder.getUserFromRequest(request);
+        final String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
+        final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        final LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
+        final JSONObject jsonResult = createJSONObject();
+        final ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        final Predicate<Attachment> isISR = attachment -> AttachmentType.INITIAL_SCAN_REPORT.equals(attachment.getAttachmentType());
 
-    private void serveClearingStatusList(ResourceRequest request, ResourceResponse response) throws TException {
+        Set<LicenseNameWithText> licenseNameWithTexts = new HashSet<LicenseNameWithText>();
+        String attachmentContentId = "";
+        String attachmentName = "";
+        Set<String> concludedLicenseIds = new TreeSet<String>();
+        Set<String> otherLicenseNames = new TreeSet<String>();
+        AttachmentType attachmentType = AttachmentType.OTHER;
+        JsonGenerator jsonGenerator = JSON_FACTORY.createGenerator(response.getWriter());
+        Predicate<LicenseInfoParsingResult> filterLicenseResult = result -> (null != result.getLicenseInfo() && null != result.getLicenseInfo().getLicenseNamesWithTexts());
+        Predicate<LicenseInfoParsingResult> filterConcludedLicense = result -> (null != result.getLicenseInfo() && null != result.getLicenseInfo().getConcludedLicenseIds());
+        long totalFileCount = 0;
+        try {
+            Release release = componentClient.getReleaseById(releaseId, user);
+            Set<Attachment> attachments = CommonUtils.nullToEmptySet(release.getAttachments());
+            attachments = attachments.stream().filter(isISR).collect(Collectors.toSet());
+            if (attachments.size() == 1) {
+                Attachment attachment = attachments.iterator().next();
+                attachmentType = attachment.getAttachmentType();
+                attachmentContentId = attachment.getAttachmentContentId();
+                attachmentName = attachment.getFilename();
+                List<LicenseInfoParsingResult> licenseInfoResult = licenseInfoClient.getLicenseInfoForAttachment(release,
+                        attachmentContentId, true, user);
+                List<LicenseNameWithText> licenseWithTexts = licenseInfoResult.stream()
+                        .filter(filterLicenseResult)
+                        .flatMap(result -> result.getLicenseInfo().getLicenseNamesWithTexts().stream())
+                        .filter(license -> !license.getLicenseName().equalsIgnoreCase(SW360Constants.LICENSE_NAME_UNKNOWN)
+                                && !license.getLicenseName().equalsIgnoreCase(SW360Constants.NA)
+                                && !license.getLicenseName().equalsIgnoreCase(SW360Constants.NO_ASSERTION)) // exclude unknown, n/a and noassertion
+                        .collect(Collectors.toList());
+                if (attachmentName.endsWith(PortalConstants.RDF_FILE_EXTENSION)) {
+                    totalFileCount = licenseWithTexts.stream().map(LicenseNameWithText::getSourceFiles).filter(Objects::nonNull).mapToInt(Set::size).sum();
+                    concludedLicenseIds = licenseInfoResult.stream()
+                            .filter(filterConcludedLicense)
+                            .flatMap(singleResult -> singleResult.getLicenseInfo().getConcludedLicenseIds().stream())
+                            .collect(Collectors.toCollection(TreeSet::new));
+                    otherLicenseNames = licenseWithTexts.stream().map(LicenseNameWithText::getLicenseName)
+                            .collect(Collectors.toCollection(TreeSet::new));
+                    otherLicenseNames.removeAll(concludedLicenseIds);
+                }
+                try {
+                    jsonGenerator.writeStartObject();
+                    if (concludedLicenseIds.size() > 0) {
+                        jsonGenerator.writeStringField(LICENSE_PREFIX, LanguageUtil.get(resourceBundle,"concluded.license.ids"));
+                        jsonGenerator.writeArrayFieldStart(LICENSE_IDS);
+                        concludedLicenseIds.forEach(licenseId -> wrapException(() -> { jsonGenerator.writeString(licenseId); }));
+                        jsonGenerator.writeEndArray();
+                    }
+                    jsonGenerator.writeStringField("otherLicense", LanguageUtil.get(resourceBundle,"other.license.id"));
+                    jsonGenerator.writeArrayFieldStart("otherLicenseIds");
+                    otherLicenseNames.forEach(licenseId -> wrapException(() -> { jsonGenerator.writeString(licenseId); }));
+                    jsonGenerator.writeEndArray();
+                    if (AttachmentType.INITIAL_SCAN_REPORT.equals(attachmentType)) {
+                        jsonGenerator.writeStringField(LICENSE_PREFIX, LanguageUtil.get(resourceBundle, "possible.main.license.ids"));
+                        jsonGenerator.writeStringField("totalFileCount", Long.toString(totalFileCount));
+                        jsonGenerator.writeStringField("fileName", attachmentName);
+                    }
+                    jsonGenerator.writeStringField(SW360Constants.STATUS, SW360Constants.SUCCESS);
+                    jsonGenerator.writeEndObject();
+                    jsonGenerator.close();
+                } catch (IOException | RuntimeException e) {
+                    log.error("Cannot write JSON response for attachment id " + attachmentContentId + " in release " + releaseId + ".", e);
+                    response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
+                }
+            } else {
+                jsonGenerator.writeStartObject();
+                jsonGenerator.writeStringField(SW360Constants.STATUS, SW360Constants.FAILURE);
+                if (attachments.size() > 1) {
+                    jsonGenerator.writeStringField(SW360Constants.MESSAGE, LanguageUtil.get(resourceBundle, "multiple.isr.are.found.in.the.release"));
+                } else if (attachments.isEmpty()) {
+                    jsonGenerator.writeStringField(SW360Constants.MESSAGE, LanguageUtil.get(resourceBundle, "isr.attachment.not.found.in.the.release"));
+                } else {
+                    jsonGenerator.writeStringField(SW360Constants.MESSAGE, LanguageUtil.get(resourceBundle, "license.information.not.found.in.isr"));
+                }
+                jsonGenerator.writeEndObject();
+                jsonGenerator.close();
+            }
+        } catch (TException e) {
+            log.error("Cannot retrieve license information for attachment id " + attachmentContentId + " in release " + releaseId + ".", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
+        }
+    }
+
+    private void serveClearingStatusList(ResourceRequest request, ResourceResponse response) {
         ProjectService.Iface client = thriftClients.makeProjectClient();
         User user = UserCacheHolder.getUserFromRequest(request);
         String projectId = request.getParameter(DOCUMENT_ID);

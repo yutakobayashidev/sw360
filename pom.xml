@@ -55,22 +55,23 @@
         <java.version>11</java.version>
         <ektorp.version>1.5.0</ektorp.version>
         <thrift.version>0.14.0</thrift.version>
-        <guava.version>21.0</guava.version>
-        <spring.version>5.2.9.RELEASE</spring.version>
-        <spring-boot.version>2.1.17.RELEASE</spring-boot.version>
-        <spring-restdocs.version>2.0.5.RELEASE</spring-restdocs.version>
-        <spring-security-oauth2.version>2.3.8.RELEASE</spring-security-oauth2.version>
-        <spring-security-jwt.version>1.0.11.RELEASE</spring-security-jwt.version>
+        <guava.version>31.0.1-jre</guava.version>
+        <spring.version>5.3.19</spring.version>
+        <spring-boot.version>2.6.6</spring-boot.version>
+        <spring-restdocs.version>2.0.6.RELEASE</spring-restdocs.version>
+        <spring-security-oauth2.version>2.5.1.RELEASE</spring-security-oauth2.version>
+        <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
 
         <slf4j.version>1.7.30</slf4j.version>
         <log4j2.version>2.17.1</log4j2.version>
         <gson.version>2.8.6</gson.version>
         <jcraft.version>0.1.54</jcraft.version>
-        <jackson.version>2.11.3</jackson.version>
-        <junit-dataprovider.version>1.12.0</junit-dataprovider.version>
+        <jackson.version>2.13.2</jackson.version>
+        <jackson-databind.version>2.13.2.2</jackson-databind.version>
+        <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
         <poi.version>4.1.2</poi.version>
 
-        <junit.version>4.13.1</junit.version>
+        <junit.version>4.13.2</junit.version>
         <jgiven.version>0.17.0</jgiven.version>
         <hamcrest.version>1.3</hamcrest.version>
         <mockito.version>1.10.19</mockito.version>
@@ -182,6 +183,11 @@
                 <version>3.8.1</version>
             </dependency>
             <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>failureaccess</artifactId>
+                <version>1.0.1</version>
+            </dependency>
+            <dependency>
                 <groupId>commons-cli</groupId>
                 <artifactId>commons-cli</artifactId>
                 <version>1.4</version>
@@ -212,7 +218,7 @@
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
-                <version>1.10</version>
+                <version>1.12</version>
             </dependency>
             <dependency>
                 <groupId>com.github.ldriscoll</groupId>
@@ -263,7 +269,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
+                <version>${jackson-databind.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -502,7 +508,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>2.6</version>
+                    <version>2.7</version>
                     <configuration>
                         <overwrite>true</overwrite>
                     </configuration>
