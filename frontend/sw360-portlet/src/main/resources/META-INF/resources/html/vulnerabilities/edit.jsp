@@ -453,6 +453,8 @@
                        let newExternalId = $("#vulnerabilityExternalId").val().trim();
                        let cvssScoreValid = true;
                        let cveYearValid = true;
+                       let cveNumberValid = true;
+
                        if (cvssScore > 10.0 || cvssScore < 0){
                             $(".cvss-invalid").css("display", "block");
                             $("#vulnerabilityScore").css("border-color", "#5aca75");
@@ -460,17 +462,29 @@
                        } else{
                             $(".cvss-invalid").css("display", "none");
                        }
+
                        $(".cve-year").each(function() {
                             let value = $(this).val();
-                            if(parseInt(value) <= 0) {
+                            if (parseInt(value) <= 0) {
                                 $(this).closest('td').find('.cve-year-invalid').css("display","block");
                                 $(this).css("border-color", "#5aca75");
                                 cveYearValid = false;
-                            }
-                            else {
+                            } else {
                                 $(this).closest('td').find('.cve-year-invalid').css("display","none");
                             }
                        });
+
+                       $(".cve-number").each(function() {
+                            let value = $(this).val();
+                            if (parseInt(value) < 0) {
+                                $(this).closest('td').find('.cve-number-invalid').css("display","block");
+                                $(this).css("border-color", "#5aca75");
+                                cveNumberValid = false;
+                            } else {
+                                $(this).closest('td').find('.cve-number-invalid').css("display","none");
+                            }
+                       });
+
                        if (addMode === "" || addMode == undefined || newExternalId != oldExternalId){
                             let externalId = $("#vulnerabilityExternalId").val();
                             let resourceURL = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>';
@@ -486,7 +500,7 @@
                                     if (data.result == 'SUCCESS') {
                                         $("#externalIdFeedBack").css("display", "none");
                                         $("#vulnerabilityExternalId").css("border-color", "#5aca75");
-                                        if (cvssScoreValid == true && cveYearValid == true){
+                                        if (cvssScoreValid == true && cveYearValid == true && cveNumberValid == true){
                                             trimValue();
                                             $('#vulnerabilityEditForm').submit();
                                         }
@@ -501,7 +515,7 @@
                             });
                        }
                        else {
-                            if (cvssScoreValid == true && cveYearValid == true){
+                            if (cvssScoreValid == true && cveYearValid == true && cveNumberValid == true){
                                 trimValue();
                                 $('#vulnerabilityEditForm').submit();
                             }
