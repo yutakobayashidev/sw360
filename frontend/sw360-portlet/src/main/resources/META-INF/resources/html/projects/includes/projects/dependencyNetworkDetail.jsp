@@ -1,12 +1,13 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
+  ~ Copyright TOSHIBA CORPORATION, 2022. Part of the SW360 Portal Project.
+  ~ Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2022. Part of the SW360 Portal Project.
   ~
   ~ This program and the accompanying materials are made
   ~ available under the terms of the Eclipse Public License 2.0
   ~ which is available at https://www.eclipse.org/legal/epl-2.0/
   ~
   ~ SPDX-License-Identifier: EPL-2.0
---%>
+  --%>
 
 <%@include file="/html/init.jsp" %>
 
@@ -21,31 +22,18 @@
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
 
-<portlet:resourceURL var="loadLinkedProjectsRowsURL">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_LINKED_PROJECTS_ROWS%>'/>
-    <portlet:param name="<%=PortalConstants.LOAD_LINKED_RELEASES_ROWS%>" value='true'/>
+<portlet:resourceURL var="loadLinkedProjectToNetwork">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.LOAD_LINKED_PROJECTS_TO_NETWORK%>"/>
+    <portlet:param name="<%=PortalConstants.LOAD_LINKED_RELEASES_ROWS%>" value='false'/>
 </portlet:resourceURL>
 
-<portlet:resourceURL var="clearingStatuslisturl">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.LIST_CLEARING_STATUS%>"/>
+<portlet:resourceURL var="listNetworkClearingStatus">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.LIST_NETWORK_CLEARING_STATUS%>"/>
     <portlet:param name="<%=PortalConstants.DOCUMENT_ID%>" value="${docid}"/>
 </portlet:resourceURL>
 
-<portlet:resourceURL var="clearingStatuslistOnloadurl">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.CLEARING_STATUS_ON_LOAD%>"/>
-    <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${docid}"/>
-</portlet:resourceURL>
-
-<portlet:resourceURL var="licenseToSourceFileUrl">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.LICENSE_TO_SOURCE_FILE%>"/>
-</portlet:resourceURL>
-
-<portlet:resourceURL var="loadSpdxLicenseInfoUrl">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_SPDX_LICENSE_INFO%>'/>
-</portlet:resourceURL>
-
-<portlet:resourceURL var="addLicenseToReleaseUrl">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.ADD_LICENSE_TO_RELEASE%>"/>
+<portlet:resourceURL var="dependenceNetworkOnLoadUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.DEPENDENCE_NETWORK_ON_LOAD_URL%>"/>
     <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${docid}"/>
 </portlet:resourceURL>
 
@@ -58,19 +46,16 @@
 <jsp:useBean id="projectList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.projects.ProjectLink>"
              scope="request"/>
 
-<div class="tab-content" id="pills-clearingStatusTab">
-    <div class="tab-pane fade show active" id="pills-treeView" role="tabpanel" aria-labelledby="pills-tree-tab">
-    <div class="btn-group mx-1" role="group">
-        <button type="button" class="btn btn-outline-dark" id="addLicenseToRelease"><liferay-ui:message key="add.license.info.to.release" /></button>
-    </div>
+<div class="tab-content" id="pills-dependencyNetwork">
+    <div class="tab-pane fade show active" id="pills-network-treeView" role="tabpanel" aria-labelledby="pills-network-tree-tab">
     <div class="float-right mx-2">
-        <input type="search" id="search_table" class="form-control form-control-sm mb-1 float-right" placeholder="<liferay-ui:message key="search" />">
+        <input type="search" id="search_network_table" class="form-control form-control-sm mb-1 float-right" placeholder="<liferay-ui:message key="search" />">
     </div>
         <div id="clearingStatusTreeViewSpinner">
             <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
         </div>
-        <table class="table table-bordered mt-0 d-none" id="LinkedProjectsInfo" data-load-node-url="<%=loadLinkedProjectsRowsURL%>"
-        data-portlet-namespace="<portlet:namespace/>" data-parent-branch-key="<%=PortalConstants.PARENT_BRANCH_ID%>"
+        <table class="table table-bordered mt-0 d-none" id="DependencyInfo" data-load-node-url="<%=loadLinkedProjectToNetwork%>"
+        data-portlet-namespace="<portlet:namespace/>" data-parent-branch-key="<%=PortalConstants.NETWORK_PARENT_BRANCH_ID%>"
         data-scope-group-id="${httpServletRequest.getAttribute('scopeGroupId')}"
         >
             <thead>
@@ -79,12 +64,10 @@
                         <div class="row px-2">
                             <liferay-ui:message key="name" />
                             <svg class="lexicon-icon lexicon-icon-caret-double-l mt-1"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#caret-double-l"/></svg>
-                            <core_rt:if test="${projectList.size() > 1 or (projectList.size() == 1 and not empty projectList.get(0).linkedReleases)}">
                             <div id="toggle" class="d-none">
                                 (<a href="#" id="expandAll" class="text-primary"><liferay-ui:message key="expand.all" /> </a>|
                                 <a href="#" id="collapseAll" class="text-primary"> <liferay-ui:message key="collapse.all" /></a>)
                             </div>
-                            </core_rt:if>
                         </div>
                     </th>
                     <th style="width:6%; cursor: pointer" class="sort"><liferay-ui:message key="type" /><clay:icon symbol="caret-double-l" /></th>
@@ -140,50 +123,49 @@
           </tbody>
        </table>
    </div>
-   <div class="tab-pane fade" id="pills-listView" role="tabpanel" aria-labelledby="pills-list-tab">
+   <div class="tab-pane fade" id="pills-network-listView" role="tabpanel" aria-labelledby="pills-network-list-tab">
         <div id="clearingStatusSpinner">
             <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
         </div>
-        <table id="clearingStatusTable" class="table table-bordered d-none"></table>
+        <table id="clearingNetworkTable" class="table table-bordered d-none"></table>
     </div>
 </div>
 <div class="dialogs auto-dialogs"></div>
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
-<%@ include file="/html/utils/includes/licenseToSrcMapping.jspf" %>
-<%@ include file="/html/utils/includes/scannerFindings.jspf" %>
 <script>
 AUI().use('liferay-portlet-url', function () {
     var PortletURL = Liferay.PortletURL;
     require(['jquery', 'modules/ajax-treetable', 'utils/render', 'bridges/datatables', 'modules/dialog'], function($, ajaxTreeTable, render, datatables, dialog) {
-        var clearingStatuslisturl= '<%=clearingStatuslisturl%>';
+        var listNetworkClearingStatus= '<%=listNetworkClearingStatus%>';
         var emptyMsg = '<liferay-ui:message key="no.linked.releases.or.projects" />';
 
-        $.ajax({url: clearingStatuslisturl,
+        $.ajax({url: listNetworkClearingStatus,
                 type: 'GET',
                 dataType: 'json'
                }).done(function(result){
-            createClearingStatusTable(result);
-            $("#clearingStatusSpinner").addClass("d-none");
-            $("#clearingStatusTable").removeClass("d-none");
+               console.log(result);
+            createClearingNetworkTable(result);
+            $("#pills-network-listView #clearingStatusSpinner").addClass("d-none");
+            $("#clearingNetworkTable").removeClass("d-none");
           });
 
-        $('#search_table').on('input', function() {
-            $("div#stateFilterForTT #dropdownmenu input[type=checkbox]:checked").each(function() {
+        $('#search_network_table').on('input', function() {
+            $("#DependencyInfo div#stateFilterForTT #dropdownmenu input[type=checkbox]:checked").each(function() {
                 $(this).prop('checked', false);
             });
-            search_table($(this).val().trim());
+            search_network_table($(this).val().trim());
         });
 
         $('a[href="#"]').click(function(e) {
             e.preventDefault();
-            $('#LinkedProjectsInfo').treetable(e.target.id);
+            $('#DependencyInfo').treetable(e.target.id);
             return false;
         });
 
         function filterByClearingState() {
             let isChecked, isPresent, checkedData = [];
-            $("div#stateFilterForTT #dropdownmenu input[type=checkbox]:checked").each(function() {
+            $("#DependencyInfo div#stateFilterForTT #dropdownmenu input[type=checkbox]:checked").each(function() {
                 let val = $(this).data().releaseclearingstate;
                 isChecked = true;
                 if (val) {
@@ -192,32 +174,32 @@ AUI().use('liferay-portlet-url', function () {
             });
 
             if (isChecked) {
-                $('#LinkedProjectsInfo tbody tr').each(function() {
+                $('#DependencyInfo tbody tr').each(function() {
                     let relState = $(this).find('td:eq(5)').data().releaseclearingstate;
                     if (relState && checkedData.includes(relState.trim().toLowerCase())) {
-                        showRow(relState, $(this));
+                        showDependenceRow(relState, $(this));
                         isPresent = true;
                     } else {
                         $(this).hide();
                     }
                 });
                 if (!isPresent) {
-                    if (!$('#LinkedProjectsInfo tbody tr#noDataRow').length) {
-                        $('#LinkedProjectsInfo tbody tr:last').after('<tr id="noDataRow"><td colspan="8"> ' + emptyMsg + '</td></tr>');
+                    if (!$('#DependencyInfo tbody tr#noDataRow').length) {
+                        $('#DependencyInfo tbody tr:last').after('<tr id="noDataRow"><td colspan="8"> ' + emptyMsg + '</td></tr>');
                     } else {
-                        $("#noDataRow").show();
+                        $("#DependencyInfo #noDataRow").show();
                     }
                 }
             } else {
-                $("#noDataRow").remove();
-                $('#LinkedProjectsInfo tbody tr').show();
+                $("#DependencyInfo #noDataRow").remove();
+                $('#DependencyInfo tbody tr').show();
             }
         }
 
-        function showRow(value, $thiz) {
+        function showDependenceRow(value, $thiz) {
             let parentId = $thiz.data().ttParentId;
             while (parentId) {
-                let $parentRow = $('#LinkedProjectsInfo tbody tr[data-tt-id='+parentId+']');
+                let $parentRow = $('#DependencyInfo tbody tr[data-tt-id='+parentId+']');
                 $parentRow.show();
                 if (value) {
                     $parentRow.removeClass('collapsed').addClass('expanded');
@@ -227,20 +209,20 @@ AUI().use('liferay-portlet-url', function () {
             $thiz.show();
         }
 
-        $("div#stateFilterForTT input:checkbox").on('change', function() {
-            $('#search_table').val('');
-            search_table('');
+        $("#DependencyInfo div#stateFilterForTT input:checkbox").on('change', function() {
+            $('#search_network_table').val('');
+            search_network_table('');
             filterByClearingState();
         });
 
-        function search_table(value) {
+        function search_network_table(value) {
             let count = 0;
             if (value === "" || value === undefined || value === null) {
-                $('#LinkedProjectsInfo tbody tr').show();
-                $("#noDataRow").remove();
+                $('#DependencyInfo tbody tr').show();
+                $("#DependencyInfo #noDataRow").remove();
                 return;
             }
-            $('#LinkedProjectsInfo tbody tr').each(function() {
+            $('#DependencyInfo tbody tr').each(function() {
                 let match = false;
                 $(this).find('td').each(function(index) {
                     // search for data in case of release/project clearing state
@@ -260,22 +242,22 @@ AUI().use('liferay-portlet-url', function () {
                 });
                 if (match) {
                     count++;
-                    $("#noDataRow").remove();
-                    showRow(value, $(this));
+                    $("#DependencyInfo #noDataRow").remove();
+                    showDependenceRow(value, $(this));
                 } else {
                     $(this).hide();
                 }
             });
             if (!count) {
-                if (!$('#LinkedProjectsInfo tbody tr#noDataRow').length) {
-                    $('#LinkedProjectsInfo tbody tr:last').after('<tr id="noDataRow"><td colspan="8"> ' + emptyMsg + '</td></tr>');
+                if (!$('#DependencyInfo tbody tr#noDataRow').length) {
+                    $('#DependencyInfo tbody tr:last').after('<tr id="noDataRow"><td colspan="8"> ' + emptyMsg + '</td></tr>');
                 } else {
-                    $("#noDataRow").show();
+                    $("#DependencyInfo #noDataRow").show();
                 }
             }
         }
 
-        $('#LinkedProjectsInfo th.sort').click(function() {
+        $('#DependencyInfo th.sort').click(function() {
             let table = $(this).parents('table').eq(0),
                 rows = table.find('tr:gt(0)').toArray().sort(comparer($(this).index()));
             this.asc = !this.asc;
@@ -293,9 +275,9 @@ AUI().use('liferay-portlet-url', function () {
                 table.append(rows[i])
             }
 
-            $("#LinkedProjectsInfo tbody tr").each(function(index,key) {
-                let node = $("#LinkedProjectsInfo").treetable("node", $(this).attr('data-tt-id'));
-                $("#LinkedProjectsInfo").treetable("sortBranch", node);
+            $("#DependencyInfo tbody tr").each(function(index,key) {
+                let node = $("#DependencyInfo").treetable("node", $(this).attr('data-tt-id'));
+                $("#DependencyInfo").treetable("sortBranch", node);
             });
         });
 
@@ -310,9 +292,9 @@ AUI().use('liferay-portlet-url', function () {
             return $(row).children('td').eq(index).text();
         }
 
-        function createClearingStatusTable(clearingStatusJsonData) {
-            var clearingStatusTable;
-            clearingStatusTable = datatables.create('#clearingStatusTable', {
+        function createClearingNetworkTable(clearingStatusJsonData) {
+            var clearingNetworkTable;
+            clearingNetworkTable = datatables.create('#clearingNetworkTable', {
                 data: clearingStatusJsonData.data.map(function(row){
                 	if(row.isAccessible === "false"){
                 		row["name"]="<liferay-ui:message key="inaccessible.release" />";
@@ -339,7 +321,7 @@ AUI().use('liferay-portlet-url', function () {
                     {title: "<liferay-ui:message key="release.mainline.state" />", data : "releaseMainlineState", "defaultContent": ""},
                     {title: "<liferay-ui:message key="project.mainline.state" />", data : "projectMainlineState", "defaultContent": ""},
                     {title: "<liferay-ui:message key="comment" />",  data: "comment", "defaultContent": "", render: $.fn.dataTable.render.ellipsis},
-                    {title: "<liferay-ui:message key="actions" />",  data: "id", "orderable": false, "defaultContent": "", render: {display: renderActions}, className: "two actions" }
+                    {title: "<liferay-ui:message key="actions" />",  data: "releaseId", "orderable": false, "defaultContent": "", render: {display: renderActions}, className: "two actions" }
                 ],
                 "columnDefs": [
                     {
@@ -358,7 +340,7 @@ AUI().use('liferay-portlet-url', function () {
                 initComplete: function() {
                     this.api().columns([6]).every(function() {
                         var column = this;
-                        var stateFilterForLT = $("#LinkedProjectsInfo div#stateFilterForTT").clone();
+                        var stateFilterForLT = $("#DependencyInfo div#stateFilterForTT").clone();
                         $(stateFilterForLT).attr('id', 'stateFilterForLT');
                         var select = $(stateFilterForLT)
                             .appendTo($(column.header()))
@@ -368,18 +350,18 @@ AUI().use('liferay-portlet-url', function () {
                                 }).toArray().join('|');
                                 column.search(values.length > 0 ? '^(' + values + ')$' : '', true, false).draw();
                             });
-                        $("#LinkedProjectsInfo div#stateFilterForLT #dropdownmenu").on('click', function(e) {
+                        $("#DependencyInfo div#stateFilterForLT #dropdownmenu").on('click', function(e) {
                             e.stopPropagation();
                         });
                     });
                 }
             }, [0, 1, 2, 3, 4, 5, 6, 7, 8], undefined, true);
-            return clearingStatusTable;
+            return clearingNetworkTable;
         }
 
-        $("#clearingStatusTable").on('init.dt', function() {
+        $("#clearingNetworkTable").on('init.dt', function() {
             $('#pills-listView input').on('keyup clear', function () {
-                $("#clearingStatusTable").DataTable().search($(this).val(), false, true).draw();
+                $("#clearingNetworkTable").DataTable().search($(this).val(), false, true).draw();
             });
         });
 
@@ -390,7 +372,7 @@ AUI().use('liferay-portlet-url', function () {
             if(row.isAccessible === "true"){
             let url;
             if(row.isRelease === "true"){
-                url = makeReleaseViewUrl(row.id);
+                url = makeReleaseViewUrl(row.releaseId);
             }
             else {
                 url = makeProjectViewUrl(row.id);
@@ -557,9 +539,9 @@ AUI().use('liferay-portlet-url', function () {
             return portletURL.toString();
         }
 
-        var config = $('#LinkedProjectsInfo').data();
-
-        function dataCallbackTreeTable(table, node) {
+        var config = $('#DependencyInfo').data();
+        console.log(config);
+        function dataCallbackNetworkTreeTable(table, node) {
             var data = {};
             data[config.portletNamespace + config.parentBranchKey] = node.id;
             data[config.portletNamespace + 'parentScopeGroupId'] =  config.scopeGroupId;
@@ -570,13 +552,28 @@ AUI().use('liferay-portlet-url', function () {
                 let isReleaseRow=$(this).attr("data-is-release-row");
                 if(isReleaseRow !== null && isReleaseRow !== undefined) {
                     data[config.portletNamespace + 'overrideToRelease'] = true;
+                    data[config.portletNamespace + 'projectId'] = $(this).attr("data-project-id");
+                    let releaseLayer = $(this).attr("data-layer");
+                    let parentId = $(this).attr("data-parent-release");
+                    let currentIndex = $(this).attr("data-index");
+                    let trace = [];
+                    trace.unshift(currentIndex);
+                    if (releaseLayer > 0) {
+                        for (let layer = releaseLayer - 1; layer >= 0; layer--) {
+                            trace.unshift($(this).prevAll('tr[data-layer="'+layer+'"][data-release-id="'+parentId+'"]').first().attr('data-index'));
+                            parentId = $(this).prevAll('tr[data-layer="'+layer+'"][data-release-id="'+parentId+'"]').first().attr('data-parent-release');
+                        }
+                    }
+                    console.log(trace);
+                    data[config.portletNamespace + 'trace[]'] = trace;
+                    console.log(data);
                     return;
                 }
             });
             return data;
         }
 
-        function renderCallbackTreeTable(table, node, result) {
+        function renderCallbackNetworkTreeTable(table, node, result) {
             var rows = $(result).filter("tr");
             $(rows).each(function(){
                 $(this).find(".editAction:eq(0)").each(function(){
@@ -610,163 +607,44 @@ AUI().use('liferay-portlet-url', function () {
             }
         }
         /* Add event listener for opening and closing list of licenses */
-        $('#LinkedProjectsInfo tbody').on('click', 'td .TogglerLicenseList', function () {
+        $('#DependencyInfo tbody').on('click', 'td .TogglerLicenseList', function () {
             render.toggleExpandableList($(this), 'License');
         });
 
-        var clearingStatuslistOnloadurl= '<%=clearingStatuslistOnloadurl%>';
-        $.ajax({url: clearingStatuslistOnloadurl, success: function(resultTreeView){
+        var dependenceNetworkOnLoadUrl= '<%=dependenceNetworkOnLoadUrl%>';
+        $.ajax({url: dependenceNetworkOnLoadUrl, success: function(resultTreeView){
+            console.log(resultTreeView);
             if(resultTreeView.trim().length===0) {
-                $("#noRecordRow").removeClass("d-none");
+                $("#DependencyInfo #noRecordRow").removeClass("d-none");
             }
             else {
-                $("#noRecordRow").remove();
-                $("div#toggle").removeClass("d-none");
-                $("#clearingStatusTreeViewTableBody").html(resultTreeView);
+                $("#DependencyInfo #noRecordRow").remove();
+                $("#DependencyInfo div#toggle").removeClass("d-none");
+                $("#DependencyInfo tbody").html(resultTreeView);
 
-                $('#LinkedProjectsInfo').find(".editAction").each(function(){
+                $('#DependencyInfo').find(".editAction").each(function(){
                     $(this).html(createActions(makeReleaseUrl($(this).data("releaseid"))));
                 });
 
-                $('#LinkedProjectsInfo').find(".editProjectAction").each(function(){
+                $('#DependencyInfo').find(".editProjectAction").each(function(){
                     $(this).html(createActions(makeProjectUrl($(this).data("projectid"))));
                 });
 
-                $('#LinkedProjectsInfo').find(".projectState").each(function(){
+                $('#DependencyInfo').find(".projectState").each(function(){
                     $(this).html(renderProjectStateBox($(this).data("projectstate"),$(this).data("projectclearingstate")));
                 });
 
-                $('#LinkedProjectsInfo').find(".releaseClearingState").each(function(){
+                $('#DependencyInfo').find(".releaseClearingState").each(function(){
                     $(this).html(renderClearingStateBox($(this).data("releaseclearingstate"), $(this).data("releaseid")));
                 });
-                $('#LinkedProjectsInfo tr').find("td.actions").each(function() {
+                $('#DependencyInfo tr').find("td.actions").each(function() {
                     renderLicenses($(this));
                 });
             }
             $("#clearingStatusTreeViewSpinner").remove();
-            $("#LinkedProjectsInfo").removeClass("d-none");
-            ajaxTreeTable.setup('LinkedProjectsInfo', config.loadNodeUrl, dataCallbackTreeTable, renderCallbackTreeTable);
+            $("#DependencyInfo").removeClass("d-none");
+            ajaxTreeTable.setup('DependencyInfo', config.loadNodeUrl, dataCallbackNetworkTreeTable, renderCallbackNetworkTreeTable);
           }});
-
-        $('#btnExportGroup a.dropdown-item').on('click', function(event) {
-            exportSpreadsheet($(event.currentTarget).data('type'));
-        });
-
-        $('#downloadLicenseInfo a.dropdown-item').on('click', function(event) {
-            var type=$(event.currentTarget).data('type');
-            downloadLicenseInfo(type);
-        });
-
-        $('#downloadSourceCode a.dropdown-item').on('click', function(event) {
-            var type=$(event.currentTarget).data('type');
-            downloadSourceCodeBundleButton(type);
-        });
-
-        function downloadLicenseInfo(type) {
-            var portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>');
-            portletURL.setParameter('<%=PortalConstants.PROJECT_ID%>', '${project.id}');
-            portletURL.setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_LICENSE_INFO%>');
-            portletURL.setParameter('<%=PortalConstants.PROJECT_WITH_SUBPROJECT%>', type === 'projectWithSubProject' ? 'true' : 'false');
-
-            window.location.href = portletURL.toString();
-        }
-
-        function downloadSourceCodeBundleButton(type) {
-            var portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>');
-            portletURL.setParameter('<%=PortalConstants.PROJECT_ID%>', '${project.id}');
-            portletURL.setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_SOURCE_CODE_BUNDLE%>');
-            portletURL.setParameter('<%=PortalConstants.PROJECT_WITH_SUBPROJECT%>', type === 'projectWithSubProject' ? 'true' : 'false');
-
-            window.location.href = portletURL.toString();
-        }
-
-        function exportSpreadsheet(type) {
-            var portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
-                    .setParameter('<%=PortalConstants.ACTION%>', '<%=PortalConstants.EXPORT_TO_EXCEL%>');
-            portletURL.setParameter('<%=Project._Fields.ID%>','${project.id}');
-            portletURL.setParameter('<%=PortalConstants.EXTENDED_EXCEL_EXPORT%>', type === 'projectWithReleases' ? 'true' : 'false');
-
-            window.location.href = portletURL.toString() + window.location.hash;
-        }
-
-        $("button#addLicenseToRelease").on("click", function(event) {
-            list = $('<ul id="releaseList" />');
-            let releaseCount = $("#LinkedProjectsInfo tbody tr:not([id=noRecordRow],[data-tt-parent-id])").length;
-            addLicenseToLinkedRelease(releaseCount);
-        });
-
-        function addLicenseToLinkedRelease(releaseCount) {
-            if (!releaseCount) {
-                dialog.warn('<liferay-ui:message key="no.linked.releases.yet" />')
-                return;
-            }
-            function addLicenseToLinkedReleaseInternal(callback) {
-                jQuery.ajax({
-                    type: 'POST',
-                    url: '<%=addLicenseToReleaseUrl%>',
-                    cache: false,
-                    success: function (response) {
-                        callback();
-                        $("div.modal button:contains('<liferay-ui:message key="cancel" />')").text('<liferay-ui:message key="close" />');
-                        $("div.modal button:contains('<liferay-ui:message key="add" />')").attr('disabled', true);
-                        $("div.modal .modal-body p#addLicenseToReleaseInfo").remove();
-                        $("div.modal .modal-body ul#releaseList").remove();
-                        if (response && response.status) {
-                            oneList = $('<ul/>');
-                            multipleList = $('<ul/>');
-                            nilList = $('<ul/>');
-                            if (response.one.length) {
-                                response.one.forEach(function(rel, index) {
-                                    let url = makeReleaseViewUrl(rel.id),
-                                        viewUrl = $("<a/>").attr({href: url, target: "_blank"}).css("word-break", "break-word").text(rel.name + rel.version);
-                                    oneList.append('<li>' + viewUrl[0].outerHTML + '</li>');
-                                });
-                            }
-                            if (response.mul.length) {
-                                response.mul.forEach(function(rel, index) {
-                                    let url = makeReleaseViewUrl(rel.id),
-                                        viewUrl = $("<a/>").attr({href: url, target: "_blank"}).css("word-break", "break-word").text(rel.name + rel.version);
-                                    multipleList.append('<li>' + viewUrl[0].outerHTML + '</li>');
-                                });
-                            }
-                            if (response.nil.length) {
-                                response.nil.forEach(function(rel, index) {
-                                    let url = makeReleaseViewUrl(rel.id),
-                                        viewUrl = $("<a/>").attr({href: url, target: "_blank"}).css("word-break", "break-word").text(rel.name + rel.version);
-                                    nilList.append('<li>' + viewUrl[0].outerHTML + '</li>');
-                                });
-                            }
-                            if ($(multipleList).find('li').length) {
-                                $dialog.warning('<liferay-ui:message key="multiple.approved.cli.are.found.in.the.release" />: <b>' + $(multipleList).find('li').length + '</b>' + multipleList[0].outerHTML);
-                            }
-                            if ($(nilList).find('li').length) {
-                                $dialog.warning('<liferay-ui:message key="approved.cli.not.found.in.the.release" />: <b>' + $(nilList).find('li').length + '</b>' + nilList[0].outerHTML);
-                            }
-                            if ($(oneList).find('li').length) {
-                                $dialog.success('<liferay-ui:message key="success.please.reload.page.to.see.the.changes" />: <b>' + $(oneList).find('li').length + '</b>');
-                            }
-                            return;
-                        }
-                        $dialog.success('<liferay-ui:message key="success.please.reload.page.to.see.the.changes" />: <b>' + response.one.length + '</b>');
-                    },
-                    error: function () {
-                        callback();
-                        $dialog.alert('<liferay-ui:message key="failed.to.add.licenses" />!');
-                    }
-                });
-            }
-            $dialog = dialog.confirm(
-                    'info',
-                    'question-circle',
-                    '<liferay-ui:message key="add.license.info.to.release" />?',
-                    '<p id="addLicenseToReleaseInfo"><liferay-ui:message key="do.you.really.want.to.add.license.info.to.all.the.directly.linked.releases" />?</p>',
-                    '<liferay-ui:message key="add" />',
-                    undefined,
-                    function(submit, callback) {
-                        addLicenseToLinkedReleaseInternal(callback);
-                    }
-                );
-        }
     });
 });
 </script>
