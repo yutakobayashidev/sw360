@@ -817,8 +817,8 @@ public class JacksonCustomizations {
                 "setExtendedDescription",
                 "vulnerableConfigurationSize",
                 "assignedExtComponentIdsSize",
-                //"assignedExtComponentIdsIterator",
-                //"vendorAdvisoriesIterator",
+                "assignedExtComponentIdsIterator",
+                "vendorAdvisoriesIterator",
                 "vendorAdvisoriesSize",
                 "setVendorAdvisories",
                 "cveFurtherMetaDataPerSourceSize",
@@ -829,8 +829,10 @@ public class JacksonCustomizations {
                 "setCvssTime",
                 "setAccess",
                 "accessSize",
+                "releasesSize",
+                "setReleases"
         })
-        static abstract class VulnerabilityApiDTOMixin extends VulnerabilityApiDTO {
+        public static abstract class VulnerabilityApiDTOMixin extends VulnerabilityApiDTO {
             @Override
             @JsonProperty("id")
             abstract public String getId();
