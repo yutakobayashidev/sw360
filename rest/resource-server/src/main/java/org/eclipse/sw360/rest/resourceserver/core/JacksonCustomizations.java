@@ -757,7 +757,7 @@ public class JacksonCustomizations {
             @JsonProperty("id")
             abstract public String getId();
         }
-
+        @JsonInclude(JsonInclude.Include.NON_EMPTY)
         @JsonIgnoreProperties({
                 "id",
                 "revision",

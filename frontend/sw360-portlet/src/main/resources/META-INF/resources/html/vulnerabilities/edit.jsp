@@ -524,7 +524,7 @@
 
             });
 
-            require(['jquery', /* jquery-plugins */ 'jquery-ui'], function($) {
+            require(['jquery', 'bridges/jquery-ui'], function($) {
                     $(".datepicker").datepicker({changeMonth:true,changeYear:true,dateFormat: "yy-mm-dd"});
                     $(".datepicker").keydown(false);
             });

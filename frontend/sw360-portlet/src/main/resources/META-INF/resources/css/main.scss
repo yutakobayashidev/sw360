@@ -13,7 +13,6 @@
 @import "portlets/homepage/signup";
 @import "portlets/homepage/welcome";
 @import "portlets/search/sidebar";
-@import "portlets/vulnerability/jquery-ui";
 // Must be outside the portlet class because jquery-ui attaches
 // tooltips directly under the body
 @import "components/tooltips";
