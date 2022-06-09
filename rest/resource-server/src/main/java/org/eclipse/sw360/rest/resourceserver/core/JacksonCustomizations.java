@@ -29,11 +29,7 @@ import org.eclipse.sw360.datahandler.thrift.changelogs.ReferenceDocData;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
-import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
+import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -90,6 +86,9 @@ public class JacksonCustomizations {
             setMixInAnnotation(ReleaseVulnerabilityRelation.class, Sw360Module.ReleaseVulnerabilityRelationMixin.class);
             setMixInAnnotation(VerificationStateInfo.class, Sw360Module.VerificationStateInfoMixin.class);
             setMixInAnnotation(ProjectProjectRelationship.class, Sw360Module.ProjectProjectRelationshipMixin.class);
+            setMixInAnnotation(ReleaseLinkJSON.class, Sw360Module.ReleaseLinkJSONMixin.class);
+            setMixInAnnotation(ProjectDTO.class, Sw360Module.ProjectDTOMixin.class);
+            setMixInAnnotation(ProjectNetwork.class, Sw360Module.ProjectNetworkMixin.class);
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -186,7 +185,8 @@ public class JacksonCustomizations {
                 "setExternalUrls",
                 "externalUrls",
                 "setVendor",
-                "setVendorId"
+                "setVendorId",
+                "setReleaseRelationNetwork"
         })
         static abstract class ProjectMixin extends Project {
 
@@ -1108,5 +1108,130 @@ public class JacksonCustomizations {
         })
         public static abstract class ProjectProjectRelationshipMixin extends ProjectProjectRelationship {
         }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+            "setMainlineState",
+            "setComment",
+            "setCreateOn",
+            "setCreateBy",
+            "setReleaseId",
+            "releaseLinkSize",
+            "releaseLinkIterator",
+            "setReleaseLink",
+            "setReleaseRelationship"
+        })
+        public static abstract class ReleaseLinkJSONMixin extends ReleaseLinkJSON {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "id",
+                "revision",
+                "attachments",
+                "createdBy",
+                "visbility",
+                "clearingTeam",
+                "homepage",
+                "wiki",
+                "documentState",
+                "releaseClearingStateSummary",
+                "permissions",
+                "attachmentsIterator",
+                "moderatorsIterator",
+                "contributorsIterator",
+                "releaseIdsIterator",
+                "setId",
+                "setRevision",
+                "setType",
+                "setName",
+                "setDescription",
+                "setDomain",
+                "setVersion",
+                "setExternalIds",
+                "setAttachments",
+                "setCreatedOn",
+                "setState",
+                "setProjectType",
+                "setTag",
+                "setCreatedBy",
+                "setModerators",
+                "setVisbility",
+                "setHomepage",
+                "externalIdsSize",
+                "attachmentsSize",
+                "setBusinessUnit",
+                "setProjectResponsible",
+                "setLeadArchitect",
+                "moderatorsSize",
+                "contributorsSize",
+                "setContributors",
+                "linkedProjectsSize",
+                "setLinkedProjects",
+                "releaseIdToUsageSize",
+                "setReleaseIdToUsage",
+                "setClearingTeam",
+                "setPreevaluationDeadline",
+                "setSystemTestStart",
+                "setClearingSummary",
+                "setObligationsText",
+                "setSpecialRisksOSS",
+                "setGeneralRisks3rdParty",
+                "setSpecialRisks3rdParty",
+                "setDeliveryChannels",
+                "setRemarksAdditionalRequirements",
+                "setSystemTestEnd",
+                "setDeliveryStart",
+                "setPhaseOutSince",
+                "setDocumentState",
+                "releaseIdsSize",
+                "setReleaseClearingStateSummary",
+                "permissionsSize",
+                "setWiki",
+                "setReleaseIds",
+                "setPermissions",
+                "setClearingState",
+                "securityResponsiblesSize",
+                "securityResponsiblesIterator",
+                "setSecurityResponsibles",
+                "setOwnerGroup",
+                "setOwnerCountry",
+                "rolesSize",
+                "setRoles",
+                "setOwnerAccountingUnit",
+                "setLicenseInfoHeaderText",
+                "setProjectOwner",
+                "setEnableSvm",
+                "setEnableVulnerabilitiesDisplay",
+                "additionalDataSize",
+                "setAdditionalData",
+                "setLinkedObligationId",
+                "linkedObligationId",
+                "setClearingRequestId",
+                "externalUrlsSize",
+                "setExternalUrls",
+                "externalUrls",
+                "setVendor",
+                "setVendorId",
+                "setDependencyNetwork",
+                "dependencyNetworkSize",
+                "dependencyNetworkIterator"
+        })
+        public static abstract class ProjectDTOMixin extends ProjectDTO {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "id",
+                "setName",
+                "dependencyNetworkSize",
+                "dependencyNetworkIterator",
+                "setDependencyNetwork",
+                "setVersion",
+                "setId"
+        })
+        public static abstract class ProjectNetworkMixin extends ProjectNetwork {
+        }
+
     }
 }
