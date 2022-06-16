@@ -17,6 +17,8 @@
 <%@ page import="org.eclipse.sw360.datahandler.thrift.components.ReleaseLink" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.users.User" %>
+<%@ page import="org.eclipse.sw360.datahandler.common.SW360Utils" %>
 
 <portlet:resourceURL var="viewReleaseURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.VIEW_LINKED_RELEASES%>"/>
@@ -194,7 +196,6 @@
             let indexes = [];
             let parentIds = [];
             let comments = [];
-            let defaultValues = [];
 
             function getContent() {
                 return new Promise(function(resolve, reject) {
@@ -238,13 +239,11 @@
                  indexes = [];
                  parentIds = [];
                  comments = [];
-                 defaultValues = [];
 
                  for(let index = 0 ; index < releaseWithRelations.length ; index++) {
                     releaseIds.push(releaseWithRelations[index].releaseId);
                     mainlineStates.push(releaseWithRelations[index].mainlineState);
                     releaseRelationShips.push(releaseWithRelations[index].releaseRelationship);
-                    defaultValues.push(releaseWithRelations[index].defaultValue);
                     if(releaseWithRelations[index].comment != null) {
                         comments.push(releaseWithRelations[index].comment);
                     } else {
@@ -272,7 +271,6 @@
                      releaseIds.push(releases[index].releaseId);
                      mainlineStates.push(releases[index].mainlineState);
                      releaseRelationShips.push(releases[index].releaseRelationship);
-                     defaultValues.push(releases[index].defaultValue);
                      if(releases[index].comment != null) {
                         comments.push(releases[index].comment);
                      } else {
@@ -284,7 +282,6 @@
 
                      releases[index] = removeUnnecessaryField(releases[index]);
                      let releaseRelationElement = Object.assign({},releases[index]);
-                     releaseRelationElement.parentId = parentId;
                      releaseRelationElement.releaseLink = [];
                      flattenArray.push(releaseRelationElement);
                      let nextLayer = layer + 1;
@@ -294,12 +291,6 @@
 
             function removeUnnecessaryField(jsonObject) {
                  delete jsonObject.setComment;
-                 delete jsonObject.setDefaultValue;
-                 delete jsonObject.setHasChange;
-                 delete jsonObject.setIndex;
-                 delete jsonObject.setLayer;
-                 delete jsonObject.setName;
-                 delete jsonObject.setParentId;
                  delete jsonObject.setReleaseId;
                  delete jsonObject.setReleaseLink;
                  delete jsonObject.setReleaseRelationship;
@@ -312,7 +303,7 @@
             }
 
             async function displayReleaseRelationShip() {
-                let newRow = await releaseRelationFromAjax('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', releaseIds, parentIds, layers, mainlineStates, releaseRelationShips, indexes, comments, defaultValues);
+                let newRow = await releaseRelationFromAjax('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', releaseIds, parentIds, layers, mainlineStates, releaseRelationShips, indexes, comments);
                 $('#LinkedReleasesNetwork tbody').append(newRow);
             }
 
@@ -390,7 +381,6 @@
                let currentIndex = $(this).closest('tr').attr('data-index');
                let version = $(this).closest('tr').find('select').eq(0).find('option:selected').text();
                let componentName = $(this).closest('tr').find('td').eq(0).text().trim();
-               let releaseName = componentName + " (" + version + ")";
                let i=0;
                let trace = [];
                trace.unshift(currentIndex);
@@ -399,7 +389,7 @@
                     trace.unshift($(this).closest('tr').prevAll('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').first().attr('data-index'));
                     parentNode =  $(this).closest('tr').prevAll('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').first().attr('parent-node');
                }
-               replaceValueOfNode(releaseWithRelations, i, trace, idValue, releaseName, "releaseId");
+               replaceValueOfNode(releaseWithRelations, i, trace, idValue, "", "releaseId");
                $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
                $(this).closest('tr').find('select').eq(0).attr('data-old',idValue);
             }
@@ -450,8 +440,6 @@
                 if(i === (trace.length - 1)) {
                     if (type == "releaseId") {
                         releasesLinked[index].releaseId = idValue;
-                        releasesLinked[index].name = textValue;
-                        releasesLinked[index].hasChange = true;
                     } else if (type == "releaseRelation") {
                         releasesLinked[index].releaseRelationship = idValue;
                     } else if (type == "mainLineState") {
@@ -512,7 +500,7 @@
 
 
 
-            function releaseRelationFromAjax(what, where, parentIds, layers, mainLineState, releaseRelation, indexes, comments, defaultValues) {
+            function releaseRelationFromAjax(what, where, parentIds, layers, mainLineState, releaseRelation, indexes, comments) {
                 return new Promise(function(resolve, reject) {
                     jQuery.ajax({
                         type: 'POST',
@@ -525,8 +513,7 @@
                             '<portlet:namespace/><%=PortalConstants.MAINLINE_STATE%>': mainLineState,
                             '<portlet:namespace/><%=PortalConstants.RELEASE_RELATION_SHIP%>': releaseRelation,
                             '<portlet:namespace/><%=PortalConstants.INDEXES%>': indexes,
-                            '<portlet:namespace/><%=PortalConstants.COMMENTS%>': comments,
-                            '<portlet:namespace/><%=PortalConstants.DEFAULT_VALUES%>': defaultValues
+                            '<portlet:namespace/><%=PortalConstants.COMMENTS%>': comments
                         },
                         success: function (data) {
                             resolve(data);
@@ -627,19 +614,17 @@
                         let toArray = [];
                         toArray.push(releaseId);
                         let indexOfNode = numberOfNodeSameLevel + index;
-                        addReleaseToTable('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', toArray, [parentId], [(parentLayer+1)], [0], [0], [indexOfNode], [""], [releaseId], function(result){
+                        addReleaseToTable('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', toArray, [parentId], [(parentLayer+1)], [0], [0], [indexOfNode], [""], function(result){
                             selectedElement.after(result);
                         });
                         let selectedRelease = {
-                              "hasChange": false,
                               "releaseLink": [],
                               "releaseId": releaseId,
                               "releaseRelationship": 0,
-                              "name": releaseNames[index],
                               "mainlineState": 0,
-                              "defaultValue": releaseId,
                               "comment": "",
-                              "layer": (parentLayer + 1)
+                              "createOn": "<%=SW360Utils.getCreatedOn()%>",
+                              "createBy": "${loginUser.email}"
                         }
 
                         addChildNode(releaseWithRelations, i, trace, selectedRelease);
@@ -708,19 +693,17 @@
                         let toArray = [];
                         toArray.push(releaseId);
                         let indexOfNode = numberOfRootExisted + index;
-                        addReleaseToTable('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', toArray, [""], [0], [0], [0], [indexOfNode], [""], [releaseId], function(result){
+                        addReleaseToTable('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', toArray, [""], [0], [0], [0], [indexOfNode], [""], function(result){
                             $('#LinkedReleasesNetwork tbody').append(result);
                         });
                         let selectedRelease = {
-                              "hasChange": false,
                               "releaseLink": [],
                               "releaseId": releaseId,
                               "releaseRelationship": 0,
-                              "name": releaseNames[index],
                               "mainlineState": 0,
-                              "defaultValue": releaseId,
                               "comment": "",
-                              "layer": 0
+                              "createOn": "<%=SW360Utils.getCreatedOn()%>",
+                              "createBy": "${loginUser.email}"
                         }
                         releaseWithRelations.push(selectedRelease);
                     }
@@ -776,7 +759,7 @@
                 });
              }
 
-            function addReleaseToTable(what, where, parentIds, layers, mainLineState, releaseRelation, indexes, comments, defaultValues, callback){
+            function addReleaseToTable(what, where, parentIds, layers, mainLineState, releaseRelation, indexes, comments, callback){
                 jQuery.ajax({
                     type: 'POST',
                     url: '<%=viewReleaseURL%>',
@@ -788,8 +771,7 @@
                         '<portlet:namespace/><%=PortalConstants.MAINLINE_STATE%>': mainLineState,
                         '<portlet:namespace/><%=PortalConstants.RELEASE_RELATION_SHIP%>': releaseRelation,
                         '<portlet:namespace/><%=PortalConstants.INDEXES%>': indexes,
-                        '<portlet:namespace/><%=PortalConstants.COMMENTS%>': comments,
-                        '<portlet:namespace/><%=PortalConstants.DEFAULT_VALUES%>': defaultValues
+                        '<portlet:namespace/><%=PortalConstants.COMMENTS%>': comments
                     },
                     success: function (data) {
                         callback(data);

@@ -387,16 +387,10 @@ struct ReleaseClearingStatusData {
 
 struct ReleaseLinkJSON {
      1: required string releaseId,
-     2: required string name,
      3: optional list<ReleaseLinkJSON> releaseLink,
      4: optional i32 releaseRelationship,
      5: optional i32 mainlineState,
-     6: optional bool hasChange = false,
-     7: optional string parentId,
-     8: optional i32 layer,
-     9: optional i32 index,
      10: optional string comment,
-     11: optional string defaultValue,
      12: optional string createOn,
      13: optional string createBy
 }

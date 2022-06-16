@@ -309,7 +309,7 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
     protected  List<ReleaseLinkJSON> getNetworkLinkedRelease(List<Release> releases, User user){
         List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
         for (Release release : releases) {
-            ReleaseLinkJSON r = new ReleaseLinkJSON(release.getId(), (release.getName() + " (" + release.getVersion() + ")"));
+            ReleaseLinkJSON r = new ReleaseLinkJSON(release.getId());
             releaseLinkJSONS.add(r);
         }
         for (int i = 0; i < releaseLinkJSONS.size(); i++) {
@@ -324,16 +324,15 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
             releaseById = client.getAccessibleReleaseById(releaseLinkJSON.getReleaseId(), user);
             List<Release> releaseList = client.getReleasesById(releaseById.getReleaseIdToRelationship().keySet().stream().collect(Collectors.toSet()), user);
             List<ReleaseLinkJSON> linkedReleasesJSON = new ArrayList<>();
-            releaseLinkJSON.setDefaultValue(releaseLinkJSON.getReleaseId());
             releaseLinkJSON.setMainlineState(MainlineState.OPEN.getValue());
             releaseLinkJSON.setComment("");
             for (Release release : releaseList) {
-                ReleaseLinkJSON rj = new ReleaseLinkJSON(release.getId(), (release.getName() + " (" + release.getVersion() + ")"));
-                rj.setReleaseRelationship(releaseById.getReleaseIdToRelationship().get(release.getId()).getValue());
+                ReleaseLinkJSON rj = new ReleaseLinkJSON(release.getId());
                 rj.setMainlineState(MainlineState.OPEN.getValue());
                 rj.setReleaseRelationship(ReleaseRelationship.CONTAINED.getValue());
-                rj.setDefaultValue(release.getId());
                 rj.setComment("");
+                rj.setCreateOn(SW360Utils.getCreatedOn());
+                rj.setCreateBy(user.getEmail());
                 linkedReleasesJSON.add(getReleaseLinkJSONS(rj, user));
             }
             releaseLinkJSON.setReleaseLink(linkedReleasesJSON);

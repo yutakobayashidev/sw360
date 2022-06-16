@@ -1252,8 +1252,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             String[] releaseRelationShips= request.getParameterValues(PortalConstants.RELEASE_RELATION_SHIP);
             String[] indexes = request.getParameterValues(PortalConstants.INDEXES);
             String[] comments = request.getParameterValues(PortalConstants.COMMENTS);
-            String[] defaultValues = request.getParameterValues(PortalConstants.DEFAULT_VALUES);
-            serveNewTableRowLinkedRelease(request, response, where, parentIds, layers, mainlineStates, releaseRelationShips, indexes, comments, defaultValues);
+            serveNewTableRowLinkedRelease(request, response, where, parentIds, layers, mainlineStates, releaseRelationShips, indexes, comments);
         } else if (PortalConstants.FIND_LINKED_RELEASE_OF_NODE.equals(what)) {
             String releaseId = request.getParameter(RELEASE_ID);
             try {
@@ -2314,7 +2313,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             Map<RequestedAction, Boolean> permissions = project.getPermissions();
             DocumentState documentState = project.getDocumentState();
             request.setAttribute(IS_PROJECT_MEMBER, SW360Utils.isModeratorOrCreator(project, user));
-
+            request.setAttribute("loginUser", user);
             addEditDocumentMessage(request, permissions, documentState);
         } else {
             if(request.getAttribute(PROJECT) == null) {
@@ -2332,7 +2331,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 }
                 request.setAttribute(USING_PROJECTS, Collections.emptySet());
                 request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
-
+                request.setAttribute("loginUser", user);
                 SessionMessages.add(request, "request_processed", LanguageUtil.get(resourceBundle,"new.project"));
             }
         }
@@ -3316,7 +3315,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
     private void serveNewTableRowLinkedRelease(ResourceRequest request, ResourceResponse response, String[] linkedIds, String[] parentIds, String[] layers, String[] mainlineStates, String[] releaseRelationShips,
-                                               String[] indexes, String[] comments, String[] defaultValues) throws IOException, PortletException {
+                                               String[] indexes, String[] comments) throws IOException, PortletException {
         final User user = UserCacheHolder.getUserFromRequest(request);
         request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
 
@@ -3343,7 +3342,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 linkedRelease.setReleaseRelationship(ReleaseRelationship.findByValue(Integer.parseInt(releaseRelationShips[index])));
                 linkedRelease.setIndex(Integer.parseInt(indexes[index]));
                 linkedRelease.setComment(comments[index]);
-                linkedRelease.setDefaultValue(defaultValues[index]);
                 linkedReleases.add(linkedRelease);
             }
         } catch (TException e) {
