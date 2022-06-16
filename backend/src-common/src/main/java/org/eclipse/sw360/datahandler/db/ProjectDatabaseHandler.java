@@ -1907,4 +1907,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         out.sort(Comparator.comparing(ProjectLink::getName).thenComparing(ProjectLink::getVersion));
         return out;
     }
+
+    public List<Project> getAll(){
+        return repository.getAll();
+    }
 }

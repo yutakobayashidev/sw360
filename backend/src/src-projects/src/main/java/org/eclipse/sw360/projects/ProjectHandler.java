@@ -454,4 +454,9 @@ public class ProjectHandler implements ProjectService.Iface {
         assertNotNull(project);
         return handler.getLinkedProjectsInNetwork(project, deep, user);
     }
+
+    @Override
+    public List<Project> getAll(){
+        return handler.getAll();
+    }
 }

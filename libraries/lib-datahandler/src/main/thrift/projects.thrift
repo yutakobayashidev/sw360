@@ -526,4 +526,6 @@ service ProjectService {
      * use for dependency network
      */
     list<ProjectLink> getLinkedProjectsOfProjectInNetwork(1: Project project, 2: bool deep, 3: User user);
+
+    list<Project> getAll();
 }

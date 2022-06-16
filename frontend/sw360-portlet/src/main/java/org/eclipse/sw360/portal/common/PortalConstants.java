@@ -696,6 +696,10 @@ public class PortalConstants {
     public static final String NETWORK_TOTAL_INACCESSIBLE_ROWS = "netWorkTotalInAccessibleRow";
 
     public static final String DEPENDENCE_NETWORK_ON_LOAD_URL = "dependenceNetworkOnLoadUrl";
+
+    public static final String PROJECTS_IN_DEPENDENCY_NETWOWK = "projectsInDependencyNetwork";
+
+    public static final String COUNT_PROJECT_IN_DEPENDENCY_NETWOWK = "countProjectInDependencyNetwork";
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 
