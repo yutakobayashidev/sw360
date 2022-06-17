@@ -1086,10 +1086,33 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         if (nothingTodo(project, visitedProjectIds)) return;
 
-        nullToEmptyMap(project.getReleaseIdToUsage()).forEach((releaseId, relation) -> {
+        /*nullToEmptyMap(project.getReleaseIdToUsage()).forEach((releaseId, relation) -> {
             releaseIdToProjects.put(releaseId, new ProjectWithReleaseRelationTuple(project, relation));
-        });
+        });*/
+        try {
+            String releaseNetwork = project.getReleaseRelationNetwork();
+            ObjectMapper mapper = new ObjectMapper();
+            List<ReleaseLinkJSON> listReleaseLinkJsonFatten = new ArrayList<>();
+            List<ReleaseLinkJSON> listReleaseLinkJson;
+            listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
+            });
 
+            for (ReleaseLinkJSON release : listReleaseLinkJson) {
+                flattenRelease(release, listReleaseLinkJsonFatten);
+            }
+
+            for (ReleaseLinkJSON release : listReleaseLinkJsonFatten) {
+                ProjectReleaseRelationship relation = new ProjectReleaseRelationship();
+                relation.setReleaseRelation(ReleaseRelationship.findByValue(release.getReleaseRelationship()));
+                relation.setMainlineState(MainlineState.findByValue(release.getMainlineState()));
+                relation.setComment(release.getComment());
+                relation.setCreatedOn(release.getCreateOn());
+                relation.setCreatedBy(release.getCreateBy());
+                releaseIdToProjects.put(release.getReleaseId(), new ProjectWithReleaseRelationTuple(project, relation));
+            }
+        } catch (JsonProcessingException e) {
+            log.error("release id to projects has error: " + e.getMessage());
+        }
         Map<String, ProjectProjectRelationship> linkedProjects = project.getLinkedProjects();
         if (linkedProjects != null) {
 
@@ -1906,5 +1929,19 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         out.sort(Comparator.comparing(ProjectLink::getName).thenComparing(ProjectLink::getVersion));
         return out;
+    }
+
+    private List<ReleaseLinkJSON> flattenRelease(ReleaseLinkJSON release, List<ReleaseLinkJSON> flatListReleaseLinkJSON) {
+        if (release != null) {
+            flatListReleaseLinkJSON.add(release);
+        }
+
+        List<ReleaseLinkJSON> children = release.getReleaseLink();
+        for (ReleaseLinkJSON child : children) {
+            if (child.getReleaseLink() != null) {
+                flattenRelease(child, flatListReleaseLinkJSON);
+            }
+        }
+        return flatListReleaseLinkJSON;
     }
 }
