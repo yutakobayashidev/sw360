@@ -210,6 +210,16 @@
                                     <a class="nav-item nav-link" id="pills-network-list-tab" data-toggle="pill" href="#pills-network-listView" role="tab" aria-controls="pills-listView" aria-selected="false">
                                     <liferay-ui:message key="list.view" /></a>
                                 </div>
+                                <div id="btnExportGroupNetwork" class="btn-group" role="group">
+                                    <button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <liferay-ui:message key="export.spreadsheet" />
+                                        <clay:icon symbol="caret-bottom" />
+                                    </button>
+                                    <div class="dropdown-menu" aria-labelledby="btnExport">
+                                        <a class="dropdown-item" data-type="projectOnly"><liferay-ui:message key="projects.only" /></a>
+                                        <a class="dropdown-item" data-type="projectWithReleases"><liferay-ui:message key="projects.with.linked.releases" /></a>
+                                    </div>
+                                </div>
                             </div>
 						</div>
 					</div>

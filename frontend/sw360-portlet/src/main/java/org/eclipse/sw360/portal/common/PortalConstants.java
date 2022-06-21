@@ -696,6 +696,10 @@ public class PortalConstants {
     public static final String NETWORK_TOTAL_INACCESSIBLE_ROWS = "netWorkTotalInAccessibleRow";
 
     public static final String DEPENDENCE_NETWORK_ON_LOAD_URL = "dependenceNetworkOnLoadUrl";
+
+    // Excel export project network
+    public static final String EXPORT_TO_EXCEL_PROJECT_NETWORK = "export_to_excel_project_network";
+
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 

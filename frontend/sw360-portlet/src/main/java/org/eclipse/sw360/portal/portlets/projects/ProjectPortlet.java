@@ -54,6 +54,7 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.exporter.ProjectExporter;
+import org.eclipse.sw360.exporter.ProjectExporterNetWork;
 import org.eclipse.sw360.exporter.ReleaseExporter;
 import org.eclipse.sw360.portal.common.*;
 import org.eclipse.sw360.portal.common.datatables.PaginationParser;
@@ -309,6 +310,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 return;
             }
             serveLoadLinkedProjectsRowsNetwork(request, response);
+        } else if (PortalConstants.EXPORT_TO_EXCEL_PROJECT_NETWORK.equals(action)) {
+            exportExcelForNetwork(request, response);
         }
     }
 
@@ -3404,5 +3407,48 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         mappedProjectLinks = sortProjectLink(mappedProjectLinks);
         request.setAttribute(NETWORK_PROJECT_LIST, mappedProjectLinks);
         include("/html/utils/ajax/linkedProjectRowsNetwork.jsp", request, response, PortletRequest.RESOURCE_PHASE);
+    }
+
+    private void exportExcelForNetwork(ResourceRequest request, ResourceResponse response) {
+        final User user = UserCacheHolder.getUserFromRequest(request);
+        final String projectId = request.getParameter(Project._Fields.ID.toString());
+        String filename = String.format("projects-%s.xlsx", SW360Utils.getCreatedOn());
+        try {
+            boolean extendedByReleases = Boolean.valueOf(request.getParameter(PortalConstants.EXTENDED_EXCEL_EXPORT));
+            ProjectService.Iface client = thriftClients.makeProjectClient();
+            int total = client.getMyAccessibleProjectCounts(user);
+            PaginationData pageData = new PaginationData();
+            pageData.setAscending(true);
+            Map<PaginationData, List<Project>> pageDtToProjects;
+            Set<Project> projects = new HashSet<>();
+            int displayStart = 0;
+            int rowsPerPage = 500;
+            while (0 < total) {
+                pageData.setDisplayStart(displayStart);
+                pageData.setRowsPerPage(rowsPerPage);
+                displayStart = displayStart + rowsPerPage;
+                pageDtToProjects = getFilteredProjectList(request, pageData);
+                projects.addAll(pageDtToProjects.entrySet().iterator().next().getValue());
+                total = total - rowsPerPage;
+            }
+
+            List<Project> listOfProjects = new ArrayList<Project>(projects);
+            if (!isNullOrEmpty(projectId)) {
+                Project project = listOfProjects.stream().filter(p -> p.getId().equals(projectId)).findFirst().get();
+                fillVendor(project);
+                filename = String.format("project-%s-%s-%s.xlsx", project.getName(), project.getVersion(), SW360Utils.getCreatedOn());
+            }
+            ProjectExporterNetWork exporter = new ProjectExporterNetWork(
+                    thriftClients.makeComponentClient(),
+                    thriftClients.makeProjectClient(),
+                    user,
+                    listOfProjects,
+                    extendedByReleases);
+            PortletResponseUtil.sendFile(request, response, filename, exporter.makeExcelExport(listOfProjects), CONTENT_TYPE_OPENXML_SPREADSHEET);
+        } catch (IOException | TException e) {
+            log.error("An error occurred while generating the Excel export", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE,
+                    Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+        }
     }
 }
