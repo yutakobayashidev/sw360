@@ -40,6 +40,7 @@ import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
+import org.eclipse.sw360.exporter.utils.ReleaseUtils;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
 import org.apache.logging.log4j.Logger;
@@ -1098,7 +1099,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             });
 
             for (ReleaseLinkJSON release : listReleaseLinkJson) {
-                flattenRelease(release, listReleaseLinkJsonFatten);
+                ReleaseUtils.flattenRelease(release, listReleaseLinkJsonFatten);
             }
 
             for (ReleaseLinkJSON release : listReleaseLinkJsonFatten) {
@@ -1929,19 +1930,5 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         out.sort(Comparator.comparing(ProjectLink::getName).thenComparing(ProjectLink::getVersion));
         return out;
-    }
-
-    private List<ReleaseLinkJSON> flattenRelease(ReleaseLinkJSON release, List<ReleaseLinkJSON> flatListReleaseLinkJSON) {
-        if (release != null) {
-            flatListReleaseLinkJSON.add(release);
-        }
-
-        List<ReleaseLinkJSON> children = release.getReleaseLink();
-        for (ReleaseLinkJSON child : children) {
-            if (child.getReleaseLink() != null) {
-                flattenRelease(child, flatListReleaseLinkJSON);
-            }
-        }
-        return flatListReleaseLinkJSON;
     }
 }
