@@ -2395,6 +2395,9 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             projects.forEach(p -> {
                 boolean contain = false;
                 for (String releaseId : releaseIds) {
+                    if (p.getReleaseRelationNetwork() == null) {
+                        return;
+                    }
                     if (p.getReleaseRelationNetwork().contains("\"releaseId\":\"" + releaseId + "\"")) {
                         contain = true;
                         break;
@@ -2421,6 +2424,9 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             projects.forEach(p -> {
                 boolean contain = false;
                 for (String releaseId : releaseIds) {
+                    if (p.getReleaseRelationNetwork() == null) {
+                        return;
+                    }
                     if (p.getReleaseRelationNetwork().contains("\"releaseId\":\"" + releaseId + "\"")) {
                         contain = true;
                         break;
