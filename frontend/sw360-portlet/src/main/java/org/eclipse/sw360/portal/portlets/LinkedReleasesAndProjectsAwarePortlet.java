@@ -399,9 +399,7 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         }
         ComponentService.Iface compClient = thriftClients.makeComponentClient();
         List<ProjectLink> mappedProjectLinks = createLinkedProjectsNetwork(project, user);
-        Set<String> releaseIds = mappedProjectLinks.stream().map(ProjectLink::getLinkedReleases)
-                .filter(CommonUtils::isNotEmpty).flatMap(rList -> rList.stream()).filter(Objects::nonNull)
-                .map(ReleaseLink::getId).collect(Collectors.toSet());
+
         mappedProjectLinks = sortProjectLink(mappedProjectLinks);
         request.setAttribute(PortalConstants.NETWORK_PROJECT_LIST, mappedProjectLinks);
         request.setAttribute(PortalConstants.PARENT_SCOPE_GROUP_ID, request.getParameter(PortalConstants.PARENT_SCOPE_GROUP_ID));

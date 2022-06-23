@@ -1845,7 +1845,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
             if (project != null) {
                 projectLink = new ProjectLink(id, project.name);
-                if (project.isSetReleaseIdToUsage() && (maxDepth < 0 || visitedIds.size() < maxDepth)){
+                if (project.getReleaseRelationNetwork() != null && project.getReleaseRelationNetwork().length() > 0){
                     String releaseNetwork = project.getReleaseRelationNetwork();
                     ObjectMapper mapper = new ObjectMapper();
                     List<ReleaseLinkJSON> listReleaseLinkJson;

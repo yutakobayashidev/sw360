@@ -11,6 +11,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.project;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.StringUtils;
@@ -18,6 +19,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLinkJSON;
+import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.springframework.data.domain.Pageable;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
@@ -47,11 +50,6 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -1097,4 +1095,66 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
         return null;
     }
+
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = PROJECTS_URL+"/v2", method = RequestMethod.POST)
+    public ResponseEntity createProjectV2(@RequestBody Map<String, Object> reqBodyMap)
+            throws URISyntaxException, TException {
+        Project project = convertToProjectV2(reqBodyMap);
+        if (project.getReleaseIdToUsage() != null) {
+
+            Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
+            Map<String, ProjectReleaseRelationship> oriReleaseIdToUsage = project.getReleaseIdToUsage();
+            for (String releaseURIString : oriReleaseIdToUsage.keySet()) {
+                URI releaseURI = new URI(releaseURIString);
+                String path = releaseURI.getPath();
+                String releaseId = path.substring(path.lastIndexOf('/') + 1);
+                releaseIdToUsage.put(releaseId, oriReleaseIdToUsage.get(releaseURIString));
+            }
+            project.setReleaseIdToUsage(releaseIdToUsage);
+        }
+
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        project = projectService.createProject(project, sw360User);
+        HalResource<Project> halResource = createHalProject(project, sw360User);
+
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest().path("/{id}")
+                .buildAndExpand(project.getId()).toUri();
+
+        return ResponseEntity.created(location).body(halResource);
+    }
+
+    private Project convertToProjectV2(Map<String, Object> requestBody) {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.registerModule(sw360Module);
+
+        if (requestBody.containsKey("linkedProjects")) {
+            Map<String, Object> linkedProjects = (Map<String, Object>) requestBody.get("linkedProjects");
+            linkedProjects.entrySet().stream().forEach(entry -> {
+                if (entry.getValue() instanceof String) {
+                    Map<String, Object> projectProjectRelationShip = new HashMap<String, Object>();
+                    projectProjectRelationShip.put("projectRelationship", entry.getValue());
+                    linkedProjects.put(entry.getKey(), projectProjectRelationShip);
+                }
+            });
+        }
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        String dependencyNetwork = null;
+        try {
+            dependencyNetwork = objectMapper.writeValueAsString(requestBody.get("dependencyNetwork"));
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        if (dependencyNetwork == null) {
+            dependencyNetwork = "[]";
+        }
+        Project project = mapper.convertValue(requestBody, Project.class);
+        project.setReleaseRelationNetwork(dependencyNetwork);
+        return project;
+    }
+
 }

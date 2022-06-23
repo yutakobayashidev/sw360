@@ -194,7 +194,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     @Override
     public void serveResource(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
         String action = request.getParameter(PortalConstants.ACTION);
-
         if (PortalConstants.VIEW_LINKED_PROJECTS.equals(action)) {
             serveLinkedProjects(request, response);
         } else if (PortalConstants.LOAD_PROJECT_LIST.equals(action)) {
@@ -3390,9 +3389,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         ProjectService.Iface client = thriftClients.makeProjectClient();
         Project project = null;
         try {
-
             project = client.getProjectById(id, user);
-            project = getWithFilledClearingStateSummary(project, user);
         } catch (TException exp) {
             log.error("Error while fetching Project id : " + id, exp);
             return;
