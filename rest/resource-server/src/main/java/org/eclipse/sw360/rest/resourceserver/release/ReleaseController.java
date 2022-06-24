@@ -32,12 +32,14 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
@@ -101,6 +103,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     @NonNull
     private Sw360ReleaseService releaseService;
 
+    @NonNull
+    private final Sw360VulnerabilityService vulnerabilityService;
     @NonNull
     private Sw360AttachmentService attachmentService;
 
@@ -463,7 +467,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                 .slash("api" + ComponentController.COMPONENTS_URL + "/" + release.getComponentId()).withRel("component");
         halRelease.add(componentLink);
         release.setComponentId(null);
-
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        final List<VulnerabilityDTO> allVulnerabilityDTOs = vulnerabilityService.getVulnerabilitiesByReleaseId(release.getId(), sw360User);
         if (verbose) {
             if (release.getModerators() != null) {
                 Set<String> moderators = release.getModerators();
@@ -474,6 +479,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                 Set<Attachment> attachments = release.getAttachments();
                 restControllerHelper.addEmbeddedAttachments(halRelease, attachments);
                 release.setAttachments(null);
+            }
+            if (allVulnerabilityDTOs != null) {
+                restControllerHelper.addEmbeddedVulnerabilityDTO(halRelease, allVulnerabilityDTOs);
             }
             if (release.getVendor() != null) {
                 Vendor vendor = release.getVendor();

@@ -686,7 +686,7 @@ public class JacksonCustomizations {
             abstract public String getIntReleaseName();
 
             @Override
-            @JsonProperty(access = Access.WRITE_ONLY)
+            @JsonProperty()
             abstract public String getExternalId();
         }
 
