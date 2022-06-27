@@ -18,6 +18,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
@@ -26,6 +27,7 @@ import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.license.LicenseController;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
+import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProjectDTO;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.eclipse.sw360.rest.resourceserver.project.ProjectController;
@@ -662,5 +664,16 @@ public class RestControllerHelper<T> {
         } else if (value != null) {
             halResource.addEmbeddedResource(relation, value);
         }
+    }
+
+    public ProjectDTO convertToEmbeddedProjectDTO(Project project) {
+        ProjectDTO embeddedProject = new EmbeddedProjectDTO();
+        embeddedProject.setName(project.getName());
+        embeddedProject.setId(project.getId());
+        embeddedProject.setProjectType(project.getProjectType());
+        embeddedProject.setVersion(project.getVersion());
+        embeddedProject.setVisbility(project.getVisbility());
+        embeddedProject.setType(null);
+        return embeddedProject;
     }
 }

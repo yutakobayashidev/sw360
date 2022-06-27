@@ -136,6 +136,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST = ImmutableMap.<String, String>builder()
             .put("message", "Moderation request is created").build();
 
+    private static final ImmutableMap<ProjectDTO._Fields, String> mapOfFieldsTobeEmbeddedDTO = ImmutableMap.<ProjectDTO._Fields, String>builder()
+            .put(ProjectDTO._Fields.CLEARING_TEAM, "clearingTeam")
+            .put(ProjectDTO._Fields.EXTERNAL_URLS, "externalUrls")
+            .put(ProjectDTO._Fields.MODERATORS, "sw360:moderators")
+            .put(ProjectDTO._Fields.CONTRIBUTORS,"sw360:contributors")
+            .put(ProjectDTO._Fields.ATTACHMENTS,"sw360:attachments").build();
+
     @NonNull
     private final Sw360ProjectService projectService;
 
@@ -1156,6 +1163,98 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return ResponseEntity.ok().body(userHalResource);
     }
 
+    @RequestMapping(value = PROJECTS_URL+"/v2", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<EntityModel<ProjectDTO>>> getProjectsForUserV2(
+            Pageable pageable,
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "type", required = false) String projectType,
+            @RequestParam(value = "group", required = false) String group,
+            @RequestParam(value = "tag", required = false) String tag,
+            @RequestParam(value = "allDetails", required = false) boolean allDetails,
+            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
+            HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Map<String, Project> mapOfProjects = new HashMap<>();
+        boolean isSearchByName = name != null && !name.isEmpty();
+        boolean isSearchByTag = CommonUtils.isNotNullEmptyOrWhitespace(tag);
+        boolean isSearchByType = CommonUtils.isNotNullEmptyOrWhitespace(projectType);
+        boolean isSearchByGroup = CommonUtils.isNotNullEmptyOrWhitespace(group);
+        List<Project> sw360Projects = new ArrayList<>();
+        Map<String, Set<String>> filterMap = new HashMap<>();
+        if (luceneSearch) {
+            if (CommonUtils.isNotNullEmptyOrWhitespace(projectType)) {
+                Set<String> values = CommonUtils.splitToSet(projectType);
+                filterMap.put(Project._Fields.PROJECT_TYPE.getFieldName(), values);
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(group)) {
+                Set<String> values = CommonUtils.splitToSet(group);
+                filterMap.put(Project._Fields.BUSINESS_UNIT.getFieldName(), values);
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(tag)) {
+                Set<String> values = CommonUtils.splitToSet(tag);
+                filterMap.put(Project._Fields.TAG.getFieldName(), values);
+            }
+
+            if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
+                Set<String> values = CommonUtils.splitToSet(name);
+                values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery)
+                        .collect(Collectors.toSet());
+                filterMap.put(Project._Fields.NAME.getFieldName(), values);
+            }
+
+            sw360Projects.addAll(projectService.refineSearch(filterMap, sw360User));
+        } else {
+            if (isSearchByName) {
+                sw360Projects.addAll(projectService.searchProjectByName(name, sw360User));
+            } else if (isSearchByGroup) {
+                sw360Projects.addAll(projectService.searchProjectByGroup(group, sw360User));
+            } else if (isSearchByTag) {
+                sw360Projects.addAll(projectService.searchProjectByTag(tag, sw360User));
+            } else if (isSearchByType) {
+                sw360Projects.addAll(projectService.searchProjectByType(projectType, sw360User));
+            } else {
+                sw360Projects.addAll(projectService.getProjectsForUser(sw360User));
+            }
+        }
+        sw360Projects.stream().forEach(prj -> mapOfProjects.put(prj.getId(), prj));
+        PaginationResult<Project> paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Projects, SW360Constants.TYPE_PROJECT);
+
+        List<EntityModel<ProjectDTO>> projectResources = new ArrayList<>();
+        Consumer<Project> consumer = p -> {
+            EntityModel<ProjectDTO> embeddedProjectResource = null;
+            if (!allDetails) {
+                ProjectDTO embeddedProject = restControllerHelper.convertToEmbeddedProjectDTO(p);
+                embeddedProjectResource = EntityModel.of(embeddedProject);
+            } else {
+                embeddedProjectResource = createHalProjectDTOResourceWithAllDetails(p, sw360User, mapOfProjects,
+                        !isSearchByName);
+                if (embeddedProjectResource == null) {
+                    return;
+                }
+            }
+            projectResources.add(embeddedProjectResource);
+        };
+
+        if (luceneSearch) {
+            paginationResult.getResources().stream().forEach(consumer);
+        } else {
+            paginationResult.getResources().stream()
+                    .filter(project -> projectType == null || projectType.equals(project.projectType.name()))
+                    .filter(project -> group == null || group.isEmpty() || group.equals(project.getBusinessUnit()))
+                    .filter(project -> tag == null || tag.isEmpty() || tag.equals(project.getTag())).forEach(consumer);
+        }
+        CollectionModel resources;
+        if (projectResources.size() == 0) {
+            resources = restControllerHelper.emptyPageResource(Project.class, paginationResult);
+        } else {
+            resources = restControllerHelper.generatePagesResource(paginationResult, projectResources);
+        }
+
+        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
+    }
+
+
     private Project convertToProjectV2(Map<String, Object> requestBody) throws JsonProcessingException, TException {
         ComponentService.Iface componentService = new ThriftClients().makeComponentClient();
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -1202,5 +1301,47 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             Release release = componentService.getReleaseById(releaseLink.getReleaseId(), sw360User);
             checkReleaseExisted(releaseLink.getReleaseLink());
         }
+    }
+
+    private HalResource<ProjectDTO> createHalProjectDTOResourceWithAllDetails(Project sw360Project, User sw360User,
+                                                                        Map<String, Project> mapOfProjects, boolean isAllAccessibleProjectFetched) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        Map<String, ProjectProjectRelationship> linkedProjects = sw360Project.getLinkedProjects();
+        if (!isLinkedProjectsVisible(linkedProjects, sw360User, mapOfProjects, isAllAccessibleProjectFetched)) {
+            return null;
+        }
+
+        ProjectDTO projectDTO = objectMapper.convertValue(sw360Project,ProjectDTO.class);
+        HalResource<ProjectDTO> halProject = new HalResource<>(projectDTO);
+        List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
+        try {
+            releaseLinkJSONS = objectMapper.readValue(sw360Project.getReleaseRelationNetwork(), new TypeReference<List<ReleaseLinkJSON>>() {
+            });
+        } catch (JsonProcessingException e) {
+            log.error(e.getMessage());
+        }
+        projectDTO.setDependencyNetwork(releaseLinkJSONS);
+        halProject.addEmbeddedResource("createdBy", projectDTO.getCreatedBy());
+
+        List<String> obsolateFields = List.of("homepage", "wiki");
+        for (Entry<ProjectDTO._Fields, String> field : mapOfFieldsTobeEmbeddedDTO.entrySet()) {
+            if (ProjectDTO._Fields.EXTERNAL_URLS.equals(field.getKey())) {
+                Map<String, String> externalUrls = CommonUtils
+                        .nullToEmptyMap((Map<String, String>) projectDTO.getFieldValue(field.getKey()));
+                restControllerHelper.addEmbeddedFields(obsolateFields.get(0),
+                        externalUrls.get(obsolateFields.get(0)) == null ? "" : externalUrls.get(obsolateFields.get(0)),
+                        halProject);
+                restControllerHelper.addEmbeddedFields(obsolateFields.get(1),
+                        externalUrls.get(obsolateFields.get(1)) == null ? "" : externalUrls.get(obsolateFields.get(1)),
+                        halProject);
+            } else {
+                restControllerHelper.addEmbeddedFields(field.getValue(), projectDTO.getFieldValue(field.getKey()),
+                        halProject);
+            }
+        }
+
+        return halProject;
     }
 }
