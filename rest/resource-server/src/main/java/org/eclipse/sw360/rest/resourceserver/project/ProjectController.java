@@ -12,6 +12,7 @@
 package org.eclipse.sw360.rest.resourceserver.project;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.StringUtils;
@@ -19,7 +20,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseLinkJSON;
+import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.springframework.data.domain.Pageable;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
@@ -30,27 +32,18 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
-import org.eclipse.sw360.datahandler.thrift.MainlineState;
-import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
-import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
@@ -1101,7 +1094,16 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     @RequestMapping(value = PROJECTS_URL+"/v2", method = RequestMethod.POST)
     public ResponseEntity createProjectV2(@RequestBody Map<String, Object> reqBodyMap)
             throws URISyntaxException, TException {
-        Project project = convertToProjectV2(reqBodyMap);
+        Project project = null;
+        try {
+            project = convertToProjectV2(reqBodyMap);
+        } catch (JsonProcessingException e) {
+            log.error(e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (SW360Exception sw360Exception){
+            log.error(sw360Exception.getWhy());
+            return ResponseEntity.badRequest().body(sw360Exception.getWhy());
+        }
         if (project.getReleaseIdToUsage() != null) {
 
             Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
@@ -1126,7 +1128,38 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return ResponseEntity.created(location).body(halResource);
     }
 
-    private Project convertToProjectV2(Map<String, Object> requestBody) {
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = PROJECTS_URL + "/v2/{id}", method = RequestMethod.PATCH)
+    public ResponseEntity patchProjectV2(
+            @PathVariable("id") String id,
+            @RequestBody Map<String, Object> reqBodyMap) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        Project sw360Project = projectService.getProjectForUserById(id, user);
+        Project updateProject = null;
+        try {
+            updateProject = convertToProjectV2(reqBodyMap);
+        } catch (JsonProcessingException e) {
+            log.error(e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (SW360Exception sw360Exception){
+            log.error(sw360Exception.getWhy());
+            return ResponseEntity.badRequest().body(sw360Exception.getWhy());
+        }
+        sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap, mapOfProjectFieldsToRequestBody);
+        sw360Project.setReleaseRelationNetwork(updateProject.getReleaseRelationNetwork());
+        RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, user);
+        HalResource<Project> userHalResource = createHalProject(sw360Project, user);
+        if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
+
+        return ResponseEntity.ok().body(userHalResource);
+    }
+
+    private Project convertToProjectV2(Map<String, Object> requestBody) throws JsonProcessingException, TException {
+        ComponentService.Iface componentService = new ThriftClients().makeComponentClient();
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.registerModule(sw360Module);
@@ -1143,18 +1176,31 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         ObjectMapper objectMapper = new ObjectMapper();
-        String dependencyNetwork = null;
-        try {
-            dependencyNetwork = objectMapper.writeValueAsString(requestBody.get("dependencyNetwork"));
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+        List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
+        String dependencyNetwork = objectMapper.writeValueAsString(requestBody.get("dependencyNetwork"));
+        releaseLinkJSONS = objectMapper.readValue(dependencyNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
+        });
+
+        if (releaseLinkJSONS != null) {
+            for (ReleaseLinkJSON releaseLink : releaseLinkJSONS) {
+                Release release = componentService.getReleaseById(releaseLink.getReleaseId(), sw360User);
+                checkReleaseExisted(releaseLink.getReleaseLink());
+            }
         }
-        if (dependencyNetwork == null) {
-            dependencyNetwork = "[]";
-        }
+
         Project project = mapper.convertValue(requestBody, Project.class);
         project.setReleaseRelationNetwork(dependencyNetwork);
         return project;
     }
 
+
+    private void checkReleaseExisted(List<ReleaseLinkJSON> releaseLinks) throws TException {
+        ComponentService.Iface componentService = new ThriftClients().makeComponentClient();
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        for (ReleaseLinkJSON releaseLink : releaseLinks) {
+            Release release = componentService.getReleaseById(releaseLink.getReleaseId(), sw360User);
+            checkReleaseExisted(releaseLink.getReleaseLink());
+        }
+    }
 }

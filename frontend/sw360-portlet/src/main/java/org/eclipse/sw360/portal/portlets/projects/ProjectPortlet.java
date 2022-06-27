@@ -464,6 +464,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         AddDocumentRequestSummary requestSummary = null;
         try {
             JsonNode crNode = OBJECT_MAPPER.readValue(request.getParameter(CLEARING_REQUEST), JsonNode.class);
+            log.info(crNode.toString());
             clearingRequest = OBJECT_MAPPER.convertValue(crNode, ClearingRequest.class);
             clearingRequest.setRequestingUser(user.getEmail());
             clearingRequest.setClearingState(ClearingRequestState.NEW);
