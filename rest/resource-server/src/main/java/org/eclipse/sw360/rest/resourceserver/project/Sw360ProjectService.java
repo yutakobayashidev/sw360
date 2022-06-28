@@ -12,6 +12,10 @@
 
 package org.eclipse.sw360.rest.resourceserver.project;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -34,10 +38,7 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectData;
@@ -442,5 +443,48 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
         }
         return listOfProjects;
+    }
+
+    public Set<String> getReleasesIdByProjectId(String projectId, User sw360User) throws TException {
+        Set<String> releasesId = new HashSet<>();
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        Project sw360Project = sw360ProjectClient.getProjectById(projectId, sw360User);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
+
+        try {
+            releaseLinkJSONS = objectMapper.readValue(sw360Project.getReleaseRelationNetwork(), new TypeReference<List<ReleaseLinkJSON>>() {
+            });
+            for (ReleaseLinkJSON release : releaseLinkJSONS) {
+                getReleaseIdInDependency(release, releasesId);
+            }
+        } catch (JsonProcessingException e) {
+            log.error(e.getMessage());
+        }
+
+
+        return releasesId;
+    }
+
+    private Set<String> getReleaseIdInDependency(ReleaseLinkJSON node, Set<String> flatList) {
+
+        if (node != null) {
+            // ReleaseLinkJSON n = new ReleaseLinkJSON(node.getKey(),node.getNodeId(), node.getParentId(), node.getEntryTest());
+            flatList.add(node.getReleaseId());
+        }
+
+        List<ReleaseLinkJSON> children = node.getReleaseLink();
+        for (ReleaseLinkJSON child : children) {
+            if(child.getReleaseLink() != null) {
+                getReleaseIdInDependency(child, flatList);
+            } else {
+                flatList.add(node.getReleaseId());
+            }
+        }
+
+        return flatList;
     }
 }
