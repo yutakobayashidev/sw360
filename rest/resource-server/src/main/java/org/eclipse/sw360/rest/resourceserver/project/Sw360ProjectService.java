@@ -487,4 +487,54 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
         return flatList;
     }
+
+    public Set<Release> getReleasesInDependencyFromProjectIds(List<String> projectIds, final User sw360User, Sw360ReleaseService releaseService) {
+        final List<Callable<List<Release>>> callableTasksToGetReleases = new ArrayList<Callable<List<Release>>>();
+
+        projectIds.stream().forEach(id -> {
+            Callable<List<Release>> getReleasesByProjectId = () -> {
+                final Set<String> releaseIds = getReleasesIdByProjectId(id, sw360User);
+
+                List<Release> releases = releaseIds.stream().map(relId -> wrapTException(() -> {
+                    final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
+                    return sw360Release;
+                })).collect(Collectors.toList());
+                return releases;
+            };
+            callableTasksToGetReleases.add(getReleasesByProjectId);
+        });
+
+        List<Future<List<Release>>> releasesFuture = new ArrayList<Future<List<Release>>>();
+        try {
+            releasesFuture = releaseExecutor.invokeAll(callableTasksToGetReleases);
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Error getting releases: " + e.getMessage());
+        }
+
+        List<List<Release>> listOfreleases = releasesFuture.stream().map(fut -> {
+            List<Release> rels = new ArrayList<Release>();
+            try {
+                rels = fut.get();
+            } catch (InterruptedException | ExecutionException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof ResourceNotFoundException) {
+                    throw (ResourceNotFoundException) cause;
+                }
+
+                if (cause instanceof AccessDeniedException) {
+                    throw (AccessDeniedException) cause;
+                }
+                throw new RuntimeException("Error getting releases: " + e.getMessage());
+            }
+            return rels;
+        }).collect(Collectors.toList());
+
+        final Set<Release> relList = new HashSet<Release>();
+        listOfreleases.stream().forEach(listOfRel -> {
+            for(Release rel : listOfRel) {
+                relList.add(rel);
+            }
+        });
+        return relList;
+    }
 }

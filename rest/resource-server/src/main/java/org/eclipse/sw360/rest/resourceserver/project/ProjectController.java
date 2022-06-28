@@ -1304,6 +1304,61 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(resources, status);
     }
 
+    @RequestMapping(value = PROJECTS_URL + "/v2/{id}/releases/ecc", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<EntityModel<Release>>> getECCsOfReleasesV2(
+            @PathVariable("id") String id) throws TException {
+
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        final Set<String> releaseIds = projectService.getReleasesIdByProjectId(id, sw360User);
+
+        final List<EntityModel<Release>> releaseResources = new ArrayList<>();
+        for (final String releaseId : releaseIds) {
+            final Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
+            Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release);
+            embeddedRelease.setEccInformation(sw360Release.getEccInformation());
+            final EntityModel<Release> releaseResource = EntityModel.of(embeddedRelease);
+            releaseResources.add(releaseResource);
+        }
+
+        final CollectionModel<EntityModel<Release>> resources = restControllerHelper.createResources(releaseResources);
+        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
+    }
+    @RequestMapping(value = PROJECTS_URL + "/v2/releases", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<EntityModel<Release>>> getProjectsReleases(
+            Pageable pageable,
+            @RequestBody List<String> projectIds,
+            @RequestParam(value = "clearingState", required = false) String clState, HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        final Set<String> releaseIdsInBranch = new HashSet<>();
+        Set<Release> releases = projectService.getReleasesInDependencyFromProjectIds(projectIds, sw360User,releaseService);
+
+        if (null != clState) {
+            ClearingState cls = ThriftEnumUtils.stringToEnum(clState, ClearingState.class);
+            releases = releases.stream().filter(rel -> rel.getClearingState().equals(cls)).collect(Collectors.toSet());
+        }
+
+        List<Release> relList = releases.stream().collect(Collectors.toList());
+
+        PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable, relList, SW360Constants.TYPE_RELEASE);
+        final List<EntityModel<Release>> releaseResources = paginationResult.getResources().stream()
+                .map(sw360Release -> wrapTException(() -> {
+                    final Release embeddedRelease = restControllerHelper.convertToEmbeddedReleaseWithDet(sw360Release);
+                    final HalResource<Release> releaseResource = new HalResource<>(embeddedRelease);
+                    return releaseResource;
+                })).collect(Collectors.toList());
+
+        CollectionModel resources = null;
+        if (CommonUtils.isNotEmpty(releaseResources)) {
+            resources = restControllerHelper.generatePagesResource(paginationResult, releaseResources);
+        }
+
+        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
+    }
+
+
     private Project convertToProjectV2(Map<String, Object> requestBody) throws JsonProcessingException, TException {
         ComponentService.Iface componentService = new ThriftClients().makeComponentClient();
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
