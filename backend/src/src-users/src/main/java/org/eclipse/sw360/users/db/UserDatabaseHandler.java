@@ -150,7 +150,7 @@ public class UserDatabaseHandler {
     public Map<PaginationData, List<User>> getUsersWithPagination(PaginationData pageData) {
         return repository.getUsersWithPagination(pageData);
     }
-
+  
     public Set<String> getAllEmailsByDepartmentKey(String departmentKey) {
         return repository.getEmailsByDepartmentName(departmentKey);
     }
@@ -435,6 +435,10 @@ public class UserDatabaseHandler {
             }
         }
         return users;
+    }
+
+    public User getByOidcClientId(String clientId) {
+        return repository.getByOidcClientId(clientId);
     }
 
 }

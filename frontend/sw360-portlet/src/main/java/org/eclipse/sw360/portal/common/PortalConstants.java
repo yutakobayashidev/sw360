@@ -46,6 +46,7 @@ public class PortalConstants {
     public static final String CLEARING_REPORT_TEMPLATE_FORMAT;
     public static final String DISABLE_CLEARING_REQUEST_FOR_PROJECT_WITH_GROUPS;
     public static final Boolean SEND_PROJECT_SPREADSHEET_EXPORT_TO_MAIL_ENABLED;
+    public static final Boolean SEND_COMPONENT_SPREADSHEET_EXPORT_TO_MAIL_ENABLED;
     public static final String LOAD_OPEN_MODERATION_REQUEST = "loadOpenModerationRequest";
     public static final String LOAD_CLOSED_MODERATION_REQUEST = "loadClosedModerationRequest";
 
@@ -663,6 +664,9 @@ public class PortalConstants {
     public static final String USERS_PRESENT_IN_COUCH_DB = "usersPresentInCouchDb";
     public static final String USERS_ABSENT_IN_COUCH_DB = "usersAbsentInCouchDb";
     public static final String USER_OBJ = "userObj";
+    public static final String USER_CLIENT_ID_KEY = "userClientIdKey";
+    public static final String USER_CLIENT_ID_ACCESS_VALUE = "userClientIdAccessValue";
+    public static final String USER_CLIENT_ID_NAME_VALUE = "userClientIdNameValue";
 
     // Rest API constants
     public static final UserGroup API_WRITE_ACCESS_USERGROUP;
@@ -722,6 +726,7 @@ public class PortalConstants {
             System.getProperty("RunComponentVisibilityRestrictionTest", props.getProperty("component.visibility.restriction.enabled", "false")));
         DISABLE_CLEARING_REQUEST_FOR_PROJECT_WITH_GROUPS = props.getProperty("org.eclipse.sw360.disable.clearing.request.for.project.group", "");
         SEND_PROJECT_SPREADSHEET_EXPORT_TO_MAIL_ENABLED = Boolean.parseBoolean(props.getProperty("send.project.spreadsheet.export.to.mail.enabled", "false"));
+        SEND_COMPONENT_SPREADSHEET_EXPORT_TO_MAIL_ENABLED = Boolean.parseBoolean(props.getProperty("send.component.spreadsheet.export.to.mail.enabled", "false"));
     }
 
     private PortalConstants() {

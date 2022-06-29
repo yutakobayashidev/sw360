@@ -90,6 +90,13 @@ public class UserHandler implements UserService.Iface {
         return db.getByApiToken(token);
     }
 
+
+    @Override
+    public User getByOidcClientId(String clientId) throws TException {
+        assertNotEmpty(clientId);
+        return db.getByOidcClientId(clientId);
+    }
+
     @Override
     public List<User> searchUsers(String searchText) {
         return db.searchUsers(searchText);
