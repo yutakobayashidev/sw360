@@ -1099,12 +1099,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
 
     @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = PROJECTS_URL+"/v2", method = RequestMethod.POST)
-    public ResponseEntity createProjectV2(@RequestBody Map<String, Object> reqBodyMap)
+    @RequestMapping(value = PROJECTS_URL+"/dependency", method = RequestMethod.POST)
+    public ResponseEntity createProjectDependency(@RequestBody Map<String, Object> reqBodyMap)
             throws URISyntaxException, TException {
         Project project = null;
         try {
-            project = convertToProjectV2(reqBodyMap);
+            project = convertToProjectDependency(reqBodyMap);
         } catch (JsonProcessingException e) {
             log.error(e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -1137,15 +1137,15 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = PROJECTS_URL + "/v2/{id}", method = RequestMethod.PATCH)
-    public ResponseEntity patchProjectV2(
+    @RequestMapping(value = PROJECTS_URL + "/dependency/{id}", method = RequestMethod.PATCH)
+    public ResponseEntity patchProjectDependency(
             @PathVariable("id") String id,
             @RequestBody Map<String, Object> reqBodyMap) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, user);
         Project updateProject = null;
         try {
-            updateProject = convertToProjectV2(reqBodyMap);
+            updateProject = convertToProjectDependency(reqBodyMap);
         } catch (JsonProcessingException e) {
             log.error(e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -1164,8 +1164,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return ResponseEntity.ok().body(userHalResource);
     }
 
-    @RequestMapping(value = PROJECTS_URL+"/v2", method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<ProjectDTO>>> getProjectsForUserV2(
+    @RequestMapping(value = PROJECTS_URL+"/dependency", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<EntityModel<ProjectDTO>>> getProjectsForUserDependency(
             Pageable pageable,
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "type", required = false) String projectType,
@@ -1255,8 +1255,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(resources, status);
     }
 
-    @RequestMapping(value = PROJECTS_URL + "/v2/{id}", method = RequestMethod.GET)
-    public ResponseEntity<EntityModel<ProjectDTO>> getProjectV2(
+    @RequestMapping(value = PROJECTS_URL + "/dependency/{id}", method = RequestMethod.GET)
+    public ResponseEntity<EntityModel<ProjectDTO>> getProjectDependency(
             @PathVariable("id") String id) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
@@ -1265,8 +1265,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
 
-    @RequestMapping(value = PROJECTS_URL + "/v2/{id}/releases", method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<Release>>> getProjectReleasesV2(
+    @RequestMapping(value = PROJECTS_URL + "/dependency/{id}/releases", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<EntityModel<Release>>> getProjectReleaseDependency(
             Pageable pageable,
             @PathVariable("id") String id,
             HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
@@ -1304,8 +1304,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(resources, status);
     }
 
-    @RequestMapping(value = PROJECTS_URL + "/v2/{id}/releases/ecc", method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<Release>>> getECCsOfReleasesV2(
+    @RequestMapping(value = PROJECTS_URL + "/dependency/{id}/releases/ecc", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<EntityModel<Release>>> getECCsOfReleasesDependency(
             @PathVariable("id") String id) throws TException {
 
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -1324,7 +1324,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
     }
-    @RequestMapping(value = PROJECTS_URL + "/v2/releases", method = RequestMethod.GET)
+    @RequestMapping(value = PROJECTS_URL + "/dependency/releases", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getProjectsReleases(
             Pageable pageable,
             @RequestBody List<String> projectIds,
@@ -1358,8 +1358,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = PROJECTS_URL + "/v2/duplicate/{id}", method = RequestMethod.POST)
-    public ResponseEntity createDuplicateProjectV2(@PathVariable("id") String id,
+    @RequestMapping(value = PROJECTS_URL + "/dependency/duplicate/{id}", method = RequestMethod.POST)
+    public ResponseEntity createDuplicateProjectDependency(@PathVariable("id") String id,
                                                                        @RequestBody Map<String, Object> reqBodyMap) throws TException {
         if (!reqBodyMap.containsKey("name") && !reqBodyMap.containsKey("version")) {
             throw new HttpMessageNotReadableException(
@@ -1369,7 +1369,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Project sw360Project = projectService.getProjectForUserById(id, user);
         Project updateProject = null;
         try {
-            updateProject = convertToProjectV2(reqBodyMap);
+            updateProject = convertToProjectDependency(reqBodyMap);
         } catch (JsonProcessingException e) {
             log.error(e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -1400,8 +1400,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return ResponseEntity.created(location).body(halResource);
     }
 
-    @RequestMapping(value = PROJECTS_URL + "/v2/{id}/vulnerabilities", method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<VulnerabilityDTO>>> getVulnerabilitiesOfReleasesV2(
+    @RequestMapping(value = PROJECTS_URL + "/dependency/{id}/vulnerabilities", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<EntityModel<VulnerabilityDTO>>> getVulnerabilitiesOfReleasesDependency(
             Pageable pageable,
             @PathVariable("id") String id, @RequestParam(value = "priority") Optional<String> priority,
             @RequestParam(value = "projectRelevance") Optional<String> projectRelevance,
@@ -1460,8 +1460,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
 
-    @RequestMapping(value = PROJECTS_URL + "/v2/{id}/licenses", method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<License>>> getLicensesOfReleasesV2(@PathVariable("id") String id) throws TException {
+    @RequestMapping(value = PROJECTS_URL + "/dependency/{id}/licenses", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<EntityModel<License>>> getLicensesOfReleasesDependency(@PathVariable("id") String id) throws TException {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -1506,7 +1506,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
     }
-    private Project convertToProjectV2(Map<String, Object> requestBody) throws JsonProcessingException, TException {
+    private Project convertToProjectDependency(Map<String, Object> requestBody) throws JsonProcessingException, TException {
         ComponentService.Iface componentService = new ThriftClients().makeComponentClient();
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
@@ -1571,11 +1571,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         ProjectDTO projectDTO = objectMapper.convertValue(sw360Project,ProjectDTO.class);
         List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
-        try {
-            releaseLinkJSONS = objectMapper.readValue(sw360Project.getReleaseRelationNetwork(), new TypeReference<List<ReleaseLinkJSON>>() {
-            });
-        } catch (JsonProcessingException e) {
-            log.error(e.getMessage());
+        if (sw360Project.getReleaseRelationNetwork() != null ) {
+            try {
+                releaseLinkJSONS = objectMapper.readValue(sw360Project.getReleaseRelationNetwork(), new TypeReference<List<ReleaseLinkJSON>>() {
+                });
+            } catch (JsonProcessingException e) {
+                log.error(e.getMessage());
+            }
         }
         projectDTO.setDependencyNetwork(releaseLinkJSONS);
         HalResource<ProjectDTO> halProject = new HalResource<>(projectDTO);
