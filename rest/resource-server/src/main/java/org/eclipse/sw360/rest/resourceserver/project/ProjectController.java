@@ -1400,6 +1400,112 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return ResponseEntity.created(location).body(halResource);
     }
 
+    @RequestMapping(value = PROJECTS_URL + "/v2/{id}/vulnerabilities", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<EntityModel<VulnerabilityDTO>>> getVulnerabilitiesOfReleasesV2(
+            Pageable pageable,
+            @PathVariable("id") String id, @RequestParam(value = "priority") Optional<String> priority,
+            @RequestParam(value = "projectRelevance") Optional<String> projectRelevance,
+            @RequestParam(value = "releaseId") Optional<String> releaseId,
+            @RequestParam(value = "externalId") Optional<String> externalId,
+            HttpServletRequest request) throws URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        final List<VulnerabilityDTO> allVulnerabilityDTOs = vulnerabilityService.getVulnerabilitiesInDependencyByProjectId(id, sw360User);
+
+        Optional<ProjectVulnerabilityRating> projectVulnerabilityRating = wrapThriftOptionalReplacement(vulnerabilityService.getProjectVulnerabilityRatingByProjectId(id, sw360User));
+        Map<String, Map<String, List<VulnerabilityCheckStatus>>> vulnerabilityIdToStatusHistory = projectVulnerabilityRating
+                .map(ProjectVulnerabilityRating::getVulnerabilityIdToReleaseIdToStatus).orElseGet(HashMap::new);
+
+        final List<EntityModel<VulnerabilityDTO>> vulnerabilityResources = new ArrayList<>();
+        for (final VulnerabilityDTO vulnerabilityDTO : allVulnerabilityDTOs) {
+            String comment = "", action = "";
+            Map<String, Map<String, VulnerabilityRatingForProject>> vulRatingProj = vulnerabilityService.fillVulnerabilityMetadata(vulnerabilityDTO, projectVulnerabilityRating);
+            vulnerabilityDTO.setProjectRelevance(vulRatingProj.get(vulnerabilityDTO.externalId).get(vulnerabilityDTO.intReleaseId).toString());
+            Map<String, List<VulnerabilityCheckStatus>> relIdToCheckStatus = vulnerabilityIdToStatusHistory.get(vulnerabilityDTO.externalId);
+            if(null != relIdToCheckStatus && relIdToCheckStatus.containsKey(vulnerabilityDTO.intReleaseId)) {
+                List<VulnerabilityCheckStatus> checkStatus = relIdToCheckStatus.get(vulnerabilityDTO.intReleaseId);
+                comment = checkStatus.get(checkStatus.size()-1).getComment();
+                action = checkStatus.get(checkStatus.size()-1).getProjectAction();
+            }
+            vulnerabilityDTO.setComment(comment);
+            vulnerabilityDTO.setAction(action);
+            final EntityModel<VulnerabilityDTO> vulnerabilityDTOEntityModel = EntityModel.of(vulnerabilityDTO);
+            vulnerabilityResources.add(vulnerabilityDTOEntityModel);
+        }
+
+        List<String> priorityList = priority.isPresent() ? Lists.newArrayList(priority.get().split(",")) : Lists.newArrayList();
+        List<String> projectRelevanceList = projectRelevance.isPresent() ? Lists.newArrayList(projectRelevance.get().split(",")) : Lists.newArrayList();
+        final List<EntityModel<VulnerabilityDTO>> vulnResources = vulnerabilityResources.stream()
+                .filter(vulRes -> projectRelevance.isEmpty() || projectRelevanceList.contains(vulRes.getContent().getProjectRelevance()))
+                .filter(vulRes -> priority.isEmpty() || priorityList.contains(vulRes.getContent().getPriority()))
+                .filter(vulRes -> !releaseId.isPresent() || vulRes.getContent().getIntReleaseId().equals(releaseId.get()))
+                .filter(vulRes -> !externalId.isPresent() || vulRes.getContent().getExternalId().equals(externalId.get()))
+                .collect(Collectors.toList());
+
+        List<VulnerabilityDTO> vulDtos = vulnResources.stream().map(res -> res.getContent()).collect(Collectors.toList());
+        PaginationResult<VulnerabilityDTO> paginationResult = restControllerHelper.createPaginationResult(request, pageable, vulDtos, SW360Constants.TYPE_VULNERABILITYDTO);
+        List<EntityModel<VulnerabilityDTO>> paginatedVulnResources = Lists.newArrayList();
+        for (VulnerabilityDTO vd: paginationResult.getResources()) {
+            EntityModel<VulnerabilityDTO> vDTOEntityModel = EntityModel.of(vd);
+            paginatedVulnResources.add(vDTOEntityModel);
+        }
+        CollectionModel resources;
+        if (vulnResources.size() == 0) {
+            resources = restControllerHelper.emptyPageResource(VulnerabilityDTO.class, paginationResult);
+        } else {
+            resources = restControllerHelper.generatePagesResource(paginationResult, paginatedVulnResources);
+        }
+
+        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
+    }
+
+
+    @RequestMapping(value = PROJECTS_URL + "/v2/{id}/licenses", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<EntityModel<License>>> getLicensesOfReleasesV2(@PathVariable("id") String id) throws TException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        final Project project = projectService.getProjectForUserById(id, sw360User);
+        final List<EntityModel<License>> licenseResources = new ArrayList<>();
+        final Set<String> allLicenseIds = new HashSet<>();
+
+        final Set<String> releaseIdToUsage = new HashSet<>();
+
+        List<ReleaseLinkJSON> releaseLinkJSONS = null;
+        if (project.getReleaseRelationNetwork() != null) {
+            try {
+                releaseLinkJSONS = objectMapper.readValue(project.getReleaseRelationNetwork(), new TypeReference<List<ReleaseLinkJSON>>() {
+                });
+            } catch (JsonProcessingException e) {
+                log.error(e.getMessage());
+                throw new RuntimeException(e);
+            }
+        }
+        if (releaseLinkJSONS != null) {
+            for (ReleaseLinkJSON releaseLink : releaseLinkJSONS) {
+                releaseIdToUsage.add(releaseLink.getReleaseId());
+                getSubReleaseIds(releaseLink.getReleaseLink(), releaseIdToUsage);
+            }
+        }
+
+        for (final String releaseId : releaseIdToUsage) {
+            final Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
+            final Set<String> licenseIds = sw360Release.getMainLicenseIds();
+            if (licenseIds != null && !licenseIds.isEmpty()) {
+                allLicenseIds.addAll(licenseIds);
+            }
+        }
+        for (final String licenseId : allLicenseIds) {
+            final License sw360License = licenseService.getLicenseById(licenseId);
+            final License embeddedLicense = restControllerHelper.convertToEmbeddedLicense(sw360License);
+            final EntityModel<License> licenseResource = EntityModel.of(embeddedLicense);
+            licenseResources.add(licenseResource);
+        }
+
+        final CollectionModel<EntityModel<License>> resources = restControllerHelper.createResources(licenseResources);
+        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
+    }
     private Project convertToProjectV2(Map<String, Object> requestBody) throws JsonProcessingException, TException {
         ComponentService.Iface componentService = new ThriftClients().makeComponentClient();
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -1423,14 +1529,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
         List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
         String dependencyNetwork = objectMapper.writeValueAsString(requestBody.get("dependencyNetwork"));
-        releaseLinkJSONS = objectMapper.readValue(dependencyNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
-        });
 
-        if (releaseLinkJSONS != null) {
-            for (ReleaseLinkJSON releaseLink : releaseLinkJSONS) {
-                Release release = componentService.getReleaseById(releaseLink.getReleaseId(), sw360User);
-                checkReleaseExisted(releaseLink.getReleaseLink());
+        if (dependencyNetwork != null && !dependencyNetwork.equals("null")) {
+            releaseLinkJSONS = objectMapper.readValue(dependencyNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
+            });
+
+            if (releaseLinkJSONS != null) {
+                for (ReleaseLinkJSON releaseLink : releaseLinkJSONS) {
+                    Release release = componentService.getReleaseById(releaseLink.getReleaseId(), sw360User);
+                    checkReleaseExisted(releaseLink.getReleaseLink());
+                }
             }
+        }
+        else {
+            dependencyNetwork = null;
         }
         Project project = mapper.convertValue(requestBody, Project.class);
         project.setReleaseRelationNetwork(dependencyNetwork);
@@ -1496,11 +1608,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         ProjectDTO projectDTO = objectMapper.convertValue(sw360Project,ProjectDTO.class);
 
         List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
-        try {
-            releaseLinkJSONS = objectMapper.readValue(sw360Project.getReleaseRelationNetwork(), new TypeReference<List<ReleaseLinkJSON>>() {
-            });
-        } catch (JsonProcessingException e) {
-            log.error(e.getMessage());
+        if (sw360Project.getReleaseRelationNetwork() != null) {
+            try {
+                releaseLinkJSONS = objectMapper.readValue(sw360Project.getReleaseRelationNetwork(), new TypeReference<List<ReleaseLinkJSON>>() {
+                });
+            } catch (JsonProcessingException e) {
+                log.error(e.getMessage());
+            }
         }
         projectDTO.setDependencyNetwork(releaseLinkJSONS);
         HalResource<ProjectDTO> halProject = new HalResource<>(projectDTO);
@@ -1544,5 +1658,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         return halProject;
+    }
+
+    private void getSubReleaseIds(List<ReleaseLinkJSON> releaseLinks, Set<String> releaseIds) throws TException {
+        for (ReleaseLinkJSON release : releaseLinks) {
+            releaseIds.add(release.getReleaseId());
+            getSubReleaseIds(release.getReleaseLink(), releaseIds);
+        }
     }
 }

@@ -454,17 +454,17 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
         List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
-
-        try {
-            releaseLinkJSONS = objectMapper.readValue(sw360Project.getReleaseRelationNetwork(), new TypeReference<List<ReleaseLinkJSON>>() {
-            });
-            for (ReleaseLinkJSON release : releaseLinkJSONS) {
-                getReleaseIdInDependency(release, releasesId);
+        if (sw360Project.getReleaseRelationNetwork() != null) {
+            try {
+                releaseLinkJSONS = objectMapper.readValue(sw360Project.getReleaseRelationNetwork(), new TypeReference<List<ReleaseLinkJSON>>() {
+                });
+                for (ReleaseLinkJSON release : releaseLinkJSONS) {
+                    getReleaseIdInDependency(release, releasesId);
+                }
+            } catch (JsonProcessingException e) {
+                log.error(e.getMessage());
             }
-        } catch (JsonProcessingException e) {
-            log.error(e.getMessage());
         }
-
 
         return releasesId;
     }
