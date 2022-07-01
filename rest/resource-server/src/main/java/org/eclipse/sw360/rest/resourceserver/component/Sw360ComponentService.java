@@ -38,9 +38,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.getSortedMap;
 
@@ -160,4 +158,38 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         TProtocol protocol = new TCompactProtocol(thriftClient);
         return new ProjectService.Client(protocol);
     }
+
+    public Set<Project> getProjectsByComponentIdDependency(String componentId, User sw360User) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        Component component = sw360ComponentClient.getComponentById(componentId, sw360User);
+        Set<String> releaseIds = SW360Utils.getReleaseIds(component.getReleases());
+
+        return getUsingProjectAccesibleInDependencyNetwork(releaseIds, sw360User);
+    }
+
+    public Set<Project> getUsingProjectAccesibleInDependencyNetwork(Set<String> releaseIds, User user) throws TException {
+        ProjectService.Iface projectClient = getThriftProjectClient();
+        Set<Project> projects = null;
+        Set<Project> projectsUsing = new HashSet<>();
+
+        projects = projectClient.getAccessibleProjects(user);
+        projects.forEach(p -> {
+            boolean contain = false;
+            for (String releaseId : releaseIds) {
+                if (p.getReleaseRelationNetwork() == null) {
+                    return;
+                }
+                if (p.getReleaseRelationNetwork().contains("\"releaseId\":\"" + releaseId + "\"")) {
+                    contain = true;
+                    break;
+                }
+            }
+            if (contain == true) {
+                projectsUsing.add(p);
+            }
+        });
+
+        return projectsUsing;
+    }
+
 }
