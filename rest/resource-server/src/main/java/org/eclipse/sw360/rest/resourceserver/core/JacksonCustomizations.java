@@ -88,6 +88,7 @@ public class JacksonCustomizations {
             setMixInAnnotation(ProjectProjectRelationship.class, Sw360Module.ProjectProjectRelationshipMixin.class);
             setMixInAnnotation(ReleaseLinkJSON.class, Sw360Module.ReleaseLinkJSONMixin.class);
             setMixInAnnotation(ProjectDTO.class, Sw360Module.ProjectDTOMixin.class);
+            setMixInAnnotation(ProjectNetwork.class, Sw360Module.ProjectNetworkMixin.class);
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -1218,5 +1219,19 @@ public class JacksonCustomizations {
         })
         public static abstract class ProjectDTOMixin extends ProjectDTO {
         }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "id",
+                "setName",
+                "dependencyNetworkSize",
+                "dependencyNetworkIterator",
+                "setDependencyNetwork",
+                "setVersion",
+                "setId"
+        })
+        public static abstract class ProjectNetworkMixin extends ProjectNetwork {
+        }
+
     }
 }

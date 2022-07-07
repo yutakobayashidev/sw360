@@ -1451,16 +1451,19 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 allUsingProjectsCount = projectClient.getCountByReleaseIds(releaseIds);
                 usingComponentsForComponent = client.getUsingComponentsWithAccessibilityForComponent(releaseIds, user);
                 usingProjectInDependencyNetwork = getUsingProjectAccesibleInDependencyNetwork(releaseIds, user);
+                request.setAttribute(PROJECTS_IN_DEPENDENCY_NETWOWK, usingProjectInDependencyNetwork);
+                request.setAttribute(COUNT_PROJECT_IN_DEPENDENCY_NETWOWK, getUsingProjectInDependencyNetwork(releaseIds).size());
             } catch (TException e) {
                 log.error("Problem filling using docs", e);
             }
+        } else {
+            request.setAttribute(PROJECTS_IN_DEPENDENCY_NETWOWK, usingProjectInDependencyNetwork);
+            request.setAttribute(COUNT_PROJECT_IN_DEPENDENCY_NETWOWK, 0);
         }
-
         request.setAttribute(USING_PROJECTS, nullToEmptySet(usingProjects));
         request.setAttribute(USING_COMPONENTS, nullToEmptySet(usingComponentsForComponent));
         request.setAttribute(ALL_USING_PROJECTS_COUNT, allUsingProjectsCount);
-        request.setAttribute(PROJECTS_IN_DEPENDENCY_NETWOWK, usingProjectInDependencyNetwork);
-        request.setAttribute(COUNT_PROJECT_IN_DEPENDENCY_NETWOWK, getUsingProjectInDependencyNetwork(releaseIds).size());
+
     }
 
     private void prepareReleaseDetailView(RenderRequest request, RenderResponse response) throws PortletException {
@@ -1707,10 +1710,13 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             request.setAttribute(PortalConstants.PROJECTS_IN_DEPENDENCY_NETWOWK, usingProjectInDependencyNetwork);
             request.setAttribute(COUNT_PROJECT_IN_DEPENDENCY_NETWOWK, getUsingProjectInDependencyNetwork(releaseIdSet).size());
         } else {
-            request.setAttribute(USING_PROJECTS, Collections.emptySet());
-            request.setAttribute(USING_COMPONENTS, Collections.emptySet());
-            request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
+            request.setAttribute(PortalConstants.PROJECTS_IN_DEPENDENCY_NETWOWK,  Collections.emptyList());
+            request.setAttribute(COUNT_PROJECT_IN_DEPENDENCY_NETWOWK, 0);
         }
+        request.setAttribute(USING_PROJECTS, Collections.emptySet());
+        request.setAttribute(USING_COMPONENTS, Collections.emptySet());
+        request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
+        
     }
 
     private void addComponentBreadcrumb(RenderRequest request, RenderResponse response, Component component) {

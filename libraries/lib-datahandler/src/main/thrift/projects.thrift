@@ -320,7 +320,15 @@ struct ProjectDTO{
     202: optional Vendor vendor,
     203: optional string vendorId,
 
-    204: optional list<ReleaseLinkJSON> dependencyNetwork;
+    204: optional list<ReleaseLinkJSON> dependencyNetwork
+}
+
+struct ProjectNetwork{
+    // General information
+    1: optional string id,
+    2: required string name,
+    3: optional string version,
+    4: optional list<ReleaseLinkJSON> dependencyNetwork
 }
 
 service ProjectService {

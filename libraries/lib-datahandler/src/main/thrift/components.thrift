@@ -388,8 +388,8 @@ struct ReleaseClearingStatusData {
 struct ReleaseLinkJSON {
      1: required string releaseId,
      3: optional list<ReleaseLinkJSON> releaseLink,
-     4: optional i32 releaseRelationship,
-     5: optional i32 mainlineState,
+     4: optional string releaseRelationship,
+     5: optional string mainlineState,
      10: optional string comment,
      12: optional string createOn,
      13: optional string createBy

@@ -1111,6 +1111,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         } catch (SW360Exception sw360Exception){
             log.error(sw360Exception.getWhy());
             return ResponseEntity.badRequest().body(sw360Exception.getWhy());
+        } catch (NumberFormatException nfe) {
+            log.error(nfe.getMessage());
+            return ResponseEntity.badRequest().body("releaseRelationship and mainlineState must be integer number");
         }
         if (project.getReleaseIdToUsage() != null) {
 
@@ -1152,6 +1155,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         } catch (SW360Exception sw360Exception){
             log.error(sw360Exception.getWhy());
             return ResponseEntity.badRequest().body(sw360Exception.getWhy());
+        } catch (NumberFormatException nfe) {
+            log.error(nfe.getMessage());
+            return ResponseEntity.badRequest().body("releaseRelationship and mainlineState must be integer number");
         }
         sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap, mapOfProjectFieldsToRequestBody);
         sw360Project.setReleaseRelationNetwork(updateProject.getReleaseRelationNetwork());
@@ -1376,6 +1382,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         } catch (SW360Exception sw360Exception){
             log.error(sw360Exception.getWhy());
             return ResponseEntity.badRequest().body(sw360Exception.getWhy());
+        } catch (NumberFormatException nfe) {
+            log.error(nfe.getMessage());
+            return ResponseEntity.badRequest().body("releaseRelationship and mainlineState must be integer number");
         }
         sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap,
                 mapOfProjectFieldsToRequestBody);
@@ -1506,7 +1515,18 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
     }
-    private Project convertToProjectDependency(Map<String, Object> requestBody) throws JsonProcessingException, TException {
+
+    @RequestMapping(value = PROJECTS_URL + "/dependency/network/{id}", method = RequestMethod.GET)
+    public ResponseEntity<EntityModel<ProjectNetwork>> getDependencyNetworkOfProject(@PathVariable("id") String id) throws TException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        final Project project = projectService.getProjectForUserById(id, sw360User);
+        EntityModel<ProjectNetwork> halProjectNetwork = createHalProjectNetwork(project, sw360User);
+        return new ResponseEntity<>(halProjectNetwork, HttpStatus.OK);
+    }
+
+    private Project convertToProjectDependency(Map<String, Object> requestBody) throws JsonProcessingException, TException, NumberFormatException {
         ComponentService.Iface componentService = new ThriftClients().makeComponentClient();
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
@@ -1537,7 +1557,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             if (releaseLinkJSONS != null) {
                 for (ReleaseLinkJSON releaseLink : releaseLinkJSONS) {
                     Release release = componentService.getReleaseById(releaseLink.getReleaseId(), sw360User);
-                    checkReleaseExisted(releaseLink.getReleaseLink());
+                    Integer.parseInt(releaseLink.getMainlineState());
+                    Integer.parseInt(releaseLink.getReleaseRelationship());
+                    checkValidInput(releaseLink.getReleaseLink());
                 }
             }
         }
@@ -1545,17 +1567,19 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             dependencyNetwork = null;
         }
         Project project = mapper.convertValue(requestBody, Project.class);
-        project.setReleaseRelationNetwork(dependencyNetwork);
+        project.setReleaseRelationNetwork(new Gson().toJson(releaseLinkJSONS));
         return project;
     }
 
 
-    private void checkReleaseExisted(List<ReleaseLinkJSON> releaseLinks) throws TException {
+    private void checkValidInput(List<ReleaseLinkJSON> releaseLinks) throws TException, NumberFormatException {
         ComponentService.Iface componentService = new ThriftClients().makeComponentClient();
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         for (ReleaseLinkJSON releaseLink : releaseLinks) {
             Release release = componentService.getReleaseById(releaseLink.getReleaseId(), sw360User);
-            checkReleaseExisted(releaseLink.getReleaseLink());
+            Integer.parseInt(releaseLink.getMainlineState());
+            Integer.parseInt(releaseLink.getReleaseRelationship());
+            checkValidInput(releaseLink.getReleaseLink());
         }
     }
 
@@ -1667,5 +1691,24 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             releaseIds.add(release.getReleaseId());
             getSubReleaseIds(release.getReleaseLink(), releaseIds);
         }
+    }
+    private EntityModel<ProjectNetwork> createHalProjectNetwork(Project sw360Project, User sw360User) throws TException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        ProjectNetwork projectNetwork = objectMapper.convertValue(sw360Project,ProjectNetwork.class);
+
+        List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
+        if (sw360Project.getReleaseRelationNetwork() != null) {
+            try {
+                releaseLinkJSONS = objectMapper.readValue(sw360Project.getReleaseRelationNetwork(), new TypeReference<List<ReleaseLinkJSON>>() {
+                });
+            } catch (JsonProcessingException e) {
+                log.error(e.getMessage());
+            }
+        }
+        projectNetwork.setDependencyNetwork(releaseLinkJSONS);
+        EntityModel<ProjectNetwork> halProject = EntityModel.of(projectNetwork);
+
+        return halProject;
     }
 }

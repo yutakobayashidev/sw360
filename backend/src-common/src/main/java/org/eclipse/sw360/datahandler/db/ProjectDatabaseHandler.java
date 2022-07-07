@@ -1671,8 +1671,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
             ReleaseLink releaseLink = new ReleaseLink();
             releaseLink.setId(releaseLinkJSON.getReleaseId());
-            releaseLink.setReleaseRelationship(ReleaseRelationship.findByValue(releaseLinkJSON.getReleaseRelationship()));
-            releaseLink.setMainlineState(MainlineState.findByValue(releaseLinkJSON.getMainlineState()));
+            releaseLink.setReleaseRelationship(ReleaseRelationship.findByValue(Integer.parseInt(releaseLinkJSON.getReleaseRelationship())));
+            releaseLink.setMainlineState(MainlineState.findByValue(Integer.parseInt(releaseLinkJSON.getMainlineState())));
             releaseLink.setComment(releaseLinkJSON.getComment());
             if (releaseLinkJSON.getReleaseLink().size() > 0) {
                 releaseLink.setHasSubreleases(true);
@@ -1739,8 +1739,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                                                   List<Map<String, String>> clearingStatusList, User user, boolean isInaccessibleLinkMasked) {
 
         listReleaseLinkJson.forEach(rl -> wrapTException(() -> {
-            String relation = ThriftEnumUtils.enumToString(ReleaseRelationship.findByValue(rl.getReleaseRelationship()));
-            String projectMailLineState = ThriftEnumUtils.enumToString(MainlineState.findByValue(rl.getMainlineState()));
+            String relation = ThriftEnumUtils.enumToString(ReleaseRelationship.findByValue(Integer.parseInt(rl.getReleaseRelationship())));
+            String projectMailLineState = ThriftEnumUtils.enumToString(MainlineState.findByValue(Integer.parseInt(rl.getMainlineState())));
             String comment = rl.getComment();
             String releaseId = rl.getReleaseId();
             if (releaseOrigin.containsKey(releaseId))
@@ -1770,8 +1770,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                                                LinkedHashMap<String, String> projectOrigin, LinkedHashMap<String, String> releaseOrigin,
                                                List<Map<String, String>> clearingStatusList, User user, boolean isInaccessibleLinkMasked) {
         listReleaseLinkJson.forEach(rl -> wrapTException(() -> {
-            String relation = ThriftEnumUtils.enumToString(ReleaseRelationship.findByValue(rl.getReleaseRelationship()));
-            String projectMailLineState = ThriftEnumUtils.enumToString(MainlineState.findByValue(rl.getMainlineState()));
+            String relation = ThriftEnumUtils.enumToString(ReleaseRelationship.findByValue(Integer.parseInt(rl.getReleaseRelationship())));
+            String projectMailLineState = ThriftEnumUtils.enumToString(MainlineState.findByValue(Integer.parseInt(rl.getMainlineState())));
             String comment = rl.getComment();
             String releaseId = rl.getReleaseId();
             if (releaseOrigin.containsKey(releaseId))
