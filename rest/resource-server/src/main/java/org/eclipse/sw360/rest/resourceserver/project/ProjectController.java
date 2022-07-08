@@ -144,6 +144,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             .put(ProjectDTO._Fields.CONTRIBUTORS,"sw360:contributors")
             .put(ProjectDTO._Fields.ATTACHMENTS,"sw360:attachments").build();
 
+    private static final List<String> enumReleaseRelationshipValues = Stream.of(ReleaseRelationship.values())
+            .map(ReleaseRelationship::name)
+            .collect(Collectors.toList());
+    private static final List<String> enumMainlineStateValues = Stream.of(MainlineState.values())
+            .map(MainlineState::name)
+            .collect(Collectors.toList());
     @NonNull
     private final Sw360ProjectService projectService;
 
@@ -1111,9 +1117,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         } catch (SW360Exception sw360Exception){
             log.error(sw360Exception.getWhy());
             return ResponseEntity.badRequest().body(sw360Exception.getWhy());
-        } catch (NumberFormatException nfe) {
-            log.error(nfe.getMessage());
-            return ResponseEntity.badRequest().body("releaseRelationship and mainlineState must be integer number");
+        } catch (NoSuchElementException nsex) {
+            log.error(nsex.getMessage());
+            return ResponseEntity.badRequest().body(nsex.getMessage());
         }
         if (project.getReleaseIdToUsage() != null) {
 
@@ -1155,9 +1161,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         } catch (SW360Exception sw360Exception){
             log.error(sw360Exception.getWhy());
             return ResponseEntity.badRequest().body(sw360Exception.getWhy());
-        } catch (NumberFormatException nfe) {
-            log.error(nfe.getMessage());
-            return ResponseEntity.badRequest().body("releaseRelationship and mainlineState must be integer number");
+        } catch (NoSuchElementException nsex) {
+            log.error(nsex.getMessage());
+            return ResponseEntity.badRequest().body(nsex.getMessage());
         }
         sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap, mapOfProjectFieldsToRequestBody);
         sw360Project.setReleaseRelationNetwork(updateProject.getReleaseRelationNetwork());
@@ -1382,9 +1388,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         } catch (SW360Exception sw360Exception){
             log.error(sw360Exception.getWhy());
             return ResponseEntity.badRequest().body(sw360Exception.getWhy());
-        } catch (NumberFormatException nfe) {
-            log.error(nfe.getMessage());
-            return ResponseEntity.badRequest().body("releaseRelationship and mainlineState must be integer number");
+        } catch (NoSuchElementException nsex) {
+            log.error(nsex.getMessage());
+            return ResponseEntity.badRequest().body(nsex.getMessage());
         }
         sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap,
                 mapOfProjectFieldsToRequestBody);
@@ -1526,7 +1532,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(halProjectNetwork, HttpStatus.OK);
     }
 
-    private Project convertToProjectDependency(Map<String, Object> requestBody) throws JsonProcessingException, TException, NumberFormatException {
+    private Project convertToProjectDependency(Map<String, Object> requestBody) throws JsonProcessingException, TException {
+
         ComponentService.Iface componentService = new ThriftClients().makeComponentClient();
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
@@ -1557,8 +1564,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             if (releaseLinkJSONS != null) {
                 for (ReleaseLinkJSON releaseLink : releaseLinkJSONS) {
                     Release release = componentService.getReleaseById(releaseLink.getReleaseId(), sw360User);
-                    Integer.parseInt(releaseLink.getMainlineState());
-                    Integer.parseInt(releaseLink.getReleaseRelationship());
+                    String mainLineStateUpper = releaseLink.getMainlineState().toUpperCase();
+                    String releaseRelationShipUpper = releaseLink.getReleaseRelationship().toUpperCase();
+
+                    if (enumMainlineStateValues.contains(mainLineStateUpper)) {
+                        releaseLink.setMainlineState(mainLineStateUpper);
+                    } else {
+                        throw new NoSuchElementException("mainLineState must be in Enum");
+                    }
+
+                    if (enumReleaseRelationshipValues.contains(releaseRelationShipUpper)) {
+                        releaseLink.setReleaseRelationship(releaseRelationShipUpper);
+                    } else {
+                        throw new NoSuchElementException("releaseRelationShip must be in Enum");
+                    }
                     checkValidInput(releaseLink.getReleaseLink());
                 }
             }
@@ -1572,13 +1591,25 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
 
-    private void checkValidInput(List<ReleaseLinkJSON> releaseLinks) throws TException, NumberFormatException {
+    private void checkValidInput(List<ReleaseLinkJSON> releaseLinks) throws TException {
         ComponentService.Iface componentService = new ThriftClients().makeComponentClient();
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         for (ReleaseLinkJSON releaseLink : releaseLinks) {
             Release release = componentService.getReleaseById(releaseLink.getReleaseId(), sw360User);
-            Integer.parseInt(releaseLink.getMainlineState());
-            Integer.parseInt(releaseLink.getReleaseRelationship());
+            String mainLineStateUpper = releaseLink.getMainlineState().toUpperCase();
+            String releaseRelationShipUpper = releaseLink.getReleaseRelationship().toUpperCase();
+
+            if (enumMainlineStateValues.contains(mainLineStateUpper)) {
+                releaseLink.setMainlineState(mainLineStateUpper);
+            } else {
+                throw new NoSuchElementException("mainLineState must be in Enum");
+            }
+
+            if (enumReleaseRelationshipValues.contains(releaseRelationShipUpper)) {
+                releaseLink.setReleaseRelationship(releaseRelationShipUpper);
+            } else {
+                throw new NoSuchElementException("releaseRelationShip must be in Enum");
+            }
             checkValidInput(releaseLink.getReleaseLink());
         }
     }

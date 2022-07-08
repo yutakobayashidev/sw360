@@ -614,14 +614,14 @@
                         let toArray = [];
                         toArray.push(releaseId);
                         let indexOfNode = numberOfNodeSameLevel + index;
-                        addReleaseToTable('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', toArray, [parentId], [(parentLayer+1)], [0], [0], [indexOfNode], [""], function(result){
+                        addReleaseToTable('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', toArray, [parentId], [(parentLayer+1)], ["OPEN"], ["CONTAINED"], [indexOfNode], [""], function(result){
                             selectedElement.after(result);
                         });
                         let selectedRelease = {
                               "releaseLink": [],
                               "releaseId": releaseId,
-                              "releaseRelationship": 0,
-                              "mainlineState": 0,
+                              "releaseRelationship": "CONTAINED",
+                              "mainlineState": "OPEN",
                               "comment": "",
                               "createOn": "<%=SW360Utils.getCreatedOn()%>",
                               "createBy": "${loginUser.email}"
@@ -693,14 +693,14 @@
                         let toArray = [];
                         toArray.push(releaseId);
                         let indexOfNode = numberOfRootExisted + index;
-                        addReleaseToTable('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', toArray, [""], [0], [0], [0], [indexOfNode], [""], function(result){
+                        addReleaseToTable('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', toArray, [""], [0], ["OPEN"], ["CONTAINED"], [indexOfNode], [""], function(result){
                             $('#LinkedReleasesNetwork tbody').append(result);
                         });
                         let selectedRelease = {
                               "releaseLink": [],
                               "releaseId": releaseId,
-                              "releaseRelationship": 0,
-                              "mainlineState": 0,
+                              "releaseRelationship": "CONTAINED",
+                              "mainlineState": "OPEN",
                               "comment": "",
                               "createOn": "<%=SW360Utils.getCreatedOn()%>",
                               "createBy": "${loginUser.email}"

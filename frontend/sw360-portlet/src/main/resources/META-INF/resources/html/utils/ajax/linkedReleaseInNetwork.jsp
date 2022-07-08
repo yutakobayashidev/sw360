@@ -72,7 +72,7 @@
                 <td>
                     <div class="form-group">
                         <select id="projectReleaseRelation" class="form-control projectReleaseRelation">
-                            <sw360:DisplayEnumOptions type="<%=ReleaseRelationship.class%>" selected="${releaseLink.releaseRelationship}"/>
+                            <sw360:DisplayEnumOptions type="<%=ReleaseRelationship.class%>" useStringValues="true" selected="${releaseLink.releaseRelationship}"/>
                         </select>
                     </div>
                 </td>
@@ -83,7 +83,7 @@
                                     disabled="disabled"
                                 </core_rt:if>
                         >
-                            <sw360:DisplayEnumOptions type="<%=MainlineState.class%>" selected="${releaseLink.mainlineState}"/>
+                            <sw360:DisplayEnumOptions type="<%=MainlineState.class%>" useStringValues="true" selected="${releaseLink.mainlineState}"/>
                         </select>
                     </div>
                 </td>

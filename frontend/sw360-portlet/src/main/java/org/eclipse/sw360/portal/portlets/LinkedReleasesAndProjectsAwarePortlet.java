@@ -324,13 +324,13 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
             releaseById = client.getAccessibleReleaseById(releaseLinkJSON.getReleaseId(), user);
             List<Release> releaseList = client.getReleasesById(releaseById.getReleaseIdToRelationship().keySet().stream().collect(Collectors.toSet()), user);
             List<ReleaseLinkJSON> linkedReleasesJSON = new ArrayList<>();
-            releaseLinkJSON.setMainlineState(MainlineState.OPEN.getValue()+"");
-            releaseLinkJSON.setReleaseRelationship(ReleaseRelationship.CONTAINED.getValue()+"");
+            releaseLinkJSON.setMainlineState(MainlineState.OPEN.toString());
+            releaseLinkJSON.setReleaseRelationship(ReleaseRelationship.CONTAINED.toString());
             releaseLinkJSON.setComment("");
             for (Release release : releaseList) {
                 ReleaseLinkJSON rj = new ReleaseLinkJSON(release.getId());
-                rj.setMainlineState(MainlineState.OPEN.getValue()+"");
-                rj.setReleaseRelationship(ReleaseRelationship.CONTAINED.getValue()+"");
+                rj.setMainlineState(MainlineState.OPEN.toString());
+                rj.setReleaseRelationship(ReleaseRelationship.CONTAINED.toString());
                 rj.setComment("");
                 rj.setCreateOn(SW360Utils.getCreatedOn());
                 rj.setCreateBy(user.getEmail());

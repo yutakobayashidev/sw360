@@ -3338,8 +3338,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 linkedRelease.setReleaseWithSameComponent(releasesWithSameComponent);
                 linkedRelease.setLayer(Integer.parseInt(layers[index]));
                 linkedRelease.setParentNodeId(parentIds[index]);
-                linkedRelease.setMainlineState(MainlineState.findByValue(Integer.parseInt(mainlineStates[index])));
-                linkedRelease.setReleaseRelationship(ReleaseRelationship.findByValue(Integer.parseInt(releaseRelationShips[index])));
+                linkedRelease.setMainlineState(MainlineState.valueOf(mainlineStates[index]));
+                linkedRelease.setReleaseRelationship(ReleaseRelationship.valueOf(releaseRelationShips[index]));
                 linkedRelease.setIndex(Integer.parseInt(indexes[index]));
                 linkedRelease.setComment(comments[index]);
                 linkedReleases.add(linkedRelease);
