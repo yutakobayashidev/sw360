@@ -1522,7 +1522,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(resources, status);
     }
 
-    @RequestMapping(value = PROJECTS_URL + "/dependency/network/{id}", method = RequestMethod.GET)
+    @RequestMapping(value = PROJECTS_URL + "/network/{id}", method = RequestMethod.GET)
     public ResponseEntity<EntityModel<ProjectNetwork>> getDependencyNetworkOfProject(@PathVariable("id") String id) throws TException {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
