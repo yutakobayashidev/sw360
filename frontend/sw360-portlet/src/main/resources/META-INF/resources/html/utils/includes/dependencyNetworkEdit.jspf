@@ -82,7 +82,7 @@
                                 <input type="text" name="searchRelease" id="searchRelease" placeholder="<liferay-ui:message key="enter.search.text" />" class="form-control" autofocus/>
                             </div>
                             <div class="col">
-                                <button type="button" class="btn btn-secondary" id="searchRelease"><liferay-ui:message key="search" /></button>
+                                <button type="button" class="btn btn-secondary" id="searchReleaseBtn"><liferay-ui:message key="search" /></button>
 
                                 <core_rt:if test="${enableSearchForReleasesFromLinkedProjects}">
                                     <button type="button" class="btn btn-secondary" id="linkedReleasesButton"><liferay-ui:message key="releases.of.linked.projects" /></button>
@@ -136,7 +136,7 @@
                                 <input type="text" name="searchRelease" id="searchRelease" placeholder="<liferay-ui:message key="enter.search.text" />" class="form-control" autofocus/>
                             </div>
                             <div class="col">
-                                <button type="button" class="btn btn-secondary" id="searchRelease"><liferay-ui:message key="search" /></button>
+                                <button type="button" class="btn btn-secondary" id="searchReleaseBtn"><liferay-ui:message key="search" /></button>
 
                                 <core_rt:if test="${enableSearchForReleasesFromLinkedProjects}">
                                     <button type="button" class="btn btn-secondary" id="linkedReleasesButton"><liferay-ui:message key="releases.of.linked.projects" /></button>
@@ -551,7 +551,7 @@
             });
 
 
-            $('#searchChildReleaseDialog').on('click', '#searchRelease', function(event) {
+            $('#searchChildReleaseDialog').on('click', '#searchReleaseBtn', function(event) {
                 releaseFromAjax('<%=PortalConstants.RELEASE_SEARCH%>', $('#searchChildReleaseDialog #searchRelease').val(), function(data) {
                     if($dataTable) {
                         $dataTable.destroy();
@@ -649,7 +649,7 @@
             var homeUrl = themeDisplay.getURLHome().replace(/\/web\//, '/group/');
             $('#addReleaseToNetWork').on('click', showSearchReleaseDialog);
 
-            $('#searchReleasesDialogOfNetwork').on('click','#searchRelease', function() {
+            $('#searchReleasesDialogOfNetwork').on('click','#searchReleaseBtn', function() {
                 releaseFromAjax('<%=PortalConstants.RELEASE_SEARCH%>', $('#searchReleasesDialogOfNetwork #searchRelease').val(), function(data) {
                     if($dataTable) {
                         $dataTable.destroy();
@@ -736,7 +736,7 @@
 
             function releaseFromAjax(what, where, callback) {
                 $releaseDialog.$.find('#releaseResultsTable').hide();
-                $releaseDialog.$.find('#searchRelease').prop('disabled', true);
+                $releaseDialog.$.find('#searchReleaseBtn').prop('disabled', true);
                 $releaseDialog.$.find('#linkedReleasesButton').prop('disabled', true);
                 $releaseDialog.enablePrimaryButtons(false);
 
@@ -750,7 +750,7 @@
                     success: function (data) {
                         callback(data);
                         $releaseDialog.$.find('#releaseResultsTable').show();
-                        $releaseDialog.$.find('#searchRelease').prop('disabled', false);
+                        $releaseDialog.$.find('#searchReleaseBtn').prop('disabled', false);
                         $releaseDialog.$.find('#linkedReleasesButton').prop('disabled', false);
                     },
                     error: function() {

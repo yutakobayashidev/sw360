@@ -37,6 +37,10 @@
     <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${docid}"/>
 </portlet:resourceURL>
 
+<portlet:resourceURL var="licenseToSourceFileUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.LICENSE_TO_SOURCE_FILE%>"/>
+</portlet:resourceURL>
+
 <c:set var="pageName" value="<%= request.getParameter("pagename") %>" />
 
 <core_rt:if test='${not isCrDisabledForProjectBU}'>
@@ -133,6 +137,7 @@
 <div class="dialogs auto-dialogs"></div>
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
+<%@ include file="/html/utils/includes/licenseToSrcMappingForNetwork.jspf" %>
 <script>
 AUI().use('liferay-portlet-url', function () {
     var PortletURL = Liferay.PortletURL;
