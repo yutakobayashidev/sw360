@@ -13,6 +13,80 @@ AUI().use('liferay-portlet-url', function () {
     var PortletURL = Liferay.PortletURL;
     var licenseToSourceFileMap = new Map();
     require(['jquery', 'modules/dialog'], function($, dialog) {
+
+        $("#DependencyInfo").on("click", "svg.cursor[data-tag]", function(event) {
+            let releaseId = $(event.currentTarget).data().tag.split("-")[0],
+                index = $(event.currentTarget).data().tag.split("-")[2],
+                licenseArray = $(this).closest('td.actions').text().replace(/<liferay-ui:message key="view.file.list" />/g, '').split(","),
+                licenseName = licenseArray[index].trim();
+            if (index === "0" && licenseArray.length > 1 && licenseName.indexOf('...') > 0) {
+                let subStrIndex = licenseName.indexOf('...') + 3;
+                licenseName = licenseName.substr(subStrIndex);
+            }
+            getLicenseToSourceFileMappingNetwork(releaseId, licenseName);
+        });
+
+        function getLicenseToSourceFileMappingNetwork(releaseId, licenseName) {
+            if (licenseToSourceFileMap.has(releaseId)) {
+                displayLicenseToSrcFileMappingNetwork(releaseId, licenseName, licenseToSourceFileMap.get(releaseId));
+                return;
+            }
+            jQuery.ajax({
+                type: 'GET',
+                url: '<%=licenseToSourceFileUrl%>',
+                cache: false,
+                data: {
+                    "<portlet:namespace/><%=PortalConstants.RELEASE_ID%>": releaseId
+                },
+                success: function (response) {
+                    if (response.status == 'success') {
+                        licenseToSourceFileMap.set(releaseId, response);
+                        let licenseToSourceFiles = response.data;
+                        displayLicenseToSrcFileMappingNetwork(releaseId, licenseName, response);
+                    }
+                    else {
+                        let warningText = '<liferay-ui:message key="failed.to.load.source.file.with.error" />: <b>' + response.message + '!</b>';
+                        $("#viewFileListWarn .modal-body").empty();
+                        $("#viewFileListWarn .modal-body").append(warningText);
+                        dialog.open("#viewFileListWarn");
+                    }
+                },
+                error: function () {
+                     let warningText = '<liferay-ui:message key="error.fetching.license.to.source.file.mapping" />! <br>' + error.statusText + ' (' + error.status + ').';
+                     $("#viewFileListWarn .modal-body").empty();
+                     $("#viewFileListWarn .modal-body").append(warningText);
+                     dialog.open("#viewFileListWarn");
+                }
+            });
+        }
+
+        function displayLicenseToSrcFileMappingNetwork(releaseId, licenseName, response) {
+            list = $('<ul/>');
+            let relId = response.relId,
+                licType = "";
+                list.append('<li><liferay-ui:message key="source.file.information.not.found.in.cli"/></li>');
+            if (relId === releaseId) {
+                response.data.forEach(function (item, index) {
+                    let licName = item.licName;
+                    if (licenseName.toUpperCase() === licName.toUpperCase() && item.srcFiles) {
+                        $(list).empty();
+                        licType = item.licType;
+                        let sourceFiles = item.srcFiles.split("\n");
+                        sourceFiles.forEach(function (file, index) {
+                            list.append('<li>' + file + '</li>');
+                        });
+                    }
+                });
+            }
+
+
+             let bodyText = '<liferay-ui:message key="file.name"/>: <b>' + response.attName + '</b><br><liferay-ui:message key="license.type"/>: <b>' + licType + '</b><br><liferay-ui:message key="license"/> <liferay-ui:message key="name"/>: <b>' + licenseName + '<b/><br>' + $(list)[0].outerHTML;
+             $("#viewFileListInfo .modal-title .title").empty();
+             $("#viewFileListInfo .modal-title .title").append(response.relName);
+             $("#viewFileListInfo .modal-body").empty();
+             $("#viewFileListInfo .modal-body").append(bodyText);
+             dialog.open("#viewFileListInfo");
+        }
     });
 });
 </script>

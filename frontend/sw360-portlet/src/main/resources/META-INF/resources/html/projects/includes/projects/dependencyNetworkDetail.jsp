@@ -134,7 +134,55 @@
         <table id="clearingNetworkTable" class="table table-bordered d-none"></table>
     </div>
 </div>
-<div class="dialogs auto-dialogs"></div>
+<div class="dialogs">
+    <div id="viewFileListInfo" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-info modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <svg class="lexicon-icon">
+                            <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open"/>
+                        </svg>
+                        <span class="title"><span>
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="dialogs">
+    <div id="viewFileListWarn" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-warning modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <svg class="lexicon-icon">
+                            <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#warning"/>
+                        </svg>
+                        Warning
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <%@ include file="/html/utils/includes/licenseToSrcMappingForNetwork.jspf" %>
@@ -149,7 +197,6 @@ AUI().use('liferay-portlet-url', function () {
                 type: 'GET',
                 dataType: 'json'
                }).done(function(result){
-               console.log(result);
             createClearingNetworkTable(result);
             $("#pills-network-listView #clearingStatusSpinner").addClass("d-none");
             $("#clearingNetworkTable").removeClass("d-none");
@@ -545,7 +592,7 @@ AUI().use('liferay-portlet-url', function () {
         }
 
         var config = $('#DependencyInfo').data();
-        console.log(config);
+
         function dataCallbackNetworkTreeTable(table, node) {
             var data = {};
             data[config.portletNamespace + config.parentBranchKey] = node.id;
@@ -569,9 +616,7 @@ AUI().use('liferay-portlet-url', function () {
                             parentId = $(this).prevAll('tr[data-layer="'+layer+'"][data-release-id="'+parentId+'"]').first().attr('data-parent-release');
                         }
                     }
-                    console.log(trace);
                     data[config.portletNamespace + 'trace[]'] = trace;
-                    console.log(data);
                     return;
                 }
             });
@@ -618,7 +663,6 @@ AUI().use('liferay-portlet-url', function () {
 
         var dependenceNetworkOnLoadUrl= '<%=dependenceNetworkOnLoadUrl%>';
         $.ajax({url: dependenceNetworkOnLoadUrl, success: function(resultTreeView){
-            console.log(resultTreeView);
             if(resultTreeView.trim().length===0) {
                 $("#DependencyInfo #noRecordRow").removeClass("d-none");
             }
