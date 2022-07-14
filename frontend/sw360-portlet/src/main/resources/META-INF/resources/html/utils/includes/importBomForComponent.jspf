@@ -62,7 +62,6 @@
                 <div id="spdxBomUploadStatus"></div>
                 <div id="spdxBomUploadAction" class="modal-footer">
                     <button id="importSBOM" type="button" class="btn btn-primary" data-dismiss="modal" style="display: none">Import</button>
-                    <button id="importSBOMAsNew" type="button" class="btn btn-secondary" data-dismiss="modal" style="display: none">Import As New</button>
                     <button id="cancelImportSBOM" type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
                 </div>
             </div>
@@ -203,10 +202,8 @@
                                     statusDiv.html("<h3>The new Release will be created, do you want to import?</h3>");
                                     statusDiv.append("<div>New Release: <b>"+componentName+" "+componentVersion+"</b></div>");
                                 } else {
-                                    statusDiv.html("<h3>The Release existed, do you want:</h3>");
-                                    statusDiv.append("<div>Update Release: <b>"+componentName+" "+componentVersion+"</b> (please choose Import button)</div>");
-                                    statusDiv.append("<div>Create new Release: <b>"+componentName+" ("+componentVersion+"-sbom-"+attachmentContentId.substring(0,6)+")</b> (please choose Import As New button)</div>");
-                                    $('#importSBOMAsNew').show();
+                                    statusDiv.html("<h3>The Release existed !</h3>");
+                                    $('#importSBOM').hide();
                                 }
                             } else {
                                 $('#importSBOM').hide();
@@ -222,10 +219,8 @@
                                 statusDiv.html("<h3>The new Release will be created, do you want to import?</h3>");
                                 statusDiv.append("<div>New Release: <b>"+componentName+" "+componentVersion+"</b></div>");
                             } else {
-                                statusDiv.html("<h3>The Component and Release existed, do you want:</h3>");
-                                statusDiv.append("<div>Update Release: <b>"+componentName+" "+componentVersion+"</b> (please choose Import button)</div>");
-                                statusDiv.append("<div>Create new Component and Release: <b>"+componentName+" ("+componentVersion+"-sbom-"+attachmentContentId.substring(0,6)+")</b> (please choose Import As New button)</div>");
-                                $('#importSBOMAsNew').show();
+                                statusDiv.html("<h3>The Component and Release existed !</h3>");
+                                $('#importSBOM').hide();
                             }
                         }
                     } else {
@@ -272,25 +267,10 @@
                     contentDiv.show();
 
                     $('#importSBOM').hide();
-                    $('#importSBOMAsNew').hide();
 
                     $('#importSBOM').on('click', function() {
                         if (attachmentContentId === "") return;
                         importBomFromAttachment(attachmentContentId, rdfFilePath).then(function (data) {
-                            statusDiv.html("<h2>Imported</h2>");
-                            if ('redirectUrl' in data) {
-                                statusDiv.append("<div>Created as <a href=\"" + data.redirectUrl + "\">" + data.message + "</a>, redirecting ...</div>");
-                                window.location.href = data.redirectUrl;
-                            } else {
-                                statusDiv.append("<div>" + JSON.stringify(data) + "</div>");
-                                contentDiv.show();
-                            }
-                        });
-                    });
-
-                    $('#importSBOMAsNew').on('click', function() {
-                        if (attachmentContentId === "") return;
-                        importBomAsNewFromAttachment(attachmentContentId, componentVersion+"-sbom-"+attachmentContentId.substring(0,6), rdfFilePath).then(function (data) {
                             statusDiv.html("<h2>Imported</h2>");
                             if ('redirectUrl' in data) {
                                 statusDiv.append("<div>Created as <a href=\"" + data.redirectUrl + "\">" + data.message + "</a>, redirecting ...</div>");

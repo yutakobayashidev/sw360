@@ -2404,31 +2404,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 InputStream spdxInputStream = null;
                 String fileType = getFileType(attachmentContent.getFilename());
 
-                if (!fileType.equals("rdf")) {
-                    final String ext = "." + fileType;
-                    final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(user, inputStream, attachmentContentId, ext);
-                    sourceFilePath = sourceFile.getAbsolutePath();
-                    targetFilePath = sourceFilePath.replace(ext, ".rdf");
-                    File targetFile = null;
-                    try {
-                        if (fileType.equals("spdx")) {
-                            targetFile = convertTagToRdf(sourceFile, targetFilePath);
-                        } else {
-                            SpdxConverter.convert(sourceFilePath, targetFilePath);
-                            targetFile = new File(targetFilePath);
-                        }
-                        spdxInputStream = new FileInputStream(targetFile);
-                    } catch (SpdxConverterException e) {
-                        log.error("Can not convert to RDF \n" + e);
-                        ImportBomRequestPreparation importBomRequestPreparation = new ImportBomRequestPreparation();
-                        importBomRequestPreparation.setRequestStatus(RequestStatus.FAILURE);
-                        importBomRequestPreparation.setMessage("error-convert");
-                        return importBomRequestPreparation;
-
-                    } finally {
-                        Files.delete(Paths.get(sourceFilePath));
-                    }
-                } else {
                     final String ext = "." + fileType;
                     final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(user, inputStream, attachmentContentId, ext);
                     sourceFilePath = sourceFile.getAbsolutePath();
@@ -2436,7 +2411,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     File targetFile = new File (sourceFilePath);
                     spdxInputStream = new  FileInputStream(targetFile);
                     targetFilePath = sourceFilePath;
-                }
 
                 ImportBomRequestPreparation importBomRequestPreparation = spdxBOMImporter.prepareImportSpdxBOMAsRelease(spdxInputStream, attachmentContent);
                 if (RequestStatus.SUCCESS.equals(importBomRequestPreparation.getRequestStatus())) {
@@ -2486,72 +2460,16 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
     }
 
-    private File convertTagToRdf(File sourceFile, String targetFilePath) {
-        FileInputStream spdxTagStream = null;
-
-        try {
-            spdxTagStream = new FileInputStream(sourceFile);
-        } catch (FileNotFoundException e2) {
-            e2.printStackTrace();
-        }
-
-        File spdxRDFFile = new File(targetFilePath);
-        String outputFormat = "RDF/XML";
-		FileOutputStream outStream = null;
-		try {
-			outStream = new FileOutputStream(spdxRDFFile);
-		} catch (FileNotFoundException e1) {
-			try {
-				spdxTagStream.close();
-			} catch (IOException e) {
-                log.error("Warning: Unable to close input file on error.");
-			}
-			log.error("Could not write to the new SPDX RDF file " + spdxRDFFile.getPath() + "due to error " + e1.getMessage());
-        }
-
-		List<String> warnings = new ArrayList<String>();
-		try {
-			TagToRDF.convertTagFileToRdf(spdxTagStream, outStream, outputFormat, warnings);
-			if (!warnings.isEmpty()) {
-				log.warn("The following warnings and or verification errors were found:");
-				for (String warning:warnings) {
-					log.warn("\t" + warning);
-				}
-            }
-		} catch (Exception e) {
-			log.error("Error creating SPDX Analysis: " + e.getMessage());
-		} finally {
-			if (outStream != null) {
-				try {
-					outStream.close();
-				} catch (IOException e) {
-					log.error("Error closing RDF file: " + e.getMessage());
-				}
-			}
-			if (spdxTagStream != null) {
-				try {
-					spdxTagStream.close();
-				} catch (IOException e) {
-					log.error("Error closing Tag/Value file: " + e.getMessage());
-				}
-			}
-		}
-        return spdxRDFFile;
-    }
-
-    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId, String newReleaseVersion, String releaseId, String rdfFilePath) throws SW360Exception {
+    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
+        final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
         try {
-            final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
-            final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
-            InputStream spdxInputStream = null;
-            if (!isNullEmptyOrWhitespace(rdfFilePath)) {
-                spdxInputStream = new FileInputStream(new File(rdfFilePath));
-                Files.delete(Paths.get(rdfFilePath));
-            } else {
-                spdxInputStream = attachmentConnector.unsafeGetAttachmentStream(attachmentContent);
+            final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
+            try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
+                final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
+                final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
+                return spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent);
             }
-                return spdxBOMImporter.importSpdxBOMAsRelease(spdxInputStream, attachmentContent, newReleaseVersion, releaseId);
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
         }

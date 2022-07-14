@@ -74,9 +74,9 @@ public class SpdxBOMImporter {
         return requestPreparation;
     }
 
-    public RequestSummary importSpdxBOMAsRelease(InputStream inputStream, AttachmentContent attachmentContent, String newReleaseVersion, String releaseId)
+    public RequestSummary importSpdxBOMAsRelease(InputStream inputStream, AttachmentContent attachmentContent)
             throws SW360Exception {
-        return importSpdxBOM(inputStream, attachmentContent, SW360Constants.TYPE_RELEASE, newReleaseVersion, releaseId);
+        return importSpdxBOM(inputStream, attachmentContent, SW360Constants.TYPE_RELEASE);
     }
 
     public RequestSummary importSpdxBOMAsProject(InputStream inputStream, AttachmentContent attachmentContent)
@@ -85,11 +85,6 @@ public class SpdxBOMImporter {
     }
 
     private RequestSummary importSpdxBOM(InputStream inputStream, AttachmentContent attachmentContent, String type)
-            throws InvalidSPDXAnalysisException, SW360Exception {
-        return importSpdxBOM(inputStream, attachmentContent, type, null, null);
-    }
-
-    private RequestSummary importSpdxBOM(InputStream inputStream, AttachmentContent attachmentContent, String type, String newReleaseVersion, String releaseId)
             throws SW360Exception {
         final RequestSummary requestSummary = new RequestSummary();
         SpdxDocument spdxDocument = null;
@@ -122,7 +117,7 @@ public class SpdxBOMImporter {
         if (SW360Constants.TYPE_PROJECT.equals(type)) {
             response = importAsProject(spdxItem, attachmentContent);
         } else if (SW360Constants.TYPE_RELEASE.equals(type)) {
-            response = importAsRelease(spdxItem, attachmentContent, spdxDocument, newReleaseVersion, releaseId);
+            response = importAsRelease(spdxItem, attachmentContent);
         } else {
             throw new SW360Exception("Unsupported type=[" + type + "], can not import BOM");
         }
@@ -213,28 +208,18 @@ public class SpdxBOMImporter {
     }
 
     private Optional<SpdxBOMImporterSink.Response> importAsRelease(SpdxElement relatedSpdxElement) throws SW360Exception {
-        return importAsRelease(relatedSpdxElement, null, null, null, null);
+        return importAsRelease(relatedSpdxElement, null);
     }
 
-    private Optional<SpdxBOMImporterSink.Response> importAsRelease(SpdxElement relatedSpdxElement, AttachmentContent attachmentContent,
-            SpdxDocument spdxDocument, String newReleaseVersion, String releaseId) throws SW360Exception {
+    private Optional<SpdxBOMImporterSink.Response> importAsRelease(SpdxElement relatedSpdxElement, AttachmentContent attachmentContent) throws SW360Exception {
         if (relatedSpdxElement instanceof SpdxPackage) {
             final SpdxPackage spdxPackage = (SpdxPackage) relatedSpdxElement;
 
-            final Release release;
-            SpdxBOMImporterSink.Response component;
-            if (isNotNullEmptyOrWhitespace(releaseId)) {
-                release = sink.getRelease(releaseId);
-                component = new SpdxBOMImporterSink.Response(release.getComponentId(), true);
-            } else {
-                component = importAsComponent(spdxPackage);
-                final String componentId = component.getId();
+            SpdxBOMImporterSink.Response component = importAsComponent(spdxPackage);
+            final String componentId = component.getId();
 
-                release = createReleaseFromSpdxPackage(spdxPackage);
-                if (isNotNullEmptyOrWhitespace(newReleaseVersion))
-                    release.setVersion(newReleaseVersion);
-                release.setComponentId(componentId);
-            }
+            final Release release = createReleaseFromSpdxPackage(spdxPackage);
+            release.setComponentId(componentId);
 
             final Relationship[] relationships = spdxPackage.getRelationships();
             List<SpdxBOMImporterSink.Response> releases = importAsReleases(relationships);
