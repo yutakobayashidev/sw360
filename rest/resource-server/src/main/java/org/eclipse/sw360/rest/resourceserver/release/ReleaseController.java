@@ -451,6 +451,29 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
+    @RequestMapping(value = RELEASES_URL + "/dependency/usedBy" + "/{id}", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetailsDependency(@PathVariable("id") String id)
+            throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication(); // Project
+        Set<org.eclipse.sw360.datahandler.thrift.projects.Project> sw360Projects = releaseService.getUsingProjectAccessibleInDependencyNetwork(id, user);
+        Set<org.eclipse.sw360.datahandler.thrift.components.Component> sw360Components = releaseService.getUsingComponentsForRelease(id, user);
+
+        List<EntityModel> resources = new ArrayList<>();
+        sw360Projects.forEach(p -> {
+            Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
+            resources.add(EntityModel.of(embeddedProject));
+        });
+
+        sw360Components.forEach(c -> {
+            Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c);
+            resources.add(EntityModel.of(embeddedComponent));
+        });
+
+        CollectionModel<EntityModel> finalResources = restControllerHelper.createResources(resources);
+        HttpStatus status = finalResources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(finalResources, status);
+    }
+
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(ReleaseController.class).slash("api" + RELEASES_URL).withRel("releases"));
