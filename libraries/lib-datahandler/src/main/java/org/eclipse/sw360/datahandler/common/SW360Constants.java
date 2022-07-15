@@ -73,6 +73,8 @@ public class SW360Constants {
     public static final String TYPE_OBLIGATIONELEMENT = "obligationElement";
     public static final String TYPE_OBLIGATIONNODE = "obligationNode";
 
+    public static final String TYPE_RELEASE_LINK_JSON = "releaseLinkJson";
+
     /**
      * Hashmap containing the name field for each type.
      * Used by the search service to fill the search results
