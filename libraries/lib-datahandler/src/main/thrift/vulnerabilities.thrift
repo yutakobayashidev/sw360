@@ -292,4 +292,10 @@ service VulnerabilityService {
      * throws SW360Exception with error code otherwise
      */
     RequestStatus deleteReleaseVulnerabilityRelation(1: ReleaseVulnerabilityRelation releaseVulnerabilityRelation, 2: User user) throws (1: SW360Exception exp);
+
+    /**
+       * see getVulnerabilitiesByReleaseId for all releases in dependency network
+       **/
+    list<VulnerabilityDTO> getVulnerabilitiesInDependencyByProjectId(1: string projectId, 2: User user);
+
 }

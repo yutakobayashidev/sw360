@@ -459,4 +459,10 @@ public class ProjectHandler implements ProjectService.Iface {
     public List<Project> getAll(){
         return handler.getAll();
     }
+
+    @Override
+    public List<ProjectLink> getLinkedProjectForDownloadLicenseInfo(Project project, boolean deep, User user) throws TException {
+        assertNotNull(project);
+        return handler.getLinkedProjectsInNetworkForDownloadLicense(project, deep, user);
+    }
 }
