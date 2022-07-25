@@ -135,6 +135,7 @@ public class UserRepository extends SummaryAwareRepository<User> {
         createIndex("byDepartment", new String[] {"department"}, databaseConnector);
         createIndex("byFirstName", new String[] {"givenname"}, databaseConnector);
         createIndex("byLastName", new String[] {"lastname"}, databaseConnector);
+        createIndex("byActiveStatus", new String[] {"deactivated"}, databaseConnector);
         createIndex("byUserGroup", new String[] {"userGroup"}, databaseConnector);
         createIndex("bySecondaryDepartmentsAndRoles", new String[] {"secondaryDepartmentsAndRoles"}, databaseConnector);
     }
@@ -221,50 +222,55 @@ public class UserRepository extends SummaryAwareRepository<User> {
         qb.skip(pageData.getDisplayStart());
 
         switch (sortColumnNo) {
-            case -1:
-            case 2:
-                qb = qb.useIndex("byEmailUser");
-                qb = ascending ? qb.sort(Sort.asc("email")) : qb.sort(Sort.desc("email"));
-                query = qb.build();
-                break;
-            case 0:
-                qb = qb.useIndex("byFirstName");
-                qb = ascending ? qb.sort(Sort.asc("givenname")) : qb.sort(Sort.desc("givenname"));
-                query = qb.build();
-                break;
-            case 1:
-                qb = qb.useIndex("byLastName");
-                qb = ascending ? qb.sort(Sort.asc("lastname")) : qb.sort(Sort.desc("lastname"));
-                query = qb.build();
-                break;
-            case 3:
-                qb = qb.useIndex("byDepartment");
-                qb = ascending ? qb.sort(Sort.asc("department")) : qb.sort(Sort.desc("department"));
-                query = qb.build();
-                break;
-            case 4:
-                qb = qb.useIndex("byUserGroup");
-                qb = ascending ? qb.sort(Sort.asc("userGroup")) : qb.sort(Sort.desc("userGroup"));
-                query = qb.build();
-                break;
-            case 5:
-                if (ascending) {
-                    qb.skip(0);
-                }
-                qb = qb.useIndex("bySecondaryDepartmentsAndRoles");
-                qb = ascending ? qb.sort(Sort.asc("secondaryDepartmentsAndRoles"))
-                        : qb.sort(Sort.desc("secondaryDepartmentsAndRoles"));
-                query = qb.build();
-                break;
-            default:
-                break;
+        case -1:
+        case 2:
+            qb = qb.useIndex("byEmailUser");
+            qb = ascending ? qb.sort(Sort.asc("email")) : qb.sort(Sort.desc("email"));
+            query = qb.build();
+            break;
+        case 0:
+            qb = qb.useIndex("byFirstName");
+            qb = ascending ? qb.sort(Sort.asc("givenname")) : qb.sort(Sort.desc("givenname"));
+            query = qb.build();
+            break;
+        case 1:
+            qb = qb.useIndex("byLastName");
+            qb = ascending ? qb.sort(Sort.asc("lastname")) : qb.sort(Sort.desc("lastname"));
+            query = qb.build();
+            break;
+        case 3:
+            qb = qb.useIndex("byActiveStatus");
+            qb = ascending ? qb.sort(Sort.asc("deactivated")) : qb.sort(Sort.desc("deactivated"));
+            query = qb.build();
+            break;
+        case 4:
+            qb = qb.useIndex("byDepartment");
+            qb = ascending ? qb.sort(Sort.asc("department")) : qb.sort(Sort.desc("department"));
+            query = qb.build();
+            break;
+        case 5:
+            qb = qb.useIndex("byUserGroup");
+            qb = ascending ? qb.sort(Sort.asc("userGroup")) : qb.sort(Sort.desc("userGroup"));
+            query = qb.build();
+            break;
+        case 6:
+            if (ascending) {
+                qb.skip(0);
+            }
+            qb = qb.useIndex("bySecondaryDepartmentsAndRoles");
+            qb = ascending ? qb.sort(Sort.asc("secondaryDepartmentsAndRoles"))
+                    : qb.sort(Sort.desc("secondaryDepartmentsAndRoles"));
+            query = qb.build();
+            break;
+        default:
+            break;
         }
 
         try {
             QueryResult<User> queryResult = getConnector().getQueryResult(query, User.class);
             users = queryResult.getDocs();
 
-            if (sortColumnNo == 5) {
+            if (sortColumnNo == 6) {
                 final Selector selectorSecondaryGroupsAndRoles = and(typeSelector,
                         emptySecondaryDepartmentsAndRolesSelector);
                 QueryBuilder emptySecondaryGroupsAndRolesQb = new QueryBuilder(selectorSecondaryGroupsAndRoles);
