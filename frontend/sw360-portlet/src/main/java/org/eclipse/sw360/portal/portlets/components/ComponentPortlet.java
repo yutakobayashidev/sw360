@@ -249,8 +249,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             importBom(request, response);
         } else if (PortalConstants.LICENSE_TO_SOURCE_FILE.equals(action)) {
             serveLicenseToSourceFileMapping(request, response);
-        } else if (PortalConstants.IMPORT_BOM_AS_NEW.equals(action)) {
-            importBomAsNew(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
         } else if (PortalConstants.LOAD_CHANGE_LOGS.equals(action) || PortalConstants.VIEW_CHANGE_LOGS.equals(action)) {
@@ -259,57 +257,10 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             JSONObject dataForChangeLogs = changeLogsPortletUtilsPortletUtils.serveResourceForChangeLogs(request,
                     response, action);
             writeJSON(request, response, dataForChangeLogs);
-        } else if (action.equals("export-spdx")) {
-            exportSPDX(request, response);
-        } else if (action.equals("download-export-spdx")) {
-            downloadSPDX(request, response);
         }
     }
 
-    private void downloadSPDX(ResourceRequest request, ResourceResponse response) {
-        final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
-        String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
-        String outputFormat = request.getParameter(PortalConstants.WHAT);
-        User user = UserCacheHolder.getUserFromRequest(request);
-        String filename = releaseId + "." + outputFormat.toLowerCase();
-        String exportFileName = null;
 
-        if (PortalConstants.ACTION_CANCEL.equals(request.getParameter(PortalConstants.ACTION_CANCEL))) {
-            deleteFileExport(outputFormat, releaseId, filename);
-            return;
-        }
-
-        try {
-            log.info("Download SPDX file");
-            exportFileName = componentClient.getReleaseById(releaseId, user).getName().replaceAll("[\\/:*?\"<>|\\s]", "_")
-                    + "_" + componentClient.getReleaseById(releaseId, user).getVersion().replaceAll("[\\/:*?\"<>|\\s]", "_")
-                    + "_" + SW360Utils.getCreatedOn() + "." + outputFormat.toLowerCase();
-            InputStream inputStream = new FileInputStream(filename);
-            PortletResponseUtil.sendFile(request, response, exportFileName, inputStream, CONTENT_TYPE_OPENXML_SPREADSHEET);
-            log.info("Download SPDX file success !!!");
-        } catch (IOException | TException e) {
-            e.printStackTrace();
-        }
-        deleteFileExport(outputFormat, releaseId, filename);
-    }
-
-    // delete file after user download
-    private void deleteFileExport(String outputFormat, String releaseId, String filename) {
-        try {
-            if (!outputFormat.equals("JSON")) {
-                Files.delete(Paths.get(releaseId + ".json"));
-            }
-            if (outputFormat.equals("SPDX")) {
-                Files.delete(Paths.get("tmp.rdf"));
-            }
-            if (Files.exists(Paths.get(filename))) {
-                Files.delete(Paths.get(filename));
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            log.error("Failed to delete files.");
-        }
-    }
 
     private void exportExcelWithEmail(ResourceRequest request, ResourceResponse response) {
         final User user = UserCacheHolder.getUserFromRequest(request);
@@ -384,20 +335,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         writeJSON(request, response, jsonObject);
     }
 
-    private void exportSPDX(ResourceRequest request, ResourceResponse response) {
-        final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
-        String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
-        String outputFormat = request.getParameter(PortalConstants.WHAT);
-        User user = UserCacheHolder.getUserFromRequest(request);
-
-        try {
-            final RequestSummary requestSummary = componentClient.exportSPDX(user, releaseId, outputFormat);
-            renderRequestSummary(request, response, requestSummary);
-        } catch (TException e) {
-            log.error("Failed to export SPDX file.", e);
-        }
-    }
-
     private void importBom(ResourceRequest request, ResourceResponse response) {
         final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
         User user = UserCacheHolder.getUserFromRequest(request);
@@ -406,29 +343,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
         try {
             final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId, null, null, rdfFilePath);
-
-            LiferayPortletURL releaseUrl = createDetailLinkTemplate(request);
-            releaseUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_RELEASE_DETAIL);
-            releaseUrl.setParameter(RELEASE_ID, requestSummary.getMessage());
-            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
-            jsonObject.put("redirectUrl", releaseUrl.toString());
-
-            renderRequestSummary(request, response, requestSummary, jsonObject);
-        } catch (TException e) {
-            log.error("Failed to import BOM.", e);
-            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
-        }
-    }
-
-    private void importBomAsNew(ResourceRequest request, ResourceResponse response) {
-        final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
-        User user = UserCacheHolder.getUserFromRequest(request);
-        String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
-        String newReleaseVersion = request.getParameter(NEW_RELEASE_VERSION);
-        String rdfFilePath = request.getParameter(RDF_FILE_PATH);
-
-        try {
-            final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId, newReleaseVersion, null, rdfFilePath);
 
             LiferayPortletURL releaseUrl = createDetailLinkTemplate(request);
             releaseUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_RELEASE_DETAIL);
@@ -884,7 +798,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     private void writeSpdxLicenseInfoIntoRelease(ResourceRequest request, ResourceResponse response) {
         User user = UserCacheHolder.getUserFromRequest(request);
         String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
-        String attachmentContentId = request.getParameter(PortalConstants.ATTACHMENT_ID);
         ComponentService.Iface componentClient = thriftClients.makeComponentClient();
 
         RequestStatus result = null;
@@ -912,8 +825,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 }
             }
             result = componentClient.updateRelease(release, user);
-
-            componentClient.importBomFromAttachmentContent(user, attachmentContentId, null, releaseId, null);
         } catch (TException | IOException e) {
             log.error("Cannot write license info into release " + releaseId + ".", e);
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
