@@ -1002,7 +1002,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     SessionMessages.add(request, "request_processed", LanguageUtil.get(resourceBundle, "new.license"));
                 }
             }
-
             PortletUtils.setCustomFieldsEdit(request, user, release);
             addComponentBreadcrumb(request, response, component);
             if (!isNullOrEmpty(release.getId())) { //Otherwise the link is meaningless

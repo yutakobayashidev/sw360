@@ -47,19 +47,15 @@
     <jsp:useBean id="component" class="org.eclipse.sw360.datahandler.thrift.components.Component" scope="request"/>
     <jsp:useBean id="release" class="org.eclipse.sw360.datahandler.thrift.components.Release" scope="request"/>
     <jsp:useBean id="spdxDocument" class="org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument" scope="request"/>
-    <jsp:useBean id="usingProjects" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.projects.Project>"
-                 scope="request"/>
+    <jsp:useBean id="usingProjects" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.projects.Project>"scope="request"/>
     <jsp:useBean id="allUsingProjectsCount" type="java.lang.Integer" scope="request"/>
     <jsp:useBean id="usingComponents" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.components.Component>" scope="request"/>
     <jsp:useBean id="customFields" type="java.util.List<org.eclipse.sw360.portal.common.customfields.CustomField>" scope="request"/>
-
     <core_rt:set var="programmingLanguages" value='<%=PortalConstants.PROGRAMMING_LANGUAGES%>'/>
     <core_rt:set var="operatingSystemsAutoC" value='<%=PortalConstants.OPERATING_SYSTEMS%>'/>
     <core_rt:set var="platformsAutoC" value='<%=PortalConstants.SOFTWARE_PLATFORMS%>'/>
-
     <core_rt:set var="addMode" value="${empty release.id}"/>
     <core_rt:set var="cotsMode" value="<%=component.componentType == ComponentType.COTS%>"/>
-
     <jsp:useBean id="isUserAtLeastClearingAdmin" type="java.lang.Boolean" scope="request" />
     <core_rt:set var="mainlineStateEnabledForUserRole" value='<%=PortalConstants.MAINLINE_STATE_ENABLED_FOR_USER%>'/>
 </c:catch>
@@ -113,7 +109,6 @@
                                     ><liferay-ui:message key="delete.release" /></button>
                                 </div>
                             </core_rt:if>
-
                             <div class="btn-group" role="group">
                                 <button id="cancelEditButton" type="button" class="btn btn-light"><liferay-ui:message key="cancel" /></button>
                             </div>
@@ -129,26 +124,21 @@
                             data-name="<sw360:ReleaseName release="${release}" />"
                             data-delete-url="<%= deleteReleaseURL %>"
                             data-linked-releases="${release.releaseIdToRelationshipSize}"
-                            data-attachments="${release.attachmentsSize}"
-                        >
+                            data-attachments="${release.attachmentsSize}" >
                             <div class="tab-content">
                                 <div id="tab-Summary" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Summary'}">active show</core_rt:if>" >
                                     <%@include file="/html/components/includes/releases/editReleaseInformation.jspf" %>
-
                                     <core_rt:set var="keys" value="<%=PortalConstants.RELEASE_ROLES%>"/>
                                     <core_rt:set var="mapTitle" value="Additional Roles"/>
                                     <core_rt:set var="inputType" value="email"/>
                                     <core_rt:set var="inputSubtitle" value="Enter mail address"/>
                                     <core_rt:set var="customMap" value="${release.roles}"/>
                                     <%@include file="/html/utils/includes/mapEdit.jspf" %>
-
                                     <core_rt:set var="externalIdsSet" value="${release.externalIds.entrySet()}"/>
                                     <core_rt:set var="externalIdKeys" value="<%=PortalConstants.RELEASE_EXTERNAL_ID_KEYS%>"/>
                                     <%@include file="/html/utils/includes/editExternalIds.jsp" %>
-
                                     <core_rt:set var="additionalDataSet" value="${release.additionalData.entrySet()}"/>
                                     <%@include file="/html/utils/includes/editAdditionalData.jsp" %>
-
                                     <%@include file="/html/components/includes/releases/editReleaseRepository.jspf" %>
                                 </div>
                                 <div id="tab-linkedReleases" class="tab-pane <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active show</core_rt:if>" >
@@ -223,15 +213,11 @@
         </div>
     </div>
 
-
     <jsp:include page="/html/utils/includes/searchLicenses.jsp" />
     <jsp:include page="/html/utils/includes/searchAndSelectLicenses.jsp" />
-
     <jsp:include page="/html/utils/includes/searchUsers.jsp" />
     <jsp:include page="/html/utils/includes/searchAndSelectUsers.jsp" />
-
     <%@include file="/html/components/includes/vendors/searchVendor.jspf" %>
-
     <core_rt:set var="enableSearchForReleasesFromLinkedProjects" value="${false}" scope="request"/>
     <jsp:include page="/html/utils/includes/searchReleases.jsp" />
 </core_rt:if>
@@ -239,7 +225,6 @@
 <script>
     require(['jquery', 'components/includes/vendors/searchVendor', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation', 'components/includes/releases/validateLib', 'components/includes/releases/spdxjs'], function($, vendorsearch, autocomplete, dialog, listgroup, validation, validateLib, spdxjs) {
         document.title = $("<span></span>").html("<sw360:out value='${component.name}'/> - " + document.title).text();
-
         listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
 
         validation.enableForm('#releaseEditForm');
@@ -253,20 +238,15 @@
             function() {
                 if ("${addMode}" == "false") {
                     validateLib.setFormId('editSPDXForm');
-
                     validateLib.validate();
-
                     if (spdxjs.readDocumentCreator().length == 0) {
                         validateLib.addError('spdxCreator', ['required']);
-
                         $('.creator-value').each(function () {
                             if ($(this).val().trim() == '') {
                                 this.setCustomValidity('error');
                             }
                         });
-
                         $('#spdxCreator')[0].setCustomValidity('error');
-
                         // It does not auto scroll to Creator if there is error with Creator
                         // So, code below used to scroll to Creator manually
                         let gotErrorBeforeCreator = false;
@@ -277,7 +257,6 @@
                                 break;
                             }
                         }
-
                         if (!gotErrorBeforeCreator) {
                             $('#creator-anonymous').get(0).scrollIntoView({behavior: "auto", block: "center", inline: "nearest"})
                         }
@@ -285,10 +264,8 @@
                         $('.creator-value').each(function () {
                             this.setCustomValidity('');
                         });
-
                         $('#spdxCreator')[0].setCustomValidity('')
                     }
-
                     validateLib.showAllErrors();
                 }
                 $(document).find(".checkStatus select").attr("disabled", false);
@@ -310,7 +287,6 @@
             vendorsearch.openSearchDialog('<portlet:namespace/>what', '<portlet:namespace/>where',
                       '<portlet:namespace/>FULLNAME', '<portlet:namespace/>SHORTNAME', '<portlet:namespace/>URL', fillVendorInfo);
         });
-
         function cancel() {
             $.ajax({
                 type: 'POST',
@@ -328,7 +304,6 @@
                 window.location.href = portletURL.toString() + window.location.hash;
             });
         }
-
         function deleteRelease() {
             var $dialog,
                 data = $('#releaseEditForm').data(),
@@ -340,7 +315,6 @@
                     deleteURL = Liferay.PortletURL.createURL( baseUrl ).setParameter(data.commentParameterName, btoa($("#moderationDeleteCommentField").val()));
                 window.location.href = deleteURL;
             }
-
             $dialog = dialog.open('#deleteReleaseDialog', {
                 name: data.name,
                 attachments: attachmentsSize,
@@ -355,12 +329,9 @@
 
         function showCommentDialog() {
             var $dialog;
-
-            // validate first to be sure that form can be submitted
             if(!validation.validate('#releaseEditForm')) {
                 return;
             }
-
             $dialog = dialog.confirm(
                 null,
                 'pencil',
@@ -380,7 +351,6 @@
                 }
             );
         }
-
         function fillVendorInfo(vendorInfo) {
             var beforeComma = vendorInfo.substr(0, vendorInfo.indexOf(","));
             var afterComma = vendorInfo.substr(vendorInfo.indexOf(",") + 1);

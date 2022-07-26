@@ -46,14 +46,12 @@
 
 <script>
     require(['jquery', 'modules/dialog'], function($, dialog) {
-
         createExternalIdsTable();
         $('#add-external-id').on('click', function() {
                 addRowToExternalIdsTable();
         });
         $('#externalIdsTable').on('click', 'svg[data-row-id]', function(event) {
             var rowId = $(event.currentTarget).data().rowId;
-
             dialog.open('#deleteExternalIdDialog', {
                 text: "<liferay-ui:message key="do.you.really.want.to.remove.this.item" />",
             }, function(submit, callback) {
@@ -61,7 +59,6 @@
                 callback(true);
             });
         });
-
         function addRowsToExternalIdsTable(key, values, rowId) {
 			try {
         		var valueArray = JSON.parse($('<div />').html(values).text()).sort()
@@ -73,7 +70,6 @@
 				addRowToExternalIdsTable(key, values, rowId)
 			}
 		}
-
         function addRowToExternalIdsTable(key, value, rowId) {
             if (!rowId) {
                 rowId = "externalIdsTableRow" + Date.now();
@@ -82,7 +78,6 @@
                 key = "";
                 value = "";
             }
-
             var newRowAsString =
                 '<tr id="' + rowId + '" class="bodyRow">' +
                 '<td>' +
@@ -101,7 +96,6 @@
                 '</tr>';
             $('#externalIdsTable tr:last').after(newRowAsString);
         }
-
         function prepareKeyDatalist() {
             var datalist = '<datalist id="externalKeyList">';
             <core_rt:forEach items="${externalIdKeys}" var="externalIdKey">
@@ -109,18 +103,15 @@
             </core_rt:forEach>
             return datalist + '</datalist>';
         }
-
         function createExternalIdsTable() {
             <core_rt:forEach items="${externalIdsSet}" var="tableEntry" varStatus="loop">
 			addRowsToExternalIdsTable('<sw360:out value="${tableEntry.key}"/>', '<sw360:out value="${tableEntry.value}"/>', 'externalIdsTableRow${loop.count}');
             </core_rt:forEach>
         }
-
 		function decodeHTMLentities(str) {
 			return str.replace(/&#(\d+);/g, function(match, dec) {
 				return String.fromCharCode(dec);
 			});
 		}
     });
-
 </script>
