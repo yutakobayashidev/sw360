@@ -298,9 +298,9 @@
             }).always(function() {
                 var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>',
                     portletURL = Liferay.PortletURL.createURL(baseUrl)
-                        .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_RELEASE_DETAIL%>')
-                        .setParameter('<%=PortalConstants.COMPONENT_ID%>', '${component.id}')
-                        .setParameter('<%=PortalConstants.RELEASE_ID%>', '${release.id}');
+                                 .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_DETAIL%>')
+                                 .setParameter('<%=PortalConstants.COMPONENT_ID%>', '${component.id}');
+
                 window.location.href = portletURL.toString() + window.location.hash;
             });
         }
