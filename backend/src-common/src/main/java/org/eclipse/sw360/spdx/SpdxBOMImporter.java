@@ -114,7 +114,6 @@ public class SpdxBOMImporter {
         } catch (InvalidSPDXAnalysisException e) {
             log.error("Can not open file to SpdxDocument " +e);
         }
-
         if (describedPackages.size() == 0) {
             requestSummary.setTotalAffectedElements(0);
             requestSummary.setTotalElements(0);
@@ -128,7 +127,6 @@ public class SpdxBOMImporter {
             requestSummary.setRequestStatus(RequestStatus.FAILURE);
             return requestSummary;
         }
-
         final SpdxItem spdxItem = describedPackages.get(0);
         final Optional<SpdxBOMImporterSink.Response> response;
         if (SW360Constants.TYPE_PROJECT.equals(type)) {
@@ -659,20 +657,11 @@ public class SpdxBOMImporter {
         if (relatedSpdxElement instanceof SpdxPackage) {
             final SpdxPackage spdxPackage = (SpdxPackage) relatedSpdxElement;
 
-            final Release release;
-            SpdxBOMImporterSink.Response component;
-            if (isNotNullEmptyOrWhitespace(releaseId)) {
-                release = sink.getRelease(releaseId);
-                component = new SpdxBOMImporterSink.Response(release.getComponentId(), true);
-            } else {
-                component = importAsComponent(spdxPackage);
-                final String componentId = component.getId();
+            SpdxBOMImporterSink.Response component = importAsComponent(spdxPackage);
+            final String componentId = component.getId();
 
-                release = createReleaseFromSpdxPackage(spdxPackage);
-                if (isNotNullEmptyOrWhitespace(newReleaseVersion))
-                    release.setVersion(newReleaseVersion);
-                release.setComponentId(componentId);
-            }
+            final Release release = createReleaseFromSpdxPackage(spdxPackage);
+            release.setComponentId(componentId);
 
             final Relationship[] relationships = spdxPackage.getRelationships();
             List<SpdxBOMImporterSink.Response> releases = importAsReleases(relationships);
@@ -683,16 +672,15 @@ public class SpdxBOMImporter {
                 Attachment attachment = makeAttachmentFromContent(attachmentContent);
                 release.setAttachments(Collections.singleton(attachment));
             }
-
-
             final SpdxBOMImporterSink.Response response = sink.addRelease(release);
 
-            try {
-                importSpdxDocument(response.getId(), spdxDocument, spdxPackage);
-            } catch (MalformedURLException e) {
-                log.error(e);
+            if(spdxDocument != null){
+                try {
+                    importSpdxDocument(response.getId(), spdxDocument, spdxPackage);
+                } catch (MalformedURLException e) {
+                    log.error(e);
+                }
             }
-
             response.addChild(component);
             return Optional.of(response);
         } else {
