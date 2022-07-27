@@ -72,7 +72,7 @@ public class SpdxBOMImporterTest {
 
     @Test
     public void testProject() throws  Exception {
-        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsProjectForTest(inputStream, attachmentContent);
+        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsProject(inputStream, attachmentContent);
         assertNotNull(requestSummary);
 
         verify(spdxBOMImporterSink, times(1)).addProject(Matchers.any());
@@ -82,7 +82,7 @@ public class SpdxBOMImporterTest {
 
     @Test
     public void testRelease() throws  Exception {
-        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsReleaseForTest(inputStream, attachmentContent);
+        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent);
         assertNotNull(requestSummary);
 
         verify(spdxBOMImporterSink, times(4)).addComponent(Matchers.any());

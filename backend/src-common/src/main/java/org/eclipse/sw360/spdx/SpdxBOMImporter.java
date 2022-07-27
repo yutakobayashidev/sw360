@@ -86,9 +86,9 @@ public class SpdxBOMImporter {
         return requestPreparation;
     }
 
-    public RequestSummary importSpdxBOMAsRelease(InputStream inputStream, AttachmentContent attachmentContent, String newReleaseVersion, String releaseId)
+    public RequestSummary importSpdxBOMAsRelease(InputStream inputStream, AttachmentContent attachmentContent)
             throws SW360Exception {
-        return importSpdxBOM(inputStream, attachmentContent, SW360Constants.TYPE_RELEASE, newReleaseVersion, releaseId);
+        return importSpdxBOM(inputStream, attachmentContent, SW360Constants.TYPE_RELEASE);
     }
 
     public RequestSummary importSpdxBOMAsProject(InputStream inputStream, AttachmentContent attachmentContent)
@@ -97,11 +97,6 @@ public class SpdxBOMImporter {
     }
 
     private RequestSummary importSpdxBOM(InputStream inputStream, AttachmentContent attachmentContent, String type)
-            throws InvalidSPDXAnalysisException, SW360Exception {
-        return importSpdxBOM(inputStream, attachmentContent, type, null, null);
-    }
-
-    private RequestSummary importSpdxBOM(InputStream inputStream, AttachmentContent attachmentContent, String type, String newReleaseVersion, String releaseId)
             throws SW360Exception {
         final RequestSummary requestSummary = new RequestSummary();
         SpdxDocument spdxDocument = null;
@@ -132,7 +127,7 @@ public class SpdxBOMImporter {
         if (SW360Constants.TYPE_PROJECT.equals(type)) {
             response = importAsProject(spdxItem, attachmentContent);
         } else if (SW360Constants.TYPE_RELEASE.equals(type)) {
-            response = importAsRelease(spdxItem, attachmentContent, spdxDocument, newReleaseVersion, releaseId);
+            response = importAsRelease(spdxItem, attachmentContent, spdxDocument);
         } else {
             throw new SW360Exception("Unsupported type=[" + type + "], can not import BOM");
         }
@@ -649,11 +644,11 @@ public class SpdxBOMImporter {
     }
 
     private Optional<SpdxBOMImporterSink.Response> importAsRelease(SpdxElement relatedSpdxElement) throws SW360Exception {
-        return importAsRelease(relatedSpdxElement, null, null, null, null);
+        return importAsRelease(relatedSpdxElement, null, null);
     }
 
     private Optional<SpdxBOMImporterSink.Response> importAsRelease(SpdxElement relatedSpdxElement, AttachmentContent attachmentContent,
-            SpdxDocument spdxDocument, String newReleaseVersion, String releaseId) throws SW360Exception {
+            SpdxDocument spdxDocument) throws SW360Exception {
         if (relatedSpdxElement instanceof SpdxPackage) {
             final SpdxPackage spdxPackage = (SpdxPackage) relatedSpdxElement;
 
@@ -848,137 +843,4 @@ public class SpdxBOMImporter {
         return (values != null && values.length > 0) ? values : new String[0];
     }
 
-
-    public RequestSummary importSpdxBOMAsReleaseForTest(InputStream inputStream, AttachmentContent attachmentContent)
-            throws InvalidSPDXAnalysisException, SW360Exception {
-        return importSpdxBOMForTest(inputStream, attachmentContent, SW360Constants.TYPE_RELEASE);
-    }
-
-    public RequestSummary importSpdxBOMAsProjectForTest(InputStream inputStream, AttachmentContent attachmentContent)
-            throws InvalidSPDXAnalysisException, SW360Exception {
-        return importSpdxBOMForTest(inputStream, attachmentContent, SW360Constants.TYPE_PROJECT);
-    }
-    private RequestSummary importSpdxBOMForTest(InputStream inputStream, AttachmentContent attachmentContent, String type)
-            throws InvalidSPDXAnalysisException, SW360Exception {
-        final RequestSummary requestSummary = new RequestSummary();
-        final SpdxDocument spdxDocument = openAsSpdx(inputStream);
-        final List<SpdxItem> describedPackages = Arrays.stream(spdxDocument.getDocumentDescribes())
-                .filter(item -> item instanceof SpdxPackage)
-                .collect(Collectors.toList());
-
-        if (describedPackages.size() == 0) {
-            requestSummary.setTotalAffectedElements(0);
-            requestSummary.setTotalElements(0);
-            requestSummary.setMessage("The provided BOM did not contain any top level packages.");
-            requestSummary.setRequestStatus(RequestStatus.FAILURE);
-            return requestSummary;
-        } else if (describedPackages.size() > 1) {
-            requestSummary.setTotalAffectedElements(0);
-            requestSummary.setTotalElements(0);
-            requestSummary.setMessage("The provided BOM file contained multiple described top level packages. This is not allowed here.");
-            requestSummary.setRequestStatus(RequestStatus.FAILURE);
-            return requestSummary;
-        }
-
-        final SpdxItem spdxItem = describedPackages.get(0);
-        final Optional<SpdxBOMImporterSink.Response> response;
-        if (SW360Constants.TYPE_PROJECT.equals(type)) {
-            response = importAsProjectForTest(spdxItem, attachmentContent);
-        } else if (SW360Constants.TYPE_RELEASE.equals(type)) {
-            response = importAsReleaseForTest(spdxItem, attachmentContent);
-        } else {
-            throw new SW360Exception("Unsupported type=[" + type + "], can not import BOM");
-        }
-
-        if (response.isPresent()) {
-            requestSummary.setRequestStatus(RequestStatus.SUCCESS);
-            requestSummary.setTotalAffectedElements(response.get().countAffected());
-            requestSummary.setTotalElements(response.get().count());
-            requestSummary.setMessage(response.get().getId());
-        } else {
-            requestSummary.setRequestStatus(RequestStatus.FAILURE);
-            requestSummary.setTotalAffectedElements(-1);
-            requestSummary.setTotalElements(-1);
-            requestSummary.setMessage("Failed to import the BOM as type=[" + type + "].");
-        }
-        return requestSummary;
-    }
-    private Optional<SpdxBOMImporterSink.Response> importAsReleaseForTest(SpdxElement relatedSpdxElement) throws SW360Exception {
-        return importAsReleaseForTest(relatedSpdxElement, null);
-    }
-    private Optional<SpdxBOMImporterSink.Response> importAsReleaseForTest(SpdxElement relatedSpdxElement, AttachmentContent attachmentContent) throws SW360Exception {
-        if (relatedSpdxElement instanceof SpdxPackage) {
-            final SpdxPackage spdxPackage = (SpdxPackage) relatedSpdxElement;
-
-            SpdxBOMImporterSink.Response component = importAsComponent(spdxPackage);
-            final String componentId = component.getId();
-
-            final Release release = createReleaseFromSpdxPackage(spdxPackage);
-            release.setComponentId(componentId);
-
-            final Relationship[] relationships = spdxPackage.getRelationships();
-            List<SpdxBOMImporterSink.Response> releases = importAsReleasesForTest(relationships);
-            Map<String, ReleaseRelationship> releaseIdToRelationship = makeReleaseIdToRelationship(releases);
-            release.setReleaseIdToRelationship(releaseIdToRelationship);
-
-            if(attachmentContent != null) {
-                Attachment attachment = makeAttachmentFromContent(attachmentContent);
-                release.setAttachments(Collections.singleton(attachment));
-            }
-
-
-            final SpdxBOMImporterSink.Response response = sink.addRelease(release);
-            response.addChild(component);
-            return Optional.of(response);
-        } else {
-            log.debug("Unsupported SpdxElement: " + relatedSpdxElement.getClass().getCanonicalName());
-            return Optional.empty();
-        }
-    }
-    private List<SpdxBOMImporterSink.Response> importAsReleasesForTest(Relationship[] relationships) throws SW360Exception {
-        List<SpdxBOMImporterSink.Response> releases = new ArrayList<>();
-
-        Map<Relationship.RelationshipType, ReleaseRelationship> typeToSupplierMap = new HashMap<>();
-        typeToSupplierMap.put(Relationship.RelationshipType.CONTAINS,  ReleaseRelationship.CONTAINED);
-
-        for (Relationship relationship : relationships) {
-            final Relationship.RelationshipType relationshipType = relationship.getRelationshipType();
-            if(! typeToSupplierMap.keySet().contains(relationshipType)) {
-                log.debug("Unsupported RelationshipType: " + relationshipType.toString());
-                continue;
-            }
-
-            final SpdxElement relatedSpdxElement = relationship.getRelatedSpdxElement();
-            final Optional<SpdxBOMImporterSink.Response> releaseId = importAsReleaseForTest(relatedSpdxElement);
-            releaseId.map(response -> {
-                response.setReleaseRelationship(typeToSupplierMap.get(relationshipType));
-                return response;
-            }).ifPresent(releases::add);
-        }
-        return releases;
-    }
-    private Optional<SpdxBOMImporterSink.Response> importAsProjectForTest(SpdxElement spdxElement, AttachmentContent attachmentContent) throws SW360Exception {
-        if (spdxElement instanceof SpdxPackage) {
-            final SpdxPackage spdxPackage = (SpdxPackage) spdxElement;
-
-            final Project project = creatProjectFromSpdxPackage(spdxPackage);
-
-            final Relationship[] relationships = spdxPackage.getRelationships();
-            List<SpdxBOMImporterSink.Response> releases = importAsReleasesForTest(relationships);
-            Map<String, ProjectReleaseRelationship> releaseIdToProjectRelationship = makeReleaseIdToProjectRelationship(releases);
-            project.setReleaseIdToUsage(releaseIdToProjectRelationship);
-
-            if(attachmentContent != null) {
-                Attachment attachment = makeAttachmentFromContent(attachmentContent);
-                project.setAttachments(Collections.singleton(attachment));
-            }
-
-            final SpdxBOMImporterSink.Response response = sink.addProject(project);
-            response.addChilds(releases);
-            return Optional.of(response);
-        } else {
-            log.debug("Unsupported SpdxElement: " + spdxElement.getClass().getCanonicalName());
-            return Optional.empty();
-        }
-    }
 }

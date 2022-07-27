@@ -339,10 +339,9 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
         User user = UserCacheHolder.getUserFromRequest(request);
         String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
-        String rdfFilePath = request.getParameter(RDF_FILE_PATH);
 
         try {
-            final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId, null, null, rdfFilePath);
+            final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId);
 
             LiferayPortletURL releaseUrl = createDetailLinkTemplate(request);
             releaseUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_RELEASE_DETAIL);

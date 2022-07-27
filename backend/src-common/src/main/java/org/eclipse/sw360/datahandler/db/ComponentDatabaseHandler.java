@@ -2549,19 +2549,14 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
 
-    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId, String newReleaseVersion, String releaseId, String rdfFilePath) throws SW360Exception {
+    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
         try {
+            InputStream spdxInputStream = null;
+            spdxInputStream = attachmentConnector.unsafeGetAttachmentStream(attachmentContent);
             final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
             final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
-            InputStream spdxInputStream = null;
-            if (!isNullEmptyOrWhitespace(rdfFilePath)) {
-                spdxInputStream = new FileInputStream(new File(rdfFilePath));
-                Files.delete(Paths.get(rdfFilePath));
-            } else {
-                spdxInputStream = attachmentConnector.unsafeGetAttachmentStream(attachmentContent);
-            }
-                return spdxBOMImporter.importSpdxBOMAsRelease(spdxInputStream, attachmentContent, newReleaseVersion, releaseId);
+            return spdxBOMImporter.importSpdxBOMAsRelease(spdxInputStream, attachmentContent);
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
         }
