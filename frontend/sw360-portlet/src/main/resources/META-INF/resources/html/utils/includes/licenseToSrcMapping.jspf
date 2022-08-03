@@ -14,7 +14,7 @@ AUI().use('liferay-portlet-url', function () {
     var licenseToSourceFileMap = new Map();
     require(['jquery', 'modules/dialog'], function($, dialog) {
 
-        $("#LinkedProjectsInfo").on("click", "svg.cursor[data-tag]", function(event) {
+        $("#DependencyInfo").on("click", "svg.cursor[data-tag]", function(event) {
             let releaseId = $(event.currentTarget).data().tag.split("-")[0],
                 index = $(event.currentTarget).data().tag.split("-")[2],
                 licenseArray = $(this).closest('td.actions').text().replace(/<liferay-ui:message key="view.file.list" />/g, '').split(","),

@@ -82,10 +82,10 @@
                         <sw360:out value="${releaseLink.name} ${releaseLink.version}" maxChar="60"/>
                     </a>
                 </td>
-                <td>
+                <td data-componenttype='<sw360:DisplayEnum value="${releaseLink.componentType}" bare="true"/>'>
                     <sw360:DisplayEnum value="${releaseLink.componentType}"/>
                 </td>
-                <td>
+                <td data-releaserelation='<sw360:DisplayEnum value="${releaseLink.releaseRelationship}" bare="true"/>'>
                     <sw360:DisplayEnum value="${releaseLink.releaseRelationship}"/>
                 </td>
                 <td class="actions">

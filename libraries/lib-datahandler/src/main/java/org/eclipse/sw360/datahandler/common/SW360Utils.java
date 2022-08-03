@@ -11,6 +11,8 @@ package org.eclipse.sw360.datahandler.common;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -795,5 +797,44 @@ public class SW360Utils {
             }
         }
         return Collections.emptyList();
+    }
+
+    public static Set<String> getReleaseIdsInNetworkOfProject(Project project) {
+        Set<String> releasesIds = new HashSet<>();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
+        if (project.getReleaseRelationNetwork() != null) {
+            try {
+                releaseLinkJSONS = objectMapper.readValue(project.getReleaseRelationNetwork(), new TypeReference<List<ReleaseLinkJSON>>() {
+                });
+                for (ReleaseLinkJSON release : releaseLinkJSONS) {
+                    getReleaseIdInDependency(release, releasesIds);
+                }
+            } catch (JsonProcessingException e) {
+                log.error(e.getMessage());
+            }
+        }
+
+        return releasesIds;
+    }
+
+    private static Set<String> getReleaseIdInDependency(ReleaseLinkJSON node, Set<String> releasesIds) {
+
+        if (node != null) {
+            releasesIds.add(node.getReleaseId());
+        }
+
+        List<ReleaseLinkJSON> children = node.getReleaseLink();
+        for (ReleaseLinkJSON child : children) {
+            if(child.getReleaseLink() != null) {
+                getReleaseIdInDependency(child, releasesIds);
+            } else {
+                releasesIds.add(node.getReleaseId());
+            }
+        }
+
+        return releasesIds;
     }
 }

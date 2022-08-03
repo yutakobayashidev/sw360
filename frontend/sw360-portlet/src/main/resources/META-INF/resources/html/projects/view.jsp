@@ -76,6 +76,10 @@
     <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${docid}"/>
 </portlet:resourceURL>
 
+<portlet:resourceURL var="exportProjectsNetworkURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.EXPORT_PROJECT_WITH_NETWORK_TO_EXCEL%>"/>
+</portlet:resourceURL>
+
 <div class="container" style="display: none;">
     <div class="row">
         <div class="col-3 sidebar">

@@ -9,6 +9,10 @@
  */
 package org.eclipse.sw360.portal.portlets.moderation;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -41,10 +45,7 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RemoveModeratorRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
@@ -479,6 +480,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             request.setAttribute(WRITE_ACCESS_USER, false);
             request.setAttribute(IS_CLEARING_EXPERT, isPrimaryRoleOfUserAtLeastClearingExpert);
             Integer approvedReleaseCount = 0;
+            Integer aprrovedReleaseInNetwork = 0;
             if (CommonUtils.isNotNullEmptyOrWhitespace(clearingRequest.getProjectId()) ) {
                 ProjectService.Iface projectClient = thriftClients.makeProjectClient();
                 Project project = projectClient.getProjectById(clearingRequest.getProjectId(), UserCacheHolder.getUserFromRequest(request));
@@ -501,6 +503,16 @@ public class ModerationPortlet extends FossologyAwarePortlet {
                     ReleaseClearingStateSummary summary = projWithCsSummary.getReleaseClearingStateSummary();
                     approvedReleaseCount = summary.getApproved() + summary.getReportAvailable();
                 }
+
+                List<Project> projectsForNetwork = getWithFilledClearingStateSummaryForNetwork(projectClient, Lists.newArrayList(project), user);
+                Project projectWithCsSummary = projectsForNetwork.get(0);
+                if (null != projectWithCsSummary && null != projectWithCsSummary.getReleaseClearingStateSummary()) {
+                    ReleaseClearingStateSummary summary = projectWithCsSummary.getReleaseClearingStateSummary();
+                    aprrovedReleaseInNetwork = summary.getApproved() + summary.getReportAvailable();
+                }
+                request.setAttribute("numberReleasesInNetwork", SW360Utils.getReleaseIdsInNetworkOfProject(project).size());
+                request.setAttribute("aprrovedReleaseInNetwork", aprrovedReleaseInNetwork);
+
             }
             if (clearingRequest.getTimestampOfDecision() > 1) {
                 Integer criticalCount = client.getCriticalClearingRequestCount();
@@ -935,10 +947,10 @@ public class ModerationPortlet extends FossologyAwarePortlet {
 
     private void prepareProject(RenderRequest request, User user, Project actual_project) {
         try {
+            ObjectMapper objectMapper = new ObjectMapper();
             ProjectService.Iface client = thriftClients.makeProjectClient();
             List<ProjectLink> mappedProjectLinks = createLinkedProjects(actual_project, user);
             request.setAttribute(PROJECT_LIST, mappedProjectLinks);
-            putDirectlyLinkedReleasesInRequest(request, actual_project);
             Set<Project> usingProjects = client.searchLinkingProjects(actual_project.getId(), user);
             request.setAttribute(USING_PROJECTS, usingProjects);
             int allUsingProjectsCount = client.getCountByProjectId(actual_project.getId());
@@ -949,6 +961,17 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             ModerationService.Iface modClient = thriftClients.makeModerationClient();
             Integer criticalCount = modClient.getCriticalClearingRequestCount();
             request.setAttribute(CRITICAL_CR_COUNT, criticalCount);
+            if (actual_project.getReleaseRelationNetwork() == null) {
+                request.setAttribute(NUMBER_LINKED_RELEASE, 0);
+            } else {
+                try {
+                    List<ReleaseLinkJSON> releaseLinkJSONS = objectMapper.readValue(actual_project.getReleaseRelationNetwork(), new TypeReference<List<ReleaseLinkJSON>>() {
+                    });
+                    request.setAttribute(NUMBER_LINKED_RELEASE, releaseLinkJSONS.size());
+                } catch(JsonProcessingException jsonEx) {
+                    request.setAttribute(NUMBER_LINKED_RELEASE, 0);
+                }
+            }
         } catch (TException e) {
             log.error("Error fetching project from backend!", e);
         }
@@ -1080,4 +1103,14 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             return "";
         }
     }
+
+    private List<Project> getWithFilledClearingStateSummaryForNetwork(ProjectService.Iface client, List<Project> projects, User user) {
+        try {
+            return client.fillClearingStateSummaryForNetwork(projects, user);
+        } catch (TException e) {
+            log.error("Could not get summary of release clearing states for projects!", e);
+            return projects;
+        }
+    }
+
 }
