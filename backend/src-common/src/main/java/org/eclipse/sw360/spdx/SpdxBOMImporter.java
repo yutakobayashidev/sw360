@@ -515,7 +515,10 @@ public class SpdxBOMImporter {
             final boolean fileAnalyzed = spdxPackage.isFilesAnalyzed();
             final String homepage = spdxPackage.getHomepage();
             final String sourceInfo = spdxPackage.getSourceInfo();
-            final String licenseConcluded = spdxPackage.getLicenseConcluded().toString();
+            String licenseConcluded = "";
+            if(spdxPackage.getLicenseConcluded() != null){
+                 licenseConcluded = spdxPackage.getLicenseConcluded().toString();
+            }
             final Set<String> licenseInfosFromFiles = Arrays.stream(spdxPackage.getLicenseInfoFromFiles())
                                                         .map(license -> license.toString())
                                                         .collect(Collectors.toSet());
