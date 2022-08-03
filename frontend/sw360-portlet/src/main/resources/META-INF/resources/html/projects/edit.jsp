@@ -77,6 +77,7 @@
 
 <core_rt:set var="isObligationPresent" value="${not empty project.releaseIdToUsage}" />
 <core_rt:set var="isProjectObligationsEnabled"  value="${isProjectObligationsEnabled and hasWritePermissions}" />
+<core_rt:set var="enableSearchForReleasesFromLinkedProjects" value="${true}" scope="request"/>
 
 <div class="container" style="display: none;">
     <div class="row">
@@ -230,8 +231,6 @@
         </div>
     </div>
 </div>
-
-<core_rt:set var="enableSearchForReleasesFromLinkedProjects" value="${true}" scope="request"/>
 
 <jsp:include page="/html/projects/includes/searchProjects.jsp" />
 <jsp:include page="/html/utils/includes/searchReleases.jsp" />

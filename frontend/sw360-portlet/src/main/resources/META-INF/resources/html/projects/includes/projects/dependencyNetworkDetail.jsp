@@ -41,6 +41,12 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.LICENSE_TO_SOURCE_FILE%>"/>
 </portlet:resourceURL>
 
+<portlet:resourceURL var="addLicenseToReleaseInNetworkUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.ADD_LICENSE_TO_RELEASE_IN_NETWORK%>"/>
+    <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${docid}"/>
+</portlet:resourceURL>
+
+
 <c:set var="pageName" value="<%= request.getParameter("pagename") %>" />
 
 <core_rt:if test='${not isCrDisabledForProjectBU}'>
@@ -52,6 +58,9 @@
 
 <div class="tab-content" id="pills-dependencyNetwork">
     <div class="tab-pane fade show active" id="pills-network-treeView" role="tabpanel" aria-labelledby="pills-network-tree-tab">
+    <div class="btn-group mx-1" role="group">
+        <button type="button" class="btn btn-outline-dark" id="addLicenseToAllReleases"><liferay-ui:message key="add.license.info.to.release" /></button>
+    </div>
     <div class="float-right mx-2">
         <input type="search" id="search_network_table" class="form-control form-control-sm mb-1 float-right" placeholder="<liferay-ui:message key="search" />">
     </div>
@@ -72,14 +81,112 @@
                                 (<a href="#" id="expandAll" class="text-primary"><liferay-ui:message key="expand.all" /> </a>|
                                 <a href="#" id="collapseAll" class="text-primary"> <liferay-ui:message key="collapse.all" /></a>)
                             </div>
+                            <core_rt:if test="${projectList.size() > 1 or numberLinkedRelease > 0}">
+                                Linked Releases: ${numberLinkedRelease}, Linked Projects: ${projectList.size() - 1}<br>
+                            </core_rt:if>
                         </div>
                     </th>
-                    <th style="width:6%; cursor: pointer" class="sort"><liferay-ui:message key="type" /><clay:icon symbol="caret-double-l" /></th>
-                    <th style="width:7%; cursor: pointer" class="sort"><liferay-ui:message key="relation" /><clay:icon symbol="caret-double-l" /></th>
+                    <th style="width:6%; cursor: pointer" class="sort">
+                        <div class="dropdown d-inline text-capitalize releaseFilterTT" id="typeFilterTT">
+                            <span title="<liferay-ui:message key="component.type" /> <liferay-ui:message key="filter" />" class="dropdown-toggle float-none" data-toggle="dropdown" id="configId">
+                                <liferay-ui:message key="type" /> <clay:icon symbol="select-from-list" /> <svg class="lexicon-icon lexicon-icon-caret-double-l mt-1"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#caret-double-l"/></svg>
+                            </span>
+                            <ul class="dropdown-menu" id="dropdownmenu" name="<portlet:namespace/>roles"
+                                aria-labelledby="configId">
+                                <li class="dropdown-header"><liferay-ui:message key="component.type" /></li>
+                                <li><hr class="my-2" /></li>
+                                <li>
+                                    <input type="checkbox" class="form-check-input ml-4" id="oss" data-componenttype="OSS"/>
+                                    <label class="mb-0"><liferay-ui:message key="oss" /></label>
+                                </li>
+                                <li>
+                                    <input type="checkbox" class="form-check-input ml-4" id="cots" data-componenttype="COTS"/>
+                                    <label class="mb-0"><liferay-ui:message key="cots" /></label>
+                                </li>
+                                <li>
+                                    <input type="checkbox" class="form-check-input ml-4" id="internal" data-componenttype="Internal"/>
+                                    <label class="mb-0"><liferay-ui:message key="internal" /></label>
+                                </li>
+                                <li>
+                                    <input type="checkbox" class="form-check-input ml-4" id="innerSource" data-componenttype="Inner Source"/>
+                                    <label class="mb-0"><liferay-ui:message key="inner.source" /></label>
+                                </li>
+                                <li>
+                                    <input type="checkbox" class="form-check-input ml-4" id="service" data-componenttype="Service"/>
+                                    <label class="mb-0"><liferay-ui:message key="service" /></label>
+                                </li>
+                                <li>
+                                    <input type="checkbox" class="form-check-input ml-4" id="freeware" data-componenttype="Freeware" />
+                                    <label class="mb-0"><liferay-ui:message key="freeware" /></label>
+                                </li>
+                                <li>
+                                    <input type="checkbox" class="form-check-input ml-4" id="codeSnippet" data-componenttype="Code Snippet" />
+                                    <label class="mb-0"><liferay-ui:message key="code.snippet" /></label>
+                                </li>
+                            </ul>
+                        </div>
+                    </th>
+
+                    <th style="width:7%; cursor: pointer" class="sort">
+                    <div class="dropdown d-inline text-capitalize releaseFilterTT" id="relationFilterTT">
+                        <span title="<liferay-ui:message key="release.relation" /> <liferay-ui:message key="filter" />" class="dropdown-toggle float-none" data-toggle="dropdown" id="configId">
+                            <liferay-ui:message key="relation" /> <clay:icon symbol="select-from-list" /> <svg class="lexicon-icon lexicon-icon-caret-double-l mt-1"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#caret-double-l"/></svg>
+                        </span>
+                        <ul class="dropdown-menu" id="dropdownmenu" name="<portlet:namespace/>roles"
+                            aria-labelledby="configId">
+                            <li class="dropdown-header"><liferay-ui:message key="release.relation" /></li>
+                            <li><hr class="my-2" /></li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="unknown" data-releaserelation="Unknown"/>
+                                <label class="mb-0"><liferay-ui:message key="unknown" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="contained" data-releaserelation="Contained"/>
+                                <label class="mb-0"><liferay-ui:message key="contained" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="related" data-releaserelation="Related"/>
+                                <label class="mb-0"><liferay-ui:message key="related" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="dynamicallyLinked" data-releaserelation="Dynamically linked"/>
+                                <label class="mb-0"><liferay-ui:message key="dynamically.linked" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="staticallyLinked" data-releaserelation="Statically linked"/>
+                                <label class="mb-0"><liferay-ui:message key="statically.linked" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="sideBySide" data-releaserelation="Side by side"/>
+                                <label class="mb-0"><liferay-ui:message key="side.by.side" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="standalone" data-releaserelation="Standalone"/>
+                                <label class="mb-0"><liferay-ui:message key="standalone" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="internalUse" data-releaserelation="Internal use"/>
+                                <label class="mb-0"><liferay-ui:message key="internal.use" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="optional" data-releaserelation="Optional"/>
+                                <label class="mb-0"><liferay-ui:message key="optional" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="toBeReplaced" data-releaserelation="To be replaced"/>
+                                <label class="mb-0"><liferay-ui:message key="to.be.replaced" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="codeSnippet" data-releaserelation="Code Snippet"/>
+                                <label class="mb-0"><liferay-ui:message key="code.snippet" /></label>
+                            </li>
+                        </ul>
+                    </div>
+                    </th>
                     <th style="width:12%; cursor: pointer" class="sort"><liferay-ui:message key="main.licenses" /><clay:icon symbol="caret-double-l" /></th>
                     <th style="width:11%"><liferay-ui:message key="other.licenses" /></th>
                     <th style="width:6%">
-                    <div class="dropdown d-inline text-capitalize" id="stateFilterForTT">
+                    <div class="dropdown d-inline text-capitalize releaseFilterTT" id="stateFilterForTT">
                         <span title="<liferay-ui:message key="release.clearing.state" /> <liferay-ui:message key="filter" />" class="dropdown-toggle float-none" data-toggle="dropdown" id="configId">
                             <liferay-ui:message key="state" /> <clay:icon symbol="select-from-list" />
                         </span>
@@ -183,6 +290,35 @@
         </div>
     </div>
 </div>
+
+<div class="dialogs">
+    <div id="addLicenseConfirmDialog" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable modal-info" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <svg class="lexicon-icon">
+                            <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#question-circle"/>
+                        </svg>
+                        <span class="title"><span>
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">OK</button>
+                    <button type="button" class="btn"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="dialogs auto-dialogs"></div>
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <%@ include file="/html/utils/includes/licenseToSrcMappingForNetwork.jspf" %>
@@ -203,7 +339,7 @@ AUI().use('liferay-portlet-url', function () {
           });
 
         $('#search_network_table').on('input', function() {
-            $("#DependencyInfo div#stateFilterForTT #dropdownmenu input[type=checkbox]:checked").each(function() {
+            $(".releaseFilterTT #dropdownmenu input[type=checkbox]:checked").each(function() {
                 $(this).prop('checked', false);
             });
             search_network_table($(this).val().trim());
@@ -215,10 +351,19 @@ AUI().use('liferay-portlet-url', function () {
             return false;
         });
 
-        function filterByClearingState() {
-            let isChecked, isPresent, checkedData = [];
-            $("#DependencyInfo div#stateFilterForTT #dropdownmenu input[type=checkbox]:checked").each(function() {
-                let val = $(this).data().releaseclearingstate;
+        function removeFilterBySelector(selector) {
+            $("div#" + selector + " #dropdownmenu input[type=checkbox]:checked").each(function() {
+                $(this).prop('checked', false);
+            });
+        }
+
+         function filterDirectlyLinkedReleases(selector) {
+            let isChecked, isPresent, checkedData = [],
+            isTypeFilter = selector.includes('typeFilter') ? true: false,
+            isRelationFilter = selector.includes('relationFilter') ? true: false,
+            isStateFilter = selector.includes('stateFilter') ? true: false;
+            $("#DependencyInfo div#" + selector + " #dropdownmenu input[type=checkbox]:checked").each(function() {
+                let val = isTypeFilter ? $(this).data().componenttype : isRelationFilter ? $(this).data().releaserelation : isStateFilter ? $(this).data().releaseclearingstate : "";
                 isChecked = true;
                 if (val) {
                     checkedData.push(val.trim().toLowerCase());
@@ -226,27 +371,58 @@ AUI().use('liferay-portlet-url', function () {
             });
 
             if (isChecked) {
-                $('#DependencyInfo tbody tr').each(function() {
-                    let relState = $(this).find('td:eq(5)').data().releaseclearingstate;
-                    if (relState && checkedData.includes(relState.trim().toLowerCase())) {
-                        showDependenceRow(relState, $(this));
-                        isPresent = true;
-                    } else {
-                        $(this).hide();
-                    }
-                });
+                if (isStateFilter) {
+                    removeFilterBySelector("relationFilterTT");
+                    removeFilterBySelector("typeFilterTT");
+                    $('#DependencyInfo tbody tr').each(function() {
+                        let relState = $(this).find('td:eq(5)').data().releaseclearingstate;
+                        if (relState && checkedData.includes(relState.trim().toLowerCase())) {
+                            showDependenceRow(relState, $(this));
+                            isPresent = true;
+                        } else {
+                            $(this).hide();
+                        }
+                    });
+                } else if (isTypeFilter) {
+                    removeFilterBySelector("relationFilterTT");
+                    removeFilterBySelector("stateFilterForTT");
+
+                    $('#DependencyInfo tbody tr').each(function() {
+                        let relType = $(this).find('td:eq(1)').data().componenttype;
+                        if (relType && checkedData.includes(relType.trim().toLowerCase())) {
+                            showDependenceRow(relType, $(this));
+                            isPresent = true;
+                        } else {
+                            $(this).hide();
+                        }
+                    });
+                } else if (isRelationFilter) {
+                    removeFilterBySelector("typeFilterTT");
+                    removeFilterBySelector("stateFilterForTT");
+                    console.log("relation");
+                    $('#DependencyInfo tbody tr').each(function() {
+                        let relRelation = $(this).find('td:eq(2)').data().releaserelation;
+                        if (relRelation && checkedData.includes(relRelation.trim().toLowerCase())) {
+                            showDependenceRow(relRelation, $(this));
+                            isPresent = true;
+                        } else {
+                            $(this).hide();
+                        }
+                    });
+                }
                 if (!isPresent) {
                     if (!$('#DependencyInfo tbody tr#noDataRow').length) {
                         $('#DependencyInfo tbody tr:last').after('<tr id="noDataRow"><td colspan="8"> ' + emptyMsg + '</td></tr>');
                     } else {
-                        $("#DependencyInfo #noDataRow").show();
+                        $("#noDataRow").show();
                     }
                 }
             } else {
-                $("#DependencyInfo #noDataRow").remove();
+                $("#noDataRow").remove();
                 $('#DependencyInfo tbody tr').show();
             }
         }
+
 
         function showDependenceRow(value, $thiz) {
             let parentId = $thiz.data().ttParentId;
@@ -261,10 +437,10 @@ AUI().use('liferay-portlet-url', function () {
             $thiz.show();
         }
 
-        $("#DependencyInfo div#stateFilterForTT input:checkbox").on('change', function() {
+         $(".releaseFilterTT input:checkbox").on('change', function() {
             $('#search_network_table').val('');
             search_network_table('');
-            filterByClearingState();
+            filterDirectlyLinkedReleases($(this).closest('div').attr('id'));
         });
 
         function search_network_table(value) {
@@ -353,6 +529,7 @@ AUI().use('liferay-portlet-url', function () {
                 	}
                 	return row;
                 }),
+                infoOnTop: true,
                 columns: [
                     {title: "<liferay-ui:message key="name" />", data : "name", "defaultContent": "", render: {display: detailUrl} },
                     {title: "<liferay-ui:message key="type" />", data : "type", "defaultContent": ""},
@@ -390,6 +567,43 @@ AUI().use('liferay-portlet-url', function () {
                     loadingRecords: "<liferay-ui:message key="loading" />"
                 },
                 initComplete: function() {
+                    this.api().columns([1]).every(function() {
+                        var column = this;
+                        var typeFilterForLT = $("#typeFilterTT").clone();
+                        $(typeFilterForLT).attr('id', 'typeFilterLT');
+                        $(typeFilterForLT).find('span svg.lexicon-icon-caret-double-l').remove()
+                        console.log(typeFilterForLT);
+                        var select = $(typeFilterForLT)
+                            .appendTo($(column.header()))
+                            .on('change', function(event) {
+                                console.log("1111111111111");
+                                var values = $('input:checked', this).map(function(index, element) {
+                                    return $.fn.dataTable.util.escapeRegex($(element).data().componenttype);
+                                }).toArray().join('|');
+                                column.search(values.length > 0 ? '^(' + values + ')$' : '', true, false).draw();
+                            });
+                        $("#typeFilterLT #dropdownmenu").on('click', function(e) {
+                            e.stopPropagation();
+                        });
+                    });
+
+                    this.api().columns([4]).every(function() {
+                        var column = this;
+                        var relationFilterForLT = $("#DependencyInfo #relationFilterTT").clone();
+                        $(relationFilterForLT).attr('id', 'relationFilterLT');
+                        $(relationFilterForLT).find('span svg.lexicon-icon-caret-double-l').remove()
+                        var select = $(relationFilterForLT)
+                            .appendTo($(column.header()))
+                            .on('change', function(event) {
+                                var values = $('input:checked', this).map(function(index, element) {
+                                    return $.fn.dataTable.util.escapeRegex($(element).data().releaserelation);
+                                }).toArray().join('|');
+                                column.search(values.length > 0 ? '^(' + values + ')$' : '', true, false).draw();
+                            });
+                        $("#relationFilterLT #dropdownmenu").on('click', function(e) {
+                            e.stopPropagation();
+                        });
+                    });
                     this.api().columns([6]).every(function() {
                         var column = this;
                         var stateFilterForLT = $("#DependencyInfo div#stateFilterForTT").clone();
@@ -694,6 +908,130 @@ AUI().use('liferay-portlet-url', function () {
             $("#DependencyInfo").removeClass("d-none");
             ajaxTreeTable.setup('DependencyInfo', config.loadNodeUrl, dataCallbackNetworkTreeTable, renderCallbackNetworkTreeTable);
           }});
+
+
+       $("button#addLicenseToAllReleases").on("click", function(event) {
+           list = $('<ul id="releaseList" />');
+           let releaseCount = $("#DependencyInfo tbody tr:not([id=noRecordRow],[data-tt-parent-id])").length;
+           addLicenseToReleaseInNetwork(releaseCount);
+       });
+
+       function addLicenseToReleaseInNetwork(releaseCount) {
+           if (!releaseCount) {
+               dialog.warn('<liferay-ui:message key="no.linked.releases.yet" />')
+               return;
+           }
+           function addLicenseToLinkedReleaseInternal(callback) {
+               jQuery.ajax({
+                   type: 'POST',
+                   url: '<%=addLicenseToReleaseInNetworkUrl%>',
+                   cache: false,
+                   success: function (response) {
+                       callback();
+                       $("div.modal button:contains('<liferay-ui:message key="cancel" />')").text('<liferay-ui:message key="close" />');
+                       $("div.modal button:contains('<liferay-ui:message key="add" />')").attr('disabled', true);
+                       $("div.modal .modal-body p#addLicenseToReleaseInfo").remove();
+                       $("div.modal .modal-body ul#releaseList").remove();
+                       if (response && response.status) {
+                           oneList = $('<ul/>');
+                           multipleList = $('<ul/>');
+                           nilList = $('<ul/>');
+                           if (response.one.length) {
+                               response.one.forEach(function(rel, index) {
+                                   let url = makeReleaseViewUrl(rel.id),
+                                       viewUrl = $("<a/>").attr({href: url, target: "_blank"}).css("word-break", "break-word").text(rel.name + rel.version);
+                                   oneList.append('<li>' + viewUrl[0].outerHTML + '</li>');
+                               });
+                           }
+                           if (response.mul.length) {
+                               response.mul.forEach(function(rel, index) {
+                                   let url = makeReleaseViewUrl(rel.id),
+                                       viewUrl = $("<a/>").attr({href: url, target: "_blank"}).css("word-break", "break-word").text(rel.name + rel.version);
+                                   multipleList.append('<li>' + viewUrl[0].outerHTML + '</li>');
+                               });
+                           }
+                           if (response.nil.length) {
+                               response.nil.forEach(function(rel, index) {
+                                   let url = makeReleaseViewUrl(rel.id),
+                                       viewUrl = $("<a/>").attr({href: url, target: "_blank"}).css("word-break", "break-word").text(rel.name + rel.version);
+                                   nilList.append('<li>' + viewUrl[0].outerHTML + '</li>');
+                               });
+                           }
+                           if ($(multipleList).find('li').length) {
+                               $dialog.warning('<liferay-ui:message key="multiple.approved.cli.are.found.in.the.release" />: <b>' + $(multipleList).find('li').length + '</b>' + multipleList[0].outerHTML);
+                           }
+                           if ($(nilList).find('li').length) {
+                               $dialog.warning('<liferay-ui:message key="approved.cli.not.found.in.the.release" />: <b>' + $(nilList).find('li').length + '</b>' + nilList[0].outerHTML);
+                           }
+                           if ($(oneList).find('li').length) {
+                               $dialog.success('<liferay-ui:message key="success.please.reload.page.to.see.the.changes" />: <b>' + $(oneList).find('li').length + '</b>');
+                           }
+                           return;
+                       }
+                       $dialog.success('<liferay-ui:message key="success.please.reload.page.to.see.the.changes" />: <b>' + response.one.length + '</b>');
+                   },
+                   error: function () {
+                       callback();
+                       $dialog.alert('<liferay-ui:message key="failed.to.add.licenses" />!');
+                   }
+               });
+           }
+
+           let bodyText = '<p id="addLicenseToReleaseInfo"><liferay-ui:message key="do.you.really.want.to.add.license.info.to.all.the.directly.linked.releases" />?</p>';
+           $("#addLicenseConfirmDialog .modal-title .title").empty();
+           $("#addLicenseConfirmDialog .modal-title .title").append('<liferay-ui:message key="add.license.info.to.release" />?');
+           $("#addLicenseConfirmDialog .modal-body").empty();
+           $("#addLicenseConfirmDialog .modal-body").append(bodyText);
+           $("#addLicenseConfirmDialog").find('.modal-footer button').last().addClass('btn-info').text('<liferay-ui:message key="add" />');
+
+           $dialog = dialog.open('#addLicenseConfirmDialog', undefined,
+           function(submit, callback) {
+                  addLicenseToLinkedReleaseInternal(callback);
+           });
+
+       }
+
+       $('#btnExportProjectWithNetwork a.dropdown-item').on('click', function(event) {
+           exportNetworkToSpreadsheet($(event.currentTarget).data('type'));
+       });
+
+       $('#downloadLicenseInfoInNetwork a.dropdown-item').on('click', function(event) {
+          var type=$(event.currentTarget).data('type');
+          downloadLicenseInfoInNetwork(type);
+       });
+
+       $('#downloadSourceCodeInNetwork a.dropdown-item').on('click', function(event) {
+           var type=$(event.currentTarget).data('type');
+           downloadSourceCodeBundleInNetworkButton(type);
+       });
+
+       function downloadLicenseInfoInNetwork(type) {
+           var portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>');
+           portletURL.setParameter('<%=PortalConstants.PROJECT_ID%>', '${project.id}');
+           portletURL.setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_LICENSE_INFO_IN_NETWORK%>');
+           portletURL.setParameter('<%=PortalConstants.PROJECT_WITH_SUBPROJECT%>', type === 'projectWithSubProject' ? 'true' : 'false');
+
+           window.location.href = portletURL.toString();
+       }
+
+       function exportNetworkToSpreadsheet(type) {
+           var portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
+                   .setParameter('<%=PortalConstants.ACTION%>', '<%=PortalConstants.EXPORT_PROJECT_WITH_NETWORK_TO_EXCEL%>');
+           portletURL.setParameter('<%=Project._Fields.ID%>','${project.id}');
+           portletURL.setParameter('<%=PortalConstants.EXTENDED_EXCEL_EXPORT%>', type === 'projectWithReleases' ? 'true' : 'false');
+
+           window.location.href = portletURL.toString() + window.location.hash;
+       }
+
+
+       function downloadSourceCodeBundleInNetworkButton(type) {
+           var portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>');
+           portletURL.setParameter('<%=PortalConstants.PROJECT_ID%>', '${project.id}');
+           portletURL.setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_SOURCE_CODE_BUNDLE_IN_NETWORK%>');
+           portletURL.setParameter('<%=PortalConstants.PROJECT_WITH_SUBPROJECT%>', type === 'projectWithSubProject' ? 'true' : 'false');
+
+           window.location.href = portletURL.toString();
+       }
     });
 });
 </script>

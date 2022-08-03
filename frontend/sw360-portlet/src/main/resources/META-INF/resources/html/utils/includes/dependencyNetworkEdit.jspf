@@ -85,7 +85,7 @@
                                 <button type="button" class="btn btn-secondary" id="searchReleaseBtn"><liferay-ui:message key="search" /></button>
 
                                 <core_rt:if test="${enableSearchForReleasesFromLinkedProjects}">
-                                    <button type="button" class="btn btn-secondary" id="linkedReleasesButton"><liferay-ui:message key="releases.of.linked.projects" /></button>
+                                    <button type="button" class="btn btn-secondary" id="getLinkedReleasesButton"><liferay-ui:message key="releases.of.linked.projects" /></button>
                                 </core_rt:if>
                             </div>
                         </div>
@@ -129,7 +129,6 @@
 		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
 		    <div class="modal-content">
 			<div class="modal-body container">
-
                     <form>
                         <div class="row form-group">
                             <div class="col-6">
@@ -139,7 +138,7 @@
                                 <button type="button" class="btn btn-secondary" id="searchReleaseBtn"><liferay-ui:message key="search" /></button>
 
                                 <core_rt:if test="${enableSearchForReleasesFromLinkedProjects}">
-                                    <button type="button" class="btn btn-secondary" id="linkedReleasesButton"><liferay-ui:message key="releases.of.linked.projects" /></button>
+                                    <button type="button" class="btn btn-secondary" id="getLinkedReleasesButton"><liferay-ui:message key="releases.of.linked.projects" /></button>
                                 </core_rt:if>
                             </div>
                         </div>
@@ -552,13 +551,13 @@
 
 
             $('#searchChildReleaseDialog').on('click', '#searchReleaseBtn', function(event) {
-                releaseFromAjax('<%=PortalConstants.RELEASE_SEARCH%>', $('#searchChildReleaseDialog #searchRelease').val(), function(data) {
+                releaseFromAjax('<%=PortalConstants.RELEASE_SEARCH%>', $('#searchChildReleaseDialog #searchRelease').val(), '#searchChildResultsTable', function(data) {
                     if($dataTable) {
                         $dataTable.destroy();
                     }
                     $('#searchChildResultsTable tbody').html(data);
                     addLinkToReleaseNameAndVersion('searchChildResultsTable');
-                    makeSearchChildReleaseDataTable();
+                    makeSearchChildReleaseDataTable('#searchChildResultsTable');
                 });
             });
 
@@ -634,8 +633,8 @@
                     $("#searchChildReleaseDialog #selectReleaseButton").attr("disabled", true);
                     callback(true);
                 }, function() {
-                    //$('#searchChildResultsTable').hide();
-                   // $('#searchRelease').val('');
+                    $('#searchChildResultsTable').hide();
+                    $('#searchChildReleaseDialog #searchRelease').val('');
                     $("#searchChildReleaseDialog #selectReleaseButton").attr("disabled", true);
                 });
             }
@@ -650,25 +649,37 @@
             $('#addReleaseToNetWork').on('click', showSearchReleaseDialog);
 
             $('#searchReleasesDialogOfNetwork').on('click','#searchReleaseBtn', function() {
-                releaseFromAjax('<%=PortalConstants.RELEASE_SEARCH%>', $('#searchReleasesDialogOfNetwork #searchRelease').val(), function(data) {
+                releaseFromAjax('<%=PortalConstants.RELEASE_SEARCH%>', $('#searchReleasesDialogOfNetwork #searchRelease').val(), '#releaseResultsTable', function(data) {
                     if($dataTable) {
                         $dataTable.destroy();
                     }
                     $('#releaseResultsTable tbody').html(data);
                     addLinkToReleaseNameAndVersion('releaseResultsTable');
-                    makeReleaseDataTable();
+                    makeReleaseDataTable('#releaseResultsTable');
                 });
             });
-            $('#searchReleasesDialogOfNetwork').on('click', '#linkedReleasesButton', function() {
-                releaseFromAjax('<%=PortalConstants.RELEASE_LIST_FROM_LINKED_PROJECTS%>', '', function(data) {
+            $('#searchReleasesDialogOfNetwork').on('click', '#getLinkedReleasesButton', function() {
+                releaseFromAjax('<%=PortalConstants.RELEASE_LIST_IN_NETWORK_FROM_LINKED_PROJECTS%>', '', '#releaseResultsTable', function(data) {
                     if($dataTable) {
                         $dataTable.destroy();
                     }
                     $('#releaseResultsTable tbody').html(data);
                     addLinkToReleaseNameAndVersion('releaseResultsTable');
-                    makeReleaseDataTable();
+                    makeReleaseDataTable('#releaseResultsTable');
                 });
             });
+
+            $('#searchChildReleaseDialog').on('click', '#getLinkedReleasesButton', function() {
+                releaseFromAjax('<%=PortalConstants.RELEASE_LIST_IN_NETWORK_FROM_LINKED_PROJECTS%>', '', '#searchChildResultsTable', function(data) {
+                    if($dataTable) {
+                        $dataTable.destroy();
+                    }
+                    $('#searchChildResultsTable tbody').html(data);
+                    addLinkToReleaseNameAndVersion('searchChildResultsTable');
+                    makeReleaseDataTable('#searchChildResultsTable');
+                });
+            });
+
             $('#releaseResultsTable').on('change', 'input', function() {
                 $releaseDialog.enablePrimaryButtons($('#releaseResultsTable input:checked').length > 0);
             });
@@ -716,8 +727,8 @@
                 });
             }
 
-            function makeReleaseDataTable() {
-                $dataTable = datatables.create('#releaseResultsTable', {
+            function makeReleaseDataTable(tableId) {
+                $dataTable = datatables.create(tableId, {
                     destroy: true,
                     paging: false,
                     info: false,
@@ -734,10 +745,10 @@
                 datatables.enableCheckboxForSelection($dataTable, 0);
             }
 
-            function releaseFromAjax(what, where, callback) {
-                $releaseDialog.$.find('#releaseResultsTable').hide();
-                $releaseDialog.$.find('#searchReleaseBtn').prop('disabled', true);
-                $releaseDialog.$.find('#linkedReleasesButton').prop('disabled', true);
+            function releaseFromAjax(what, where, tableId, callback) {
+                $(tableId).hide();
+                $(tableId).closest('.modal-body').find('#searchReleaseBtn').prop('disabled', true);
+                $(tableId).closest('.modal-body').find('#getLinkedReleasesButton').prop('disabled', true);
                 $releaseDialog.enablePrimaryButtons(false);
 
                 jQuery.ajax({
@@ -748,10 +759,11 @@
                         '<portlet:namespace/><%=PortalConstants.WHERE%>': where
                     },
                     success: function (data) {
+                        $(tableId + ' tbody').empty();
                         callback(data);
-                        $releaseDialog.$.find('#releaseResultsTable').show();
-                        $releaseDialog.$.find('#searchReleaseBtn').prop('disabled', false);
-                        $releaseDialog.$.find('#linkedReleasesButton').prop('disabled', false);
+                        $(tableId).show();
+                        $(tableId).closest('.modal-body').find('#searchReleaseBtn').prop('disabled', false);
+                        $(tableId).closest('.modal-body').find('#getLinkedReleasesButton').prop('disabled', false);
                     },
                     error: function() {
                         $releaseDialog.alert('<liferay-ui:message key="cannot.link.to.release" />');

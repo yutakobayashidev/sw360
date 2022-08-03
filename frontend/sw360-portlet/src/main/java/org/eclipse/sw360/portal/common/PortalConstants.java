@@ -700,6 +700,19 @@ public class PortalConstants {
     public static final String PROJECTS_IN_DEPENDENCY_NETWOWK = "projectsInDependencyNetwork";
 
     public static final String COUNT_PROJECT_IN_DEPENDENCY_NETWOWK = "countProjectInDependencyNetwork";
+
+    public static final String ADD_LICENSE_TO_RELEASE_IN_NETWORK = "addLicenseToReleaseInNetwork";
+
+    public static final String EXPORT_PROJECT_WITH_NETWORK_TO_EXCEL = "exportProjectWithNetworkToExcel";
+
+    public static final String PAGENAME_LICENSE_INFO_IN_NETWORK = "pageNameLicenseInfoInNetwork";
+
+    public static final String PAGENAME_SOURCE_CODE_BUNDLE_IN_NETWORK = "generateSourceCodeBundleInNetwork";
+
+    public static final String NUMBER_LINKED_RELEASE = "numberLinkedRelease";
+
+    public static final String RELEASE_LIST_IN_NETWORK_FROM_LINKED_PROJECTS = "releaseListInNetworkFromLinkedProjects";
+
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 
