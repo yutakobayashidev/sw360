@@ -91,7 +91,7 @@ public class ProjectExporter extends ExcelExporter<Project, ProjectHelper> {
     }
 
     public ProjectExporter(ComponentService.Iface componentClient, ProjectService.Iface projectClient, User user,
-            boolean extendedByReleases) throws SW360Exception {
+                                  boolean extendedByReleases) throws SW360Exception {
         super(new ProjectHelper(projectClient, user, extendedByReleases, new ReleaseHelper(componentClient, user)));
     }
 
@@ -107,8 +107,11 @@ public class ProjectExporter extends ExcelExporter<Project, ProjectHelper> {
         Set<String> linkedProjectIds = extractIds.apply(Project::getLinkedProjects);
         Map<String, Project> projectsById = ThriftUtils.getIdMap(helper.getProjects(linkedProjectIds, user));
         helper.setPreloadedLinkedProjects(projectsById);
+        Set<String> linkedReleaseIds = new HashSet<>();
+        projects.stream().forEach(p -> {
+            linkedReleaseIds.addAll(SW360Utils.getReleaseIdsInNetworkOfProject(p));
+        });
 
-        Set<String> linkedReleaseIds = extractIds.apply(Project::getReleaseIdToUsage);
         preloadLinkedReleases(linkedReleaseIds, withLinkedOfLinked);
     }
 

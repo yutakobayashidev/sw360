@@ -181,6 +181,14 @@
             viewClearingRequest($(this));
         });
 
+        $('#createClearingRequestProjectWithNetworkBtn').on('click', function(event) {
+            createClearingRequest($(this));
+        });
+
+        $('#viewClearingRequestProjectWithNetworkBtn').on('click', function(event) {
+            viewClearingRequest($(this));
+        });
+
         validation.enableForm('#createClearingRequestForm');
         let pcdLimit = ${PreferredClearingDateLimit};
 

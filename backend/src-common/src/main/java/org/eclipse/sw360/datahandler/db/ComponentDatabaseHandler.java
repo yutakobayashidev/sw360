@@ -2502,4 +2502,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     });
         }
     }
+
+
+    public List<Release> getReleaseByIds(List<String> ids) {
+        return releaseRepository.getFullDocsByListIds(SummaryType.SHORT, ids);
+    }
 }
