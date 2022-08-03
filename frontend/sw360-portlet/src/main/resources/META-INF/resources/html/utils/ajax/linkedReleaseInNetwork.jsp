@@ -30,23 +30,23 @@
 
             <core_rt:set var="uuid" value="${releaseLink.id}"/>
             <tr id="releaseLinkRow${uuid}" parent-node="${releaseLink.parentNodeId}" data-layer="${releaseLink.layer}" data-index="${releaseLink.index}">
-                <td style="vertical-align:middle;font-size:1rem" style="display:flex">
-                    <div style="width:77%; display:inline-block">
+                <td style="vertical-align:middle;font-size:1rem; width: 38%" style="display:flex">
+                    <div style="width:85%; display:inline-block">
                         <core_rt:forEach begin="0" end="${releaseLink.layer}" var="val">
                               &nbsp;&nbsp;&nbsp;&nbsp;
                         </core_rt:forEach>
                         <sw360:out value="${releaseLink.name}"/>
                     </div>
-                    <div style="width:19%; display:inline-block">
-                        <button type="button" class="btn btn-secondary add-child" style="width:100%">
+                    <div style="width:13%; display:inline-block">
+                        <button type="button" class="btn btn-secondary add-child" style="width:64%">
                             <svg class="action lexicon-icon" style="width:15px">
-                                <title><liferay-ui:message key="plus" /></title>
+                                <title><liferay-ui:message key="add.child.release" /></title>
                                 <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#plus"/>
                             </svg>
                         </button>
                     </div>
                 </td>
-                <td>
+                <td style="width: 15%">
                     <div class="form-group">
                         <select id="projectReleaseVersion" class="form-control releaseVersion" style="width:80%;display:inline-block"
                              data-old="<sw360:out value="${releaseLink.id}"/>">
@@ -64,19 +64,19 @@
                             </core_rt:forEach>
                         </select>
                         <svg class="action lexicon-icon load-release" style="width:10%; height:10%">
-                            <title><liferay-ui:message key="load" /></title>
+                            <title><liferay-ui:message key="load.default.children.releases" /></title>
                             <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#check-circle-full"/>
                         </svg>
                     </div>
                 </td>
-                <td>
+                <td style="width: 15%">
                     <div class="form-group">
                         <select id="projectReleaseRelation" class="form-control projectReleaseRelation">
                             <sw360:DisplayEnumOptions type="<%=ReleaseRelationship.class%>" useStringValues="true" selected="${releaseLink.releaseRelationship}"/>
                         </select>
                     </div>
                 </td>
-                <td>
+                <td style="width: 15%">
                     <div class="form-group">
                         <select class="form-control mainlineState" id="mainlineState"
                                 <core_rt:if test="${not isUserAtLeastClearingAdmin and not mainlineStateEnabledForUserRole}" >
@@ -87,14 +87,14 @@
                         </select>
                     </div>
                 </td>
-                <td>
+                <td style="width: 15%">
                     <div class="form-group">
                         <input id="releaseComment"
                         type="text" placeholder="<liferay-ui:message key="enter.comment" />" class="form-control releaseComment"
                             value="<sw360:out value="${releaseLink.comment}"/>"/>
                     </div>
                 </td>
-                <td class="content-middle">
+                <td class="content-middle" style="width: 2%">
                     <svg class="action lexicon-icon" data-row-id="releaseLinkRow${uuid}" data-release-name="<sw360:out value='${releaseLink.longName}' jsQuoting="true"/>">
                         <title><liferay-ui:message key="delete" /></title>
                         <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>

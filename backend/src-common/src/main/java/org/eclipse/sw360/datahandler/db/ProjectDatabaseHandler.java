@@ -525,8 +525,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void addCommentToClearingRequest(Project updated, Project current, User user) {
-        Set<String> currentReleaseIds = CommonUtils.getNullToEmptyKeyset(current.getReleaseIdToUsage());
-        Set<String> updatedReleaseIds = CommonUtils.getNullToEmptyKeyset(updated.getReleaseIdToUsage());
+        Set<String> currentReleaseIds = SW360Utils.getReleaseIdsInNetworkOfProject(current);
+        Set<String> updatedReleaseIds = SW360Utils.getReleaseIdsInNetworkOfProject(updated);
         Set<String> allReleaseIds = Sets.newHashSet(currentReleaseIds);
         allReleaseIds.addAll(updatedReleaseIds);
         Set<String> added = Sets.difference(updatedReleaseIds, currentReleaseIds);
@@ -596,8 +596,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private boolean isLinkedReleaseUpdated(Project updated, Project current) {
-        Set<String> updatedReleaseIds = CommonUtils.getNullToEmptyKeyset(updated.getReleaseIdToUsage());
-        Set<String> currentReleaseIds = CommonUtils.getNullToEmptyKeyset(current.getReleaseIdToUsage());
+        Set<String> updatedReleaseIds = SW360Utils.getReleaseIdsInNetworkOfProject(updated);
+        Set<String> currentReleaseIds = SW360Utils.getReleaseIdsInNetworkOfProject(current);
         if (updatedReleaseIds.equals(currentReleaseIds)) {
             return false;
         }
@@ -1250,7 +1250,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private void sendMailForNewClearing(Project project, String projectUrl, ClearingRequest clearingRequest, User user) {
         project = fillClearingStateSummary(Arrays.asList(project), user).get(0);
-        Set<String> releaseIds = CommonUtils.nullToEmptyMap(project.getReleaseIdToUsage()).keySet();
+        Set<String> releaseIds = SW360Utils.getReleaseIdsInNetworkOfProject(project);
         Collection<Release> releases = componentDatabaseHandler.getReleasesForClearingStateSummary(releaseIds);
 
         Set<String> cotsCompIds = getCotsComponentIdsFromRelease(releases);
@@ -1271,7 +1271,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         StringBuilder commentText = new StringBuilder(extractReleaseNameForClearingEmail(releases));
         mailUtil.sendClearingMail(ClearingRequestEmailTemplate.NEW, MailConstants.SUBJECT_FOR_NEW_CLEARING_REQUEST, getRecipients(clearingRequest),
                 userDetails, CommonUtils.nullToEmptyString(clearingRequest.getId()), CommonUtils.nullToEmptyString(projectUrl), SW360Utils.printName(project),
-                String.valueOf(project.getLinkedProjectsSize()), String.valueOf(project.getReleaseIdToUsageSize()), String.valueOf(totalCount),
+                String.valueOf(project.getLinkedProjectsSize()), String.valueOf(SW360Utils.getReleaseIdsInNetworkOfProject(project).size()), String.valueOf(totalCount),
                 String.valueOf(approvedCount), clearingRequest.getRequestedClearingDate(), cotsCompCount, commentText.toString());
         if (releases.size() > 0) {
             commentText = new StringBuilder("Linked release(s) with clearing state new:").append(System.lineSeparator()).append(commentText);
@@ -1304,7 +1304,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         releases = getDirectlyLinkedReleasesInNewState(releases);
         mailUtil.sendClearingMail(ClearingRequestEmailTemplate.PROJECT_UPDATED, MailConstants.SUBJECT_FOR_UPDATED_PROJECT_WITH_CLEARING_REQUEST,
                 getRecipients(clearingRequest), userDetails, SW360Utils.printName(updated), updated.getClearingRequestId(),
-                String.valueOf(updated.getLinkedProjectsSize()), String.valueOf(updated.getReleaseIdToUsageSize()), String.valueOf(totalCount),
+                String.valueOf(updated.getLinkedProjectsSize()), String.valueOf(SW360Utils.getReleaseIdsInNetworkOfProject(updated).size()), String.valueOf(totalCount),
                 String.valueOf(approvedCount), CommonUtils.getEnumStringOrNull(clearingRequest.getClearingState()),
                 clearingRequest.getRequestedClearingDate(), CommonUtils.nullToEmptyString(clearingRequest.getAgreedClearingDate()),
                 cotsCompCount, extractReleaseNameForClearingEmail(releases));
@@ -1812,13 +1812,13 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
             if (project != null) {
                 projectLink = new ProjectLink(id, project.name);
-                if (project.getReleaseRelationNetwork() != null && project.getReleaseRelationNetwork().length() > 0){
+                if (project.getReleaseRelationNetwork() != null && project.getReleaseRelationNetwork().length() > 0 && (maxDepth < 0 || visitedIds.size() < maxDepth)){
                     String releaseNetwork = project.getReleaseRelationNetwork();
                     ObjectMapper mapper = new ObjectMapper();
                     List<ReleaseLinkJSON> listReleaseLinkJson;
                     List<ReleaseLink> linkedReleases = new ArrayList<>();
                     try {
-                        listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
+                        listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<>() {
                         });
                         linkedReleases = convertFromReleaseLinkJSONToReleaseLink(listReleaseLinkJson, id, user, "", 0);
                     } catch (JsonProcessingException e) {
@@ -1828,7 +1828,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     }
                     projectLink.setLinkedReleases(nullToEmptyList(linkedReleases));
                 }
-
                 projectLink
                         .setNodeId(generateNodeId(id))
                         .setParentNodeId(parentNodeId)
@@ -1840,7 +1839,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                         .setClearingState(project.getClearingState())
                         .setTreeLevel(visitedIds.size() - 1);
                 if (project.isSetLinkedProjects()) {
-                    List<ProjectLink> subprojectLinks = iterateProjectRelationShips(project.getLinkedProjects(),
+                    List<ProjectLink> subprojectLinks = iterateProjectRelationShipsInNetwork(project.getLinkedProjects(),
                             projectLink.getNodeId(), visitedIds, maxDepth, user);
                     projectLink.setSubprojects(subprojectLinks);
                 }
@@ -1912,7 +1911,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
             if (project != null) {
                 projectLink = new ProjectLink(id, project.name);
-                if (project.getReleaseRelationNetwork() != null && project.getReleaseRelationNetwork().length() > 0){
+                if (project.getReleaseRelationNetwork() != null && project.getReleaseRelationNetwork().length() > 0 && (maxDepth < 0 || visitedIds.size() < maxDepth)){
                     String releaseNetwork = project.getReleaseRelationNetwork();
                     ObjectMapper mapper = new ObjectMapper();
                     List<ReleaseLinkJSON> listReleaseLinkJson;
@@ -1944,7 +1943,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                         .setClearingState(project.getClearingState())
                         .setTreeLevel(visitedIds.size() - 1);
                 if (project.isSetLinkedProjects()) {
-                    List<ProjectLink> subprojectLinks = iterateProjectRelationShips(project.getLinkedProjects(),
+                    List<ProjectLink> subprojectLinks = iterateProjectRelationShipsInNetworkForDownloadLicense(project.getLinkedProjects(),
                             projectLink.getNodeId(), visitedIds, maxDepth, user);
                     projectLink.setSubprojects(subprojectLinks);
                 }
@@ -1970,6 +1969,23 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
         }
         return flatList;
+    }
+
+    public List<Project> fillClearingStateSummaryForNetwork(List<Project> projects, User user) {
+        Function<Project, Set<String>> extractReleaseIds = project -> CommonUtils.nullToEmptySet(SW360Utils.getReleaseIdsInNetworkOfProject(project));
+
+        Set<String> allReleaseIds = projects.stream().map(extractReleaseIds).reduce(Sets.newHashSet(), Sets::union);
+        if (!allReleaseIds.isEmpty()) {
+            Map<String, Release> releasesById = ThriftUtils.getIdMap(componentDatabaseHandler.getReleasesForClearingStateSummary(allReleaseIds));
+            for (Project project : projects) {
+                final Set<String> releaseIds = extractReleaseIds.apply(project);
+                List<Release> releases = releaseIds.stream().map(releasesById::get).collect(Collectors.toList());
+                final ReleaseClearingStateSummary releaseClearingStateSummary = ReleaseClearingStateSummaryComputer.computeReleaseClearingStateSummary(releases, project
+                        .getClearingTeam());
+                project.setReleaseClearingStateSummary(releaseClearingStateSummary);
+            }
+        }
+        return projects;
     }
 
 }

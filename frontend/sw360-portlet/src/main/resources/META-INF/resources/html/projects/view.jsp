@@ -40,7 +40,7 @@
 <core_rt:set var="pageName"  value="<%= request.getParameter("pagename") %>" />
 
 <portlet:resourceURL var="exportProjectsURL">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.EXPORT_TO_EXCEL%>"/>
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.EXPORT_PROJECT_WITH_NETWORK_TO_EXCEL%>"/>
 </portlet:resourceURL>
 
 <portlet:resourceURL var="deleteAjaxURL">
@@ -74,6 +74,10 @@
 <portlet:resourceURL var="generateExcelReport">
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.EMAIL_EXPORTED_EXCEL%>"/>
     <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${docid}"/>
+</portlet:resourceURL>
+
+<portlet:resourceURL var="exportProjectsNetworkURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.EXPORT_PROJECT_WITH_NETWORK_TO_EXCEL%>"/>
 </portlet:resourceURL>
 
 <div class="container" style="display: none;">
@@ -548,7 +552,7 @@
                     });
                 } else {
                     var portletURL = PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
-                    .setParameter('<%=PortalConstants.ACTION%>', '<%=PortalConstants.EXPORT_TO_EXCEL%>');
+                    .setParameter('<%=PortalConstants.ACTION%>', '<%=PortalConstants.EXPORT_PROJECT_WITH_NETWORK_TO_EXCEL%>');
                     portletURL.setParameter('<%=Project._Fields.NAME%>', $('#project_name').val());
                     portletURL.setParameter('<%=Project._Fields.TYPE%>', $('#project_type').val());
                     portletURL.setParameter('<%=Project._Fields.PROJECT_RESPONSIBLE%>', $('#project_responsible').val());

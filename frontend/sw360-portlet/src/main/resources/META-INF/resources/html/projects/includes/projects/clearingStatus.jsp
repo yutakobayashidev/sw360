@@ -51,10 +51,6 @@
 
 <c:set var="pageName" value="<%= request.getParameter("pagename") %>" />
 
-<core_rt:if test='${not isCrDisabledForProjectBU}'>
-    <%@include file="/html/projects/includes/projects/clearingRequest.jspf" %>
-</core_rt:if>
-
 <jsp:useBean id="projectList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.projects.ProjectLink>"
              scope="request"/>
 
@@ -493,7 +489,7 @@ AUI().use('liferay-portlet-url', function () {
                 initComplete: function() {
                     this.api().columns([1]).every(function() {
                         var column = this;
-                        var typeFilterForLT = $("div#typeFilterForTT").clone();
+                        var typeFilterForLT = $("#LinkedProjectsInfo div#typeFilterForTT").clone();
                         $(typeFilterForLT).attr('id', 'typeFilterForLT');
                         $(typeFilterForLT).find('span svg.lexicon-icon-caret-double-l').remove()
                         var select = $(typeFilterForLT)
@@ -504,13 +500,13 @@ AUI().use('liferay-portlet-url', function () {
                                 }).toArray().join('|');
                                 column.search(values.length > 0 ? '^(' + values + ')$' : '', true, false).draw();
                             });
-                        $("div#typeFilterForLT #dropdownmenu").on('click', function(e) {
+                        $("#LinkedProjectsInfo div#typeFilterForLT #dropdownmenu").on('click', function(e) {
                             e.stopPropagation();
                         });
                     });
                     this.api().columns([4]).every(function() {
                         var column = this;
-                        var relationFilterForLT = $("div#relationFilterForTT").clone();
+                        var relationFilterForLT = $("#LinkedProjectsInfo div#relationFilterForTT").clone();
                         $(relationFilterForLT).attr('id', 'relationFilterForLT');
                         $(relationFilterForLT).find('span svg.lexicon-icon-caret-double-l').remove()
                         var select = $(relationFilterForLT)
@@ -521,7 +517,7 @@ AUI().use('liferay-portlet-url', function () {
                                 }).toArray().join('|');
                                 column.search(values.length > 0 ? '^(' + values + ')$' : '', true, false).draw();
                             });
-                        $("div#relationFilterForLT #dropdownmenu").on('click', function(e) {
+                        $("#LinkedProjectsInfo div#relationFilterForLT #dropdownmenu").on('click', function(e) {
                             e.stopPropagation();
                         });
                     });

@@ -310,10 +310,7 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
         for (Release release : releases) {
             ReleaseLinkJSON r = new ReleaseLinkJSON(release.getId());
-            releaseLinkJSONS.add(r);
-        }
-        for (int i = 0; i < releaseLinkJSONS.size(); i++) {
-            releaseLinkJSONS.set(i, getReleaseLinkJSONS(releaseLinkJSONS.get(i), user));
+            releaseLinkJSONS.add(getReleaseLinkJSONS(r, user));
         }
         return releaseLinkJSONS;
     }
@@ -416,6 +413,12 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
     protected List<ProjectLink> createLinkedProjectsNetwork(Project project, Function<ProjectLink, ProjectLink> projectLinkMapper, boolean deep,
                                                      User user) {
         final Collection<ProjectLink> linkedProjects = SW360Utils.getLinkedProjectsNetworkAsFlatList(project, deep, thriftClients, log, user);
+        return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
+    }
+    protected List<ProjectLink> createLinkedProjectsForNetwork(Project project,
+                                                               Function<ProjectLink, ProjectLink> projectLinkMapper, boolean deep, User user) {
+        final Collection<ProjectLink> linkedProjects = SW360Utils
+                .flattenProjectLinkNetwork(SW360Utils.getLinkedProjectsInNetworkForDownloadLicense(project, deep, new ThriftClients(), log, user));
         return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
     }
 }

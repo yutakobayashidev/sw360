@@ -46,6 +46,7 @@
 <core_rt:set var="isEditableForRequestingUser" value="${isRequestingUser and isEditable}"/>
 <core_rt:set var="isEditableForClearingTeam" value="${isClearingTeam and isEditable}"/>
 <core_rt:set var="isProgressBarVisible" value="${not isClosedOrRejected and clearingRequest.clearingState ne 'NEW' and project.releaseIdToUsageSize gt 0}"/>
+<core_rt:set var="progressBarOfDependencyVisible" value="${not isClosedOrRejected and clearingRequest.clearingState ne 'NEW' and numberReleasesInNetwork gt 0}"/>
 <core_rt:set var="isCRreOpened" value="${not empty clearingRequest.reOpenOn and clearingRequest.reOpenOn.size() gt 0}"/>
 <core_rt:set var="isReOpenButtonVisible" value="${isProjectPresent and isClosedOrRejected and (isClearingTeam or isRequestingUser)}" />
 <core_rt:set var="criticalCount" value="3"/>
@@ -284,7 +285,7 @@
                                                     </td>
                                                 </tr>
                                             </core_rt:if>
-                                            <core_rt:if test="${isProgressBarVisible}">
+                                            <core_rt:if test="${isProgressBarVisible or progressBarOfDependencyVisible}">
                                                 <tr>
                                                     <td><label class="form-group"> <liferay-ui:message key="clearing.progress" />:</label></td>
                                                     <td>
@@ -494,6 +495,31 @@ require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'br
                 $progressBar.attr("aria-valuenow", progressPercentage).css("width", progressPercentage + "%").addClass("progress-bar-animated inProgress");
                 $td.attr("title", progressText);
             }
+        }
+
+        if ("${progressBarOfDependencyVisible}" === "true") {
+           let totalRelease = "${numberReleasesInNetwork}",
+           approvedReleaseCount = "${aprrovedReleaseInNetwork}",
+           $progressBar = $("#crProgress"),
+           $td = $("#crProgress").closest("tr").find("td:eq(1)");
+
+           if(approvedReleaseCount === "0") {
+               let progressText = "(0/"+totalRelease+") "+"<liferay-ui:message key="none.of.the.directly.linked.releases.are.cleared" />";
+               $progressBar.find('span').text("0%").removeClass('text-dark').addClass('text-danger');
+               $progressBar.attr("aria-valuenow", "0").css({"width": "0%", "overflow": "visible"}).removeClass('text-dark').addClass('text-danger');
+                $td.attr("title", progressText);
+           } else if (approvedReleaseCount === totalRelease) {
+               let progressText = "("+totalRelease+"/"+totalRelease+") "+"<liferay-ui:message key="all.of.the.directly.linked.releases.are.cleared" />";
+                $progressBar.find('span').text("100%");
+                $progressBar.attr("aria-valuenow", "100").css("width", "100%").addClass("closed");
+                $td.attr("title", progressText);
+           } else {
+                let progressPercentage = ((approvedReleaseCount / totalRelease) * 100).toFixed(0),
+                   progressText = "("+ approvedReleaseCount +"/"+totalRelease+") "+"<liferay-ui:message key="directly.linked.releases.are.cleared" />";
+               $progressBar.find("span").text(progressPercentage + "%");
+                $progressBar.attr("aria-valuenow", progressPercentage).css("width", progressPercentage + "%").addClass("progress-bar-animated inProgress");
+                $td.attr("title", progressText);
+           }
         }
 
         $('.datepicker').datepicker({

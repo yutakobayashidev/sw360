@@ -125,21 +125,6 @@
 										</div>
 									</div>
 								</div>
-								<core_rt:if test='${not isCrDisabledForProjectBU}'>
-								<div class="btn-group" role="group" id="clearingRequest">
-									<button id="createClearingRequestBtn" type="button" class="btn btn-secondary <core_rt:if test="${not empty project.clearingRequestId}">d-none</core_rt:if>"
-									    <core_rt:if test = "${(project.clearingState eq 'CLOSED') || !writeAccessUser}">
-											disabled="disabled"
-										</core_rt:if>
-										>
-										<liferay-ui:message key="create.clearing.request" />
-									</button>
-									<button id="viewClearingRequestBtn" type="button" class="btn btn-secondary <core_rt:if test="${empty project.clearingRequestId}">d-none</core_rt:if>"
-										data-clearing-request-id="${project.clearingRequestId}">
-										<liferay-ui:message key="view.clearing.request" />
-									</button>
-								</div>
-								</core_rt:if>
 							</div>
 							<div class="list-group-companion" data-belong-to="tab-attachmentUsages">
 								<core_rt:if test="${writeAccessUser}">
@@ -210,6 +195,53 @@
                                     <a class="nav-item nav-link" id="pills-network-list-tab" data-toggle="pill" href="#pills-network-listView" role="tab" aria-controls="pills-listView" aria-selected="false">
                                     <liferay-ui:message key="list.view" /></a>
                                 </div>
+                                <div id="btnExportProjectWithNetwork" class="btn-group" role="group">
+                                    <button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <liferay-ui:message key="export.spreadsheet" />
+                                        <clay:icon symbol="caret-bottom" />
+                                    </button>
+                                    <div class="dropdown-menu" aria-labelledby="btnExport">
+                                        <a class="dropdown-item" data-type="projectOnly"><liferay-ui:message key="projects.only" /></a>
+                                        <a class="dropdown-item" data-type="projectWithReleases"><liferay-ui:message key="projects.with.linked.releases" /></a>
+                                    </div>
+                                </div>
+                                <div class="btn-group" role="group">
+                                    <div class="btn-group" id="downloadLicenseInfoInNetwork" style="margin-right: auto;">
+                                        <button id="downloadLicenseInfoInNetworkBtn" type="button" data-toggle="dropdown" class="btn btn-secondary dropdown-toggle">
+                                            <liferay-ui:message key="generate.license.info" />
+                                            <clay:icon symbol="caret-bottom" />
+                                        </button>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item" data-type="projectOnly"><liferay-ui:message key="project.only" /></a>
+                                            <a class="dropdown-item" data-type="projectWithSubProject"><liferay-ui:message key="project.with.sub.project" /></a>
+                                        </div>
+                                    </div>
+                                    <div class="btn-group" id="downloadSourceCodeInNetwork">
+                                        <button id="downloadSourceCodeBundleButton" type="button" data-toggle="dropdown" class="btn btn-secondary dropdown-toggle">
+                                            <liferay-ui:message key="generate.source.code.bundle" />
+                                            <clay:icon symbol="caret-bottom" />
+                                        </button>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item" data-type="projectOnly"><liferay-ui:message key="project.only" /></a>
+                                            <a class="dropdown-item" data-type="projectWithSubProject"><liferay-ui:message key="project.with.sub.project" /></a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <core_rt:if test='${not isCrDisabledForProjectBU}'>
+                                <div class="btn-group" role="group" id="clearingRequest">
+                                    <button id="createClearingRequestProjectWithNetworkBtn" type="button" class="btn btn-secondary <core_rt:if test="${not empty project.clearingRequestId}">d-none</core_rt:if>"
+                                        <core_rt:if test = "${(project.clearingState eq 'CLOSED') || !writeAccessUser}">
+                                            disabled="disabled"
+                                        </core_rt:if>
+                                        >
+                                        <liferay-ui:message key="create.clearing.request" />
+                                    </button>
+                                    <button id="viewClearingRequestProjectWithNetworkBtn" type="button" class="btn btn-secondary <core_rt:if test="${empty project.clearingRequestId}">d-none</core_rt:if>"
+                                        data-clearing-request-id="${project.clearingRequestId}">
+                                        <liferay-ui:message key="view.clearing.request" />
+                                    </button>
+                                </div>
+                                </core_rt:if>
                             </div>
 						</div>
 					</div>

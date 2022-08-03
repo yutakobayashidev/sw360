@@ -465,4 +465,11 @@ public class ProjectHandler implements ProjectService.Iface {
         assertNotNull(project);
         return handler.getLinkedProjectsInNetworkForDownloadLicense(project, deep, user);
     }
+
+    @Override
+    public List<Project> fillClearingStateSummaryForNetwork(List<Project> projects, User user) throws TException {
+        assertUser(user);
+        return handler.fillClearingStateSummaryForNetwork(projects, user);
+    }
+
 }
