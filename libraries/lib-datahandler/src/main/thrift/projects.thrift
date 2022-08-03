@@ -625,4 +625,11 @@ service ProjectService {
      * use for download license info
      */
     list<ProjectLink> getLinkedProjectForDownloadLicenseInfo(1: Project project, 2: bool deep, 3: User user);
+
+    /**
+    * get the same list of projects back, but with filled release clearing state summaries
+    * for dependency network
+    */
+    list<Project> fillClearingStateSummaryForNetwork(1: list<Project> projects, 2: User user);
+
 }

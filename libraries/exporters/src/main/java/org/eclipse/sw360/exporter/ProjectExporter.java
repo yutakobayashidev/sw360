@@ -91,7 +91,7 @@ public class ProjectExporter extends ExcelExporter<Project, ProjectHelper> {
     }
 
     public ProjectExporter(ComponentService.Iface componentClient, ProjectService.Iface projectClient, User user,
-            boolean extendedByReleases) throws SW360Exception {
+                                  boolean extendedByReleases) throws SW360Exception {
         super(new ProjectHelper(projectClient, user, extendedByReleases, new ReleaseHelper(componentClient, user)));
     }
 
@@ -107,29 +107,14 @@ public class ProjectExporter extends ExcelExporter<Project, ProjectHelper> {
         Set<String> linkedProjectIds = extractIds.apply(Project::getLinkedProjects);
         Map<String, Project> projectsById = ThriftUtils.getIdMap(helper.getProjects(linkedProjectIds, user));
         helper.setPreloadedLinkedProjects(projectsById);
+        Set<String> linkedReleaseIds = new HashSet<>();
+        projects.stream().forEach(p -> linkedReleaseIds.addAll(SW360Utils.getReleaseIdsInNetworkOfProject(p)));
 
-        Set<String> linkedReleaseIds = extractIds.apply(Project::getReleaseIdToUsage);
         preloadLinkedReleases(linkedReleaseIds, withLinkedOfLinked);
     }
 
     private void preloadLinkedReleases(Set<String> linkedReleaseIds, boolean withLinkedOfLinked) throws SW360Exception {
         Map<String, Release> releasesById = ThriftUtils.getIdMap(helper.getReleases(linkedReleaseIds));
-        if (withLinkedOfLinked) {
-            Set<String> linkedOfLinkedReleaseIds = releasesById
-                    .values()
-                    .stream()
-                    .map(Release::getReleaseIdToRelationship)
-                    .filter(Objects::nonNull)
-                    .map(Map::keySet)
-                    .flatMap(Set::stream)
-                    .collect(Collectors.toSet());
-
-            Map<String, Release> joinedMap = new HashMap<>();
-            Map<String, Release> linkedOfLinkedReleasesById = ThriftUtils.getIdMap(helper.getReleases(linkedOfLinkedReleaseIds));
-            joinedMap.putAll(releasesById);
-            joinedMap.putAll(linkedOfLinkedReleasesById);
-            releasesById = joinedMap;
-        }
         helper.setPreloadedLinkedReleases(releasesById, withLinkedOfLinked);
     }
 
