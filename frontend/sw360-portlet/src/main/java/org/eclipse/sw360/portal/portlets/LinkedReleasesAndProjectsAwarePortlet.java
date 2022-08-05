@@ -231,15 +231,10 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         } else {
             project = new Project();
         }
-        ComponentService.Iface compClient = thriftClients.makeComponentClient();
-        List<ProjectLink> mappedProjectLinks = createLinkedProjects(project, user);
-        Set<String> releaseIds = mappedProjectLinks.stream().map(ProjectLink::getLinkedReleases)
-                .filter(CommonUtils::isNotEmpty).flatMap(rList -> rList.stream()).filter(Objects::nonNull)
-                .map(ReleaseLink::getId).collect(Collectors.toSet());
+        List<ProjectLink> mappedProjectLinks = createLinkedProjectsForAttachmentUsage(project, user);
+        log.info(mappedProjectLinks);
         mappedProjectLinks = sortProjectLink(mappedProjectLinks);
         request.setAttribute(PROJECT_LIST, mappedProjectLinks);
-        request.setAttribute("projectReleaseRelation", project.getReleaseIdToUsage());
-        request.setAttribute("relMainLineState", fillMainLineState(releaseIds, compClient, user));
         request.setAttribute(PortalConstants.PARENT_SCOPE_GROUP_ID, request.getParameter(PortalConstants.PARENT_SCOPE_GROUP_ID));
     }
 
@@ -395,7 +390,6 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         } else {
             project = new Project();
         }
-        ComponentService.Iface compClient = thriftClients.makeComponentClient();
         List<ProjectLink> mappedProjectLinks = createLinkedProjectsNetwork(project, user);
 
         mappedProjectLinks = sortProjectLink(mappedProjectLinks);
@@ -421,4 +415,13 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
                 .flattenProjectLinkNetwork(SW360Utils.getLinkedProjectsInNetworkForDownloadLicense(project, deep, new ThriftClients(), log, user));
         return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
     }
+
+    protected List<ProjectLink> createLinkedProjectsForAttachmentUsage(Project project, User user) {
+        return createLinkedProjectsForAttachmentUsage(project, Function.identity(), user);
+    }
+
+    protected List<ProjectLink> createLinkedProjectsForAttachmentUsage(Project project, Function<ProjectLink, ProjectLink> projectLinkMapper, User user) {
+        return createLinkedProjectsForNetwork(project, projectLinkMapper, false, user);
+    }
+
 }

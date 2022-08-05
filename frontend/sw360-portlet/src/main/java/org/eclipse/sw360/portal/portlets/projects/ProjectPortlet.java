@@ -1653,9 +1653,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 request.setAttribute(PROJECT, project);
                 request.setAttribute(PARENT_PROJECT_PATH, project.getId());
                 setAttachmentsInRequest(request, project);
-                List<ProjectLink> mappedProjectLinks = createLinkedProjects(project, user);
+                List<ProjectLink> mappedProjectLinks = createLinkedProjectsForAttachmentUsage(project, user);
                 request.setAttribute(PROJECT_LIST, mappedProjectLinks);
-                List<ProjectLink> allSubProjectLinks = createLinkedProjects(project, Function.identity(), true, user);
+                List<ProjectLink> allSubProjectLinks = createLinkedProjectsForNetwork(project, Function.identity(), true, user);
                 request.setAttribute(ALL_SUB_PROJECT_LINK, allSubProjectLinks);
                 putDirectlyLinkedReleasesInRequest(request, project);
                 Set<Project> usingProjects = client.searchLinkingProjects(id, user);
