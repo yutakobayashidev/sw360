@@ -74,7 +74,7 @@
 
 <core_rt:if test="${empty attributeNotFoundException}">
 
-<core_rt:set var="isObligationPresent" value="${not empty project.releaseIdToUsage}" />
+<core_rt:set var="isObligationPresent" value="${isObligationPresent}" />
 <core_rt:set var="isProjectObligationsEnabled"  value="${isProjectObligationsEnabled and hasWritePermissions}" />
 <core_rt:set var="enableSearchForReleasesFromLinkedProjects" value="${true}" scope="request"/>
 

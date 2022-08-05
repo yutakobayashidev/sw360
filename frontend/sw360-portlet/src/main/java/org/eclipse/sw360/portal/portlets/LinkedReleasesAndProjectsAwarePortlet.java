@@ -207,15 +207,9 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         } else {
             project = new Project();
         }
-        ComponentService.Iface compClient = thriftClients.makeComponentClient();
-        List<ProjectLink> mappedProjectLinks = createLinkedProjects(project, user);
-        Set<String> releaseIds = mappedProjectLinks.stream().map(ProjectLink::getLinkedReleases)
-                .filter(CommonUtils::isNotEmpty).flatMap(rList -> rList.stream()).filter(Objects::nonNull)
-                .map(ReleaseLink::getId).collect(Collectors.toSet());
+        List<ProjectLink> mappedProjectLinks = createLinkedProjectsForAttachmentUsage(project, user);
         mappedProjectLinks = sortProjectLink(mappedProjectLinks);
         request.setAttribute(PROJECT_LIST, mappedProjectLinks);
-        request.setAttribute("projectReleaseRelation", project.getReleaseIdToUsage());
-        request.setAttribute("relMainLineState", fillMainLineState(releaseIds, compClient, user));
         request.setAttribute(PortalConstants.PARENT_SCOPE_GROUP_ID, request.getParameter(PortalConstants.PARENT_SCOPE_GROUP_ID));
     }
 
@@ -322,7 +316,6 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         String[] trace = request.getParameterValues("trace[]");
         String branchId = request.getParameter(PortalConstants.NETWORK_PARENT_BRANCH_ID);
         final User user = UserCacheHolder.getUserFromRequest(request);
-        ComponentService.Iface client = thriftClients.makeComponentClient();
         try {
             ProjectService.Iface projectClient = thriftClients.makeProjectClient();
             List<ReleaseLink> linkedReleases = projectClient.getReleaseLinksOfProjectNetWorkByTrace(projectId, Arrays.asList(trace), user);
@@ -337,7 +330,11 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
             }
             request.setAttribute(PortalConstants.NETWORK_TOTAL_INACCESSIBLE_ROWS, totalInaccessibleRow);
         } catch (TException e) {
-            log.error("Error getting projects!", e);
+            log.error("Error getting releases!", e);
+            request.setAttribute(PortalConstants.NETWORK_PARENT_BRANCH_ID, branchId);
+            request.setAttribute(PortalConstants.PARENT_SCOPE_GROUP_ID, request.getParameter(PortalConstants.PARENT_SCOPE_GROUP_ID));
+            request.setAttribute(PortalConstants.NETWORK_RELEASE_LIST, Collections.emptyList());
+            request.setAttribute(PortalConstants.NETWORK_TOTAL_INACCESSIBLE_ROWS, 0);
         }
     }
 
@@ -368,7 +365,6 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         } else {
             project = new Project();
         }
-        ComponentService.Iface compClient = thriftClients.makeComponentClient();
         List<ProjectLink> mappedProjectLinks = createLinkedProjectsNetwork(project, user);
 
         mappedProjectLinks = sortProjectLink(mappedProjectLinks);
@@ -394,4 +390,13 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
                 .flattenProjectLinkNetwork(SW360Utils.getLinkedProjectsInNetworkForDownloadLicense(project, deep, new ThriftClients(), log, user));
         return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
     }
+
+    protected List<ProjectLink> createLinkedProjectsForAttachmentUsage(Project project, User user) {
+        return createLinkedProjectsForAttachmentUsage(project, Function.identity(), user);
+    }
+
+    protected List<ProjectLink> createLinkedProjectsForAttachmentUsage(Project project, Function<ProjectLink, ProjectLink> projectLinkMapper, User user) {
+        return createLinkedProjectsForNetwork(project, projectLinkMapper, false, user);
+    }
+
 }

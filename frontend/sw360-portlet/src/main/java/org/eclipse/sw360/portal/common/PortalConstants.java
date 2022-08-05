@@ -711,6 +711,8 @@ public class PortalConstants {
 
     public static final String RELEASE_LIST_IN_NETWORK_FROM_LINKED_PROJECTS = "releaseListInNetworkFromLinkedProjects";
 
+    public static final String IS_OBLIGATION_PRESENT = "isObligationPresent";
+
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 
