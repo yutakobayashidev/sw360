@@ -2244,11 +2244,11 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         Map<String, ObligationStatusInfo> licenseObligations = SW360Utils
                 .getProjectComponentOrganisationLicenseObligationToDisplay(obligationStatusMap, obligations,
                         ObligationLevel.LICENSE_OBLIGATION, false);
-        Map<String, ProjectReleaseRelationship> releaseIdToUsage = project.getReleaseIdToUsage();
+        Set<String> releaseIdsInNetwork = SW360Utils.getReleaseIdsInNetworkOfProject(project);
 
         Map<String, Release> mapOfReleases = new HashMap<String, Release>();
-        if (!CommonUtils.isNullOrEmptyMap(releaseIdToUsage)) {
-            releaseIdToUsage.keySet().stream().forEach(rId -> {
+        if (!CommonUtils.isNullOrEmptyCollection(releaseIdsInNetwork)) {
+            releaseIdsInNetwork.stream().forEach(rId -> {
                 try {
                     Release releaseById = componentClient.getReleaseById(rId, user);
                     mapOfReleases.put(rId, releaseById);
@@ -2689,7 +2689,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
         boolean obligationPresent=true;
         try {
-            releases = getLinkedReleases(CommonUtils.getNullToEmptyKeyset(project.getReleaseIdToUsage()), user);
+            releases = getLinkedReleases(SW360Utils.getReleaseIdsInNetworkOfProject(project), user);
                 if (CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId())) {
                     obligation = projectClient.getLinkedObligations(project.getLinkedObligationId(), user);
                     obligationStatusMap = CommonUtils.nullToEmptyMap(obligation.getLinkedObligationStatus());

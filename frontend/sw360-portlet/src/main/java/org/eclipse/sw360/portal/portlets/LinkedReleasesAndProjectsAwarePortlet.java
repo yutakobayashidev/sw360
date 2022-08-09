@@ -232,7 +232,6 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
             project = new Project();
         }
         List<ProjectLink> mappedProjectLinks = createLinkedProjectsForAttachmentUsage(project, user);
-        log.info(mappedProjectLinks);
         mappedProjectLinks = sortProjectLink(mappedProjectLinks);
         request.setAttribute(PROJECT_LIST, mappedProjectLinks);
         request.setAttribute(PortalConstants.PARENT_SCOPE_GROUP_ID, request.getParameter(PortalConstants.PARENT_SCOPE_GROUP_ID));

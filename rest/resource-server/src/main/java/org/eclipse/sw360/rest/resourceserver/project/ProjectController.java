@@ -1826,7 +1826,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = PROJECTS_URL + "/dependency/blackduck", method = RequestMethod.POST)
     public ResponseEntity createProjectDependencyBlackDuck(@RequestBody Map<String, Object> reqBodyMap) throws TException {
-        ComponentService.Iface componentService = new ThriftClients().makeComponentClient();
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         try {
             Project project = convertFromBlackDuckFormatToProjectDependency(reqBodyMap, sw360User);
