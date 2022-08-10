@@ -1061,7 +1061,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             ReleaseClearingStatusData releaseClearingStatusData = new ReleaseClearingStatusData(release)
                     .setProjectNames(joinStrings(projectNames))
                     .setMainlineStates(joinStrings(mainlineStates))
-                    .setComponentType(componentsById.get(release.getComponentId()).getComponentType()); 
+                    .setComponentType(componentsById.get(release.getComponentId()).getComponentType());
 
             boolean isAccessible = componentDatabaseHandler.isReleaseActionAllowed(release, user, RequestedAction.READ);
             releaseClearingStatusData.setAccessible(isAccessible);
@@ -1086,10 +1086,33 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         if (nothingTodo(project, visitedProjectIds)) return;
 
-        nullToEmptyMap(project.getReleaseIdToUsage()).forEach((releaseId, relation) -> {
+      /*nullToEmptyMap(project.getReleaseIdToUsage()).forEach((releaseId, relation) -> {
             releaseIdToProjects.put(releaseId, new ProjectWithReleaseRelationTuple(project, relation));
-        });
+        });*/
+        try {
+            String releaseNetwork = project.getReleaseRelationNetwork();
+            ObjectMapper mapper = new ObjectMapper();
+            List<ReleaseLinkJSON> listReleaseLinkJsonFatten = new ArrayList<>();
+            List<ReleaseLinkJSON> listReleaseLinkJson;
+            listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
+            });
 
+            for (ReleaseLinkJSON release : listReleaseLinkJson) {
+                flattenRelease(release, listReleaseLinkJsonFatten);
+            }
+
+            for (ReleaseLinkJSON release : listReleaseLinkJsonFatten) {
+                ProjectReleaseRelationship relation = new ProjectReleaseRelationship();
+                relation.setReleaseRelation(ReleaseRelationship.valueOf(release.getReleaseRelationship()));
+                relation.setMainlineState(MainlineState.valueOf(release.getMainlineState()));
+                relation.setComment(release.getComment());
+                relation.setCreatedOn(release.getCreateOn());
+                relation.setCreatedBy(release.getCreateBy());
+                releaseIdToProjects.put(release.getReleaseId(), new ProjectWithReleaseRelationTuple(project, relation));
+            }
+        } catch (JsonProcessingException e) {
+            log.error("Convert json to object has error JsonProcessingException: " + e.getMessage());
+        }
         Map<String, ProjectProjectRelationship> linkedProjects = project.getLinkedProjects();
         if (linkedProjects != null) {
 
@@ -1506,7 +1529,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             if (releaseOrigin.containsKey(releaseId))
                 return;
             Release rel = componentDatabaseHandler.getRelease(releaseId, user);
-            
+
             if (!isInaccessibleLinkMasked || componentDatabaseHandler.isReleaseActionAllowed(rel, user, RequestedAction.READ)) {
                 Map<String, ReleaseRelationship> releaseIdToRelationship = rel.getReleaseIdToRelationship();
                 releaseOrigin.put(releaseId, SW360Utils.printName(rel));
@@ -1536,7 +1559,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             if (releaseOrigin.containsKey(releaseId))
                 return;
             Release rel = componentDatabaseHandler.getRelease(releaseId, user);
-            
+
             if (!isInaccessibleLinkMasked || componentDatabaseHandler.isReleaseActionAllowed(rel, user, RequestedAction.READ)) {
                 Map<String, ReleaseRelationship> subReleaseIdToRelationship = rel.getReleaseIdToRelationship();
                 releaseOrigin.put(releaseId, SW360Utils.printName(rel));
@@ -1598,7 +1621,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         clearingStatusList.add(row);
         return row;
     }
-    
+
     private Map<String, String> createInaccessibleReleaseCSRow(List<Map<String, String>> clearingStatusList) throws SW360Exception {
         Map<String, String> row = new HashMap<>();
         row.put("id", "");
