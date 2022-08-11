@@ -1642,20 +1642,25 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
      * This function will get list ReleaseLink from release network of project with trace from root to clicked release on screen
      * Trace is list index of each node.
      */
-    public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(List<String> trace, String projectId, User user) throws TException{
+    public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(List<String> trace, String projectId, User user) {
         Project project = repository.get(projectId);
         String releaseNetwork = project.getReleaseRelationNetwork();
         ObjectMapper mapper = new ObjectMapper();
         List<ReleaseLinkJSON> listReleaseLinkJson;
         List<ReleaseLink> linkedReleases = new ArrayList<>();
         try {
-            listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
+            listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<>() {
             });
             ReleaseLinkJSON previousNode = listReleaseLinkJson.get(Integer.parseInt(trace.get(0)));
             for (int i = 1; i < trace.size(); i++){
                 previousNode = previousNode.getReleaseLink().get(Integer.parseInt(trace.get(i)));
             }
-            linkedReleases = convertFromReleaseLinkJSONToReleaseLink(previousNode.getReleaseLink(), projectId, user, previousNode.getReleaseId(), trace.size());
+            try {
+                linkedReleases = convertFromReleaseLinkJSONToReleaseLink(previousNode.getReleaseLink(), projectId, user, previousNode.getReleaseId(), trace.size());
+            }
+            catch (TException e) {
+                log.error(e.getMessage());
+            }
         } catch (JsonProcessingException e) {
             log.error("JsonProcessingException: " + e);
         }
@@ -1668,7 +1673,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         for (ReleaseLinkJSON releaseLinkJSON : releaseLinkJSONs) {
             Release releaseById = componentDatabaseHandler.getAccessibleRelease(releaseLinkJSON.getReleaseId(), user);
             Component componentById = componentDatabaseHandler.getAccessibleComponent(releaseById.getComponentId(), user);
-
             ReleaseLink releaseLink = new ReleaseLink();
             releaseLink.setId(releaseLinkJSON.getReleaseId());
             releaseLink.setReleaseRelationship(ReleaseRelationship.valueOf(releaseLinkJSON.getReleaseRelationship()));
@@ -1693,7 +1697,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             releaseLink.setProjectId(projectId);
             releaseLink.setIndex(index);
             releaseLink.setReleaseMainLineState(releaseById.getMainlineState());
-            releaseLink.setAttachments(Lists.newArrayList(releaseById.getAttachments()));
+            releaseLink.setAttachments(releaseById.getAttachments() != null ? Lists.newArrayList(releaseById.getAttachments()) : Collections.emptyList());
             if (releaseById.getVendor() != null) {
                 releaseLink.setVendor(releaseById.getVendor().getFullname());
             } else {
@@ -1918,7 +1922,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     List<ReleaseLinkJSON> flattedListReleaseLinkJson = new ArrayList<>();
                     List<ReleaseLink> linkedReleases = new ArrayList<>();
                     try {
-                        listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
+                        listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<>() {
                         });
                         for (ReleaseLinkJSON release : listReleaseLinkJson) {
                             flattenRelease(release, flattedListReleaseLinkJson);

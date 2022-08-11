@@ -12,13 +12,7 @@ package org.eclipse.sw360.datahandler.cloudantclient;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -304,5 +298,23 @@ public class DatabaseConnectorCloudant {
             log.error("Error in getting project groups", e);
         }
         return Collections.emptySet();
+    }
+
+    public <T> List<T> getNotUniqueDocs(Class<T> type, Collection<String> ids) {
+        if (!CommonUtils.isNotEmpty(ids))
+            return Collections.emptyList();
+        try {
+            List<String> idSet = new ArrayList<>(ids);
+            String[] keys = new String[idSet.size()];
+            int index = 0;
+            for (String str : idSet)
+                keys[index++] = str;
+            List<T> docs = database.getAllDocsRequestBuilder().includeDocs(true).keys(keys).build().getResponse()
+                    .getDocsAs(type);
+            return docs.stream().filter(Objects::nonNull).collect(Collectors.toList());
+        } catch (IOException e) {
+            log.error("Error fetching documents", e);
+            return Collections.emptyList();
+        }
     }
 }

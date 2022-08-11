@@ -438,7 +438,7 @@ public class ProjectHandler implements ProjectService.Iface {
     }
 
     @Override
-    public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(String projectId, List<String> trace, User user) throws TException {
+    public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(String projectId, List<String> trace, User user)  {
         return handler.getReleaseLinksOfProjectNetWorkByTrace(trace, projectId, user);
     }
 

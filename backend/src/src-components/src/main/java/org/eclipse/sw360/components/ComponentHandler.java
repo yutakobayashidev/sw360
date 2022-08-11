@@ -656,4 +656,11 @@ public class ComponentHandler implements ComponentService.Iface {
         }
         return releaseLinks;
     }
+
+    @Override
+    public List<Release> getReleasesByListIds(List<String> ids, User user) throws TException {
+        assertUser(user);
+        assertNotNull(ids);
+        return handler.getReleaseByIds(ids);
+    }
 }

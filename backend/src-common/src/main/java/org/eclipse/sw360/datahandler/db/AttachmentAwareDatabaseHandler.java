@@ -14,6 +14,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 
 import java.net.MalformedURLException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;

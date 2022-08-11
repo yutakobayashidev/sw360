@@ -306,7 +306,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     include("/html/utils/ajax/linkedReleaseInNetWorkRows.jsp", request, response,
                             PortletRequest.RESOURCE_PHASE);
                 } catch (TException e) {
-                    throw new RuntimeException(e);
+                    log.error("Error when create new release row for tree view");
                 }
                 return;
             }
@@ -3352,13 +3352,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         List<ReleaseLink> linkedReleases = new ArrayList<>();
         ComponentService.Iface client = thriftClients.makeComponentClient();
         try {
-            List<Release> releases = new ArrayList<>();
-            for (String linkedId : linkedIds) {
-                Set<String> linkedIdMap = new HashSet<>();
-                linkedIdMap.add(linkedId);
-                releases.addAll(client.getReleasesById(linkedIdMap, user));
-            }
-
+            List<Release> releases = client.getReleasesByListIds(Arrays.asList(linkedIds), user);
             for (int index = 0; index < releases.size(); index++) {
                 final Vendor vendor = releases.get(index).getVendor();
                 final String vendorName = vendor != null ? vendor.getShortname() : "";

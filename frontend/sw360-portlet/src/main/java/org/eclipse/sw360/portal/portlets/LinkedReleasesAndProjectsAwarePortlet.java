@@ -313,7 +313,10 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         Release releaseById = null;
         try {
             releaseById = client.getAccessibleReleaseById(releaseLinkJSON.getReleaseId(), user);
-            List<Release> releaseList = client.getReleasesById(releaseById.getReleaseIdToRelationship().keySet().stream().collect(Collectors.toSet()), user);
+            List<Release> releaseList = new ArrayList<>();
+            if(releaseById.getReleaseIdToRelationship() != null ) {
+                releaseList = client.getReleasesById(releaseById.getReleaseIdToRelationship().keySet().stream().collect(Collectors.toSet()), user);
+            }
             List<ReleaseLinkJSON> linkedReleasesJSON = new ArrayList<>();
             releaseLinkJSON.setMainlineState(MainlineState.OPEN.toString());
             releaseLinkJSON.setReleaseRelationship(ReleaseRelationship.CONTAINED.toString());
@@ -328,10 +331,11 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
                 linkedReleasesJSON.add(getReleaseLinkJSONS(rj, user));
             }
             releaseLinkJSON.setReleaseLink(linkedReleasesJSON);
-            return releaseLinkJSON;
+
         } catch (TException e) {
-            throw new RuntimeException(e);
+            log.error("Error when get Release: " + releaseLinkJSON.getReleaseId());
         }
+        return releaseLinkJSON;
     }
 
     protected void putLinkedReleasesNetworkWithAccessibilityInRequest(PortletRequest request, Project project, User user){
@@ -343,7 +347,6 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         String[] trace = request.getParameterValues("trace[]");
         String branchId = request.getParameter(PortalConstants.NETWORK_PARENT_BRANCH_ID);
         final User user = UserCacheHolder.getUserFromRequest(request);
-        ComponentService.Iface client = thriftClients.makeComponentClient();
         try {
             ProjectService.Iface projectClient = thriftClients.makeProjectClient();
             List<ReleaseLink> linkedReleases = projectClient.getReleaseLinksOfProjectNetWorkByTrace(projectId, Arrays.asList(trace), user);
@@ -358,6 +361,10 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
             }
             request.setAttribute(PortalConstants.NETWORK_TOTAL_INACCESSIBLE_ROWS, totalInaccessibleRow);
         } catch (TException e) {
+            request.setAttribute(PortalConstants.NETWORK_PARENT_BRANCH_ID, branchId);
+            request.setAttribute(PortalConstants.PARENT_SCOPE_GROUP_ID, request.getParameter(PortalConstants.PARENT_SCOPE_GROUP_ID));
+            request.setAttribute(PortalConstants.NETWORK_RELEASE_LIST, Collections.emptyList());
+            request.setAttribute(PortalConstants.NETWORK_TOTAL_INACCESSIBLE_ROWS, 0);
             log.error("Error getting projects!", e);
         }
     }

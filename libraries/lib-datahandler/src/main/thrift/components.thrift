@@ -860,4 +860,9 @@ service ComponentService {
      * Gets all releases with complete details
      */
     list<ReleaseLink> getReleasesAndOtherWithSameComponent(1: map<string, ProjectReleaseRelationship> relations, 2: User user);
+
+   /**
+     * Gets list releases with list release id
+     */
+    list<Release> getReleasesByListIds(1: list<string> ids, 2:User user)
 }
