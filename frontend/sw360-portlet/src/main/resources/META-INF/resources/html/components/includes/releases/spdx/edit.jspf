@@ -551,23 +551,17 @@
                 }
                 let index = $('#externalDocumentRefs')[0].selectedIndex;
                 spdxjs.storeExternalDocRef(index);
-
                 let selectedPackage = $('#selectPackage')[0].selectedIndex;
                 index = $('#externalReferences')[0].selectedIndex;
                 spdxjs.storeExternalRef(packagesInformationObj[selectedPackage], index);
-
                 index = $('#selectPackage')[0].selectedIndex;
                 spdxjs.storePackageInfo(index);
-
                 index = $('#selectSnippet')[0].selectedIndex;
                 spdxjs.storeSnippet(index);
-
                 index = $('#selectOtherLicensing')[0].selectedIndex;
                 spdxjs.storeOtherLicensing(index);
-
                 index = $('#selectRelationship')[0].selectedIndex;
                 spdxjs.storeRelationship(index);
-
                 index = $('#selectAnnotation')[0].selectedIndex;
                 spdxjs.storeAnnotation(index);
             });

@@ -44,6 +44,7 @@ import java.net.MalformedURLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.eclipse.sw360.datahandler.common.CommonUtils.isNotEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNotNullEmptyOrWhitespace;
 
 public class SpdxBOMImporter {
@@ -522,7 +523,12 @@ public class SpdxBOMImporter {
             final boolean fileAnalyzed = spdxPackage.isFilesAnalyzed();
             final String homepage = spdxPackage.getHomepage();
             final String sourceInfo = spdxPackage.getSourceInfo();
-            final String licenseConcluded = spdxPackage.getLicenseConcluded().toString();
+
+            String licenseConcluded="";
+            if(spdxPackage.getLicenseConcluded() != null){
+                licenseConcluded = spdxPackage.getLicenseConcluded().toString();
+            }
+
             final Set<String> licenseInfosFromFiles = Arrays.stream(spdxPackage.getLicenseInfoFromFiles())
                                                         .map(license -> license.toString())
                                                         .collect(Collectors.toSet());
@@ -684,13 +690,14 @@ public class SpdxBOMImporter {
                 release.setAttachments(Collections.singleton(attachment));
             }
 
-
             final SpdxBOMImporterSink.Response response = sink.addRelease(release);
-
-            try {
-                importSpdxDocument(response.getId(), spdxDocument, spdxPackage);
-            } catch (MalformedURLException e) {
-                log.error(e);
+            if(spdxDocument != null){
+                importAsReleaseFromSpdxDocument(getPackages(spdxDocument),attachmentContent);
+                try {
+                    importSpdxDocument(response.getId(), spdxDocument, spdxPackage);
+                } catch (MalformedURLException e) {
+                    log.error(e);
+                }
             }
 
             response.addChild(component);
@@ -698,6 +705,40 @@ public class SpdxBOMImporter {
         } else {
             log.debug("Unsupported SpdxElement: " + relatedSpdxElement.getClass().getCanonicalName());
             return Optional.empty();
+        }
+    }
+
+    private List<SpdxPackage> getPackages(SpdxDocument spdxDocument){
+        List<SpdxPackage> packages=new ArrayList<>();
+        try {
+            packages = spdxDocument.getDocumentContainer().findAllPackages();
+        } catch (InvalidSPDXAnalysisException e) {
+            log.error("Can not get list package from SpdxDocument");
+            e.printStackTrace();
+            packages = Collections.emptyList();
+        }
+        return packages;
+    }
+
+    private  void importAsReleaseFromSpdxDocument(List<SpdxPackage> packages, AttachmentContent attachmentContent) throws SW360Exception {
+        for (SpdxPackage spdxElement: packages){
+            final Release release = createReleaseFromSpdxPackage(spdxElement);
+            if(release.getVersion().isEmpty()){
+                release.setComponentId(importAsComponent(spdxElement).getId());
+                continue;
+            }
+            else {
+                release.setComponentId(importAsComponent(spdxElement).getId());
+                final Relationship[] relationships = spdxElement.getRelationships();
+                List<SpdxBOMImporterSink.Response> releases = importAsReleases(relationships);
+                Map<String, ReleaseRelationship> releaseIdToRelationship = makeReleaseIdToRelationship(releases);
+                release.setReleaseIdToRelationship(releaseIdToRelationship);
+                if (attachmentContent != null) {
+                    Attachment attachment = makeAttachmentFromContent(attachmentContent);
+                    release.setAttachments(Collections.singleton(attachment));
+                }
+                final SpdxBOMImporterSink.Response response = sink.addRelease(release);
+            }
         }
     }
 

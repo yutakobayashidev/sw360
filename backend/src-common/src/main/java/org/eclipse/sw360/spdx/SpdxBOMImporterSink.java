@@ -73,10 +73,10 @@ public class SpdxBOMImporterSink {
     }
 
     public Response addRelease(Release release) throws SW360Exception {
+
         log.debug("create Release { name='" + release.getName() + "', version='" + release.getVersion() + "' }");
         final AddDocumentRequestSummary addDocumentRequestSummary = componentDatabaseHandler.addRelease(release,
                 user);
-
         final String releaseId = addDocumentRequestSummary.getId();
         if(releaseId == null || releaseId.isEmpty()) {
             throw new SW360Exception("Id of added release should not be empty. " + addDocumentRequestSummary.toString());

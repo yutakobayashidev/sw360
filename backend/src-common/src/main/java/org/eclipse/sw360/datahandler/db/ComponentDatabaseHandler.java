@@ -463,6 +463,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         // Prepare the release and get underlying component ID
         prepareRelease(release);
         if(isDuplicate(release)) {
+
             final AddDocumentRequestSummary addDocumentRequestSummary = new AddDocumentRequestSummary()
                     .setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
             List<Release> duplicates = releaseRepository.searchByNameAndVersion(release.getName(), release.getVersion());
@@ -478,7 +479,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return new AddDocumentRequestSummary()
                     .setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT);
         }
-
         String componentId = release.getComponentId();
         // Ensure that component exists
         Component component = componentRepository.get(componentId);
@@ -490,7 +490,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         // Add default ECC options if download url is set
         autosetEccFieldsForReleaseWithDownloadUrl(release);
-
         // check for MainlineState change
         setMainlineState(release, user, null);
         if (release.getClearingState() == null) {
@@ -499,7 +498,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         // Add release to database
         releaseRepository.add(release);
         final String id = release.getId();
-
         // Update the underlying component
         component.addToReleaseIds(id);
 
