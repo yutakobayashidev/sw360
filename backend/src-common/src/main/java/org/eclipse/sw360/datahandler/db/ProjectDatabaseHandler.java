@@ -1092,16 +1092,16 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         try {
             String releaseNetwork = project.getReleaseRelationNetwork();
             ObjectMapper mapper = new ObjectMapper();
-            List<ReleaseLinkJSON> listReleaseLinkJsonFatten = new ArrayList<>();
+            // List<ReleaseLinkJSON> listReleaseLinkJsonFatten = new ArrayList<>();
             List<ReleaseLinkJSON> listReleaseLinkJson;
             listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
             });
 
-            for (ReleaseLinkJSON release : listReleaseLinkJson) {
+            /*for (ReleaseLinkJSON release : listReleaseLinkJson) {
                 flattenRelease(release, listReleaseLinkJsonFatten);
-            }
+            }*/
 
-            for (ReleaseLinkJSON release : listReleaseLinkJsonFatten) {
+            for (ReleaseLinkJSON release : listReleaseLinkJson) {
                 ProjectReleaseRelationship relation = new ProjectReleaseRelationship();
                 relation.setReleaseRelation(ReleaseRelationship.valueOf(release.getReleaseRelationship()));
                 relation.setMainlineState(MainlineState.valueOf(release.getMainlineState()));
