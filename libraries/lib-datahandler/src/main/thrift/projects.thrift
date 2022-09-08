@@ -510,4 +510,9 @@ service ProjectService {
     * Send email to the user once spreadsheet export completed
     */
     void sendExportSpreadsheetSuccessMail(1: string url, 2: string userEmail);
+
+    /**
+    * get ReleaseLink in release network of project by project id and trace
+    */
+    list<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(1: string projectId, 2: list<string> trace, 3: User user);
 }
