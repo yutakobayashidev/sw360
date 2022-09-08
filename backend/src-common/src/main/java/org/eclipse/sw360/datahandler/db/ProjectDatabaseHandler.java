@@ -11,10 +11,14 @@
 package org.eclipse.sw360.datahandler.db;
 
 import com.cloudant.client.api.CloudantClient;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.*;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.businessrules.ReleaseClearingStateSummaryComputer;
@@ -1088,19 +1092,44 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         if (nothingTodo(project, visitedProjectIds)) return;
 
-        nullToEmptyMap(project.getReleaseIdToUsage()).forEach((releaseId, relation) -> {
+      /*nullToEmptyMap(project.getReleaseIdToUsage()).forEach((releaseId, relation) -> {
             releaseIdToProjects.put(releaseId, new ProjectWithReleaseRelationTuple(project, relation));
-        });
+        });*/
+        try {
+            String releaseNetwork = project.getReleaseRelationNetwork();
+            ObjectMapper mapper = new ObjectMapper();
+            // List<ReleaseLinkJSON> listReleaseLinkJsonFatten = new ArrayList<>();
+            List<ReleaseLinkJSON> listReleaseLinkJson  = new ArrayList<>();
+            if (StringUtils.isNotEmpty(releaseNetwork)) {
+                listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
+                });
+            }
 
+            /*for (ReleaseLinkJSON release : listReleaseLinkJson) {
+                flattenRelease(release, listReleaseLinkJsonFatten);
+            }*/
+
+            for (ReleaseLinkJSON release : listReleaseLinkJson) {
+                ProjectReleaseRelationship relation = new ProjectReleaseRelationship();
+                relation.setReleaseRelation(ReleaseRelationship.valueOf(release.getReleaseRelationship()));
+                relation.setMainlineState(MainlineState.valueOf(release.getMainlineState()));
+                relation.setComment(release.getComment());
+                relation.setCreatedOn(release.getCreateOn());
+                relation.setCreatedBy(release.getCreateBy());
+                releaseIdToProjects.put(release.getReleaseId(), new ProjectWithReleaseRelationTuple(project, relation));
+            }
+        } catch (JsonProcessingException e) {
+            log.error("Convert json to object has error JsonProcessingException: " + e.getMessage());
+        }
         Map<String, ProjectProjectRelationship> linkedProjects = project.getLinkedProjects();
         if (linkedProjects != null) {
 
-                for (String projectId : linkedProjects.keySet()) {
-                    if (visitedProjectIds.contains(projectId)) continue;
+            for (String projectId : linkedProjects.keySet()) {
+                if (visitedProjectIds.contains(projectId)) continue;
 
-                    Project linkedProject = getProjectById(projectId, user);
-                    releaseIdToProjects(linkedProject, user, visitedProjectIds, releaseIdToProjects);
-                }
+                Project linkedProject = getProjectById(projectId, user);
+                releaseIdToProjects(linkedProject, user, visitedProjectIds, releaseIdToProjects);
+            }
         }
     }
 
