@@ -162,6 +162,8 @@ struct Project {
     203: optional string vendorId,
     204: optional string modifiedBy, // Last Modified By User Email
     205: optional string modifiedOn, // Last Modified Date YYYY-MM-dd
+
+    206: optional string releaseRelationNetwork
 }
 
 struct ProjectLink {
