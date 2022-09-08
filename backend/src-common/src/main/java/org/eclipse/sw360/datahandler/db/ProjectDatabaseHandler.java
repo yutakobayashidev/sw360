@@ -18,6 +18,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.*;
 
+import org.apache.commons.lang.StringUtils;
 import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.businessrules.ReleaseClearingStateSummaryComputer;
@@ -1093,9 +1094,11 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             String releaseNetwork = project.getReleaseRelationNetwork();
             ObjectMapper mapper = new ObjectMapper();
             // List<ReleaseLinkJSON> listReleaseLinkJsonFatten = new ArrayList<>();
-            List<ReleaseLinkJSON> listReleaseLinkJson;
-            listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
-            });
+            List<ReleaseLinkJSON> listReleaseLinkJson  = new ArrayList<>();
+            if (StringUtils.isNotEmpty(releaseNetwork)) {
+                listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
+                });
+            }
 
             /*for (ReleaseLinkJSON release : listReleaseLinkJson) {
                 flattenRelease(release, listReleaseLinkJsonFatten);
