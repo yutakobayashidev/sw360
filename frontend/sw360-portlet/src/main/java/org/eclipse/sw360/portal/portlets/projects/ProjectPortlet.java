@@ -1237,6 +1237,22 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             serveReleaseSearchResults(request, response, where);
         } else if (PortalConstants.RELEASE_LIST_FROM_LINKED_PROJECTS.equals(what)) {
             serveReleasesFromLinkedProjects(request, response, projectId);
+        } else if (PortalConstants.CREATE_LINKED_RELEASE_ROW.equals(what)) {
+            String[] where = request.getParameterValues(PortalConstants.WHERE_ARRAY);
+            String[] parentIds = request.getParameterValues(PARENT_NODE_ID);
+            String[] layers = request.getParameterValues(PortalConstants.LAYER);
+            String[] mainlineStates = request.getParameterValues(PortalConstants.MAINLINE_STATE);
+            String[] releaseRelationShips= request.getParameterValues(PortalConstants.RELEASE_RELATION_SHIP);
+            String[] indexes = request.getParameterValues(PortalConstants.INDEXES);
+            String[] comments = request.getParameterValues(PortalConstants.COMMENTS);
+            serveNewTableRowLinkedRelease(request, response, where, parentIds, layers, mainlineStates, releaseRelationShips, indexes, comments);
+        } else if (PortalConstants.FIND_LINKED_RELEASE_OF_NODE.equals(what)) {
+            String releaseId = request.getParameter(RELEASE_ID);
+            try {
+                serveReleaseRelationNetworkOfNode(request, response, releaseId);
+            } catch (TException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -1331,8 +1347,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 Project linkedProject = projectClient.getProjectById(linkedProjectId, user);
 
                 if (linkedProject != null) {
-                    Map<String, ProjectReleaseRelationship> releaseIdToUsage = CommonUtils.nullToEmptyMap(linkedProject.getReleaseIdToUsage());
-                    releaseIdsFromLinkedProjects.addAll(releaseIdToUsage.keySet());
+                    releaseIdsFromLinkedProjects.addAll(SW360Utils.getReleaseIdsLinkedWithProject(linkedProject));
                 }
             }
 
@@ -1616,7 +1631,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 request.setAttribute(PROJECT_LIST, mappedProjectLinks);
                 List<ProjectLink> allSubProjectLinks = createLinkedProjects(project, Function.identity(), true, user);
                 request.setAttribute(ALL_SUB_PROJECT_LINK, allSubProjectLinks);
-                putDirectlyLinkedReleasesInRequest(request, project);
                 Set<Project> usingProjects = client.searchLinkingProjects(id, user);
                 request.setAttribute(USING_PROJECTS, usingProjects);
                 int allUsingProjectCount = client.getCountByProjectId(id);
@@ -2277,19 +2291,14 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             request.setAttribute(DOCUMENT_ID, id);
 
             setAttachmentsInRequest(request, project);
-            try {
-                putDirectlyLinkedProjectsInRequest(request, project, user);
-                putDirectlyLinkedReleasesWithAccessibilityInRequest(request, project, user);
-            } catch (TException e) {
-                log.error("Could not fetch linked projects or linked releases in projects view.", e);
-                return;
-            }
+            putDirectlyLinkedProjectsInRequest(request, project, user);
             request.setAttribute(USING_PROJECTS, usingProjects);
             request.setAttribute(ALL_USING_PROJECTS_COUNT, allUsingProjectCount);
             Map<RequestedAction, Boolean> permissions = project.getPermissions();
             DocumentState documentState = project.getDocumentState();
             request.setAttribute(IS_PROJECT_MEMBER, SW360Utils.isUserAllowedToEditClosedProject(project, user));
-
+            request.setAttribute("loginUser", user);
+            request.setAttribute(PortalConstants.IS_OBLIGATION_PRESENT, SW360Utils.getReleaseIdsLinkedWithProject(project).isEmpty() ? false:true);
             addEditDocumentMessage(request, permissions, documentState);
         } else {
             if(request.getAttribute(PROJECT) == null) {
@@ -2299,15 +2308,10 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 setDefaultRequestAttributes(request, user.getDepartment());
                 PortletUtils.setCustomFieldsEdit(request, user, project);
                 setAttachmentsInRequest(request, project);
-                try {
-                    putDirectlyLinkedProjectsInRequest(request, project, user);
-                    putDirectlyLinkedReleasesWithAccessibilityInRequest(request, project, user);
-                } catch(TException e) {
-                    log.error("Could not put empty linked projects or linked releases in projects view.", e);
-                }
+                putDirectlyLinkedProjectsInRequest(request, project, user);
                 request.setAttribute(USING_PROJECTS, Collections.emptySet());
                 request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
-
+                request.setAttribute("loginUser", user);
                 SessionMessages.add(request, "request_processed", LanguageUtil.get(resourceBundle,"new.project"));
             }
         }
@@ -2334,11 +2338,11 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 PortletUtils.setCustomFieldsEdit(request, user, newProject);
                 request.setAttribute(PROJECT, newProject);
                 putDirectlyLinkedProjectsInRequest(request, newProject, user);
-                putDirectlyLinkedReleasesWithAccessibilityInRequest(request, newProject, user);
                 newProject.unsetId();
                 request.setAttribute(USING_PROJECTS, Collections.emptySet());
                 request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
                 request.setAttribute(SOURCE_PROJECT_ID, id);
+                request.setAttribute("loginUser", user);
             } else {
                 Project project = new Project();
                 project.setBusinessUnit(user.getDepartment());
@@ -2347,10 +2351,10 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 request.setAttribute(PROJECT, project);
                 PortletUtils.setCustomFieldsEdit(request, user, project);
                 putDirectlyLinkedProjectsInRequest(request, project, user);
-                putDirectlyLinkedReleasesWithAccessibilityInRequest(request, project, user);
 
                 request.setAttribute(USING_PROJECTS, Collections.emptySet());
                 request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
+                request.setAttribute("loginUser", user);
             }
         } catch (TException e) {
             log.error("Error fetching project from backend!", e);
@@ -2547,7 +2551,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         request.setAttribute(USING_PROJECTS, Collections.emptySet());
         request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
         putDirectlyLinkedProjectsInRequest(request, project, user);
-        putDirectlyLinkedReleasesWithAccessibilityInRequest(request, project, user);
     }
 
     @UsedAsLiferayAction
@@ -3242,5 +3245,67 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             }
         }
         return businessUnit;
+    }
+    private void serveNewTableRowLinkedRelease(ResourceRequest request, ResourceResponse response, String[] linkedIds,
+                                               String[] parentIds, String[] layers, String[] mainlineStates, String[] releaseRelationShips,
+                                               String[] indexes, String[] comments) throws IOException, PortletException {
+        final User user = UserCacheHolder.getUserFromRequest(request);
+        request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
+
+        List<ReleaseLink> linkedReleases = new ArrayList<>();
+        ComponentService.Iface client = thriftClients.makeComponentClient();
+        try {
+            List<Release> releases = client.getReleasesByListIds(Arrays.asList(linkedIds), user);
+            List<Release> allReleases = client.getAllReleasesForUser(user);
+            Map<String, List<Release>> listReleaseWithSameComponentId = new HashMap<>();
+            allReleases.forEach(release -> {
+                String componentId = release.getComponentId();
+                List<Release> releasesOfComponent = null;
+                if(listReleaseWithSameComponentId.containsKey(componentId)){
+                    releasesOfComponent = listReleaseWithSameComponentId.get(componentId);
+                } else {
+                    releasesOfComponent = new ArrayList<>();
+                }
+                releasesOfComponent.add(release);
+                listReleaseWithSameComponentId.put(componentId, releasesOfComponent);
+            });
+            for (int index = 0; index < releases.size(); index++) {
+                final Vendor vendor = releases.get(index).getVendor();
+                final String vendorName = vendor != null ? vendor.getShortname() : "";
+                Release loadingRelease =  releases.get(index);
+                List<Release> releasesWithSameComponent = listReleaseWithSameComponentId.get(loadingRelease.getComponentId());
+                ReleaseLink linkedRelease = new ReleaseLink(releases.get(index).getId(), vendorName, releases.get(index).getName(), releases.get(index).getVersion(),
+                        SW360Utils.printFullname(releases.get(index)), !nullToEmptyMap(releases.get(index).getReleaseIdToRelationship()).isEmpty());
+                linkedRelease.setReleaseWithSameComponent(releasesWithSameComponent);
+                linkedRelease.setLayer(Integer.parseInt(layers[index]));
+                linkedRelease.setParentNodeId(parentIds[index]);
+                linkedRelease.setMainlineState(MainlineState.valueOf(mainlineStates[index]));
+                linkedRelease.setReleaseRelationship(ReleaseRelationship.valueOf(releaseRelationShips[index]));
+                linkedRelease.setIndex(Integer.parseInt(indexes[index]));
+                linkedRelease.setComment(comments[index]);
+                linkedReleases.add(linkedRelease);
+            }
+        } catch (TException e) {
+            log.error("Error getting releases!", e);
+            throw new PortletException("cannot get releases " + Arrays.toString(linkedIds), e);
+        }
+        request.setAttribute(RELEASES_IN_NETWORK, linkedReleases);
+        include("/html/utils/ajax/linkedReleaseInNetwork.jsp", request, response, PortletRequest.RESOURCE_PHASE);
+    }
+
+    private void serveReleaseRelationNetworkOfNode(ResourceRequest request, ResourceResponse response, String releaseId) throws TException {
+        ComponentService.Iface releaseClient = thriftClients.makeComponentClient();
+        User user = UserCacheHolder.getUserFromRequest(request);
+        JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+        Release release = releaseClient.getAccessibleReleaseById(releaseId,user);
+        List<Release> releases = new ArrayList<>();
+        releases.add(release);
+        List<ReleaseLinkJSON> releaseLinkJSONS = getNetworkLinkedRelease(releases, user);
+        jsonObject.put(PortalConstants.RESULT, releaseLinkJSONS);
+        try {
+            writeJSON(request, response, jsonObject);
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
     }
 }

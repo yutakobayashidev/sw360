@@ -667,6 +667,17 @@ public class PortalConstants {
     public static final String NETWORK_PARENT_BRANCH_ID = "network_parent_branch_id";
     public static final String NETWORK_RELEASE_LIST = "networkReleaseList";
     public static final String NETWORK_TOTAL_INACCESSIBLE_ROWS = "netWorkTotalInAccessibleRow";
+    public static final String IS_OBLIGATION_PRESENT = "isObligationPresent";
+    public static final String CREATE_LINKED_RELEASE_ROW = "createLinkedReleaseRow";
+    public static final String PARENT_NODE_ID = "parentNodeIds[]";
+    public static final String LAYER = "layer[]";
+    public static final String RELEASE_RELATION_SHIP = "releaseRelationShip[]";
+    public static final String MAINLINE_STATE = "mainlineState[]";
+    public static final String INDEXES = "indexes[]";
+    public static final String COMMENTS = "comments[]";
+    public static final String FIND_LINKED_RELEASE_OF_NODE = "findLinkedReleaseOfNode";
+    public static final String RELEASES_IN_NETWORK = "releasesInNetwork";
+
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 

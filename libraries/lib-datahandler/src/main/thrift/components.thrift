@@ -864,4 +864,9 @@ service ComponentService {
     * Send email to the user once spreadsheet export completed
     */
     void sendExportSpreadsheetSuccessMail(1: string url, 2: string userEmail);
+
+    /**
+    * Gets list releases with list release id
+    */
+    list<Release> getReleasesByListIds(1: list<string> ids, 2:User user)
 }
