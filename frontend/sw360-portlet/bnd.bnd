@@ -72,12 +72,14 @@ Import-Package: \
 	com.cloudant.*, \
 	org.osgi.service.cm, \
 	org.osgi.service.component.*, \
-	org.slf4j
+	org.slf4j, \
+	com.fasterxml.jackson.*
 
 Conditional-Package: \
 	org.apache.http.*, \
 	org.apache.taglibs.*, \
-	org.springframework.security.crypto.bcrypt
+	org.springframework.security.crypto.bcrypt, \
+	com.google.gson.*
 
 Include-Resource: \
 	@requirejs-bower-[0-9]*.jar, \

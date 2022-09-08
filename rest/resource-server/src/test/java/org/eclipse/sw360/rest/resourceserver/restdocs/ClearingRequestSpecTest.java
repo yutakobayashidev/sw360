@@ -27,6 +27,7 @@ import org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.clearingrequest.Sw360ClearingRequestService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
@@ -77,6 +78,8 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
 
         given(this.clearingRequestServiceMock.getClearingRequestById(any(), any())).willReturn(clearingRequest);
         given(this.clearingRequestServiceMock.getClearingRequestByProjectId(any(), any())).willReturn(clearingRequest);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
+                new User("admin@sw360.org", "sw360").setId("123456789"));
     }
 
     @Test

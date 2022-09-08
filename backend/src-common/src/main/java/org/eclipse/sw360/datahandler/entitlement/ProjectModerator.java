@@ -126,13 +126,6 @@ public class ProjectModerator extends Moderator<Project._Fields, Project> {
                             projectAdditions,
                             projectDeletions);
                     break;
-                case RELEASE_ID_TO_USAGE:
-                    project = updateStringMap(
-                            Project._Fields.RELEASE_ID_TO_USAGE,
-                            project,
-                            projectAdditions,
-                            projectDeletions);
-                    break;
                 case ATTACHMENTS:
                     project.setAttachments( updateAttachments(
                             project.getAttachments(),
