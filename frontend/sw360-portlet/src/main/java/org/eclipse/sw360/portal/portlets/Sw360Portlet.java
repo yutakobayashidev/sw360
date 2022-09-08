@@ -165,7 +165,6 @@ abstract public class Sw360Portlet extends MVCPortlet {
             jsonObject.put("version", requestPreparation.version);
         if (requestPreparation.isSetMessage())
             jsonObject.put("message", requestPreparation.message);
-
         try {
             writeJSON(request, response, jsonObject);
         } catch (IOException e) {
