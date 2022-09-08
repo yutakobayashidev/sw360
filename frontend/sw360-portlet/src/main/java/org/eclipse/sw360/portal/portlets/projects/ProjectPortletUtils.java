@@ -78,12 +78,6 @@ public class ProjectPortletUtils {
                     }
                     updateLinkedProjectsFromRequest(request, project.linkedProjects);
                     break;
-                case RELEASE_ID_TO_USAGE:
-                    if (!project.isSetReleaseIdToUsage()) {
-                        project.setReleaseIdToUsage(new HashMap<>());
-                    }
-                    updateLinkedReleasesFromRequest(request, project.releaseIdToUsage);
-                    break;
 
                 case ATTACHMENTS:
                     project.setAttachments(PortletUtils.updateAttachmentsFromRequest(request, project.getAttachments()));

@@ -38,6 +38,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -86,7 +87,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         Component component = sw360ComponentClient.getComponentById(componentId, sw360User);
         Set<String> releaseIds = SW360Utils.getReleaseIds(component.getReleases());
 
-        return projectService.getProjectsByReleaseIds(releaseIds, sw360User);
+        return getUsingProjectAccesibleByReleaseIds(releaseIds, sw360User);
     }
 
     public Set<Component> getUsingComponentsForComponent(String componentId, User sw360User) throws TException {
@@ -159,5 +160,30 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         THttpClient thriftClient = new THttpClient(thriftServerUrl + "/projects/thrift");
         TProtocol protocol = new TCompactProtocol(thriftClient);
         return new ProjectService.Client(protocol);
+    }
+
+    public Set<Project> getUsingProjectAccesibleByReleaseIds(Set<String> releaseIds, User user) throws TException {
+        ProjectService.Iface projectClient = getThriftProjectClient();
+        Set<Project> projects = null;
+        Set<Project> projectsUsing = new HashSet<>();
+
+        projects = projectClient.getAccessibleProjects(user);
+        projects.forEach(p -> {
+            boolean contain = false;
+            for (String releaseId : releaseIds) {
+                if (p.getReleaseRelationNetwork() == null) {
+                    return;
+                }
+                if (p.getReleaseRelationNetwork().contains("\"releaseId\":\"" + releaseId + "\"")) {
+                    contain = true;
+                    break;
+                }
+            }
+            if (contain == true) {
+                projectsUsing.add(p);
+            }
+        });
+
+        return projectsUsing;
     }
 }

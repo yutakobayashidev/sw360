@@ -17,10 +17,11 @@ import org.eclipse.sw360.clients.rest.resource.SW360HalResource;
 import org.eclipse.sw360.clients.rest.resource.SW360Visibility;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public final class SW360Project extends SW360HalResource<LinkObjects, SW360ProjectEmbedded> {
+public final class SW360ProjectDTO extends SW360HalResource<LinkObjects, SW360ProjectDTOEmbedded> {
     private String name;
     private String version;
     private SW360ProjectType projectType;
@@ -30,14 +31,24 @@ public final class SW360Project extends SW360HalResource<LinkObjects, SW360Proje
     private String businessUnit;
     private String clearingTeam;
     private SW360Visibility visibility;
-    private Map<String, SW360ProjectReleaseRelationship> releaseIdToUsage;
+
+    private List<SW360ReleaseLinkJSON> dependencyNetwork;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public List<SW360ReleaseLinkJSON> getDependencyNetwork() {
+        return dependencyNetwork;
+    }
+
+    public void setDependencyNetwork(List<SW360ReleaseLinkJSON> dependencyNetwork) {
+        this.dependencyNetwork = dependencyNetwork;
+    }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getName() {
         return this.name;
     }
 
-    public SW360Project setName(String name) {
+    public SW360ProjectDTO setName(String name) {
         this.name = name;
         return this;
     }
@@ -47,7 +58,7 @@ public final class SW360Project extends SW360HalResource<LinkObjects, SW360Proje
         return this.version;
     }
 
-    public SW360Project setVersion(String version) {
+    public SW360ProjectDTO setVersion(String version) {
         this.version = version;
         return this;
     }
@@ -57,7 +68,7 @@ public final class SW360Project extends SW360HalResource<LinkObjects, SW360Proje
         return this.description;
     }
 
-    public SW360Project setDescription(String description) {
+    public SW360ProjectDTO setDescription(String description) {
         this.description = description;
         return this;
     }
@@ -67,7 +78,7 @@ public final class SW360Project extends SW360HalResource<LinkObjects, SW360Proje
         return this.externalIds;
     }
 
-    public SW360Project setExternalIds(Map<String, String> externalIds) {
+    public SW360ProjectDTO setExternalIds(Map<String, String> externalIds) {
         this.externalIds = externalIds;
         return this;
     }
@@ -77,7 +88,7 @@ public final class SW360Project extends SW360HalResource<LinkObjects, SW360Proje
         return this.createdOn;
     }
 
-    public SW360Project setCreatedOn(String createdOn) {
+    public SW360ProjectDTO setCreatedOn(String createdOn) {
         this.createdOn = createdOn;
         return this;
     }
@@ -87,7 +98,7 @@ public final class SW360Project extends SW360HalResource<LinkObjects, SW360Proje
         return this.businessUnit;
     }
 
-    public SW360Project setBusinessUnit(String businessUnit) {
+    public SW360ProjectDTO setBusinessUnit(String businessUnit) {
         this.businessUnit = businessUnit;
         return this;
     }
@@ -97,7 +108,7 @@ public final class SW360Project extends SW360HalResource<LinkObjects, SW360Proje
         return this.projectType;
     }
 
-    public SW360Project setProjectType(SW360ProjectType projectType) {
+    public SW360ProjectDTO setProjectType(SW360ProjectType projectType) {
         this.projectType = projectType;
         return this;
     }
@@ -107,7 +118,7 @@ public final class SW360Project extends SW360HalResource<LinkObjects, SW360Proje
         return this.clearingTeam;
     }
 
-    public SW360Project setClearingTeam(String clearingTeam) {
+    public SW360ProjectDTO setClearingTeam(String clearingTeam) {
         this.clearingTeam = clearingTeam;
         return this;
     }
@@ -117,19 +128,13 @@ public final class SW360Project extends SW360HalResource<LinkObjects, SW360Proje
         return this.visibility;
     }
 
-    public SW360Project setVisibility(SW360Visibility visbility) {
+    public SW360ProjectDTO setVisibility(SW360Visibility visbility) {
         this.visibility = visbility;
         return this;
     }
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public Map<String, SW360ProjectReleaseRelationship> getReleaseIdToUsage() {
-        return this.releaseIdToUsage;
-    }
 
-    public SW360Project setReleaseIdToUsage(Map<String, SW360ProjectReleaseRelationship> releaseIdToUsage) {
-        this.releaseIdToUsage = releaseIdToUsage;
-        return this;
-    }
+
+
 
     @Override
     public LinkObjects createEmptyLinks() {
@@ -137,15 +142,15 @@ public final class SW360Project extends SW360HalResource<LinkObjects, SW360Proje
     }
 
     @Override
-    public SW360ProjectEmbedded createEmptyEmbedded() {
-        return new SW360ProjectEmbedded();
+    public SW360ProjectDTOEmbedded createEmptyEmbedded() {
+        return new SW360ProjectDTOEmbedded();
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof SW360Project) || !super.equals(o)) return false;
-        SW360Project that = (SW360Project) o;
+        if (!(o instanceof SW360ProjectDTO) || !super.equals(o)) return false;
+        SW360ProjectDTO that = (SW360ProjectDTO) o;
         return Objects.equals(name, that.name) &&
                 Objects.equals(version, that.version) &&
                 projectType == that.projectType &&
@@ -154,18 +159,17 @@ public final class SW360Project extends SW360HalResource<LinkObjects, SW360Proje
                 Objects.equals(createdOn, that.createdOn) &&
                 Objects.equals(businessUnit, that.businessUnit) &&
                 visibility == that.visibility &&
-                Objects.equals(releaseIdToUsage, that.releaseIdToUsage) &&
                 Objects.equals(clearingTeam, that.clearingTeam);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), name, version, projectType, description, externalIds, createdOn,
-                businessUnit, visibility, releaseIdToUsage, clearingTeam);
+                businessUnit, visibility, clearingTeam);
     }
 
     @Override
     public boolean canEqual(Object o) {
-        return o instanceof SW360Project;
+        return o instanceof SW360ProjectDTO;
     }
 }

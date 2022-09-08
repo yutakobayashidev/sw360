@@ -11,6 +11,8 @@ package org.eclipse.sw360.datahandler.common;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -758,5 +760,60 @@ public class SW360Utils {
         } catch (TException e) {
             log.error(e.getMessage());
         }
+    }
+    public static Set<String> getReleaseIdsLinkedWithProject(Project project) {
+        Set<String> releasesIds = new HashSet<>();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
+        if (project.getReleaseRelationNetwork() != null) {
+            try {
+                releaseLinkJSONS = objectMapper.readValue(project.getReleaseRelationNetwork(), new TypeReference<List<ReleaseLinkJSON>>() {
+                });
+                for (ReleaseLinkJSON release : releaseLinkJSONS) {
+                    flattenReleaseIdInNetwork(release, releasesIds);
+                }
+            } catch (JsonProcessingException e) {
+                log.error(e.getMessage());
+            }
+        }
+
+        return releasesIds;
+    }
+
+    private static Set<String> flattenReleaseIdInNetwork(ReleaseLinkJSON node, Set<String> releasesIds) {
+
+        if (node != null) {
+            releasesIds.add(node.getReleaseId());
+        }
+
+        List<ReleaseLinkJSON> children = node.getReleaseLink();
+        for (ReleaseLinkJSON child : children) {
+            if(child.getReleaseLink() != null) {
+                flattenReleaseIdInNetwork(child, releasesIds);
+            } else {
+                releasesIds.add(node.getReleaseId());
+            }
+        }
+
+        return releasesIds;
+    }
+
+    public static Collection<ProjectLink> getLinkedProjectsWithAllReleasesAsFlatList(Project project, boolean deep, ThriftClients thriftClients, Logger log, User user) {
+        return flattenProjectLinkTree(getLinkedProjectsWithAllReleases(project, deep, thriftClients, log, user));
+    }
+
+    public static Collection<ProjectLink> getLinkedProjectsWithAllReleases(Project project, boolean deep, ThriftClients thriftClients, Logger log, User user) {
+        if (project != null) {
+            try {
+                ProjectService.Iface client = thriftClients.makeProjectClient();
+                List<ProjectLink> linkedProjects = client.getLinkedProjectsOfProjectWithAllReleases(project, deep, user);
+                return linkedProjects;
+            } catch (TException e) {
+                log.error("Could not get linked projects", e);
+            }
+        }
+        return Collections.emptyList();
     }
 }

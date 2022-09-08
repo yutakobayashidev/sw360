@@ -578,3 +578,18 @@ include::{snippets}/should_document_update_project_vulnerabilities/http-response
 
 ===== Links
 include::{snippets}/should_document_update_project_vulnerabilities/links.adoc[]
+
+==== Get project's dependency network
+A `GET` request will get project and releases dependency network of a single project.
+
+===== Response structure
+include::{snippets}/should_document_get_project_network/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_network/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_network/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_project_network/links.adoc[]

@@ -163,11 +163,6 @@ public class ProjectDatabaseHandlerTest {
 
         final List<ProjectLink> linkedProjects = completionFuture.get();
 
-        ReleaseLink releaseLinkR1A = new ReleaseLink("R1A", "vendor", "component1", "releaseA", "vendor component1 releaseA", false).setReleaseRelationship(ReleaseRelationship.REFERRED).setMainlineState(MainlineState.MAINLINE).setNodeId("R1A").setComponentType(ComponentType.OSS).setAccessible(true);
-        ReleaseLink releaseLinkR1B = new ReleaseLink("R1B", "vendor", "component1", "releaseB", "vendor component1 releaseB", false).setReleaseRelationship(ReleaseRelationship.REFERRED).setMainlineState(MainlineState.MAINLINE).setNodeId("R1B").setComponentType(ComponentType.OSS).setAccessible(true);
-        ReleaseLink releaseLinkR2A = new ReleaseLink("R2A", "vendor", "component2", "releaseA", "vendor component2 releaseA", false).setReleaseRelationship(ReleaseRelationship.REFERRED).setMainlineState(MainlineState.MAINLINE).setNodeId("R2A").setComponentType(ComponentType.COTS).setAccessible(true);
-        ReleaseLink releaseLinkR2B = new ReleaseLink("R2B", "vendor", "component2", "releaseB", "vendor component2 releaseB", false).setReleaseRelationship(ReleaseRelationship.REFERRED).setMainlineState(MainlineState.MAINLINE).setNodeId("R2B").setComponentType(ComponentType.COTS).setAccessible(true);
-
         ProjectLink link3 = new ProjectLink("P3", "project3")
                 .setRelation(ProjectRelationship.REFERRED)
                 .setEnableSvm(true)
@@ -176,7 +171,6 @@ public class ProjectDatabaseHandlerTest {
                 .setProjectType(ProjectType.CUSTOMER)
                 .setState(ProjectState.ACTIVE)
                 .setTreeLevel(2)
-                .setLinkedReleases(Arrays.asList(releaseLinkR2A, releaseLinkR2B))
                 .setSubprojects(Collections.emptyList());
         ProjectLink link4 = new ProjectLink("P4", "project4")
                 .setRelation(ProjectRelationship.CONTAINED)
@@ -195,7 +189,6 @@ public class ProjectDatabaseHandlerTest {
                 .setProjectType(ProjectType.CUSTOMER)
                 .setState(ProjectState.ACTIVE)
                 .setTreeLevel(1)
-                .setLinkedReleases(Arrays.asList(releaseLinkR1A, releaseLinkR1B))
                 .setSubprojects(Arrays.asList(link3, link4));
         ProjectLink link1 = new ProjectLink("P1", "project1")
                 .setRelation(ProjectRelationship.UNKNOWN)
