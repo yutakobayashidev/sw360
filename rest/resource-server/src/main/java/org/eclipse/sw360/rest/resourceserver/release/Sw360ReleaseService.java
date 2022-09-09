@@ -39,6 +39,7 @@ import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
+import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
@@ -59,11 +60,7 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTExcepti
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
@@ -90,6 +87,8 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     private static final String RESPONSE_STATUS_VALUE_COMPLETED = "Completed";
     private static final String RESPONSE_STATUS_VALUE_FAILED = "Failed";
     private static final String RELEASE_ATTACHMENT_ERRORMSG = "There has to be exactly one source attachment, but there are %s at this release. Please come back once you corrected that.";
+    @NonNull
+    private final Sw360ComponentService componentService;
 
     public List<Release> getReleasesForUser(User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
@@ -204,7 +203,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     public Set<Project> getProjectsByRelease(String releaseId, User sw360User) throws TException {
-        return projectService.getProjectsByRelease(releaseId, sw360User);
+        return getUsingProjectAccessibleByReleaseId(releaseId, sw360User);
     }
 
     public Set<Component> getUsingComponentsForRelease(String releaseId, User sw360User) throws TException {
@@ -630,5 +629,11 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
 
         return fossologyClient;
+    }
+
+    public Set<Project> getUsingProjectAccessibleByReleaseId(String releaseId, User sw360User) throws TException {
+        Set<String> releaseIds = new HashSet<>();
+        releaseIds.add(releaseId);
+        return componentService.getUsingProjectAccesibleByReleaseIds(releaseIds, sw360User);
     }
 }
