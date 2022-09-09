@@ -127,15 +127,7 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         }               
         request.setAttribute(TOTAL_INACCESSIBLE_ROWS, totalInaccessibleRow);
     }
-    
-    protected void putDirectlyLinkedReleasesInRequest(PortletRequest request, Project project) throws TException {
-        List<ReleaseLink> linkedReleases = SW360Utils.getLinkedReleases(project, thriftClients, log);
-        linkedReleases = linkedReleases.stream().filter(Objects::nonNull).sorted(Comparator.comparing(
-                rl -> SW360Utils.getVersionedName(nullToEmptyString(rl.getName()), rl.getVersion()), String.CASE_INSENSITIVE_ORDER)
-                ).collect(Collectors.toList());
-        request.setAttribute(RELEASE_LIST, linkedReleases);
-    }
-    
+
     protected List<ProjectLink> createLinkedProjects(Project project, User user) {
         return createLinkedProjects(project, Function.identity(), user);
     }

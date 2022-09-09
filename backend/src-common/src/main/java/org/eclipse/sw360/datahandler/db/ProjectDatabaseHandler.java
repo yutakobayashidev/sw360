@@ -529,8 +529,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void addCommentToClearingRequest(Project updated, Project current, User user) {
-        Set<String> currentReleaseIds = CommonUtils.getNullToEmptyKeyset(current.getReleaseIdToUsage());
-        Set<String> updatedReleaseIds = CommonUtils.getNullToEmptyKeyset(updated.getReleaseIdToUsage());
+        Set<String> currentReleaseIds = SW360Utils.getReleaseIdsLinkedWithProject(current);
+        Set<String> updatedReleaseIds = SW360Utils.getReleaseIdsLinkedWithProject(updated);
         Set<String> allReleaseIds = Sets.newHashSet(currentReleaseIds);
         allReleaseIds.addAll(updatedReleaseIds);
         Set<String> added = Sets.difference(updatedReleaseIds, currentReleaseIds);
@@ -601,8 +601,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private boolean isLinkedReleaseUpdated(Project updated, Project current) {
-        Set<String> updatedReleaseIds = CommonUtils.getNullToEmptyKeyset(updated.getReleaseIdToUsage());
-        Set<String> currentReleaseIds = CommonUtils.getNullToEmptyKeyset(current.getReleaseIdToUsage());
+        Set<String> updatedReleaseIds = SW360Utils.getReleaseIdsLinkedWithProject(updated);
+        Set<String> currentReleaseIds = SW360Utils.getReleaseIdsLinkedWithProject(current);
         if (updatedReleaseIds.equals(currentReleaseIds)) {
             return false;
         }
@@ -992,7 +992,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public List<Project> fillClearingStateSummary(List<Project> projects, User user) {
-        Function<Project, Set<String>> extractReleaseIds = project -> CommonUtils.nullToEmptyMap(project.getReleaseIdToUsage()).keySet();
+        Function<Project, Set<String>> extractReleaseIds = project -> CommonUtils.nullToEmptySet(SW360Utils.getReleaseIdsLinkedWithProject(project));
 
         Set<String> allReleaseIds = projects.stream().map(extractReleaseIds).reduce(Sets.newHashSet(), Sets::union);
         if (!allReleaseIds.isEmpty()) {
@@ -1265,7 +1265,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private void sendMailForNewClearing(Project project, String projectUrl, ClearingRequest clearingRequest, User user) {
         project = fillClearingStateSummary(Arrays.asList(project), user).get(0);
-        Set<String> releaseIds = CommonUtils.nullToEmptyMap(project.getReleaseIdToUsage()).keySet();
+        Set<String> releaseIds = SW360Utils.getReleaseIdsLinkedWithProject(project);
         Collection<Release> releases = componentDatabaseHandler.getReleasesForClearingStateSummary(releaseIds);
 
         Set<String> cotsCompIds = getCotsComponentIdsFromRelease(releases);
@@ -1286,7 +1286,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         StringBuilder commentText = new StringBuilder(extractReleaseNameForClearingEmail(releases));
         mailUtil.sendClearingMail(ClearingRequestEmailTemplate.NEW, MailConstants.SUBJECT_FOR_NEW_CLEARING_REQUEST, getRecipients(clearingRequest),
                 userDetails, CommonUtils.nullToEmptyString(clearingRequest.getId()), CommonUtils.nullToEmptyString(projectUrl), SW360Utils.printName(project),
-                String.valueOf(project.getLinkedProjectsSize()), String.valueOf(project.getReleaseIdToUsageSize()), String.valueOf(totalCount),
+                String.valueOf(project.getLinkedProjectsSize()), String.valueOf(SW360Utils.getReleaseIdsLinkedWithProject(project).size()), String.valueOf(totalCount),
                 String.valueOf(approvedCount), clearingRequest.getRequestedClearingDate(), cotsCompCount, commentText.toString());
         if (releases.size() > 0) {
             commentText = new StringBuilder("Linked release(s) with clearing state new:").append(System.lineSeparator()).append(commentText);
@@ -1319,7 +1319,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         releases = getDirectlyLinkedReleasesInNewState(releases);
         mailUtil.sendClearingMail(ClearingRequestEmailTemplate.PROJECT_UPDATED, MailConstants.SUBJECT_FOR_UPDATED_PROJECT_WITH_CLEARING_REQUEST,
                 getRecipients(clearingRequest), userDetails, SW360Utils.printName(updated), updated.getClearingRequestId(),
-                String.valueOf(updated.getLinkedProjectsSize()), String.valueOf(updated.getReleaseIdToUsageSize()), String.valueOf(totalCount),
+                String.valueOf(updated.getLinkedProjectsSize()), String.valueOf(SW360Utils.getReleaseIdsLinkedWithProject(updated).size()), String.valueOf(totalCount),
                 String.valueOf(approvedCount), CommonUtils.getEnumStringOrNull(clearingRequest.getClearingState()),
                 clearingRequest.getRequestedClearingDate(), CommonUtils.nullToEmptyString(clearingRequest.getAgreedClearingDate()),
                 cotsCompCount, extractReleaseNameForClearingEmail(releases));
