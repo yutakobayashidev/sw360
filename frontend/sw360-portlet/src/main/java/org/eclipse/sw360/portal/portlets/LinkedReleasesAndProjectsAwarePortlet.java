@@ -285,7 +285,6 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         try {
             ProjectService.Iface projectClient = thriftClients.makeProjectClient();
             List<ReleaseLink> linkedReleases = projectClient.getReleaseLinksOfProjectNetWorkByTrace(projectId, Arrays.asList(trace), user);
-            log.info(linkedReleases);
             request.setAttribute(PortalConstants.NETWORK_PARENT_BRANCH_ID, branchId);
             request.setAttribute(PortalConstants.PARENT_SCOPE_GROUP_ID, request.getParameter(PortalConstants.PARENT_SCOPE_GROUP_ID));
             request.setAttribute(PortalConstants.NETWORK_RELEASE_LIST, linkedReleases);

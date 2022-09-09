@@ -2809,7 +2809,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
         try {
             Project project = client.getProjectById(projectId, user);
-            Set<String> releaseIds = CommonUtils.getNullToEmptyKeyset(project.getReleaseIdToUsage());
+            Set<String> releaseIds = SW360Utils.getReleaseIdsLinkedWithProject(project);
             List<Release> oneCLI = new ArrayList<Release>();
             List<Release> multipleCLI = new ArrayList<Release>();
             List<Release> noCLI = new ArrayList<Release>();
