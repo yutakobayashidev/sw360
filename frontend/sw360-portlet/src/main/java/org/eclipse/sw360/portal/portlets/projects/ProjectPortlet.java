@@ -1896,7 +1896,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 List<OutputFormatInfo> outputFormats = licenseInfoClient.getPossibleOutputFormats();
                 request.setAttribute(PortalConstants.LICENSE_INFO_OUTPUT_FORMATS, outputFormats);
 
-                List<ProjectLink> mappedProjectLinks = createLinkedProjects(project,
+                List<ProjectLink> mappedProjectLinks = createLinkedProjectsWithAllReleases(project,
                         filterAndSortAttachments(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES), true,
                         user);
 
@@ -2065,7 +2065,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 request.setAttribute(PROJECT, project);
                 request.setAttribute(DOCUMENT_ID, id);
 
-                List<ProjectLink> mappedProjectLinks = createLinkedProjects(project,
+                List<ProjectLink> mappedProjectLinks = createLinkedProjectsWithAllReleases(project,
                         filterAndSortAttachments(SW360Constants.SOURCE_CODE_ATTACHMENT_TYPES), true, user);
 
                 if (!projectWithSubProjects) {

@@ -441,4 +441,10 @@ public class ProjectHandler implements ProjectService.Iface {
     public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(String projectId, List<String> trace, User user) throws TException {
         return handler.getReleaseLinksOfProjectNetWorkByTrace(trace, projectId, user);
     }
+
+    @Override
+    public List<ProjectLink> getLinkedProjectsOfProjectWithAllReleases(Project project, boolean deep, User user) throws TException {
+        assertNotNull(project);
+        return handler.getLinkedProjectsWithAllReleases(project, deep, user);
+    }
 }

@@ -338,4 +338,13 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         return releaseLinkJSON;
     }
 
+    protected List<ProjectLink> createLinkedProjectsWithAllReleases(Project project, Function<ProjectLink, ProjectLink> projectLinkMapper, User user) {
+        return createLinkedProjectsWithAllReleases(project, projectLinkMapper, false, user);
+    }
+
+    protected List<ProjectLink> createLinkedProjectsWithAllReleases(Project project, Function<ProjectLink, ProjectLink> projectLinkMapper, boolean deep,
+                                                     User user) {
+        final Collection<ProjectLink> linkedProjects = SW360Utils.getLinkedProjectsWithAllReleasesAsFlatList(project, deep, thriftClients, log, user);
+        return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
+    }
 }

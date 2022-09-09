@@ -799,4 +799,21 @@ public class SW360Utils {
 
         return releasesIds;
     }
+
+    public static Collection<ProjectLink> getLinkedProjectsWithAllReleasesAsFlatList(Project project, boolean deep, ThriftClients thriftClients, Logger log, User user) {
+        return flattenProjectLinkTree(getLinkedProjectsWithAllReleases(project, deep, thriftClients, log, user));
+    }
+
+    public static Collection<ProjectLink> getLinkedProjectsWithAllReleases(Project project, boolean deep, ThriftClients thriftClients, Logger log, User user) {
+        if (project != null) {
+            try {
+                ProjectService.Iface client = thriftClients.makeProjectClient();
+                List<ProjectLink> linkedProjects = client.getLinkedProjectsOfProjectWithAllReleases(project, deep, user);
+                return linkedProjects;
+            } catch (TException e) {
+                log.error("Could not get linked projects", e);
+            }
+        }
+        return Collections.emptyList();
+    }
 }

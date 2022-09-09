@@ -1692,4 +1692,98 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         return linkedReleases;
     }
+
+    public List<ProjectLink> getLinkedProjectsWithAllReleases(Project project, boolean deep, User user) {
+        Deque<String> visitedIds = new ArrayDeque<>();
+
+        Map<String, ProjectProjectRelationship> fakeRelations = new HashMap<>();
+        fakeRelations.put(project.isSetId() ? project.getId() : DUMMY_NEW_PROJECT_ID, new ProjectProjectRelationship(ProjectRelationship.UNKNOWN));
+        List<ProjectLink> out = iterateProjectRelationShipsWithAllReleases(fakeRelations, null, visitedIds, deep ? -1 : 2, user);
+        return out;
+    }
+
+    private List<ProjectLink> iterateProjectRelationShipsWithAllReleases(Map<String, ProjectProjectRelationship> relations,
+                                                          String parentNodeId, Deque<String> visitedIds, int maxDepth, User user) {
+        List<ProjectLink> out = new ArrayList<>();
+        for (Map.Entry<String, ProjectProjectRelationship> entry : relations.entrySet()) {
+            Optional<ProjectLink> projectLinkOptional = createProjectLinkWithAllReleases(entry.getKey(), entry.getValue(),
+                    parentNodeId, visitedIds, maxDepth, user);
+            projectLinkOptional.ifPresent(out::add);
+        }
+        out.sort(Comparator.comparing(ProjectLink::getName).thenComparing(ProjectLink::getVersion));
+        return out;
+    }
+
+    private Optional<ProjectLink> createProjectLinkWithAllReleases(String id, ProjectProjectRelationship projectProjectRelationship, String parentNodeId,
+                                                    Deque<String> visitedIds, int maxDepth, User user) {
+        ProjectLink projectLink = null;
+        if (!visitedIds.contains(id) && (maxDepth < 0 || visitedIds.size() < maxDepth)) {
+            visitedIds.push(id);
+            Project project = repository.get(id);
+            if (project != null
+                    && (user == null || !makePermission(project, user).isActionAllowed(RequestedAction.READ))) {
+                log.error("User " + user == null ? ""
+                        : user.getEmail() + " requested not accessible project " + printName(project));
+                project = null;
+            }
+            if (project != null) {
+                projectLink = new ProjectLink(id, project.name);
+                if (project.getReleaseRelationNetwork() != null && project.getReleaseRelationNetwork().length() > 0 && (maxDepth < 0 || visitedIds.size() < maxDepth)){
+                    String releaseNetwork = project.getReleaseRelationNetwork();
+                    ObjectMapper mapper = new ObjectMapper();
+                    List<ReleaseLinkJSON> listReleaseLinkJson;
+                    List<ReleaseLinkJSON> flattedListReleaseLinkJson = new ArrayList<>();
+                    List<ReleaseLink> linkedReleases = new ArrayList<>();
+                    try {
+                        listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
+                        });
+                        for (ReleaseLinkJSON release : listReleaseLinkJson) {
+                            flattenRelease(release, flattedListReleaseLinkJson);
+                        }
+                        linkedReleases = convertFromReleaseLinkJSONToReleaseLink(flattedListReleaseLinkJson, id, user, "", 0);
+                    } catch (JsonProcessingException e) {
+                        log.error("JsonProcessingException: " + e);
+                    } catch (TException e) {
+                        log.error(e.getMessage());
+                    }
+                    projectLink.setLinkedReleases(nullToEmptyList(linkedReleases));
+                }
+
+                projectLink
+                        .setNodeId(generateNodeId(id))
+                        .setParentNodeId(parentNodeId)
+                        .setRelation(projectProjectRelationship.getProjectRelationship())
+                        .setEnableSvm(projectProjectRelationship.isEnableSvm())
+                        .setVersion(project.getVersion())
+                        .setState(project.getState())
+                        .setProjectType(project.getProjectType())
+                        .setClearingState(project.getClearingState())
+                        .setTreeLevel(visitedIds.size() - 1);
+                if (project.isSetLinkedProjects()) {
+                    List<ProjectLink> subprojectLinks = iterateProjectRelationShipsWithAllReleases(project.getLinkedProjects(),
+                            projectLink.getNodeId(), visitedIds, maxDepth, user);
+                    projectLink.setSubprojects(subprojectLinks);
+                }
+            } else {
+                log.error("Broken ProjectLink in project with id: " + parentNodeId + ". Linked project with id " + id + " was not found");
+            }
+            visitedIds.pop();
+        }
+        return Optional.ofNullable(projectLink);
+    }
+    private  List<ReleaseLinkJSON> flattenRelease(ReleaseLinkJSON node, List<ReleaseLinkJSON> flatList) {
+        if (node != null) {
+            flatList.add(node);
+        }
+
+        List<ReleaseLinkJSON> children = node.getReleaseLink();
+        for (ReleaseLinkJSON child : children) {
+            if(child.getReleaseLink() != null) {
+                flattenRelease(child, flatList);
+            } else {
+                flatList.add(node);
+            }
+        }
+        return flatList;
+    }
 }
