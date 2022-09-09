@@ -43,6 +43,7 @@ typedef licenses.Obligation Obligation
 typedef licenses.ObligationType ObligationType
 typedef licenses.ObligationLevel ObligationLevel
 typedef vendors.Vendor Vendor
+typedef components.ReleaseLinkJSON ReleaseLinkJSON
 
 const string CLEARING_TEAM_UNKNOWN = "Unknown"
 
@@ -510,4 +511,9 @@ service ProjectService {
     * Send email to the user once spreadsheet export completed
     */
     void sendExportSpreadsheetSuccessMail(1: string url, 2: string userEmail);
+
+    /**
+    * Get all list projects
+    */
+    list<Project> getAll();
 }
