@@ -677,6 +677,7 @@ public class PortalConstants {
     public static final String COMMENTS = "comments[]";
     public static final String FIND_LINKED_RELEASE_OF_NODE = "findLinkedReleaseOfNode";
     public static final String RELEASES_IN_NETWORK = "releasesInNetwork";
+    public static final String NUMBER_LINKED_RELEASE = "numberLinkedRelease";
 
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);

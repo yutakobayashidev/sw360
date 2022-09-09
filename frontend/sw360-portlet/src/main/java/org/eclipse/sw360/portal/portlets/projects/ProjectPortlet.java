@@ -12,6 +12,8 @@ package org.eclipse.sw360.portal.portlets.projects;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Predicate;
@@ -98,7 +100,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapException;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
-import static org.eclipse.sw360.portal.common.PortalConstants.NETWORK_PROJECT_LIST;
+import static org.eclipse.sw360.portal.common.PortalConstants.NUMBER_LINKED_RELEASE;
 import static org.eclipse.sw360.portal.portlets.projects.ProjectPortletUtils.isUsageEquivalent;
 import static org.eclipse.sw360.portal.common.PortletUtils.setDepartmentSearchAttribute;
 
@@ -1614,6 +1616,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private void prepareDetailView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
         User user = UserCacheHolder.getUserFromRequest(request);
         String id = request.getParameter(PROJECT_ID);
+        ObjectMapper objectMapper = new ObjectMapper();
         request.setAttribute(DOCUMENT_ID, id);
         if (id != null) {
             try {
@@ -1658,6 +1661,17 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 request.setAttribute(CRITICAL_CR_COUNT, criticalCount);
                 request.setAttribute(LIST_VULNERABILITY_WITH_VIEW_SIZE_FRIENDLY_URL,
                         ProjectPortletUtils.createProjectPortletUrlWithViewSizeFriendlyUrl(request, id));
+                if (project.getReleaseRelationNetwork() == null) {
+                    request.setAttribute(NUMBER_LINKED_RELEASE, 0);
+                } else {
+                    try {
+                        List<ReleaseLinkJSON> releaseLinkJSONS = objectMapper.readValue(project.getReleaseRelationNetwork(), new TypeReference<List<ReleaseLinkJSON>>() {
+                        });
+                        request.setAttribute(NUMBER_LINKED_RELEASE, releaseLinkJSONS.size());
+                    } catch(JsonProcessingException jsonEx) {
+                        request.setAttribute(NUMBER_LINKED_RELEASE, 0);
+                    }
+                }
             } catch (SW360Exception sw360Exp) {
                 setSessionErrorBasedOnErrorCode(request, sw360Exp.getErrorCode());
             } catch (TException e) {

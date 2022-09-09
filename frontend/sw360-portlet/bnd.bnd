@@ -78,7 +78,8 @@ Import-Package: \
 	com.cloudant.*, \
 	org.osgi.service.cm, \
 	org.osgi.service.component.*, \
-	org.slf4j
+	org.slf4j, \
+	com.fasterxml.jackson.*
 
 Conditional-Package: \
 	org.apache.http.*, \

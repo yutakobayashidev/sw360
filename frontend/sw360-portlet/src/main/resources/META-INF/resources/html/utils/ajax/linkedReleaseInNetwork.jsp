@@ -63,7 +63,7 @@
                                 </core_rt:if>
                             </core_rt:forEach>
                         </select>
-                        <svg class="action lexicon-icon load-release" style="width:10%; height:10%">
+                        <svg class="action lexicon-icon load-release" style="width:10%;">
                             <title><liferay-ui:message key="load.default.children.releases" /></title>
                             <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#check-circle-full"/>
                         </svg>
