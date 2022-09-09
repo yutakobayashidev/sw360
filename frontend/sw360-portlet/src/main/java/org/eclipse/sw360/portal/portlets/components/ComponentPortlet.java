@@ -534,8 +534,15 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     }
 
     private void serveDeleteRelease(PortletRequest request, ResourceResponse response) throws IOException {
-        final RequestStatus requestStatus = ComponentPortletUtils.deleteRelease(request, log);
-        serveRequestStatus(request, response, requestStatus, "Problem removing release", log);
+        String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
+        Set<String> releaseIdToSet = new HashSet<>();
+        releaseIdToSet.add(releaseId);
+        if (getUsingProjectInDependencyNetwork(releaseIdToSet).size() > 0) {
+            serveRequestStatus(request, response, RequestStatus.IN_USE, "Problem removing release", log);
+        } else {
+            final RequestStatus requestStatus = ComponentPortletUtils.deleteRelease(request, log);
+            serveRequestStatus(request, response, requestStatus, "Problem removing release", log);
+        }
     }
 
     private void exportExcel(ResourceRequest request, ResourceResponse response) {
@@ -1588,24 +1595,22 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     }
 
     private void setUsingDocs(RenderRequest request, User user, ComponentService.Iface client, Set<String> releaseIds) {
-        Set<Project> usingProjects = null;
         Set<Component> usingComponentsForComponent = null;
-        int allUsingProjectsCount = 0;
-
+        List<Project> usingProjectInDependencyNetwork;
         if (releaseIds != null && releaseIds.size() > 0) {
             try {
-                ProjectService.Iface projectClient = thriftClients.makeProjectClient();
-                usingProjects = projectClient.searchByReleaseIds(releaseIds, user);
-                allUsingProjectsCount = projectClient.getCountByReleaseIds(releaseIds);
                 usingComponentsForComponent = client.getUsingComponentsWithAccessibilityForComponent(releaseIds, user);
+                usingProjectInDependencyNetwork = getUsingProjectAccessibleInDependencyNetwork(releaseIds, user);
+                request.setAttribute(USING_PROJECTS, new HashSet<>(usingProjectInDependencyNetwork));
+                request.setAttribute(ALL_USING_PROJECTS_COUNT, getUsingProjectInDependencyNetwork(releaseIds).size());
             } catch (TException e) {
                 log.error("Problem filling using docs", e);
             }
+        } else {
+            request.setAttribute(USING_PROJECTS, Collections.emptySet());
+            request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
         }
-
-        request.setAttribute(USING_PROJECTS, nullToEmptySet(usingProjects));
         request.setAttribute(USING_COMPONENTS, nullToEmptySet(usingComponentsForComponent));
-        request.setAttribute(ALL_USING_PROJECTS_COUNT, allUsingProjectsCount);
     }
 
     private void prepareReleaseDetailView(RenderRequest request, RenderResponse response) throws PortletException {
@@ -1838,18 +1843,18 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
     private void setUsingDocs(RenderRequest request, String releaseId, User user, ComponentService.Iface client) throws TException {
         if (releaseId != null) {
-            ProjectService.Iface projectClient = thriftClients.makeProjectClient();
-            Set<Project> usingProjects = projectClient.searchByReleaseId(releaseId, user);
-            request.setAttribute(USING_PROJECTS, nullToEmptySet(usingProjects));
-            int allUsingProjectsCount = projectClient.getCountByReleaseIds(Collections.singleton(releaseId));
-            request.setAttribute(ALL_USING_PROJECTS_COUNT, allUsingProjectsCount);
             final Set<Component> usingComponentsForRelease = client.getUsingComponentsWithAccessibilityForRelease(releaseId, user);
+            Set<String> releaseIdSet = new HashSet<>();
+            releaseIdSet.add(releaseId);
+            List<Project> usingProjectInDependencyNetwork = getUsingProjectAccessibleInDependencyNetwork(releaseIdSet, user);
             request.setAttribute(USING_COMPONENTS, nullToEmptySet(usingComponentsForRelease));
+            request.setAttribute(USING_PROJECTS, new HashSet<>(usingProjectInDependencyNetwork));
+            request.setAttribute(ALL_USING_PROJECTS_COUNT, getUsingProjectInDependencyNetwork(releaseIdSet).size());
         } else {
-            request.setAttribute(USING_PROJECTS, Collections.emptySet());
-            request.setAttribute(USING_COMPONENTS, Collections.emptySet());
+            request.setAttribute(USING_PROJECTS,  Collections.emptySet());
             request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
         }
+        request.setAttribute(USING_COMPONENTS, Collections.emptySet());
     }
 
     private void addComponentBreadcrumb(RenderRequest request, RenderResponse response, Component component) {
@@ -2527,5 +2532,59 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         } else {
             return CommonUtils.COMMA_JOINER.join(strings.stream().sorted().collect(Collectors.toList()));
         }
+    }
+
+    private List<Project> getUsingProjectAccessibleInDependencyNetwork(Set<String> releaseIds, User user) {
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+        Set<Project> projects;
+        List<Project> projectsUsing = new ArrayList<>();
+        try {
+            projects = projectClient.getAccessibleProjects(user);
+            projects.forEach(p -> {
+                boolean contain = false;
+                for (String releaseId : releaseIds) {
+                    if (p.getReleaseRelationNetwork() == null) {
+                        return;
+                    }
+                    if (p.getReleaseRelationNetwork().contains("\"releaseId\":\"" + releaseId + "\"")) {
+                        contain = true;
+                        break;
+                    }
+                }
+                if (contain == true) {
+                    projectsUsing.add(p);
+                }
+            });
+        } catch (TException e) {
+            log.error(e.getMessage());
+        }
+        return projectsUsing;
+    }
+
+    private List<Project> getUsingProjectInDependencyNetwork(Set<String> releaseIds) {
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+        List<Project> projects;
+        List<Project> projectsUsing = new ArrayList<>();
+        try {
+            projects = projectClient.getAll();
+            projects.forEach(p -> {
+                boolean contain = false;
+                for (String releaseId : releaseIds) {
+                    if (p.getReleaseRelationNetwork() == null) {
+                        return;
+                    }
+                    if (p.getReleaseRelationNetwork().contains("\"releaseId\":\"" + releaseId + "\"")) {
+                        contain = true;
+                        break;
+                    }
+                }
+                if (contain == true) {
+                    projectsUsing.add(p);
+                }
+            });
+        } catch (TException e) {
+            log.error(e.getMessage());
+        }
+        return projectsUsing;
     }
 }

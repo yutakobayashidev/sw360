@@ -1437,7 +1437,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         relUsageRepository.update(usedReleaseRelations);
     }
 
-    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws SW360Exception {
+    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws TException {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
         final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
         try {
@@ -1445,7 +1445,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
                 final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, this, componentDatabaseHandler);
                 final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
-                return spdxBOMImporter.importSpdxBOMAsProject(inputStream, attachmentContent);
+                return spdxBOMImporter.importSpdxBOMAsProject(inputStream, attachmentContent, user);
             }
         } catch (InvalidSPDXAnalysisException | IOException e) {
             throw new SW360Exception(e.getMessage());
@@ -1644,6 +1644,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public ProjectData searchByType(String type, User user) {
         return repository.searchByType(type, user);
     }
+
     protected List<ReleaseLink> convertFromReleaseLinkJSONToReleaseLink(List<ReleaseLinkJSON> releaseLinkJSONs, String projectId, User user, String parentId, int layer) throws TException {
         List<ReleaseLink> releaseLinks = new ArrayList<>();
         int index = 0;
@@ -1791,12 +1792,20 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         List<ReleaseLinkJSON> children = node.getReleaseLink();
         for (ReleaseLinkJSON child : children) {
-            if(child.getReleaseLink() != null) {
+            if (child.getReleaseLink() != null) {
                 flattenRelease(child, flatList);
             } else {
                 flatList.add(node);
             }
         }
         return flatList;
+    }
+    /**
+     * Get all projects
+     *
+     * @return list of projects
+     */
+    public List<Project> getAll(){
+        return repository.getAll();
     }
 }

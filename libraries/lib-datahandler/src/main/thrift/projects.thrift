@@ -611,4 +611,9 @@ service ProjectService {
      * is equivalent to `getLinkedProjectsOfProject(getProjectById(id, user))`
      */
     list<ProjectLink> getLinkedProjectsOfProjectWithAllReleases(1: Project project, 2: bool deep, 3: User user);
+
+    /**
+    * Get all list projects
+    */
+    list<Project> getAll();
 }
