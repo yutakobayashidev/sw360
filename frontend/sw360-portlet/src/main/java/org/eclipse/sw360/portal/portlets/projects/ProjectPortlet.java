@@ -580,7 +580,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
     private void serveAttachmentUsagesRows(ResourceRequest request, ResourceResponse response) throws PortletException, IOException {
-        prepareLinkedProjects(request);
+        prepareLinkedProjectsForAttachmentUsage(request);
         String projectId = request.getParameter(PROJECT_ID);
         setIsWriteAccessAllowed(request, projectId);
         putAttachmentUsagesInRequest(request, projectId);
@@ -1630,9 +1630,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 request.setAttribute(PROJECT, project);
                 request.setAttribute(PARENT_PROJECT_PATH, project.getId());
                 setAttachmentsInRequest(request, project);
-                List<ProjectLink> mappedProjectLinks = createLinkedProjects(project, user);
+                List<ProjectLink> mappedProjectLinks = createLinkedProjectsWithAllReleases(project, user);
                 request.setAttribute(PROJECT_LIST, mappedProjectLinks);
-                List<ProjectLink> allSubProjectLinks = createLinkedProjects(project, Function.identity(), true, user);
+                List<ProjectLink> allSubProjectLinks = createLinkedProjectsWithAllReleases(project, Function.identity(), true, user);
                 request.setAttribute(ALL_SUB_PROJECT_LINK, allSubProjectLinks);
                 Set<Project> usingProjects = client.searchLinkingProjects(id, user);
                 request.setAttribute(USING_PROJECTS, usingProjects);
@@ -1706,12 +1706,13 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             log.error("Error fetching project from backend!", e);
             return null;
         }
-        if (CommonUtils.isNullOrEmptyMap(project.getReleaseIdToUsage())) {
+        Set<String> releaseIdsInNetwork = SW360Utils.getReleaseIdsLinkedWithProject(project);
+        if (releaseIdsInNetwork.isEmpty()) {
             return null;
         }
         Map<String, AttachmentUsage> licenseInfoAttachmentUsage = getLicenseInfoAttachmentUsage(request, projectId);
         Map<String, Set<Release>> licensesFromAttachmentUsage = getLicensesFromAttachmentUsage(
-                licenseInfoAttachmentUsage, project.getReleaseIdToUsage(), user, request);
+                licenseInfoAttachmentUsage, releaseIdsInNetwork, user, request);
         Map<String, ObligationStatusInfo> licenseObligation = new HashMap<>();
         LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
         licensesFromAttachmentUsage.entrySet().stream().forEach(entry -> wrapTException(() -> {
@@ -1758,7 +1759,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
     private Map<String, Set<Release>> getLicensesFromAttachmentUsage(
             Map<String, AttachmentUsage> licenseInfoAttachmentUsage,
-            Map<String, ProjectReleaseRelationship> releaseIdToUsage, User user, ResourceRequest request) {
+            Set<String> releaseIdsInNetwork, User user, ResourceRequest request) {
         LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
         ComponentService.Iface componentClient = thriftClients.makeComponentClient();
         Map<String, Release> attachmentIdToReleaseMap = new HashMap<String, Release>();
@@ -1788,7 +1789,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     attachmentIdToReleaseMap.put(entry.getKey(), releaseById);
                 });
 
-        setReleasesForWhichAttachmentUsageNotSet(componentClient, user, attachmentIdToReleaseMap, releaseIdToUsage,
+        setReleasesForWhichAttachmentUsageNotSet(componentClient, user, attachmentIdToReleaseMap, releaseIdsInNetwork,
                 request);
         attachmentIdToReleaseMap.entrySet().stream().filter(entry -> entry.getKey() != null && entry.getValue() != null)
                 .forEach(entry -> wrapTException(() -> {
@@ -1819,16 +1820,13 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
     private void setReleasesForWhichAttachmentUsageNotSet(ComponentService.Iface componentClient, User user,
-            Map<String, Release> attachmentIdToReleaseMap, Map<String, ProjectReleaseRelationship> releaseIdToUsage,
-            ResourceRequest request) {
+            Map<String, Release> attachmentIdToReleaseMap, Set<String> releaseIdsInNetwork, ResourceRequest request) {
         Set<String> releaseIdUsed = attachmentIdToReleaseMap.values().stream().map(release -> release.getId())
                 .collect(Collectors.toSet());
-        Set<String> linkedReleaseIds = releaseIdToUsage.keySet();
-
-        linkedReleaseIds.removeAll(releaseIdUsed);
+        releaseIdsInNetwork.removeAll(releaseIdUsed);
 
         Set<Release> setOfUnusedRelease = new HashSet<Release>();
-        linkedReleaseIds.stream().forEach(releaseIdUnused -> {
+        releaseIdsInNetwork.stream().forEach(releaseIdUnused -> {
             try {
                 Release releaseById = componentClient.getReleaseById(releaseIdUnused, user);
                 setOfUnusedRelease.add(releaseById);
@@ -2219,11 +2217,11 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         Map<String, ObligationStatusInfo> licenseObligations = SW360Utils
                 .getProjectComponentOrganisationLicenseObligationToDisplay(obligationStatusMap, obligations,
                         ObligationLevel.LICENSE_OBLIGATION, false);
-        Map<String, ProjectReleaseRelationship> releaseIdToUsage = project.getReleaseIdToUsage();
+        Set<String> releaseIdsInNetwork = SW360Utils.getReleaseIdsLinkedWithProject(project);
 
         Map<String, Release> mapOfReleases = new HashMap<String, Release>();
-        if (!CommonUtils.isNullOrEmptyMap(releaseIdToUsage)) {
-            releaseIdToUsage.keySet().stream().forEach(rId -> {
+        if (!CommonUtils.isNullOrEmptyCollection(releaseIdsInNetwork)) {
+            releaseIdsInNetwork.stream().forEach(rId -> {
                 try {
                     Release releaseById = componentClient.getReleaseById(rId, user);
                     mapOfReleases.put(rId, releaseById);
@@ -2655,7 +2653,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
         boolean obligationPresent=true;
         try {
-            releases = getLinkedReleases(CommonUtils.getNullToEmptyKeyset(project.getReleaseIdToUsage()), user);
+            releases = getLinkedReleases(SW360Utils.getReleaseIdsLinkedWithProject(project), user);
                 if (CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId())) {
                     obligation = projectClient.getLinkedObligations(project.getLinkedObligationId(), user);
                     obligationStatusMap = CommonUtils.nullToEmptyMap(obligation.getLinkedObligationStatus());
@@ -3062,7 +3060,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             jsonObject.put("visbility", nullToEmptyString(project.getVisbility()));
             jsonObject.put("resp", nullToEmptyString(project.getProjectResponsible()));
             jsonObject.put("lProjSize", String.valueOf(project.getLinkedProjectsSize()));
-            jsonObject.put("lRelsSize", String.valueOf(project.getReleaseIdToUsageSize()));
+            jsonObject.put("lRelsSize", String.valueOf(SW360Utils.getReleaseIdsLinkedWithProject(project).size()));
             jsonObject.put("attsSize", String.valueOf(project.getAttachmentsSize()));
             if (isNotEmpty && groupsWithCrDisabled.contains(project.getBusinessUnit().toLowerCase()) && Objects.isNull(project.getClearingRequestId())) {
                 jsonObject.put("isCrDisabledForProjectBU", true);
@@ -3071,7 +3069,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     SW360Utils.isUserAllowedToEditClosedProject(project, UserCacheHolder.getUserFromRequest(request)));
             projectData.put(jsonObject);
         }
-
+        log.info(projectData);
         return projectData;
     }
 

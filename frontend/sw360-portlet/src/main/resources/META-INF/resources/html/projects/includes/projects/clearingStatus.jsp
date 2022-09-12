@@ -33,6 +33,7 @@
 
 <portlet:resourceURL var="clearingStatuslistOnloadurl">
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.CLEARING_STATUS_ON_LOAD%>"/>
+    <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${docid}"/>
 </portlet:resourceURL>
 
 <portlet:resourceURL var="licenseToSourceFileUrl">

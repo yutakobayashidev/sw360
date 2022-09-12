@@ -329,14 +329,43 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         }
         return releaseLinkJSON;
     }
-
+    protected List<ProjectLink> createLinkedProjectsWithAllReleases(Project project, User user) {
+        return createLinkedProjectsWithAllReleases(project, Function.identity(), user);
+    }
     protected List<ProjectLink> createLinkedProjectsWithAllReleases(Project project, Function<ProjectLink, ProjectLink> projectLinkMapper, User user) {
         return createLinkedProjectsWithAllReleases(project, projectLinkMapper, false, user);
     }
-
     protected List<ProjectLink> createLinkedProjectsWithAllReleases(Project project, Function<ProjectLink, ProjectLink> projectLinkMapper, boolean deep,
                                                      User user) {
         final Collection<ProjectLink> linkedProjects = SW360Utils.getLinkedProjectsWithAllReleasesAsFlatList(project, deep, thriftClients, log, user);
         return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
+    }
+    protected void prepareLinkedProjectsForAttachmentUsage(ResourceRequest request) throws PortletException {
+        final User user = UserCacheHolder.getUserFromRequest(request);
+        String branchId = request.getParameter(PortalConstants.NETWORK_PARENT_BRANCH_ID);
+        Optional<String> projectIdOpt = getProjectIdFromBranchId(branchId);
+        request.setAttribute(PortalConstants.NETWORK_PARENT_BRANCH_ID, branchId);
+        final Project project;
+        if (projectIdOpt.isPresent()) {
+            try {
+                ProjectService.Iface client = thriftClients.makeProjectClient();
+                project = client.getProjectById(projectIdOpt.get(), user);
+            } catch (TException e) {
+                log.error("Error getting projects!", e);
+                throw new PortletException("cannot load project " + projectIdOpt.get(), e);
+            }
+            String parentProjectPath = request.getParameter(PortalConstants.PARENT_PROJECT_PATH);
+            if (parentProjectPath != null) {
+                request.setAttribute(PortalConstants.PARENT_PROJECT_PATH,
+                        parentProjectPath.concat(":").concat(projectIdOpt.get()));
+            }
+        } else {
+            project = new Project();
+        }
+        List<ProjectLink> mappedProjectLinks = createLinkedProjectsWithAllReleases(project, user);
+
+        mappedProjectLinks = sortProjectLink(mappedProjectLinks);
+        request.setAttribute(PROJECT_LIST, mappedProjectLinks);
+        request.setAttribute(PortalConstants.PARENT_SCOPE_GROUP_ID, request.getParameter(PortalConstants.PARENT_SCOPE_GROUP_ID));
     }
 }

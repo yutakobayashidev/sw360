@@ -1174,6 +1174,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private Set<String> getReleaseIdsOfProjectTree(Project project, Set<String> visitedProjectIds,
             Map<String, Project> allProjectsIdMap, User user, List<RequestedAction> permissionsFilter) {
+        ObjectMapper mapper = new ObjectMapper();
         // no need to visit a project twice
         if (visitedProjectIds.contains(project.getId())) {
             return Collections.emptySet();
@@ -1208,10 +1209,22 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
 
         // add own releases to result if they are not just "REFERRED"
-        if (project.isSetReleaseIdToUsage()) {
-            project.getReleaseIdToUsage().entrySet().stream().forEach(e -> {
-                if (!ReleaseRelationship.REFERRED.equals(e.getValue().getReleaseRelation())) {
-                    releaseIds.add(e.getKey());
+        if (project.getReleaseRelationNetwork()!=null) {
+            List<ReleaseLinkJSON> listReleaseLinkJson;
+            List<ReleaseLinkJSON> flattedListReleaseLinkJson = new ArrayList<>();
+            try {
+                listReleaseLinkJson = mapper.readValue(project.getReleaseRelationNetwork(), new TypeReference<>() {
+                });
+                for (ReleaseLinkJSON release : listReleaseLinkJson) {
+                    flattenRelease(release, flattedListReleaseLinkJson);
+                }
+            } catch (JsonProcessingException e) {
+                log.error("JsonProcessingException: " + e);
+            }
+
+            flattedListReleaseLinkJson.stream().forEach(linkedRelease -> {
+                if (!ReleaseRelationship.REFERRED.equals(linkedRelease.getReleaseRelationship())) {
+                    releaseIds.add(linkedRelease.getReleaseId());
                 }
             });
         }
