@@ -60,6 +60,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.apache.commons.lang.StringUtils;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertId;
@@ -1101,19 +1102,35 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         if (nothingTodo(project, visitedProjectIds)) return;
 
-        nullToEmptyMap(project.getReleaseIdToUsage()).forEach((releaseId, relation) -> {
-            releaseIdToProjects.put(releaseId, new ProjectWithReleaseRelationTuple(project, relation));
-        });
+        try {
+            String releaseNetwork = project.getReleaseRelationNetwork();
+            ObjectMapper mapper = new ObjectMapper();
 
+            List<ReleaseLinkJSON> listReleaseLinkJson  = new ArrayList<>();
+            if (StringUtils.isNotEmpty(releaseNetwork)) {
+                listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
+                });
+            }
+
+            for (ReleaseLinkJSON release : listReleaseLinkJson) {
+                ProjectReleaseRelationship relation = new ProjectReleaseRelationship();
+                relation.setReleaseRelation(ReleaseRelationship.valueOf(release.getReleaseRelationship()));
+                relation.setMainlineState(MainlineState.valueOf(release.getMainlineState()));
+                relation.setComment(release.getComment());
+                relation.setCreatedOn(release.getCreateOn());
+                relation.setCreatedBy(release.getCreateBy());
+                releaseIdToProjects.put(release.getReleaseId(), new ProjectWithReleaseRelationTuple(project, relation));
+            }
+        } catch (JsonProcessingException e) {
+            log.error("Convert json to object has error JsonProcessingException: " + e.getMessage());
+        }
         Map<String, ProjectProjectRelationship> linkedProjects = project.getLinkedProjects();
         if (linkedProjects != null) {
-
-                for (String projectId : linkedProjects.keySet()) {
-                    if (visitedProjectIds.contains(projectId)) continue;
-
-                    Project linkedProject = getProjectById(projectId, user);
-                    releaseIdToProjects(linkedProject, user, visitedProjectIds, releaseIdToProjects);
-                }
+            for (String projectId : linkedProjects.keySet()) {
+                if (visitedProjectIds.contains(projectId)) continue;
+                Project linkedProject = getProjectById(projectId, user);
+                releaseIdToProjects(linkedProject, user, visitedProjectIds, releaseIdToProjects);
+            }
         }
     }
 
