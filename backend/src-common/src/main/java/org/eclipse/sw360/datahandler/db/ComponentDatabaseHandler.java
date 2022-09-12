@@ -2521,4 +2521,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 MailConstants.TEXT_SPREADSHEET_EXPORT_SUCCESS, SW360Constants.NOTIFICATION_CLASS_COMPONENT, "", false,
                 "component", url);
     }
+
+    public List<Release> getReleaseByIds(List<String> ids) {
+        return releaseRepository.getFullDocsByListIds(SummaryType.SHORT, ids);
+    }
 }
