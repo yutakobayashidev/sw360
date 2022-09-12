@@ -12,6 +12,7 @@
 package org.eclipse.sw360.spdx;
 
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
@@ -63,6 +64,18 @@ public class SpdxBOMImporter {
                 .filter(item -> item instanceof SpdxPackage)
                 .collect(Collectors.toList());
 
+        String componentsName="";
+        String releasesName="";
+        String version="";
+        List<SpdxPackage> packages = getPackages(spdxDocument);
+        for (SpdxPackage spdxPackage: packages){
+            componentsName += spdxPackage.getName() +" , ";
+            if (isNotNullEmptyOrWhitespace(spdxPackage.getVersionInfo()))
+                releasesName += spdxPackage.getName() + " " +spdxPackage.getVersionInfo() +" , ";
+                version += spdxPackage.getVersionInfo() +" , ";
+        }
+        componentsName = componentsName.substring(0, componentsName.length() - 2);
+        releasesName = releasesName.substring(0, releasesName.length() - 2);
         if (describedPackages.size() == 0) {
             requestPreparation.setMessage("The provided BOM did not contain any top level packages.");
             requestPreparation.setRequestStatus(RequestStatus.FAILURE);
@@ -76,9 +89,9 @@ public class SpdxBOMImporter {
         final SpdxItem spdxItem = describedPackages.get(0);
         if (spdxItem instanceof SpdxPackage) {
             final SpdxPackage spdxPackage = (SpdxPackage) spdxItem;
-
-            requestPreparation.setName(spdxPackage.getName());
-            requestPreparation.setVersion(spdxPackage.getVersionInfo());
+            requestPreparation.setComponentsName(componentsName);
+            requestPreparation.setReleasesName(releasesName);
+            requestPreparation.setVersion(version);
             requestPreparation.setRequestStatus(RequestStatus.SUCCESS);
         } else {
             requestPreparation.setMessage("Failed to get spdx package from the provided BOM file.");
@@ -724,7 +737,7 @@ public class SpdxBOMImporter {
         for (SpdxPackage spdxElement: packages){
             final Release release = createReleaseFromSpdxPackage(spdxElement);
 
-            if(release.getVersion() == null){
+            if(release.getVersion() == null || release.getVersion().isEmpty()){
                 release.setComponentId(importAsComponent(spdxElement).getId());
                 continue;
             } else {

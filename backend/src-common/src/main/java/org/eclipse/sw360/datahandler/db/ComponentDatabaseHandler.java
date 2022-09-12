@@ -65,6 +65,8 @@ import org.eclipse.sw360.spdx.SpdxBOMExporter;
 import org.eclipse.sw360.spdx.SpdxBOMExporterSink;
 import org.jetbrains.annotations.NotNull;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
+import org.spdx.rdfparser.model.SpdxDocument;
+import org.spdx.rdfparser.model.SpdxPackage;
 import org.spdx.tools.SpdxConverter;
 import org.spdx.tools.SpdxConverterException;
 import org.spdx.tools.TagToRDF;
@@ -114,6 +116,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private static final String ECC_AUTOSET_VALUE = "N";
     private static final String DEFAULT_CATEGORY = "Default_Category";
 
+    private static final List<String> listComponentName =new ArrayList<>();
+
+    private static final Map<String ,String> listReleaseName =new HashMap<>();
     /**
      * Connection to the couchDB database
      */
@@ -540,16 +545,40 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         if (isNullEmptyOrWhitespace(componentName)) {
             return false;
         }
-        Set<String> duplicates = componentRepository.getComponentIdsByName(componentName, caseInsenstive);
+        Set<String>  duplicates = componentRepository.getComponentIdsByName(componentName, caseInsenstive);
         return duplicates.size()>0;
     }
 
     private boolean isDuplicate(String releaseName, String releaseVersion) {
-        if (isNullEmptyOrWhitespace(releaseName)) {
+        if(isNullEmptyOrWhitespace(releaseName)) {
             return false;
         }
         List<Release> duplicates = releaseRepository.searchByNameAndVersion(releaseName, releaseVersion);
         return duplicates.size()>0;
+    }
+
+    private boolean isDuplicate(List<String> componentName, boolean caseInsenstive) {
+        int cnt =0;
+        for (String name : componentName) {
+            if(isDuplicate(name, caseInsenstive))
+                cnt ++;
+            else listComponentName.add(name);
+        }
+        if (cnt == listComponentName.size())
+            return true;
+        return false;
+    }
+
+    private boolean isDuplicate(Map<String, String>  releases) {
+        int cnt =0;
+        for (Map.Entry<String, String> release : releases.entrySet()) {
+            if(isDuplicate(release.getKey(), release.getValue()))
+                cnt ++;
+            else listReleaseName.put(release.getKey(),release.getValue());
+        }
+        if (cnt == releases.size())
+           return true;
+        return false;
     }
 
     private void resetReleaseDependentFields(Component component) {
@@ -2450,21 +2479,41 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
                 ImportBomRequestPreparation importBomRequestPreparation = spdxBOMImporter.prepareImportSpdxBOMAsRelease(spdxInputStream, attachmentContent);
                 if (RequestStatus.SUCCESS.equals(importBomRequestPreparation.getRequestStatus())) {
-                    String name = importBomRequestPreparation.getName();
-                    String version = importBomRequestPreparation.getVersion();
-                    if (!isDuplicate(name, true)) {
+                    List<String> componentsName = getComponentsName(importBomRequestPreparation.getComponentsName());
+                    Map<String, String> releasesName = getReleasesName(importBomRequestPreparation.getReleasesName());
+                    if (!isDuplicate(componentsName, true) && !isDuplicate(releasesName)) {
+                        String componentName ="";
+                        String releaseName="";
+                        if ( listComponentName.size() == 0){
+                            componentName ="Don't have Component created!";
+                        } else {
+                            for (String name : listComponentName) {
+                                componentName += name + " , ";
+                            }
+                            componentName = componentName.substring(0, componentName.length() - 2);
+                        }
+                        if (listReleaseName.size() ==0 ){
+                            releaseName ="Don't have Release created!";
+                        } else {
+                            for (Map.Entry<String, String> release : listReleaseName.entrySet()) {
+                                releaseName += release.getKey() + " " + release.getValue() + " , ";
+                            }
+                            releaseName = releaseName.substring(0, releaseName.length() - 2);
+                        }
+                        listComponentName.clear();
+                        listReleaseName.clear();
+                        importBomRequestPreparation.setComponentsName(componentName);
+                        importBomRequestPreparation.setReleasesName(releaseName);
                         importBomRequestPreparation.setIsComponentDuplicate(false);
                         importBomRequestPreparation.setIsReleaseDuplicate(false);
-                    } else if (!isDuplicate(name, version)) {
-                        importBomRequestPreparation.setIsComponentDuplicate(true);
-                        importBomRequestPreparation.setIsReleaseDuplicate(false);
                     } else {
+                        listComponentName.clear();
+                        listReleaseName.clear();
                         importBomRequestPreparation.setIsComponentDuplicate(true);
                         importBomRequestPreparation.setIsReleaseDuplicate(true);
                     }
                     importBomRequestPreparation.setMessage(targetFilePath);
                 }
-
                 return importBomRequestPreparation;
             }
         } catch (InvalidSPDXAnalysisException | IOException e) {
@@ -2744,5 +2793,25 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         mailUtil.sendMail(recepient, MailConstants.SUBJECT_SPREADSHEET_EXPORT_SUCCESS,
                 MailConstants.TEXT_SPREADSHEET_EXPORT_SUCCESS, SW360Constants.NOTIFICATION_CLASS_COMPONENT, "", false,
                 "component", url);
+    }
+    public List<String> getComponentsName (String components){
+        components = components.substring(0, components.length() - 1);
+        List<String> componentsName= new ArrayList<>();
+        String[] parts = components.split(" , ");
+        for (int i = 0; i < parts.length; i++) {
+            componentsName.add(parts[i]);
+        }
+        return componentsName;
+    }
+
+    public Map<String, String> getReleasesName (String releases)  {
+        Map<String,String> releasesName= new HashMap<>();
+        releases = releases.replace(" , ", ",");
+        String[] parts = releases.split(",");
+        for (int i = 0; i < parts.length; i++) {
+            String[] parts1 = parts[i].split(" ");
+            releasesName.put(parts1[0],parts1[1]);
+        }
+        return releasesName;
     }
 }

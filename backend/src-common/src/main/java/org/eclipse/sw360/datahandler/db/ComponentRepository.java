@@ -16,6 +16,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import com.cloudant.client.api.model.DesignDocument.MapReduce;
@@ -62,6 +63,7 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
             "    emit(doc.name, doc._id);" +
             "  } " +
             "}";
+
     private static final String BYCOMPONENTTYPE = "function(doc) {" +
             "  if (doc.type == 'component') {" +
             "    emit(doc.componentType, doc._id);" +
@@ -308,5 +310,10 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
         pageData.setTotalRowCount(response.getTotalRowCount());
         result.put(pageData, components);
         return result;
+    }
+
+    public List<Component> searchComponent(String name){
+        List<Component> components =  new ArrayList<Component>(getFullDocsById(queryForIdsAsValue("byname", name)));
+        return components;
     }
 }
