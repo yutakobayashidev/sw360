@@ -71,7 +71,7 @@ public class UserCacheHolder {
             if (refresh) {
                 return cache.getRefreshed(email);
             }
-            return cache.get(email);
+            return cache.get(email).setDepartment("department1");
         } catch (ExecutionException e) {
             LOGGER.error("Unable to fetch user...", e);
             return EMPTY_USER;

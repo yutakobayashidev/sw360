@@ -209,7 +209,7 @@
 
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
-<%@ include file="/html/utils/includes/importBomForComponent.jspf" %>
+<%@ include file="/html/utils/includes/importBom.jspf" %>
 <script>
     var renderCallback = function () {
     };
