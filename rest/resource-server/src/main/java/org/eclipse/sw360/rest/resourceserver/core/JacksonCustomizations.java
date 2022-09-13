@@ -191,7 +191,8 @@ public class JacksonCustomizations {
                 "setModifiedOn",
                 "modifiedOn",
                 "setModifiedBy",
-                "modifiedBy"
+                "modifiedBy",
+                "setReleaseRelationNetwork"
         })
         static abstract class ProjectMixin extends Project {
 
