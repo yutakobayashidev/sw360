@@ -118,7 +118,7 @@ public class RestControllerHelper<T> {
     public User getSw360UserFromAuthentication() {
         try {
             String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            return userService.getUserByEmailOrExternalId(userId).setDepartment("DEPARTMENT");
+            return userService.getUserByEmailOrExternalId(userId);
         } catch (RuntimeException e) {
             throw new AuthenticationServiceException("Could not load user from authentication.");
         }
