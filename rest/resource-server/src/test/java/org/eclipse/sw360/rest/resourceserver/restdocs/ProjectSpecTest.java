@@ -43,6 +43,7 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingF
 import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
+import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
@@ -85,6 +86,7 @@ import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.li
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -123,6 +125,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     @Mock
     private RestControllerHelper restControllerHelper;
 
+    @Mock
+    private ComponentService.Iface componentServiceMock;
     @Mock
     private ProjectService.Iface projectClientMock;
 
@@ -322,6 +326,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         .setCreatedBy("admin@sw360.org")
                         .setPhaseOutSince("2020-06-25")
                         .setState(ProjectState.ACTIVE)
+                        .setReleaseRelationNetwork("[{\"comment\":\"\",\"releaseLink\":[],\"createBy\":\"admin@sw360.org\",\"createOn\":\"2022-08-15\",\"mainlineState\":\"OPEN\",\"releaseId\":\"3765276512\",\"releaseRelationship\":\"CONTAINED\"}]")
                         .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date())));
 
         Release release = new Release();
@@ -383,6 +388,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), any())).willReturn(release);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), any())).willReturn(release2);
+        given(this.componentServiceMock.getReleaseById(any(), any())).willReturn(release);
 
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789"));
@@ -1187,9 +1193,16 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project.put("visibility", "PRIVATE");
         project.put("description", "This is the description of my Test Project");
         project.put("projectType", ProjectType.PRODUCT.toString());
-        Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
-        releaseIdToUsage.put("3765276512", new ProjectReleaseRelationship(CONTAINED, OPEN));
-        project.put("linkedReleases", releaseIdToUsage);
+        List<Map<String, Object>> dependencyNetwork = new ArrayList<>();
+        Map<String, Object> releaseLinkJson = new HashMap<>();
+        releaseLinkJson.put("releaseId", "3765276512");
+        releaseLinkJson.put("comment", "Test Comment");
+        releaseLinkJson.put("releaseRelationship", "CONTAINED");
+        releaseLinkJson.put("mainlineState", "MAINLINE");
+        releaseLinkJson.put("releaseId", "3765276512");
+        releaseLinkJson.put("createBy", "admin@sw360.org");
+        dependencyNetwork.add(releaseLinkJson);
+        project.put("dependencyNetwork", dependencyNetwork);
         Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
         linkedProjects.put("376576", new ProjectProjectRelationship(ProjectRelationship.CONTAINED).setEnableSvm(true));
         project.put("linkedProjects", linkedProjects);
@@ -1213,13 +1226,13 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("version").description("The version of the new project"),
                                 fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
                                 fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
-                                subsectionWithPath("linkedReleases").description("The relationship between linked releases of the project"),
                                 subsectionWithPath("linkedProjects").description("The `linked project id` - metadata of linked projects (`enableSvm` - whether linked projects will be part of SVM, `projectRelationship` - relationship between linked project and the project. Possible values: " + Arrays.asList(ProjectRelationship.values())),
                                 fieldWithPath("leadArchitect").description("The lead architect of the project"),
                                 fieldWithPath("contributors").description("An array of contributors to the project"),
                                 fieldWithPath("moderators").description("An array of moderators"),
                                 fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
-                                fieldWithPath("phaseOutSince").description("The project phase-out date")
+                                fieldWithPath("phaseOutSince").description("The project phase-out date"),
+                                subsectionWithPath("dependencyNetwork").description("Dependency network")
                         ),
                         responseFields(
                                 fieldWithPath("name").description("The name of the project"),
@@ -1233,6 +1246,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
                                 fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
                                 fieldWithPath("phaseOutSince").description("The project phase-out date"),
+                                fieldWithPath("releaseRelationNetwork").description("Release and project dependency network"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 subsectionWithPath("_embedded.createdBy").description("The user who created this project")
                         )));
@@ -1247,7 +1261,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         projectReqs.put("projectType", ProjectType.PRODUCT.toString());
         Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
         releaseIdToUsage.put("3765276512", new ProjectReleaseRelationship(CONTAINED, OPEN));
-        projectReqs.put("linkedReleases", releaseIdToUsage);
         Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
         linkedProjects.put("376576", new ProjectProjectRelationship(ProjectRelationship.CONTAINED).setEnableSvm(true));
         projectReqs.put("linkedProjects", linkedProjects);
@@ -1271,7 +1284,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("version").description("The version of the new project"),
                                 fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
                                 fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
-                                subsectionWithPath("linkedReleases").description("The relationship between linked releases of the project"),
                                 subsectionWithPath("linkedProjects").description("The `linked project id` - metadata of linked projects (`enableSvm` - whether linked projects will be part of SVM, `projectRelationship` - relationship between linked project and the project. Possible values: " + Arrays.asList(ProjectRelationship.values())),
                                 fieldWithPath("leadArchitect").description("The lead architect of the project"),
                                 fieldWithPath("contributors").description("An array of contributors to the project"),
@@ -1291,6 +1303,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
                                 fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
                                 fieldWithPath("phaseOutSince").description("The project phase-out date"),
+                                fieldWithPath("releaseRelationNetwork").description("releaseRelationNetwork"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 subsectionWithPath("_embedded.createdBy").description("The user who created this project")
                         )));
@@ -1379,7 +1392,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("releaseRelationNetwork").description("Release relation network"),
                         subsectionWithPath("_embedded.sw360:moderators").description("An array of moderators"),
                         subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
-                        subsectionWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
                         subsectionWithPath("_embedded.sw360:attachments").description("An array of all project attachments and link to their <<resources-attachment-get,Attachment resource>>"))));
     }
 

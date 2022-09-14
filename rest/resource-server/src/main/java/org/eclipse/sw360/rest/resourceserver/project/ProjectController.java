@@ -289,8 +289,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = PROJECTS_URL, method = RequestMethod.POST)
-    public ResponseEntity createProject(@RequestBody Map<String, Object> reqBodyMap)
-            throws URISyntaxException, TException {
+    public ResponseEntity createProject(@RequestBody Map<String, Object> reqBodyMap) throws URISyntaxException, TException {
         try {
             Project project = convertToProject(reqBodyMap, ProjectOperation.CREATE);
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -302,15 +301,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     .buildAndExpand(project.getId()).toUri();
 
             return ResponseEntity.created(location).body(halResource);
-        } catch (JsonProcessingException e) {
+        } catch (JsonProcessingException | ResourceNotFoundException | NoSuchElementException e) {
             log.error(e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (SW360Exception sw360Exception){
-            log.error(sw360Exception.getWhy());
-            return ResponseEntity.badRequest().body(sw360Exception.getWhy());
-        } catch (NoSuchElementException nsex) {
-            log.error(nsex.getMessage());
-            return ResponseEntity.badRequest().body(nsex.getMessage());
         }
     }
 
@@ -328,15 +321,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Project updateProject = null;
         try {
             updateProject = convertToProject(reqBodyMap, ProjectOperation.CREATE);
-        } catch (JsonProcessingException e) {
+        } catch (JsonProcessingException | ResourceNotFoundException | NoSuchElementException e) {
             log.error(e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (SW360Exception sw360Exception){
-            log.error(sw360Exception.getWhy());
-            return ResponseEntity.badRequest().body(sw360Exception.getWhy());
-        } catch (NoSuchElementException nsex) {
-            log.error(nsex.getMessage());
-            return ResponseEntity.badRequest().body(nsex.getMessage());
         }
         sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap,
                 mapOfProjectFieldsToRequestBody);
@@ -855,15 +842,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             }
 
             return ResponseEntity.ok().body(userHalResource);
-        } catch (JsonProcessingException e) {
+        } catch (JsonProcessingException | ResourceNotFoundException | NoSuchElementException e) {
             log.error(e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (SW360Exception sw360Exception){
-            log.error(sw360Exception.getWhy());
-            return ResponseEntity.badRequest().body(sw360Exception.getWhy());
-        } catch (NoSuchElementException nsex) {
-            log.error(nsex.getMessage());
-            return ResponseEntity.badRequest().body(nsex.getMessage());
         }
     }
 
@@ -964,7 +945,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = PROJECTS_URL + "/readableFormat", method = RequestMethod.POST)
     public ResponseEntity createProjectReadableFormat(@RequestBody Map<String, Object> reqBodyMap) throws TException {
-        ComponentService.Iface componentService = new ThriftClients().makeComponentClient();
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         try {
             Project project = convertFromReadableFormatToProject(reqBodyMap, ProjectOperation.CREATE, sw360User);
@@ -976,15 +956,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     .buildAndExpand(project.getId()).toUri();
 
             return ResponseEntity.created(location).body(halResource);
-        } catch (JsonProcessingException e) {
+        } catch (JsonProcessingException | ResourceNotFoundException | NoSuchElementException e) {
             log.error(e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (SW360Exception sw360Exception) {
-            log.error(sw360Exception.getWhy());
-            return ResponseEntity.badRequest().body(sw360Exception.getWhy());
-        } catch (NoSuchElementException nsex) {
-            log.error(nsex.getMessage());
-            return ResponseEntity.badRequest().body(nsex.getMessage());
         }
     }
 
@@ -1007,15 +981,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
             }
             return ResponseEntity.ok().body(userHalResource);
-        } catch (JsonProcessingException e) {
+        } catch (JsonProcessingException | ResourceNotFoundException | NoSuchElementException e) {
             log.error(e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (SW360Exception sw360Exception) {
-            log.error(sw360Exception.getWhy());
-            return ResponseEntity.badRequest().body(sw360Exception.getWhy());
-        } catch (NoSuchElementException nsex) {
-            log.error(nsex.getMessage());
-            return ResponseEntity.badRequest().body(nsex.getMessage());
         }
     }
     @Override
@@ -1028,11 +996,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         HalResource<Project> halProject = new HalResource<>(sw360Project);
         User projectCreator = restControllerHelper.getUserByEmail(sw360Project.getCreatedBy());
         restControllerHelper.addEmbeddedUser(halProject, projectCreator, "createdBy");
-
-        Map<String, ProjectReleaseRelationship> releaseIdToUsage = sw360Project.getReleaseIdToUsage();
-        if (releaseIdToUsage != null) {
-            restControllerHelper.addEmbeddedReleases(halProject, releaseIdToUsage.keySet(), releaseService, sw360User);
-        }
 
         Map<String, ProjectProjectRelationship> linkedProjects = sw360Project.getLinkedProjects();
         if (linkedProjects != null) {
@@ -1168,7 +1131,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     private Project convertToProject(Map<String, Object> requestBody, ProjectOperation operation) throws JsonProcessingException, TException {
-        ComponentService.Iface componentService = new ThriftClients().makeComponentClient();
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         ObjectMapper mapper = new ObjectMapper();
@@ -1199,7 +1161,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
             if (releaseLinkJSONS != null) {
                 for (ReleaseLinkJSON releaseLink : releaseLinkJSONS) {
-                    componentService.getReleaseById(releaseLink.getReleaseId(), sw360User);
+                    releaseService.getReleaseForUserById(releaseLink.getReleaseId(), sw360User);
                     String mainLineStateUpper = (releaseLink.getMainlineState() != null) ? releaseLink.getMainlineState().toUpperCase() : MainlineState.OPEN.toString();
                     String releaseRelationShipUpper = (releaseLink.getReleaseRelationship() != null) ? releaseLink.getReleaseRelationship().toUpperCase() : ReleaseRelationship.CONTAINED.toString();
 
@@ -1247,10 +1209,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
         return null;
     }
-    private void checkValidInput(List<ReleaseLinkJSON> releaseLinks, ProjectOperation operation) {
+    private void checkValidInput(List<ReleaseLinkJSON> releaseLinks, ProjectOperation operation) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         for (ReleaseLinkJSON releaseLink : releaseLinks) {
-            componentService.getReleaseById(releaseLink.getReleaseId(), sw360User);
+            releaseService.getReleaseForUserById(releaseLink.getReleaseId(), sw360User);
             String mainLineStateUpper = (releaseLink.getMainlineState() != null) ? releaseLink.getMainlineState().toUpperCase() : MainlineState.OPEN.toString();
             String releaseRelationShipUpper = (releaseLink.getReleaseRelationship() != null) ? releaseLink.getReleaseRelationship().toUpperCase() : ReleaseRelationship.CONTAINED.toString();
 
@@ -1395,7 +1357,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         return halProject;
     }
-    private Project convertFromReadableFormatToProject(Map<String, Object> requestBody, ProjectOperation operation, User sw360User) throws JsonProcessingException {
+    private Project convertFromReadableFormatToProject(Map<String, Object> requestBody, ProjectOperation operation, User sw360User) throws JsonProcessingException, TException {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.registerModule(sw360Module);
@@ -1453,7 +1415,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return project;
     }
 
-    private List<ReleaseLinkJSON> getRelationNetwork(Map<String, Integer> listSubReleaseId, ReleaseLinkJSON releaseLinkJSON, List<ReleaseLinkJSON> inputNetwork, ProjectOperation operation,User sw360User) {
+    private List<ReleaseLinkJSON> getRelationNetwork(Map<String, Integer> listSubReleaseId, ReleaseLinkJSON releaseLinkJSON, List<ReleaseLinkJSON> inputNetwork, ProjectOperation operation,User sw360User) throws TException {
         List<ReleaseLinkJSON> subReleases = new ArrayList<>();
         for (ReleaseLinkJSON subRelease : releaseLinkJSON.getReleaseLink()) {
             ReleaseLinkJSON releaseByIndex = inputNetwork.get(listSubReleaseId.get(subRelease.getReleaseId()));
@@ -1465,9 +1427,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return subReleases;
     }
 
-    public ReleaseLinkJSON checkAndUpdateNode(ReleaseLinkJSON node, ProjectOperation operation, User sw360User) {
+    public ReleaseLinkJSON checkAndUpdateNode(ReleaseLinkJSON node, ProjectOperation operation, User sw360User) throws TException {
         ReleaseLinkJSON release = new ReleaseLinkJSON();
-        componentService.getReleaseById(node.getReleaseId(), sw360User);
+        releaseService.getReleaseForUserById(node.getReleaseId(), sw360User);
         String mainLineStateUpper = (node.getMainlineState() != null) ? node.getMainlineState().toUpperCase() : MainlineState.OPEN.toString();
         String releaseRelationShipUpper = (node.getReleaseRelationship() != null) ? node.getReleaseRelationship().toUpperCase() : ReleaseRelationship.CONTAINED.toString();
 
