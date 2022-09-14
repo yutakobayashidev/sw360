@@ -304,6 +304,7 @@ public class PortalConstants {
     public static final String PROJECT_OBLIGATIONS_INFO_BY_RELEASE = "projectObligationsInfoByRelease";
     public static final String LINKED_OBLIGATIONS = "linkedObligations";
     public static final String APPROVED_OBLIGATIONS_COUNT = "approvedObligationsCount";
+    public static final String OBLIGATION_FROM_README_OSS = "obligationFromReadmeOSS";
     public static final String EXCLUDED_RELEASES = "excludedReleases";
     public static final String RELATIONSHIPS = "relations";
     public static final String PROJECT_RELEASE_TO_RELATION = "projectReleaseToRelation";
@@ -502,9 +503,6 @@ public class PortalConstants {
     // bom import
     public static final String PREPARE_IMPORT_BOM = "prepareImportBom";
     public static final String IMPORT_BOM = "importBom";
-    public static final String IMPORT_BOM_AS_NEW = "importBomAsNew";
-    public static final String NEW_RELEASE_VERSION = "newRleaseVersion";
-    public static final String RDF_FILE_PATH = "rdfFilePath";
 
     // project actions
     public static final String VIEW_LINKED_PROJECTS = "view_linked_projects";

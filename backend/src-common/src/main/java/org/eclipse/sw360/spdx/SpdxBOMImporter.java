@@ -32,8 +32,6 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.eclipse.sw360.datahandler.common.CommonUtils.isNotNullEmptyOrWhitespace;
-
 public class SpdxBOMImporter {
     private static final Logger log = LogManager.getLogger(SpdxBOMImporter.class);
     private final SpdxBOMImporterSink sink;
@@ -233,7 +231,6 @@ public class SpdxBOMImporter {
 
 
             final SpdxBOMImporterSink.Response response = sink.addRelease(release);
-
             response.addChild(component);
             return Optional.of(response);
         } else {

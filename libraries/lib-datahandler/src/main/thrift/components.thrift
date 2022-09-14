@@ -829,9 +829,6 @@ service ComponentService {
      */
     string getCyclicLinkedReleasePath(1: Release release, 2: User user);
 
-    // /**
-    //  * parse a bom file and write the information to SW360
-    //  **/
     ImportBomRequestPreparation prepareImportBom(1: User user, 2:string attachmentContentId);
 
     /**
@@ -853,5 +850,4 @@ service ComponentService {
     * Send email to the user once spreadsheet export completed
     */
     void sendExportSpreadsheetSuccessMail(1: string url, 2: string userEmail);
-
 }

@@ -62,21 +62,13 @@ import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.jetbrains.annotations.NotNull;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
-import org.spdx.tools.SpdxConverter;
-import org.spdx.tools.SpdxConverterException;
-import org.spdx.tools.TagToRDF;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -171,7 +163,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         attachmentConnector = new AttachmentConnector(httpClient, attachmentDbName, durationOf(30, TimeUnit.SECONDS));
         DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
-
     }
 
     public ComponentDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String changeLogsDbName, String attachmentDbName, ComponentModerator moderator, ReleaseModerator releaseModerator, ProjectModerator projectModerator) throws MalformedURLException {
@@ -1706,7 +1697,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             // Remove release id from component
             removeReleaseId(id, release.componentId);
             Component componentAfter=removeReleaseAndCleanUp(release, user);
-
             dbHandlerUtil.addChangeLogs(null, release, user.getEmail(), Operation.DELETE, attachmentConnector,
                     Lists.newArrayList(), null, null);
             dbHandlerUtil.addChangeLogs(componentAfter, componentBefore, user.getEmail(), Operation.UPDATE,
@@ -2486,10 +2476,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 			}
 		}
 		return ext;
-    }
-
-    private boolean isJSONFile(String fileType) {
-        return (!isNullEmptyOrWhitespace(fileType) && fileType.equals("json"));
     }
 
     private void removeLeadingTrailingWhitespace(Release release) {

@@ -77,7 +77,6 @@ import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ProjectRe
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.RepositoryMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.VendorMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ObligationMixin;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.*;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -127,7 +126,6 @@ public class DatabaseHandlerUtil {
     private static final boolean IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED;
     private static final String ATTACHMENT_STORE_FILE_SYSTEM_LOCATION;
     private static final String ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION;
-    // private static final String TEMPLE_FILE_LOCATION;
     private static ExecutorService ATTACHMENT_FILE_SYSTEM_STORE_THREAD_POOL = Executors.newFixedThreadPool(5);
     private static final String ATTACHMENT_DELETE_NO_OF_DAYS;
     private static final boolean IS_SW360CHANGELOG_ENABLED;
@@ -143,7 +141,6 @@ public class DatabaseHandlerUtil {
                 "/opt/sw360tempattachments");
         ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION = props.getProperty("attachment.store.file.system.permission",
                 "rwx------");
-                // TEMPLE_FILE_LOCATION = props.getProperty("temp.dir", "../temp")
         IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED = Boolean.parseBoolean(props.getProperty("enable.attachment.store.to.file.system", "false"));
         ATTACHMENT_DELETE_NO_OF_DAYS = props.getProperty("attachemnt.delete.no.of.days",
                 "30");
@@ -415,6 +412,8 @@ public class DatabaseHandlerUtil {
             changeLog.setDocumentType(newProjVer.getType());
             changeLog.setDbName(DatabaseSettings.COUCH_DB_DATABASE);
         }
+
+        log.info("Initialize ChangeLogs for Document Id : " + changeLog.getDocumentId());
 
         if (parentOperation != null)
             info.put("PARENT_OPERATION", parentOperation.name());
