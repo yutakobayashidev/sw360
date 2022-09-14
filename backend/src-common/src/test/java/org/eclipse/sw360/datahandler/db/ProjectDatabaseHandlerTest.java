@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.SetMultimap;
 
 import org.eclipse.sw360.datahandler.TestUtils;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
@@ -58,6 +59,10 @@ public class ProjectDatabaseHandlerTest {
     ProjectDatabaseHandler handler;
     ComponentDatabaseHandler componentHandler;
     AttachmentDatabaseHandler attachmentDatabaseHandler;
+
+    ReleaseRepository releaseRepository;
+
+    VendorRepository vendorRepository;
     @Before
     public void setUp() throws Exception {
         assertTestString(dbName);
@@ -87,6 +92,36 @@ public class ProjectDatabaseHandlerTest {
         projects.add(new Project().setId("P3").setName("Project3").setBusinessUnit("AB CD EF").setCreatedBy("user3"));
         Project p4 = new Project().setId("P4").setName("Project4").setBusinessUnit("AB CD EF").setCreatedBy("user1")
                 .setVisbility(Visibility.PRIVATE)
+                .setReleaseRelationNetwork("[\n" +
+                        "  {\n" +
+                        "    \"releaseId\": \"r1\",\n" +
+                        "    \"releaseLink\": [],\n" +
+                        "    \"releaseRelationship\": \"CONTAINED\",\n" +
+                        "    \"mainlineState\": \"OPEN\",\n" +
+                        "    \"comment\": \"\",\n" +
+                        "    \"createOn\": \"2022-09-12\",\n" +
+                        "    \"createBy\": \"admin@sw360.org\"\n" +
+                        "  },\n" +
+                        "  {\n" +
+                        "    \"releaseId\": \"r2\",\n" +
+                        "    \"releaseLink\": [\n" +
+                        "      {\n" +
+                        "        \"releaseId\": \"r3\",\n" +
+                        "        \"releaseLink\": [],\n" +
+                        "        \"releaseRelationship\": \"CONTAINED\",\n" +
+                        "        \"mainlineState\": \"OPEN\",\n" +
+                        "        \"comment\": \"\",\n" +
+                        "        \"createOn\": \"2022-09-12\",\n" +
+                        "        \"createBy\": \"admin@sw360.org\"\n" +
+                        "      }\n" +
+                        "    ],\n" +
+                        "    \"releaseRelationship\": \"CONTAINED\",\n" +
+                        "    \"mainlineState\": \"OPEN\",\n" +
+                        "    \"comment\": \"\",\n" +
+                        "    \"createOn\": \"2022-09-12\",\n" +
+                        "    \"createBy\": \"admin@sw360.org\"\n" +
+                        "  }\n" +
+                        "]")
                 .setReleaseIdToUsage(ImmutableMap.<String, ProjectReleaseRelationship>builder()
                         .put("r1", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
                         .put("r2", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
@@ -121,6 +156,10 @@ public class ProjectDatabaseHandlerTest {
         componentHandler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName);
         attachmentDatabaseHandler = new AttachmentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentsDbName);
         handler = new ProjectDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName, moderator, componentHandler, attachmentDatabaseHandler);
+
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(DatabaseSettings.getConfiguredClient(), dbName);
+        vendorRepository = new VendorRepository(db);
+        releaseRepository = new ReleaseRepository(db, vendorRepository);
     }
 
     @After
@@ -337,27 +376,6 @@ public class ProjectDatabaseHandlerTest {
         SetMultimap<String, ProjectWithReleaseRelationTuple> releaseIdToProjects = handler.releaseIdToProjects(new Project().setId("p4"), user1);
         Set<String> releaseIds = releaseIdToProjects.keySet();
         assertTrue("Release IDs size", releaseIds.size() == 0);
-    }
-
-    @Test
-    public void testReleaseIdToProjects() throws Exception {
-        Project p1 = handler.getProjectById("P1", user1);
-        p1.setLinkedProjects(ImmutableMap.<String, ProjectProjectRelationship>builder().put("P2", new ProjectProjectRelationship(ProjectRelationship.CONTAINED)).build());
-        handler.updateProject(p1, user1);
-        Project p2 = handler.getProjectById("P2", user2);
-
-        SetMultimap<String, ProjectWithReleaseRelationTuple> releaseIdToProjects = handler.releaseIdToProjects(p1, user1);
-
-        Set<String> releaseIds = releaseIdToProjects.keySet();
-
-        assertThat(releaseIds, containsInAnyOrder("r1", "r2","r3","r4","r5","r6"));
-        assertThat(releaseIdToProjects.get("r1"), containsInAnyOrder(createTuple(p1),createTuple(p2)));
-        assertThat(releaseIdToProjects.get("r2"), containsInAnyOrder(createTuple(p1),createTuple(p2)));
-        assertThat(releaseIdToProjects.get("r3"), containsInAnyOrder(createTuple(p1),createTuple(p2)));
-        assertThat(releaseIdToProjects.get("r4"), containsInAnyOrder(createTuple(p1)));
-        assertThat(releaseIdToProjects.get("r5"), containsInAnyOrder(createTuple(p1)));
-        assertThat(releaseIdToProjects.get("r6"), containsInAnyOrder(createTuple(p1)));
-
     }
 
     @Test
