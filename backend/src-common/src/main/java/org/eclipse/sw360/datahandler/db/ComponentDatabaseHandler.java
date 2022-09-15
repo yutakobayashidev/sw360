@@ -2383,26 +2383,17 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public ImportBomRequestPreparation prepareImportBom(User user, String attachmentContentId) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
         final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
-        String sourceFilePath = null;
-        String targetFilePath = null;
         try {
             final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
             try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
                 final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
                 final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
 
-                InputStream spdxInputStream = null;
                 String fileType = getFileType(attachmentContent.getFilename());
+                final String ext = "." + fileType;
+                final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(user, inputStream, attachmentContentId, ext);
 
-                    final String ext = "." + fileType;
-                    final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(user, inputStream, attachmentContentId, ext);
-                    sourceFilePath = sourceFile.getAbsolutePath();
-                    cutFileInformation(sourceFilePath);
-                    File targetFile = new File (sourceFilePath);
-                    spdxInputStream = new  FileInputStream(targetFile);
-                    targetFilePath = sourceFilePath;
-
-                ImportBomRequestPreparation importBomRequestPreparation = spdxBOMImporter.prepareImportSpdxBOMAsRelease(spdxInputStream, attachmentContent);
+                ImportBomRequestPreparation importBomRequestPreparation = spdxBOMImporter.prepareImportSpdxBOMAsRelease(sourceFile);
                 if (RequestStatus.SUCCESS.equals(importBomRequestPreparation.getRequestStatus())) {
                     String name = importBomRequestPreparation.getName();
                     String version = importBomRequestPreparation.getVersion();
@@ -2416,28 +2407,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                         importBomRequestPreparation.setIsComponentDuplicate(true);
                         importBomRequestPreparation.setIsReleaseDuplicate(true);
                     }
-                    importBomRequestPreparation.setMessage(targetFilePath);
+                    importBomRequestPreparation.setMessage(sourceFile.getAbsolutePath());
                 }
+
                 return importBomRequestPreparation;
             }
-        } catch (InvalidSPDXAnalysisException | IOException e) {
-            throw new SW360Exception(e.getMessage());
-        }
-    }
-
-    private void cutFileInformation(String pathFile) {
-        try {
-            log.info("Run command cut File information from RDF file from line");
-            String command = "file=\"" + pathFile + "\" " +
-            "&& start=$(cat $file | grep -nF \"spdx:hasFile>\" | head -1 | cut -d \":\" -f1) " +
-            "&& end=$(cat $file | grep -nF \"/spdx:hasFile>\" | tail -1 | cut -d \":\" -f1) " +
-            "&& echo $start to $end " +
-            "&& sed -i \"${start},${end}d\" $file ";
-            Process process = Runtime.getRuntime().exec(new String[] { "/bin/bash", "-c", command });
-            printResults(process);
         } catch (IOException e) {
-            log.error("Error when cut File information");
-            e.printStackTrace();
+            throw new SW360Exception(e.getMessage());
         }
     }
 
@@ -2449,19 +2425,12 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
     }
 
-    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws SW360Exception {
+    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId, String rdfFilePath) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
-        final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
-        try {
-            final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
-            try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
-                final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
-                final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
-                return spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent);
-            }
-        } catch (IOException e) {
-            throw new SW360Exception(e.getMessage());
-        }
+        final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
+        final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
+        File file = new File(rdfFilePath);
+        return spdxBOMImporter.importSpdxBOMAsRelease(file, attachmentContent);
     }
 
     private String getFileType(String fileName) {
@@ -2621,4 +2590,5 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 MailConstants.TEXT_SPREADSHEET_EXPORT_SUCCESS, SW360Constants.NOTIFICATION_CLASS_COMPONENT, "", false,
                 "component", url);
     }
+
 }

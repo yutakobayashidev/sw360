@@ -46,6 +46,7 @@ import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -1416,13 +1417,29 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
                 final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, this, componentDatabaseHandler);
                 final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
-                return spdxBOMImporter.importSpdxBOMAsProject(inputStream, attachmentContent);
+                String fileType = getFileType(attachmentContent.getFilename());
+                final String ext = "." + fileType;
+                final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(user, inputStream, attachmentContentId, ext);
+                return spdxBOMImporter.importSpdxBOMAsProject(sourceFile, attachmentContent);
             }
-        } catch (InvalidSPDXAnalysisException | IOException e) {
+        } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
         }
     }
 
+    private String getFileType(String fileName) {
+        if (isNullEmptyOrWhitespace(fileName) || !fileName.contains(".")) {
+            log.error("Can not get file type from file name - no file extension");
+            return null;
+        }
+        String ext = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+        if ("xml".equals(ext)) {
+            if (fileName.endsWith("rdf.xml")) {
+                ext = "rdf";
+            }
+        }
+        return ext;
+    }
     private void removeLeadingTrailingWhitespace(Project project) {
         DatabaseHandlerUtil.trimStringFields(project, listOfStringFieldsInProjToTrim);
 
