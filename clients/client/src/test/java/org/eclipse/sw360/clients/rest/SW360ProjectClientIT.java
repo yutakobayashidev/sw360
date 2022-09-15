@@ -261,7 +261,6 @@ public class SW360ProjectClientIT extends AbstractMockServerTest {
      */
     private void checkLinkedReleases(boolean transitive) throws IOException {
         SW360ProjectDTO projectIT = readTestJsonFile(resolveTestFileURL("projectIT.json"), SW360ProjectDTO.class);
-        SW360Project createdProject = waitFor(projectClient.createProject(projectIT));
         List<String> releases = Arrays.asList("release1", "releaseMe", "releaseParty");
         SW360Release release = null;
         SW360Release release2 = null;
@@ -282,36 +281,26 @@ public class SW360ProjectClientIT extends AbstractMockServerTest {
             releases = Arrays.asList(release.getId(), release2.getId());
         }
         List<SW360ReleaseLinkJSON> dependencyNetwork= new ArrayList<>();
-        SW360ReleaseLinkJSON releaseLinkJSON1 = new SW360ReleaseLinkJSON(releases.get(0), Collections.emptyList(), "CONTAIN", "MAINLINE", "","","");
-        SW360ReleaseLinkJSON releaseLinkJSON2 = new SW360ReleaseLinkJSON(releases.get(1), Collections.emptyList(), "CONTAIN", "MAINLINE", "","","");
+        SW360ReleaseLinkJSON releaseLinkJSON1 = new SW360ReleaseLinkJSON(releases.get(0), Collections.emptyList(), "CONTAINED", "MAINLINE", "","","");
+        SW360ReleaseLinkJSON releaseLinkJSON2 = new SW360ReleaseLinkJSON(releases.get(1), Collections.emptyList(), "CONTAINED", "MAINLINE", "","","");
         dependencyNetwork.add(releaseLinkJSON1);
         dependencyNetwork.add(releaseLinkJSON2);
         projectIT.setDependencyNetwork(dependencyNetwork);
+        String projId = createProject(projectIT);
 
-        SW360Project returnProject = objectMapper.convertValue(projectIT, SW360Project.class);
-        String urlPath = "/projects/" + createdProject.getId();
-        wireMockRule.stubFor(patch(urlPathEqualTo("/projects/" + createdProject.getId()))
-                .withRequestBody(equalTo(toJson(projectIT)))
-                .willReturn(aJsonResponse(HttpConstants.STATUS_OK)
-                        .withBody(toJson(returnProject))));
-
-        waitFor(projectClient.updateProject(projectIT));
         if (RUN_REST_INTEGRATION_TEST) {
-            List<SW360SparseRelease> releasesLinked = waitFor(projectClient.getLinkedReleases(createdProject.getId(), false));
+            List<SW360SparseRelease> releasesLinked = waitFor(projectClient.getLinkedReleases(projId, false));
             assertThat(releasesLinked).hasSize(2);
         }
-        if (!RUN_REST_INTEGRATION_TEST) {
-            wireMockRule.verify(postRequestedFor(urlPathEqualTo(urlPath)).withRequestBody(equalTo(toJson(releases))));
-        }
-        
-        String urlPathGet = "/projects/" + createdProject.getId() + "/releases";
+
+        String urlPathGet = "/projects/" + projId + "/releases";
         wireMockRule.stubFor(get(urlPathEqualTo(urlPathGet))
                 .withQueryParam("transitive", equalTo(String.valueOf(transitive)))
                 .willReturn(aJsonResponse(HttpConstants.STATUS_OK)
                         .withBodyFile("all_releases.json")));
 
-        List<SW360SparseRelease> releasesFetched = waitFor(projectClient.getLinkedReleases(createdProject.getId(), transitive));
-        deleteProject(createdProject.getId());
+        List<SW360SparseRelease> releasesFetched = waitFor(projectClient.getLinkedReleases(projId, transitive));
+        deleteProject(projId);
         if (RUN_REST_INTEGRATION_TEST) {
             SW360ReleaseClientIT.cleanupRelease(release, releaseClient);
             SW360ReleaseClientIT.cleanupRelease(release2, releaseClient);

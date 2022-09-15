@@ -375,7 +375,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @RequestMapping(value = PROJECTS_URL + "/{id}/releases", method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<Release>>> getProjectReleases(
+    public ResponseEntity getProjectReleases(
             Pageable pageable,
             @PathVariable("id") String id,
             @RequestParam(value = "transitive", required = false) String transitive,HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
@@ -383,8 +383,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         boolean isTransitive = Boolean.parseBoolean(transitive);
 
-        final List<ReleaseLinkJSON> releaseLinkedDirectly = projectService.getReleasesLinkDirectlyByProjectId(id, sw360User, isTransitive);
-
+        List<ReleaseLinkJSON> releaseLinkedDirectly = new ArrayList<>();
+        try {
+            releaseLinkedDirectly = projectService.getReleasesLinkDirectlyByProjectId(id, sw360User, isTransitive);
+        } catch (SW360Exception sw360Exception) {
+            return new ResponseEntity<>("Project " + id + " not found", HttpStatus.NOT_FOUND);
+        }
         PaginationResult<ReleaseLinkJSON> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
                 releaseLinkedDirectly, SW360Constants.TYPE_RELEASE_LINK_JSON);
 
