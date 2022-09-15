@@ -329,6 +329,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
         User user = UserCacheHolder.getUserFromRequest(request);
         String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
+
         String rdfFilePath = request.getParameter(RDF_FILE_PATH);
         try {
             final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId,rdfFilePath);
@@ -1012,7 +1013,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     putDirectlyLinkedReleaseRelationsWithAccessibilityInRequest(request, release, user);
                     setAttachmentsInRequest(request, release);
                     setUsingDocs(request, null, user, client);
-                    SessionMessages.add(request, "request_processed", LanguageUtil.get(resourceBundle, "new.license"));
+                    SessionMessages.add(request, "request_processed", LanguageUtil.get(resourceBundle,"new.license"));
                 }
             }
 
@@ -1365,7 +1366,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
         ComponentService.Iface cClient = thriftClients.makeComponentClient();
         List<Release> releases = cClient.getReleasesByComponentId(componentId, sessionUser);
-
+        
         jsonGenerator.writeStartObject();
 
         jsonGenerator.writeArrayFieldStart("releases");
@@ -1433,7 +1434,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         for(Attachment attachment : nullToEmptySet(releaseSource.getAttachments())) {
             addToMap(displayInformation, "attachmentType", attachment.getAttachmentType());
         }
-        for (Attachment attachment : nullToEmptySet(releaseTarget.getAttachments())) {
+        for(Attachment attachment : nullToEmptySet(releaseTarget.getAttachments())) {
             addToMap(displayInformation, "attachmentType", attachment.getAttachmentType());
         }
 

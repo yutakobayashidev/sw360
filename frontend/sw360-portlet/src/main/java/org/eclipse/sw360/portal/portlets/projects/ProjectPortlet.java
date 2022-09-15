@@ -2692,6 +2692,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
             request.setAttribute(APPROVED_OBLIGATIONS_COUNT, getFulfilledObligationsCount(obligationStatusMap));
             request.setAttribute(OBLIGATION_FROM_README_OSS, getObligationsFromReadmeOSSCount(obligationStatusMap));
+
             request.setAttribute(EXCLUDED_RELEASES, excludedReleases);
             request.setAttribute(PROJECT_OBLIGATIONS_INFO_BY_RELEASE, filterAndSortLicenseInfo(licenseObligation.getLicenseInfoResults()));
         } catch (TException e) {
