@@ -534,10 +534,17 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     }
 
     private void serveDeleteRelease(PortletRequest request, ResourceResponse response) throws IOException {
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
         String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
         Set<String> releaseIdToSet = new HashSet<>();
         releaseIdToSet.add(releaseId);
-        if (getUsingProjectInDependencyNetwork(releaseIdToSet).size() > 0) {
+        Set<Project> allProjects = new HashSet<>();
+        try {
+            allProjects.addAll(projectClient.getAll());
+        } catch (TException e) {
+            log.error(e.getMessage());
+        }
+        if (getUsingProjectByReleaseIds(releaseIdToSet, allProjects).size() > 0) {
             serveRequestStatus(request, response, RequestStatus.IN_USE, "Problem removing release", log);
         } else {
             final RequestStatus requestStatus = ComponentPortletUtils.deleteRelease(request, log);
@@ -1595,14 +1602,18 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     }
 
     private void setUsingDocs(RenderRequest request, User user, ComponentService.Iface client, Set<String> releaseIds) {
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
         Set<Component> usingComponentsForComponent = null;
         List<Project> usingProjectInDependencyNetwork;
+
         if (releaseIds != null && releaseIds.size() > 0) {
             try {
+                Set<Project> setProjectsWithAccessible = projectClient.getAccessibleProjects(user);
+                Set<Project> allProjects = projectClient.getAll().stream().collect(Collectors.toSet());
                 usingComponentsForComponent = client.getUsingComponentsWithAccessibilityForComponent(releaseIds, user);
-                usingProjectInDependencyNetwork = getUsingProjectAccessibleInDependencyNetwork(releaseIds, user);
+                usingProjectInDependencyNetwork = getUsingProjectByReleaseIds(releaseIds, setProjectsWithAccessible);
                 request.setAttribute(USING_PROJECTS, new HashSet<>(usingProjectInDependencyNetwork));
-                request.setAttribute(ALL_USING_PROJECTS_COUNT, getUsingProjectInDependencyNetwork(releaseIds).size());
+                request.setAttribute(ALL_USING_PROJECTS_COUNT, getUsingProjectByReleaseIds(releaseIds, allProjects).size());
             } catch (TException e) {
                 log.error("Problem filling using docs", e);
             }
@@ -1842,14 +1853,17 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
 
     private void setUsingDocs(RenderRequest request, String releaseId, User user, ComponentService.Iface client) throws TException {
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
         if (releaseId != null) {
+            Set<Project> setProjectsWithAccessible = projectClient.getAccessibleProjects(user);
+            Set<Project> allProjects = projectClient.getAll().stream().collect(Collectors.toSet());
             final Set<Component> usingComponentsForRelease = client.getUsingComponentsWithAccessibilityForRelease(releaseId, user);
             Set<String> releaseIdSet = new HashSet<>();
             releaseIdSet.add(releaseId);
-            List<Project> usingProjectInDependencyNetwork = getUsingProjectAccessibleInDependencyNetwork(releaseIdSet, user);
+            List<Project> usingProjectInDependencyNetwork = getUsingProjectByReleaseIds(releaseIdSet, setProjectsWithAccessible);
             request.setAttribute(USING_COMPONENTS, nullToEmptySet(usingComponentsForRelease));
             request.setAttribute(USING_PROJECTS, new HashSet<>(usingProjectInDependencyNetwork));
-            request.setAttribute(ALL_USING_PROJECTS_COUNT, getUsingProjectInDependencyNetwork(releaseIdSet).size());
+            request.setAttribute(ALL_USING_PROJECTS_COUNT, getUsingProjectByReleaseIds(releaseIdSet, allProjects).size());
         } else {
             request.setAttribute(USING_PROJECTS,  Collections.emptySet());
             request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
@@ -2534,57 +2548,23 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         }
     }
 
-    private List<Project> getUsingProjectAccessibleInDependencyNetwork(Set<String> releaseIds, User user) {
-        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
-        Set<Project> projects;
+    private List<Project> getUsingProjectByReleaseIds(Set<String> releaseIds, Set<Project> projects) {
         List<Project> projectsUsing = new ArrayList<>();
-        try {
-            projects = projectClient.getAccessibleProjects(user);
-            projects.forEach(p -> {
-                boolean contain = false;
-                for (String releaseId : releaseIds) {
-                    if (p.getReleaseRelationNetwork() == null) {
-                        return;
-                    }
-                    if (p.getReleaseRelationNetwork().contains("\"releaseId\":\"" + releaseId + "\"")) {
-                        contain = true;
-                        break;
-                    }
+        projects.forEach(p -> {
+            boolean contain = false;
+            for (String releaseId : releaseIds) {
+                if (p.getReleaseRelationNetwork() == null) {
+                    return;
                 }
-                if (contain == true) {
-                    projectsUsing.add(p);
+                if (p.getReleaseRelationNetwork().contains("\"releaseId\":\"" + releaseId + "\"")) {
+                    contain = true;
+                    break;
                 }
-            });
-        } catch (TException e) {
-            log.error(e.getMessage());
-        }
-        return projectsUsing;
-    }
-
-    private List<Project> getUsingProjectInDependencyNetwork(Set<String> releaseIds) {
-        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
-        List<Project> projects;
-        List<Project> projectsUsing = new ArrayList<>();
-        try {
-            projects = projectClient.getAll();
-            projects.forEach(p -> {
-                boolean contain = false;
-                for (String releaseId : releaseIds) {
-                    if (p.getReleaseRelationNetwork() == null) {
-                        return;
-                    }
-                    if (p.getReleaseRelationNetwork().contains("\"releaseId\":\"" + releaseId + "\"")) {
-                        contain = true;
-                        break;
-                    }
-                }
-                if (contain == true) {
-                    projectsUsing.add(p);
-                }
-            });
-        } catch (TException e) {
-            log.error(e.getMessage());
-        }
+            }
+            if (contain == true) {
+                projectsUsing.add(p);
+            }
+        });
         return projectsUsing;
     }
 }

@@ -121,6 +121,7 @@ public final class SW360Project extends SW360HalResource<LinkObjects, SW360Proje
         this.visibility = visbility;
         return this;
     }
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Map<String, SW360ProjectReleaseRelationship> getReleaseIdToUsage() {
         return this.releaseIdToUsage;

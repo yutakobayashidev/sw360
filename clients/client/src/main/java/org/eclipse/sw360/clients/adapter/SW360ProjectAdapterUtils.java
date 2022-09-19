@@ -28,6 +28,7 @@ class SW360ProjectAdapterUtils {
         boolean isProjectVersionEqual = sw360Project.getVersion().equalsIgnoreCase(projectVersion);
         return isAppIdEqual && isProjectVersionEqual;
     }
+
     public static boolean isValidProjectDTO(SW360ProjectDTO project) {
         return StringUtils.isNotEmpty(project.getName()) && StringUtils.isNotEmpty(project.getVersion());
     }

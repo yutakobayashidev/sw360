@@ -761,6 +761,7 @@ public class SW360Utils {
             log.error(e.getMessage());
         }
     }
+
     public static Set<String> getReleaseIdsLinkedWithProject(Project project) {
         Set<String> releasesIds = new HashSet<>();
         ObjectMapper objectMapper = new ObjectMapper();

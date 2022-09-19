@@ -438,6 +438,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
         return listOfProjects;
     }
+
     public List<ReleaseLinkJSON> getReleasesLinkDirectlyByProjectId(String projectId, User sw360User, boolean transitive) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         Project sw360Project = sw360ProjectClient.getProjectById(projectId, sw360User);
@@ -467,6 +468,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
         return releaseLinkedDirectly;
     }
+
     public List<ReleaseLinkJSON> getReleasesInDependencyNetworkFromProjectIds(List<String> projectIds, final User sw360User, boolean transitive) {
         List<ReleaseLinkJSON> releasesLinked = new ArrayList<>();
 
@@ -480,6 +482,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
         return releasesLinked;
     }
+
     public Set<String> getReleasesIdByProjectId(String projectId, User sw360User, String transitive) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         Project sw360Project = sw360ProjectClient.getProjectById(projectId, sw360User);

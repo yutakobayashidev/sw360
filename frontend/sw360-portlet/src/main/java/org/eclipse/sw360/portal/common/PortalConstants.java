@@ -663,7 +663,6 @@ public class PortalConstants {
     public static final String PREDEFINED_TAGS;
     public static final boolean SSO_LOGIN_ENABLED;
     public static final boolean IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED;
-    public static final String NETWORK_PROJECT_LIST = "networkProjectList";
     public static final String NETWORK_PARENT_BRANCH_ID = "network_parent_branch_id";
     public static final String NETWORK_RELEASE_LIST = "networkReleaseList";
     public static final String NETWORK_TOTAL_INACCESSIBLE_ROWS = "netWorkTotalInAccessibleRow";

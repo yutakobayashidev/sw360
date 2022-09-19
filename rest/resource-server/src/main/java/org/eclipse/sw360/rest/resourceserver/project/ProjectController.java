@@ -307,7 +307,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
     }
 
-
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = PROJECTS_URL + "/duplicate/{id}", method = RequestMethod.POST)
     public ResponseEntity createDuplicateProject(@PathVariable("id") String id,
@@ -327,7 +326,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
         sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap,
                 mapOfProjectFieldsToRequestBody);
-
         sw360Project.unsetId();
         sw360Project.unsetRevision();
         sw360Project.unsetAttachments();
@@ -937,6 +935,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         HttpStatus status = attachmentUsageMap == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(attachmentUsageMap, status);
     }
+
     @RequestMapping(value = PROJECTS_URL + "/network/{id}", method = RequestMethod.GET)
     public ResponseEntity<EntityModel<ProjectNetwork>> getDependencyNetworkOfProject(@PathVariable("id") String id) throws TException {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -946,6 +945,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         EntityModel<ProjectNetwork> halProjectNetwork = createHalProjectNetwork(project);
         return new ResponseEntity<>(halProjectNetwork, HttpStatus.OK);
     }
+
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = PROJECTS_URL + "/readableFormat", method = RequestMethod.POST)
     public ResponseEntity createProjectReadableFormat(@RequestBody Map<String, Object> reqBodyMap) throws TException {
@@ -1213,6 +1213,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
         return null;
     }
+
     private void checkValidInput(List<ReleaseLinkJSON> releaseLinks, ProjectOperation operation) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         for (ReleaseLinkJSON releaseLink : releaseLinks) {
@@ -1248,6 +1249,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             checkValidInput(releaseLink.getReleaseLink(), operation);
         }
     }
+
     private HalResource<ProjectDTO> createHalProjectDTOResourceWithAllDetails(Project sw360Project, User sw360User,
                                                                               Map<String, Project> mapOfProjects, boolean isAllAccessibleProjectFetched) {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -1291,6 +1293,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         return halProject;
     }
+
     private EntityModel<ProjectNetwork> createHalProjectNetwork(Project sw360Project) {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -1309,6 +1312,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         return halProject;
     }
+
     private HalResource<ProjectDTO> createHalProjectDTO(Project sw360Project, User sw360User) throws TException {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -1361,6 +1365,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         return halProject;
     }
+
     private Project convertFromReadableFormatToProject(Map<String, Object> requestBody, ProjectOperation operation, User sw360User) throws JsonProcessingException, TException {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

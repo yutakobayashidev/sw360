@@ -1105,13 +1105,11 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         try {
             String releaseNetwork = project.getReleaseRelationNetwork();
             ObjectMapper mapper = new ObjectMapper();
-
             List<ReleaseLinkJSON> listReleaseLinkJson  = new ArrayList<>();
             if (StringUtils.isNotEmpty(releaseNetwork)) {
                 listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
                 });
             }
-
             for (ReleaseLinkJSON release : listReleaseLinkJson) {
                 ProjectReleaseRelationship relation = new ProjectReleaseRelationship();
                 relation.setReleaseRelation(ReleaseRelationship.valueOf(release.getReleaseRelationship()));
@@ -1226,14 +1224,14 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
 
         // add own releases to result if they are not just "REFERRED"
-        if (project.getReleaseRelationNetwork()!=null) {
+        if (project.getReleaseRelationNetwork() != null) {
             List<ReleaseLinkJSON> listReleaseLinkJson;
             List<ReleaseLinkJSON> flattedListReleaseLinkJson = new ArrayList<>();
             try {
                 listReleaseLinkJson = mapper.readValue(project.getReleaseRelationNetwork(), new TypeReference<>() {
                 });
                 for (ReleaseLinkJSON release : listReleaseLinkJson) {
-                    flattenRelease(release, flattedListReleaseLinkJson);
+                    flattedListReleaseLinkJson.addAll(flattenRelease(release));
                 }
             } catch (JsonProcessingException e) {
                 log.error("JsonProcessingException: " + e);
@@ -1704,6 +1702,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         return releaseLinks;
     }
+
     public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(List<String> trace, String projectId, User user) throws TException{
         Project project = repository.get(projectId);
         String releaseNetwork = project.getReleaseRelationNetwork();
@@ -1769,7 +1768,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                         listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
                         });
                         for (ReleaseLinkJSON release : listReleaseLinkJson) {
-                            flattenRelease(release, flattedListReleaseLinkJson);
+                            flattedListReleaseLinkJson.addAll(flattenRelease(release));
                         }
                         linkedReleases = convertFromReleaseLinkJSONToReleaseLink(flattedListReleaseLinkJson, id, user, "", 0);
                     } catch (JsonProcessingException e) {
@@ -1802,21 +1801,23 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         return Optional.ofNullable(projectLink);
     }
-    private  List<ReleaseLinkJSON> flattenRelease(ReleaseLinkJSON node, List<ReleaseLinkJSON> flatList) {
-        if (node != null) {
-            flatList.add(node);
-        }
 
-        List<ReleaseLinkJSON> children = node.getReleaseLink();
-        for (ReleaseLinkJSON child : children) {
-            if (child.getReleaseLink() != null) {
-                flattenRelease(child, flatList);
-            } else {
-                flatList.add(node);
+    private List<ReleaseLinkJSON> flattenRelease(ReleaseLinkJSON node) {
+        List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
+        if (node != null) {
+            releaseLinkJSONS.add(node);
+        }
+        if (!node.getReleaseLink().isEmpty()) {
+            List<ReleaseLinkJSON> children = node.getReleaseLink();
+            for (ReleaseLinkJSON child : children) {
+                if (child.getReleaseLink() != null) {
+                    releaseLinkJSONS.addAll(flattenRelease(child));
+                }
             }
         }
-        return flatList;
+        return releaseLinkJSONS;
     }
+
     /**
      * Get all projects
      *

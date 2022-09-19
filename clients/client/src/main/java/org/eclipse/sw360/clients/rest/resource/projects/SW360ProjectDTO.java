@@ -1,10 +1,10 @@
 /*
- * Copyright (c) Bosch Software Innovations GmbH 2017-2018.
+ * Copyright TOSHIBA CORPORATION, 2022. Part of the SW360 Portal Project.
+ * Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2022. Part of the SW360 Portal Project.
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v2.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v20.html
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
  */
@@ -132,9 +132,6 @@ public final class SW360ProjectDTO extends SW360HalResource<LinkObjects, SW360Pr
         this.visibility = visbility;
         return this;
     }
-
-
-
 
     @Override
     public LinkObjects createEmptyLinks() {

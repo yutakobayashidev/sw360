@@ -678,6 +678,7 @@ public class RestControllerHelper<T> {
             halResource.addEmbeddedResource(relation, value);
         }
     }
+
     public ProjectDTO convertToEmbeddedProjectDTO(Project project) {
         ProjectDTO embeddedProject = new EmbeddedProjectDTO();
         embeddedProject.setName(project.getName());
@@ -688,6 +689,7 @@ public class RestControllerHelper<T> {
         embeddedProject.setType(null);
         return embeddedProject;
     }
+
     public void addEmbeddedProjectDTO(HalResource<ProjectDTO> halProject, Set<String> projectIds, Sw360ProjectService sw360ProjectService, User user) throws TException {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -697,6 +699,7 @@ public class RestControllerHelper<T> {
             addEmbeddedProjectDTO(halProject, project);
         }
     }
+
     public void addEmbeddedProjectDTO(HalResource halResource, Project project) {
         ProjectDTO embeddedProject = convertToEmbeddedProjectDTO(project);
         HalResource<ProjectDTO> halProject = new HalResource<>(embeddedProject);

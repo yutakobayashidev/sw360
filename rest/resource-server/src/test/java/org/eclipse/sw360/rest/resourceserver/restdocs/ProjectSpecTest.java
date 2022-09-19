@@ -1566,6 +1566,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .content(this.objectMapper.writeValueAsString(releaseIdToUsage))
                 .header("Authorization", "Bearer " + accessToken)).andExpect(status().isCreated());
     }
+
     private String getAPIBaseUrl() throws URISyntaxException {
         URI uri = ServletUriComponentsBuilder.fromCurrentRequest().build().toUri();
         return new URI(uri.getScheme(),
@@ -1574,6 +1575,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 null,
                 uri.getFragment()).toString();
     }
+
     private String createPaginationLink(String baseUrl, int page, int pageSize) {
         return baseUrl + "?" + "page" + "=" + page + "&" + "page_entries" + "=" + pageSize;
     }

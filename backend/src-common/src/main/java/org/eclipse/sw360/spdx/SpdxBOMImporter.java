@@ -247,7 +247,6 @@ public class SpdxBOMImporter {
         }
     }
 
-
     /**
      *
      * Get ReleaseLinkJSON (object data release relation network) by relationship
@@ -318,7 +317,6 @@ public class SpdxBOMImporter {
 
         return releaseLinkJSON;
     }
-
 
     /**
      * Import as project release

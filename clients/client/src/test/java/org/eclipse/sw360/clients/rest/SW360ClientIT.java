@@ -286,6 +286,7 @@ public class SW360ClientIT extends AbstractMockServerTest {
             assertThat(wireMockRule.getAllServeEvents()).hasSize(2);
         }
     }
+
     private CompletableFuture<SW360ProjectDTOList> whenClientInvokedDTOList() {
         String endpointUrl = client.resourceUrl(StringUtils.stripStart(ENDPOINT, "/"));
         if (RUN_REST_INTEGRATION_TEST) {

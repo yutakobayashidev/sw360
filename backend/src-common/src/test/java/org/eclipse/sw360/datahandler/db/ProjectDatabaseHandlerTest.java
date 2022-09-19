@@ -63,6 +63,7 @@ public class ProjectDatabaseHandlerTest {
     ReleaseRepository releaseRepository;
 
     VendorRepository vendorRepository;
+
     @Before
     public void setUp() throws Exception {
         assertTestString(dbName);

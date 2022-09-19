@@ -269,6 +269,7 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         }));
         return relMainLineState;
     }
+
     protected void loadLinkedReleaseOfProject(ResourceRequest request, ResourceResponse response) throws TException {
         String projectId = request.getParameter("projectId");
         String[] trace = request.getParameterValues("trace[]");
@@ -295,11 +296,13 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
             request.setAttribute(PortalConstants.NETWORK_TOTAL_INACCESSIBLE_ROWS, 0);
         }
     }
+
     protected List<ReleaseLinkJSON> getNetworkLinkedRelease(List<Release> releases, User user){
         List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
         releases.forEach(release -> releaseLinkJSONS.add(getReleaseLinkJSONS(new ReleaseLinkJSON(release.getId()), user)));
         return releaseLinkJSONS;
     }
+
     public ReleaseLinkJSON getReleaseLinkJSONS(ReleaseLinkJSON releaseLinkJSON, User user) {
         ComponentService.Iface client = thriftClients.makeComponentClient();
         Release releaseById = null;
@@ -329,17 +332,21 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         }
         return releaseLinkJSON;
     }
+
     protected List<ProjectLink> createLinkedProjectsWithAllReleases(Project project, User user) {
         return createLinkedProjectsWithAllReleases(project, Function.identity(), user);
     }
+
     protected List<ProjectLink> createLinkedProjectsWithAllReleases(Project project, Function<ProjectLink, ProjectLink> projectLinkMapper, User user) {
         return createLinkedProjectsWithAllReleases(project, projectLinkMapper, false, user);
     }
+
     protected List<ProjectLink> createLinkedProjectsWithAllReleases(Project project, Function<ProjectLink, ProjectLink> projectLinkMapper, boolean deep,
                                                      User user) {
         final Collection<ProjectLink> linkedProjects = SW360Utils.getLinkedProjectsWithAllReleasesAsFlatList(project, deep, thriftClients, log, user);
         return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
     }
+
     protected void prepareLinkedProjectsForAttachmentUsage(ResourceRequest request) throws PortletException {
         final User user = UserCacheHolder.getUserFromRequest(request);
         String branchId = request.getParameter(PortalConstants.NETWORK_PARENT_BRANCH_ID);

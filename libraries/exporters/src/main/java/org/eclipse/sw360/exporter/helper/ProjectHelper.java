@@ -179,9 +179,8 @@ public class ProjectHelper implements ExporterHelper<Project> {
         this.preloadedLinkedProjects = preloadedLinkedProjects;
     }
 
-
     private Map<String, ProjectReleaseRelationship> getProjectReleationShipWithReleaseInNetwork(Project project) {
-        Map<String, ProjectReleaseRelationship> projectReleaseRelationshipList = new HashMap<>();
+        Map<String, ProjectReleaseRelationship> projectReleaseRelationshipMap = new HashMap<>();
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
@@ -191,40 +190,35 @@ public class ProjectHelper implements ExporterHelper<Project> {
                 releaseLinkJSONS = objectMapper.readValue(project.getReleaseRelationNetwork(), new TypeReference<>() {
                 });
                 for (ReleaseLinkJSON release : releaseLinkJSONS) {
-                    flattenNetwork(release, projectReleaseRelationshipList);
+                    projectReleaseRelationshipMap.putAll(flattenNetwork(release));
                 }
-                return projectReleaseRelationshipList;
+                return projectReleaseRelationshipMap;
             } catch (JsonProcessingException e) {
                 return Collections.emptyMap();
             }
         }
         return Collections.emptyMap();
     }
-    private Map<String, ProjectReleaseRelationship> flattenNetwork(ReleaseLinkJSON node, Map<String, ProjectReleaseRelationship> projectReleaseRelationshipList) {
 
+    private Map<String, ProjectReleaseRelationship> flattenNetwork(ReleaseLinkJSON node) {
+        Map<String, ProjectReleaseRelationship> projectReleaseRelationshipMap = new HashMap<>();
         if (node != null) {
             ProjectReleaseRelationship prr = new ProjectReleaseRelationship();
             prr.setComment(node.getComment());
             prr.setCreatedOn(node.getCreateOn());
             prr.setMainlineState(MainlineState.valueOf(node.getMainlineState()));
             prr.setReleaseRelation(ReleaseRelationship.valueOf(node.getReleaseRelationship()));
-            projectReleaseRelationshipList.put(node.getReleaseId(), prr);
+            projectReleaseRelationshipMap.put(node.getReleaseId(), prr);
         }
-
-        List<ReleaseLinkJSON> children = node.getReleaseLink();
-        for (ReleaseLinkJSON child : children) {
-            if (child.getReleaseLink() != null) {
-                flattenNetwork(child, projectReleaseRelationshipList);
-            } else {
-                ProjectReleaseRelationship prr = new ProjectReleaseRelationship();
-                prr.setComment(node.getComment());
-                prr.setCreatedOn(node.getCreateOn());
-                prr.setMainlineState(MainlineState.valueOf(node.getMainlineState()));
-                prr.setReleaseRelation(ReleaseRelationship.valueOf(node.getReleaseRelationship()));
-                projectReleaseRelationshipList.put(node.getReleaseId(), prr);
+        if (!node.getReleaseLink().isEmpty()) {
+            List<ReleaseLinkJSON> children = node.getReleaseLink();
+            for (ReleaseLinkJSON child : children) {
+                if (child.getReleaseLink() != null || !child.getReleaseLink().isEmpty()) {
+                    projectReleaseRelationshipMap.putAll(flattenNetwork(child));
+                }
             }
         }
-        return projectReleaseRelationshipList;
+        return projectReleaseRelationshipMap;
     }
 
 }

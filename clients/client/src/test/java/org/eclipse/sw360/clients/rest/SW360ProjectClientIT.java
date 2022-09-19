@@ -223,8 +223,6 @@ public class SW360ProjectClientIT extends AbstractMockServerTest {
             assertTrue(updProject.getName().equals(project.getName()));
             assertTrue(updProject.getVersion().equals(project.getVersion()));
         }
-
-
         updProject.setVersion("updatedVersion");
         SW360ProjectDTO updatedProject = objectMapper.convertValue(updProject, SW360ProjectDTO.class);
         String projectJson = toJson(project);
