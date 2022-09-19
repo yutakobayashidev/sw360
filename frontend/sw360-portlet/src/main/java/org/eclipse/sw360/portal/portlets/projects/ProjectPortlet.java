@@ -3268,13 +3268,10 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         ComponentService.Iface client = thriftClients.makeComponentClient();
         try {
             List<String> listReleaseIds = Arrays.asList(linkedIds);
-            List<Release> releases = new ArrayList<>();
+            List<Release> releases = client.getReleasesByListIds(listReleaseIds, user);
             List<Release> allReleases = client.getAllReleasesForUser(user);
             Map<String, List<Release>> listReleaseWithSameComponentId = new HashMap<>();
             allReleases.forEach(release -> {
-                if (listReleaseIds.contains(release.getId())) {
-                    releases.add(release);
-                }
                 String componentId = release.getComponentId();
                 List<Release> releasesOfComponent;
                 if (listReleaseWithSameComponentId.containsKey(componentId)) {
