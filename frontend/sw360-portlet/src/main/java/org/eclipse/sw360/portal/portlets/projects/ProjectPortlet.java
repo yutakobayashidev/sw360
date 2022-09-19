@@ -3069,7 +3069,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     SW360Utils.isUserAllowedToEditClosedProject(project, UserCacheHolder.getUserFromRequest(request)));
             projectData.put(jsonObject);
         }
-        log.info(projectData);
         return projectData;
     }
 
@@ -3258,6 +3257,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         }
         return businessUnit;
     }
+
     private void serveNewTableRowLinkedRelease(ResourceRequest request, ResourceResponse response, String[] linkedIds,
                                                String[] parentIds, String[] layers, String[] mainlineStates, String[] releaseRelationShips,
                                                String[] indexes, String[] comments) throws IOException, PortletException {
@@ -3267,13 +3267,17 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         List<ReleaseLink> linkedReleases = new ArrayList<>();
         ComponentService.Iface client = thriftClients.makeComponentClient();
         try {
-            List<Release> releases = client.getReleasesByListIds(Arrays.asList(linkedIds), user);
+            List<String> listReleaseIds = Arrays.asList(linkedIds);
+            List<Release> releases = new ArrayList<>();
             List<Release> allReleases = client.getAllReleasesForUser(user);
             Map<String, List<Release>> listReleaseWithSameComponentId = new HashMap<>();
             allReleases.forEach(release -> {
+                if (listReleaseIds.contains(release.getId())) {
+                    releases.add(release);
+                }
                 String componentId = release.getComponentId();
-                List<Release> releasesOfComponent = null;
-                if(listReleaseWithSameComponentId.containsKey(componentId)){
+                List<Release> releasesOfComponent;
+                if (listReleaseWithSameComponentId.containsKey(componentId)) {
                     releasesOfComponent = listReleaseWithSameComponentId.get(componentId);
                 } else {
                     releasesOfComponent = new ArrayList<>();
