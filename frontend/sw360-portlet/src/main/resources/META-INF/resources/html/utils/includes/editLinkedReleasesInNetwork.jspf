@@ -637,7 +637,8 @@
             });
 
             // Search release dialog
-            keyboard.bindkeyPressToClick('searchRelease', 'searchRelease');
+            keyboard.bindkeyPressToClick('searchReleasesDialogOfNetwork #searchRelease', 'searchReleasesDialogOfNetwork #searchReleaseBtn');
+            keyboard.bindkeyPressToClick('searchChildReleaseDialog #searchRelease', 'searchChildReleaseDialog #searchReleaseBtn');
             var homeUrl = themeDisplay.getURLHome().replace(/\/web\//, '/group/');
 
             $('#searchReleasesDialogOfNetwork').on('click','#searchReleaseBtn', function() {
