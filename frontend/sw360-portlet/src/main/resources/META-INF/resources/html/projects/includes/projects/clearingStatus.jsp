@@ -477,7 +477,7 @@ AUI().use('liferay-portlet-url', function () {
                     {title: "<liferay-ui:message key="release.mainline.state" />", data : "releaseMainlineState", "defaultContent": ""},
                     {title: "<liferay-ui:message key="project.mainline.state" />", data : "projectMainlineState", "defaultContent": ""},
                     {title: "<liferay-ui:message key="comment" />",  data: "comment", "defaultContent": "", render: $.fn.dataTable.render.ellipsis},
-                    {title: "<liferay-ui:message key="actions" />",  data: "releaseId", "orderable": false, "defaultContent": "", render: {display: renderActions}, className: "two actions" }
+                    {title: "<liferay-ui:message key="actions" />",  data: "id", "orderable": false, "defaultContent": "", render: {display: renderActions}, className: "two actions" }
                 ],
                 "columnDefs": [
                     {
@@ -563,7 +563,7 @@ AUI().use('liferay-portlet-url', function () {
             if(row.isAccessible === "true"){
             let url;
             if(row.isRelease === "true"){
-                url = makeReleaseViewUrl(row.releaseId);
+                url = makeReleaseViewUrl(row.id);
             }
             else {
                 url = makeProjectViewUrl(row.id);
