@@ -28,7 +28,7 @@ from webbrowser import get
 
 DRY_RUN = True
 
-COUCHSERVER = "http://localhost:5984/"
+COUCHSERVER = 'http://localhost:5984/'
 DBNAME = 'sw360db'
 
 couch=couchdb.Server(COUCHSERVER)
@@ -45,7 +45,7 @@ log['Error updated project'] = []
 log['Success updated project'] = []
 log['Project will be update with DRY RUN'] = []
 # query get all project with field "releaseIdToUsage"
-get_projects_with_releaseIdToUsage_field_query = {"selector": {"type": {"$eq": "project"},deleteFieldName: {"$exists": True}}}
+get_projects_with_releaseIdToUsage_field_query = {"selector": {"type": {"$eq": "project"}, deleteFieldName: {"$exists": True}}}
 
 def get_children_node(id, createBy, createOn):
     get_release_by_id = {"selector":{"type": {"$eq":"release"}, "_id":{"$eq":id}}}
@@ -57,7 +57,7 @@ def get_children_node(id, createBy, createOn):
             for release_id, release_relation in release_by_id.get('releaseIdToRelationship').items():
                 node = {
                     'releaseId': release_id,
-                    'releaseRelationship':release_relation,
+                    'releaseRelationship': release_relation,
                     'mainlineState': 'OPEN',
                     'createOn': createOn,
                     'createBy': createBy,
@@ -69,7 +69,7 @@ def get_children_node(id, createBy, createOn):
     return children_nodes
 
 
-def updateProjectFormat(project, log):
+def applyTranferData(project, log):
     updatedDocId = {}
     updatedDocId['id'] = project.get('_id')
     if not DRY_RUN:
@@ -113,18 +113,18 @@ def run():
 
                     del project['releaseIdToUsage']
 
-                    updateProjectFormat(project, log)
+                    applyTranferData(project, log)
                 except:
                     log['Error updated project'].append({"id": project['_id']})
 # --------------------------------
 
 def writeLog():
-    logFile = open('migrate_dependency_network.log', 'w')
+    logFile = open('050_migrate_project_dependency_network.log', 'w')
     json.dump(log, logFile, indent = 4, sort_keys = True)
     logFile.close()
     print ('\n')
     print ('------------------------------------------')
-    print ('Please check log file "migrate_dependency_network.log" in this directory for details')
+    print ('Please check log file "050_migrate_project_dependency_network.log" in this directory for details')
     print ('------------------------------------------')
 
 

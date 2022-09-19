@@ -40,7 +40,7 @@
                     <div style="width:13%; display:inline-block">
                         <button type="button" class="btn btn-secondary add-child" style="width:64%">
                             <svg class="action lexicon-icon" style="width:15px">
-                                <title><liferay-ui:message key="add.child.release" /></title>
+                                <title><liferay-ui:message key="add.child.releases" /></title>
                                 <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#plus"/>
                             </svg>
                         </button>
@@ -64,7 +64,7 @@
                             </core_rt:forEach>
                         </select>
                         <svg class="action lexicon-icon load-release" style="width:10%;">
-                            <title><liferay-ui:message key="load.default.children.releases" /></title>
+                            <title><liferay-ui:message key="load.default.child.releases" /></title>
                             <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#check-circle-full"/>
                         </svg>
                     </div>
