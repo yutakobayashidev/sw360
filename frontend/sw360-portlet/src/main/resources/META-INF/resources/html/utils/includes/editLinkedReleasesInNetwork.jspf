@@ -620,8 +620,6 @@
                         addChildNode(releaseWithRelations, i, trace, selectedRelease);
                     }
                     $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
-                    $("#searchChildResultsTable").empty();
-                    $("#searchChildReleaseDialog #selectReleaseButton").attr("disabled", true);
                     callback(true);
                 }, function() {
                     $('#searchChildResultsTable').hide();
@@ -634,10 +632,13 @@
                 $("#searchChildReleaseDialog #selectReleaseButton").attr("disabled", false);
             });
 
+            $('#releaseResultsTable').on('change', 'input', function() {
+                $("#searchReleasesDialogOfNetwork #selectReleaseButton").attr("disabled", false);
+            });
+
             // Search release dialog
             keyboard.bindkeyPressToClick('searchRelease', 'searchRelease');
             var homeUrl = themeDisplay.getURLHome().replace(/\/web\//, '/group/');
-            $('#addReleaseToNetWork').on('click', showSearchReleaseDialog);
 
             $('#searchReleasesDialogOfNetwork').on('click','#searchReleaseBtn', function() {
                 releaseFromAjax('<%=PortalConstants.RELEASE_SEARCH%>', $('#searchReleasesDialogOfNetwork #searchRelease').val(), '#releaseResultsTable', function(data) {
@@ -673,6 +674,10 @@
 
             $('#releaseResultsTable').on('change', 'input', function() {
                 $releaseDialog.enablePrimaryButtons($('#releaseResultsTable input:checked').length > 0);
+            });
+
+            $('#searchChildResultsTable').on('change', 'input', function() {
+                $releaseDialog.enablePrimaryButtons($('#searchChildResultsTable input:checked').length > 0);
             });
 
             function showSearchReleaseDialog() {
@@ -714,7 +719,7 @@
                 }, function() {
                     this.$.find('#releaseResultsTable').hide();
                     this.$.find('#searchRelease').val('');
-                    this.enablePrimaryButtons(false);
+                    $("#searchReleasesDialogOfNetwork #selectReleaseButton").attr("disabled", true);
                 });
             }
 
@@ -738,9 +743,9 @@
 
             function releaseFromAjax(what, where, tableId, callback) {
                 $(tableId).hide();
+                $(tableId).closest('.modal-body').find('.spinner').show();
                 $(tableId).closest('.modal-body').find('#searchReleaseBtn').prop('disabled', true);
                 $(tableId).closest('.modal-body').find('#getLinkedReleasesButton').prop('disabled', true);
-                $releaseDialog.enablePrimaryButtons(false);
 
                 jQuery.ajax({
                     type: 'POST',
@@ -753,6 +758,7 @@
                         $(tableId + ' tbody').empty();
                         callback(data);
                         $(tableId).show();
+                        $(tableId).closest('.modal-body').find('.spinner').hide();
                         $(tableId).closest('.modal-body').find('#searchReleaseBtn').prop('disabled', false);
                         $(tableId).closest('.modal-body').find('#getLinkedReleasesButton').prop('disabled', false);
                     },
