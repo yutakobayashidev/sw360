@@ -125,7 +125,7 @@ struct Project {
 
     // Linked objects
     30: optional map<string, ProjectProjectRelationship> linkedProjects,
-    31: optional map<string, ProjectReleaseRelationship> releaseIdToUsage,
+    // 31: optional map<string, ProjectReleaseRelationship> releaseIdToUsage,
 
     // Admin data
     40: optional string clearingTeam;

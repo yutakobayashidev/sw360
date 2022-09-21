@@ -217,8 +217,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project.setSpecialRisks3rdParty("Lorem Ipsum");
         project.setDeliveryChannels("Lorem Ipsum");
         project.setRemarksAdditionalRequirements("Lorem Ipsum");
-        linkedReleases.put("3765276512", projectReleaseRelationship);
-        project.setReleaseIdToUsage(linkedReleases);
+        /*linkedReleases.put("3765276512", projectReleaseRelationship);
+        project.setReleaseIdToUsage(linkedReleases);*/
         linkedProjects.put("376570", new ProjectProjectRelationship(ProjectRelationship.CONTAINED).setEnableSvm(true));
         project.setLinkedProjects(linkedProjects);
         project.setReleaseRelationNetwork("[{\"comment\":\"\",\"releaseLink\":[],\"createBy\":\"admin@sw360.org\",\"createOn\":\"2022-08-15\",\"mainlineState\":\"OPEN\",\"releaseId\":\"3765276512\",\"releaseRelationship\":\"CONTAINED\"}]");
@@ -269,9 +269,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         projExtKeys.put("mainline-id-project", "7657");
         projExtKeys.put("portal-id", "13319-XX3");
         project2.setExternalIds(projExtKeys);
-        linkedReleases = new HashMap<>();
+        /*linkedReleases = new HashMap<>();
         linkedReleases.put("5578999", projectReleaseRelationship);
-        project2.setReleaseIdToUsage(linkedReleases);
+        project2.setReleaseIdToUsage(linkedReleases);*/
         project2.setExternalIds(externalIds2);
         Map<String, String> externalURLs = new HashMap<>();
         externalURLs.put("homepage", "http://test_wiki_url.com");

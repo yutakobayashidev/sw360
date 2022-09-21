@@ -205,10 +205,15 @@ public class JacksonCustomizations {
             @JsonProperty("linkedProjects")
             abstract public Map<String, ProjectProjectRelationship> getLinkedProjects();
 
-            @Override
+            /*@Override
             @JsonSerialize(using = JsonReleaseRelationSerializer.class)
             @JsonProperty("linkedReleases")
-            abstract public Map<String, ProjectReleaseRelationship> getReleaseIdToUsage();
+            abstract public Map<String, ProjectReleaseRelationship> getReleaseIdToUsage();*/
+
+            @Override
+            @JsonSerialize(using = JsonReleaseRelationSerializer.class)
+            @JsonProperty("releaseRelationNetwork")
+            abstract public String getReleaseRelationNetwork();
 
             @Override
             @JsonProperty("visibility")
