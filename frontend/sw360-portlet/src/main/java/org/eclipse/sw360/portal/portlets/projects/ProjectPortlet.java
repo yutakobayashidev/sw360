@@ -1255,6 +1255,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             } catch (TException e) {
                 throw new RuntimeException(e);
             }
+        } else if (PortalConstants.CHECK_RELEASE_EXIST.equals(what)) {
+            String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
+            severCheckReleaseExistOrAccessibleToLink(request, response, releaseId);
         }
     }
 
@@ -3315,6 +3318,23 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         releases.add(release);
         List<ReleaseLinkJSON> releaseLinkJSONS = getNetworkLinkedRelease(releases, user);
         jsonObject.put(PortalConstants.RESULT, releaseLinkJSONS);
+        try {
+            writeJSON(request, response, jsonObject);
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void severCheckReleaseExistOrAccessibleToLink(ResourceRequest request, ResourceResponse response, String releaseId) {
+        ComponentService.Iface releaseClient = thriftClients.makeComponentClient();
+        User user = UserCacheHolder.getUserFromRequest(request);
+        JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+        try {
+            releaseClient.getAccessibleReleaseById(releaseId, user);
+            jsonObject.put(PortalConstants.RESULT, true);
+        } catch (TException e) {
+            jsonObject.put(PortalConstants.RESULT, false);
+        }
         try {
             writeJSON(request, response, jsonObject);
         } catch (IOException e) {

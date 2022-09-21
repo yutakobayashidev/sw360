@@ -678,7 +678,7 @@ public class PortalConstants {
     public static final String RELEASES_IN_NETWORK = "releasesInNetwork";
     public static final String NUMBER_LINKED_RELEASE = "numberLinkedRelease";
     public static final String TOTAL_RELEASE_COUNT = "totalReleaseCount";
-
+    public static final String CHECK_RELEASE_EXIST = "checkReleaseExist";
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 
