@@ -2443,7 +2443,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 AddDocumentRequestStatus status = summary.getRequestStatus();
 
                 if (null != sourceProjectId && AddDocumentRequestStatus.SUCCESS.equals(status)) {
-                    if (project.getReleaseIdToUsageSize() > 0) {
+                    if (SW360Utils.getReleaseIdsLinkedWithProject(project).size() > 0) {
                         Project sourceProject = client.getProjectById(sourceProjectId, user);
                         if (CommonUtils.isNotNullEmptyOrWhitespace(sourceProject.getLinkedObligationId())) {
                             project.setId(newProjectId);

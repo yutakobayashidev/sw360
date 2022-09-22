@@ -386,30 +386,6 @@ public class SW360Utils {
                             selectedProjectRelationAsList));
         }
     }
-
-    public static List<ReleaseLink> getLinkedReleases(Project project, ThriftClients thriftClients, Logger log) {
-        if (project != null && project.getReleaseIdToUsage() != null) {
-            try {
-                ComponentService.Iface componentClient = thriftClients.makeComponentClient();
-                return componentClient.getLinkedReleases(project.getReleaseIdToUsage());
-            } catch (TException e) {
-                log.error("Could not get linked releases", e);
-            }
-        }
-        return Collections.emptyList();
-    }
-
-    public static List<ReleaseLink> getLinkedReleasesWithAccessibility(Project project, ThriftClients thriftClients, Logger log, User user) {
-        if (project != null && project.getReleaseIdToUsage() != null) {
-            try {
-                ComponentService.Iface componentClient = thriftClients.makeComponentClient();
-                return componentClient.getLinkedReleasesWithAccessibility(project.getReleaseIdToUsage(), user);
-            } catch (TException e) {
-                log.error("Could not get linked releases", e);
-            }
-        }
-        return Collections.emptyList();
-    }
     
     public static List<ReleaseLink> getLinkedReleaseRelations(Release release, ThriftClients thriftClients, Logger log) {
         if (release != null && release.getReleaseIdToRelationship() != null) {
@@ -729,8 +705,8 @@ public class SW360Utils {
     public static void copyLinkedObligationsForClonedProject(Project newProject, Project sourceProject, ProjectService.Iface client, User user) {
         try {
             ObligationList obligation = client.getLinkedObligations(sourceProject.getLinkedObligationId(), user);
-            Set<String> newLinkedReleaseIds = newProject.getReleaseIdToUsage().keySet();
-            Set<String> sourceLinkedReleaseIds = sourceProject.getReleaseIdToUsage().keySet();
+            Set<String> newLinkedReleaseIds = getReleaseIdsLinkedWithProject(newProject);
+            Set<String> sourceLinkedReleaseIds = getReleaseIdsLinkedWithProject(sourceProject);
             Map<String, ObligationStatusInfo> linkedObligations = obligation.getLinkedObligationStatus();
             if (!newLinkedReleaseIds.equals(sourceLinkedReleaseIds)) {
                 linkedObligations = obligation.getLinkedObligationStatus().entrySet().stream().filter(entry -> {

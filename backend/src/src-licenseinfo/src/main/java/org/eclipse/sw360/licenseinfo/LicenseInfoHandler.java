@@ -145,7 +145,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         }
 
         Map<String, ObligationStatusInfo> obligationsStatusInfoMap = Maps.newHashMap();
-        if (project.getReleaseIdToUsageSize() > 0) {
+        if (project.getReleaseRelationNetwork() != null && SW360Utils.getReleaseIdsLinkedWithProject(project).size() > 0) {
             obligationsStatusInfoMap = createLicenseToObligationMappingForReport(project, projectLicenseInfoResults,
                     obligationsResults, releaseToAttachmentId, user);
         }
@@ -710,7 +710,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
     private Map<String, ObligationStatusInfo> createLicenseToObligationMappingForReport(Project project, Collection<LicenseInfoParsingResult> licenseResults,
             Collection<ObligationParsingResult> obligationResults, Map<Release, Map<String, Boolean>> releaseToSelectedAttachmentIds, User user) throws TException {
 
-        Set<String> linkedReleaseIds = project.getReleaseIdToUsage().keySet();
+        Set<String> linkedReleaseIds = SW360Utils.getReleaseIdsLinkedWithProject(project);
         Map<String, ObligationStatusInfo> obligationStatusMap = Maps.newHashMap();
 
         Map<Release, Map<String,Boolean>> filteredRelToSelAttIds = releaseToSelectedAttachmentIds.entrySet().stream()

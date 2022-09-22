@@ -122,10 +122,6 @@ public class ProjectHelper implements ExporterHelper<Project> {
         if (project.isSet(field)) {
             Object fieldValue = project.getFieldValue(field);
             switch (field) {
-                case RELEASE_ID_TO_USAGE:
-                    ProjectReleaseRelationship inaccessibleRelationship = new ProjectReleaseRelationship();
-                    row.add(fieldValueAsString(putAccessibleReleaseNamesInMap(project.releaseIdToUsage, getReleases(project), user, inaccessibleRelationship)));
-                    break;
                 case LINKED_PROJECTS:
                     row.add(fieldValueAsString(putProjectNamesInMap(project.getLinkedProjects(), getProjects(project
                             .getLinkedProjects()
