@@ -260,8 +260,8 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         views.put("bytag", createMapReduce(BY_TAG_VIEW, null));
         views.put("bytype", createMapReduce(BY_TYPE_VIEW, null));
         views.put("byState", createMapReduce(BY_STATE_VIEW, null));
-        views.put("byreleaseid", createMapReduce(BY_RELEASE_ID_VIEW, null));
-        views.put("fullbyreleaseid", createMapReduce(FULL_BY_RELEASE_ID_VIEW, null));
+        /*views.put("byreleaseid", createMapReduce(BY_RELEASE_ID_VIEW, null));*/
+        /*views.put("fullbyreleaseid", createMapReduce(FULL_BY_RELEASE_ID_VIEW, null));*/
         views.put("bylinkingprojectid", createMapReduce(BY_LINKING_PROJECT_ID_VIEW, null));
         views.put("fullmyprojects", createMapReduce(FULL_MY_PROJECTS_VIEW, null));
         views.put("buprojects", createMapReduce(BU_PROJECTS_VIEW, null));
