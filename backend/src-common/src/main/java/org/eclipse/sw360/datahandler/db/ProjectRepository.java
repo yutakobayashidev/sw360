@@ -202,24 +202,24 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
             "}";
 
 
-    private static final String BY_RELEASE_ID_VIEW =
+   /* private static final String BY_RELEASE_ID_VIEW =
             "function(doc) {" +
                     "  if (doc.type == 'project') {" +
                     "    for(var i in doc.releaseIdToUsage) {" +
                     "      emit(i, doc._id);" +
                     "    }" +
                     "  }" +
-                    "}";
+                    "}";*/
 
 
-    private static final String FULL_BY_RELEASE_ID_VIEW =
+    /*private static final String FULL_BY_RELEASE_ID_VIEW =
             "function(doc) {" +
                     "  if (doc.type == 'project') {" +
                     "    for(var i in doc.releaseIdToUsage) {" +
                     "      emit(i, doc._id);" +
                     "    }" +
                     "  }" +
-                    "}";
+                    "}";*/
 
     private static final String BY_LINKING_PROJECT_ID_VIEW =
             "function(doc) {" +

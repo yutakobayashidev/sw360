@@ -143,8 +143,8 @@ public class JacksonCustomizations {
                 "setContributors",
                 "linkedProjectsSize",
                 "setLinkedProjects",
-                "releaseIdToUsageSize",
-                "setReleaseIdToUsage",
+/*                "releaseIdToUsageSize",
+                "setReleaseIdToUsage",*/
                 "setClearingTeam",
                 "setPreevaluationDeadline",
                 "setSystemTestStart",
