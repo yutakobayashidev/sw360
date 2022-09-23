@@ -44,7 +44,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
-import org.spdx.rdfparser.InvalidSPDXAnalysisException;
+import org.spdx.library.InvalidSPDXAnalysisException;
+import java.io.File;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -1418,7 +1419,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
                 return spdxBOMImporter.importSpdxBOMAsProject(inputStream, attachmentContent);
             }
-        } catch (InvalidSPDXAnalysisException | IOException e) {
+        } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
         }
     }

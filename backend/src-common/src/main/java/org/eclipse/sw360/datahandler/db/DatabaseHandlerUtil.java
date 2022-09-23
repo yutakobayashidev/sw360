@@ -1032,7 +1032,7 @@ public class DatabaseHandlerUtil {
 	       .add( builder.newAppenderRef("ChangeLogFile")));
 	       Configurator.reconfigure(builder.build());
        }
-    public static File saveAsTempFile(User user, InputStream inputStream, String prefix, String suffix) throws IOException {
+    public static File saveAsTempFile(InputStream inputStream, String prefix, String suffix) throws IOException {
         final File tempFile = File.createTempFile(prefix, suffix);
         tempFile.deleteOnExit();
         // Set append to false, overwrite if file existed

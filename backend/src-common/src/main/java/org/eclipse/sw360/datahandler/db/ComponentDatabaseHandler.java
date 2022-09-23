@@ -62,22 +62,22 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.jetbrains.annotations.NotNull;
-import org.spdx.rdfparser.InvalidSPDXAnalysisException;
-import org.spdx.tools.SpdxConverter;
-import org.spdx.tools.SpdxConverterException;
-import org.spdx.tools.TagToRDF;
+//import org.spdx.rdfparser.InvalidSPDXAnalysisException;
+//import org.spdx.tools.SpdxConverter;
+//import org.spdx.tools.SpdxConverterException;
+//import org.spdx.tools.TagToRDF;
 
-import java.io.BufferedReader;
+//import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+//import java.io.FileInputStream;
+//import java.io.FileNotFoundException;
+//import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+//import java.io.InputStreamReader;
 import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+//import java.nio.file.Files;
+//import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -2399,55 +2399,92 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 release.getName(), release.getVersion());
     }
 
+//    public ImportBomRequestPreparation prepareImportBom(User user, String attachmentContentId) throws SW360Exception {
+//        final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
+//        final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
+//        String sourceFilePath = null;
+//        String targetFilePath = null;
+//        try {
+//            final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
+//            try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
+//                final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
+//                final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
+//
+//                InputStream spdxInputStream = null;
+//                String fileType = getFileType(attachmentContent.getFilename());
+//
+//                if (!fileType.equals("rdf")) {
+//                    final String ext = "." + fileType;
+//                    final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(user, inputStream, attachmentContentId, ext);
+//                    sourceFilePath = sourceFile.getAbsolutePath();
+//                    targetFilePath = sourceFilePath.replace(ext, ".rdf");
+//                    File targetFile = null;
+//                    try {
+//                        if (fileType.equals("spdx")) {
+//                            targetFile = convertTagToRdf(sourceFile, targetFilePath);
+//                        } else {
+//                            SpdxConverter.convert(sourceFilePath, targetFilePath);
+//                            targetFile = new File(targetFilePath);
+//                        }
+//                        spdxInputStream = new FileInputStream(targetFile);
+//                    } catch (SpdxConverterException e) {
+//                        log.error("Can not convert to RDF \n" + e);
+//                        ImportBomRequestPreparation importBomRequestPreparation = new ImportBomRequestPreparation();
+//                        importBomRequestPreparation.setRequestStatus(RequestStatus.FAILURE);
+//                        importBomRequestPreparation.setMessage("error-convert");
+//                        return importBomRequestPreparation;
+//
+//                    } finally {
+//                        Files.delete(Paths.get(sourceFilePath));
+//                    }
+//                } else {
+//                    final String ext = "." + fileType;
+//                    final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(user, inputStream, attachmentContentId, ext);
+//                    sourceFilePath = sourceFile.getAbsolutePath();
+//                    cutFileInformation(sourceFilePath);
+//                    File targetFile = new File (sourceFilePath);
+//                    spdxInputStream = new  FileInputStream(targetFile);
+//                    targetFilePath = sourceFilePath;
+//                }
+//
+//                ImportBomRequestPreparation importBomRequestPreparation = spdxBOMImporter.prepareImportSpdxBOMAsRelease(spdxInputStream, attachmentContent);
+//                if (RequestStatus.SUCCESS.equals(importBomRequestPreparation.getRequestStatus())) {
+//                    String name = importBomRequestPreparation.getName();
+//                    String version = importBomRequestPreparation.getVersion();
+//                    if (!isDuplicate(name, true)) {
+//                        importBomRequestPreparation.setIsComponentDuplicate(false);
+//                        importBomRequestPreparation.setIsReleaseDuplicate(false);
+//                    } else if (!isDuplicate(name, version)) {
+//                        importBomRequestPreparation.setIsComponentDuplicate(true);
+//                        importBomRequestPreparation.setIsReleaseDuplicate(false);
+//                    } else {
+//                        importBomRequestPreparation.setIsComponentDuplicate(true);
+//                        importBomRequestPreparation.setIsReleaseDuplicate(true);
+//                    }
+//                    importBomRequestPreparation.setMessage(targetFilePath);
+//                }
+//
+//                return importBomRequestPreparation;
+//            }
+//        } catch (InvalidSPDXAnalysisException | IOException e) {
+//            throw new SW360Exception(e.getMessage());
+//        }
+//    }
+
     public ImportBomRequestPreparation prepareImportBom(User user, String attachmentContentId) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
         final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
-        String sourceFilePath = null;
-        String targetFilePath = null;
         try {
             final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
             try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
                 final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
                 final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
 
-                InputStream spdxInputStream = null;
                 String fileType = getFileType(attachmentContent.getFilename());
+                final String ext = "." + fileType;
+                final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(inputStream, attachmentContentId, ext);
 
-                if (!fileType.equals("rdf")) {
-                    final String ext = "." + fileType;
-                    final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(user, inputStream, attachmentContentId, ext);
-                    sourceFilePath = sourceFile.getAbsolutePath();
-                    targetFilePath = sourceFilePath.replace(ext, ".rdf");
-                    File targetFile = null;
-                    try {
-                        if (fileType.equals("spdx")) {
-                            targetFile = convertTagToRdf(sourceFile, targetFilePath);
-                        } else {
-                            SpdxConverter.convert(sourceFilePath, targetFilePath);
-                            targetFile = new File(targetFilePath);
-                        }
-                        spdxInputStream = new FileInputStream(targetFile);
-                    } catch (SpdxConverterException e) {
-                        log.error("Can not convert to RDF \n" + e);
-                        ImportBomRequestPreparation importBomRequestPreparation = new ImportBomRequestPreparation();
-                        importBomRequestPreparation.setRequestStatus(RequestStatus.FAILURE);
-                        importBomRequestPreparation.setMessage("error-convert");
-                        return importBomRequestPreparation;
-
-                    } finally {
-                        Files.delete(Paths.get(sourceFilePath));
-                    }
-                } else {
-                    final String ext = "." + fileType;
-                    final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(user, inputStream, attachmentContentId, ext);
-                    sourceFilePath = sourceFile.getAbsolutePath();
-                    cutFileInformation(sourceFilePath);
-                    File targetFile = new File (sourceFilePath);
-                    spdxInputStream = new  FileInputStream(targetFile);
-                    targetFilePath = sourceFilePath;
-                }
-
-                ImportBomRequestPreparation importBomRequestPreparation = spdxBOMImporter.prepareImportSpdxBOMAsRelease(spdxInputStream, attachmentContent);
+                ImportBomRequestPreparation importBomRequestPreparation = spdxBOMImporter.prepareImportSpdxBOMAsRelease(sourceFile);
                 if (RequestStatus.SUCCESS.equals(importBomRequestPreparation.getRequestStatus())) {
                     String name = importBomRequestPreparation.getName();
                     String version = importBomRequestPreparation.getVersion();
@@ -2461,102 +2498,103 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                         importBomRequestPreparation.setIsComponentDuplicate(true);
                         importBomRequestPreparation.setIsReleaseDuplicate(true);
                     }
-                    importBomRequestPreparation.setMessage(targetFilePath);
+                    importBomRequestPreparation.setMessage(sourceFile.getAbsolutePath());
                 }
 
                 return importBomRequestPreparation;
             }
-        } catch (InvalidSPDXAnalysisException | IOException e) {
+        } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
         }
     }
 
-    private void cutFileInformation(String pathFile) {
-        try {
-            log.info("Run command cut File information from RDF file from line");
-            String command = "file=\"" + pathFile + "\" " +
-            "&& start=$(cat $file | grep -nF \"spdx:hasFile>\" | head -1 | cut -d \":\" -f1) " +
-            "&& end=$(cat $file | grep -nF \"/spdx:hasFile>\" | tail -1 | cut -d \":\" -f1) " +
-            "&& echo $start to $end " +
-            "&& sed -i \"${start},${end}d\" $file ";
-            Process process = Runtime.getRuntime().exec(new String[] { "/bin/bash", "-c", command });
-            printResults(process);
-        } catch (IOException e) {
-            log.error("Error when cut File information");
-            e.printStackTrace();
-        }
-    }
+//    private void cutFileInformation(String pathFile) {
+//        try {
+//            log.info("Run command cut File information from RDF file from line");
+//            String command = "file=\"" + pathFile + "\" " +
+//            "&& start=$(cat $file | grep -nF \"spdx:hasFile>\" | head -1 | cut -d \":\" -f1) " +
+//            "&& end=$(cat $file | grep -nF \"/spdx:hasFile>\" | tail -1 | cut -d \":\" -f1) " +
+//            "&& echo $start to $end " +
+//            "&& sed -i \"${start},${end}d\" $file ";
+//            Process process = Runtime.getRuntime().exec(new String[] { "/bin/bash", "-c", command });
+//            printResults(process);
+//        } catch (IOException e) {
+//            log.error("Error when cut File information");
+//            e.printStackTrace();
+//        }
+//    }
 
-    public static void printResults(Process process) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        String line = "";
-        while ((line = reader.readLine()) != null) {
-            log.info(line);
-        }
-    }
+//    public static void printResults(Process process) throws IOException {
+//        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+//        String line = "";
+//        while ((line = reader.readLine()) != null) {
+//            log.info(line);
+//        }
+//    }
 
-    private File convertTagToRdf(File sourceFile, String targetFilePath) {
-        FileInputStream spdxTagStream = null;
-
-        try {
-            spdxTagStream = new FileInputStream(sourceFile);
-        } catch (FileNotFoundException e2) {
-            e2.printStackTrace();
-        }
-
-        File spdxRDFFile = new File(targetFilePath);
-        String outputFormat = "RDF/XML";
-		FileOutputStream outStream = null;
-		try {
-			outStream = new FileOutputStream(spdxRDFFile);
-		} catch (FileNotFoundException e1) {
-			try {
-				spdxTagStream.close();
-			} catch (IOException e) {
-                log.error("Warning: Unable to close input file on error.");
-			}
-			log.error("Could not write to the new SPDX RDF file " + spdxRDFFile.getPath() + "due to error " + e1.getMessage());
-        }
-
-		List<String> warnings = new ArrayList<String>();
-		try {
-			TagToRDF.convertTagFileToRdf(spdxTagStream, outStream, outputFormat, warnings);
-			if (!warnings.isEmpty()) {
-				log.warn("The following warnings and or verification errors were found:");
-				for (String warning:warnings) {
-					log.warn("\t" + warning);
-				}
-            }
-		} catch (Exception e) {
-			log.error("Error creating SPDX Analysis: " + e.getMessage());
-		} finally {
-			if (outStream != null) {
-				try {
-					outStream.close();
-				} catch (IOException e) {
-					log.error("Error closing RDF file: " + e.getMessage());
-				}
-			}
-			if (spdxTagStream != null) {
-				try {
-					spdxTagStream.close();
-				} catch (IOException e) {
-					log.error("Error closing Tag/Value file: " + e.getMessage());
-				}
-			}
-		}
-        return spdxRDFFile;
-    }
-
+//    private File convertTagToRdf(File sourceFile, String targetFilePath) {
+//        FileInputStream spdxTagStream = null;
+//
+//        try {
+//            spdxTagStream = new FileInputStream(sourceFile);
+//        } catch (FileNotFoundException e2) {
+//            e2.printStackTrace();
+//        }
+//
+//        File spdxRDFFile = new File(targetFilePath);
+//        String outputFormat = "RDF/XML";
+//		FileOutputStream outStream = null;
+//		try {
+//			outStream = new FileOutputStream(spdxRDFFile);
+//		} catch (FileNotFoundException e1) {
+//			try {
+//				spdxTagStream.close();
+//			} catch (IOException e) {
+//                log.error("Warning: Unable to close input file on error.");
+//			}
+//			log.error("Could not write to the new SPDX RDF file " + spdxRDFFile.getPath() + "due to error " + e1.getMessage());
+//        }
+//
+//		List<String> warnings = new ArrayList<String>();
+//		try {
+//			TagToRDF.convertTagFileToRdf(spdxTagStream, outStream, outputFormat, warnings);
+//			if (!warnings.isEmpty()) {
+//				log.warn("The following warnings and or verification errors were found:");
+//				for (String warning:warnings) {
+//					log.warn("\t" + warning);
+//				}
+//            }
+//		} catch (Exception e) {
+//			log.error("Error creating SPDX Analysis: " + e.getMessage());
+//		} finally {
+//			if (outStream != null) {
+//				try {
+//					outStream.close();
+//				} catch (IOException e) {
+//					log.error("Error closing RDF file: " + e.getMessage());
+//				}
+//			}
+//			if (spdxTagStream != null) {
+//				try {
+//					spdxTagStream.close();
+//				} catch (IOException e) {
+//					log.error("Error closing Tag/Value file: " + e.getMessage());
+//				}
+//			}
+//		}
+//        return spdxRDFFile;
+//    }
 
     public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
+        final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
         try {
-            InputStream spdxInputStream = null;
-            spdxInputStream = attachmentConnector.unsafeGetAttachmentStream(attachmentContent);
-            final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
-            final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
-            return spdxBOMImporter.importSpdxBOMAsRelease(spdxInputStream, attachmentContent);
+            final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
+            try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
+                final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
+                final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
+                return spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent);
+            }
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
         }
@@ -2574,10 +2612,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 			}
 		}
 		return ext;
-    }
-
-    private boolean isJSONFile(String fileType) {
-        return (!isNullEmptyOrWhitespace(fileType) && fileType.equals("json"));
     }
 
     private void removeLeadingTrailingWhitespace(Release release) {
