@@ -62,6 +62,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.jetbrains.annotations.NotNull;
+import org.spdx.library.InvalidSPDXAnalysisException;
 //import org.spdx.rdfparser.InvalidSPDXAnalysisException;
 //import org.spdx.tools.SpdxConverter;
 //import org.spdx.tools.SpdxConverterException;
@@ -111,6 +112,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private static final String ECC_AUTOSET_COMMENT = "automatically set";
     private static final String ECC_AUTOSET_VALUE = "N";
     private static final String DEFAULT_CATEGORY = "Default_Category";
+
+    private static final List<String> listComponentName =new ArrayList<>();
+
+    private static final Map<String ,String> listReleaseName =new HashMap<>();
 
     /**
      * Connection to the couchDB database
@@ -550,6 +555,28 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         List<Release> duplicates = releaseRepository.searchByNameAndVersion(releaseName, releaseVersion);
         return duplicates.size()>0;
+    }
+
+    private boolean isDuplicate(List<String> componentName, boolean caseInsenstive) {
+        int cnt =0;
+        for (String name : componentName) {
+            if(isDuplicate(name, caseInsenstive)) cnt++;
+            else listComponentName.add(name);
+        }
+        if (cnt == listComponentName.size())
+            return true;
+        return false;
+    }
+
+    private boolean isDuplicate(Map<String, String>  releases) {
+        int cnt =0;
+        for (Map.Entry<String, String> release : releases.entrySet()) {
+            if(isDuplicate(release.getKey(), release.getValue())) cnt ++;
+            else listReleaseName.put(release.getKey(),release.getValue());
+        }
+        if (cnt == listReleaseName.size())
+            return true;
+        return false;
     }
 
     private void resetReleaseDependentFields(Component component) {
@@ -2486,104 +2513,50 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
                 ImportBomRequestPreparation importBomRequestPreparation = spdxBOMImporter.prepareImportSpdxBOMAsRelease(sourceFile);
                 if (RequestStatus.SUCCESS.equals(importBomRequestPreparation.getRequestStatus())) {
-                    String name = importBomRequestPreparation.getName();
-                    String version = importBomRequestPreparation.getVersion();
-                    if (!isDuplicate(name, true)) {
-                        importBomRequestPreparation.setIsComponentDuplicate(false);
-                        importBomRequestPreparation.setIsReleaseDuplicate(false);
-                    } else if (!isDuplicate(name, version)) {
-                        importBomRequestPreparation.setIsComponentDuplicate(true);
-                        importBomRequestPreparation.setIsReleaseDuplicate(false);
-                    } else {
+                    List<String> componentsName = getComponentsName(importBomRequestPreparation.getComponentsName());
+                    Map<String, String> releasesName = getReleasesName(importBomRequestPreparation.getReleasesName());
+                    boolean checkDuplicateRelease=isDuplicate(releasesName);
+                    boolean checkDuplicateComponent=isDuplicate(componentsName,true);
+                    if (listComponentName.size() == 0 && listReleaseName.size() ==0){
                         importBomRequestPreparation.setIsComponentDuplicate(true);
                         importBomRequestPreparation.setIsReleaseDuplicate(true);
                     }
+                    else {
+                        String componentName ="";
+                        String releaseName="";
+                        if ( listComponentName.size() == 0){
+                            componentName ="Don't have Component created!";
+                        } else {
+                            for (String name : listComponentName) {
+                                componentName += name + " , ";
+                            }
+                            componentName = componentName.substring(0, componentName.length() - 2);
+                        }
+                        if (listReleaseName.size() ==0 ){
+                            releaseName ="Don't have Release created!";
+                        } else {
+                            for (Map.Entry<String, String> release : listReleaseName.entrySet()) {
+                                releaseName += release.getKey() + " " + release.getValue() + " , ";
+                            }
+                            releaseName = releaseName.substring(0, releaseName.length() - 2);
+                        }
+                        listComponentName.clear();
+                        listReleaseName.clear();
+                        importBomRequestPreparation.setComponentsName(componentName);
+                        importBomRequestPreparation.setReleasesName(releaseName);
+                        importBomRequestPreparation.setIsComponentDuplicate(false);
+                        importBomRequestPreparation.setIsReleaseDuplicate(false);
+                    }
+
                     importBomRequestPreparation.setMessage(sourceFile.getAbsolutePath());
                 }
 
                 return importBomRequestPreparation;
             }
-        } catch (IOException e) {
+        } catch (IOException | InvalidSPDXAnalysisException e) {
             throw new SW360Exception(e.getMessage());
         }
     }
-
-//    private void cutFileInformation(String pathFile) {
-//        try {
-//            log.info("Run command cut File information from RDF file from line");
-//            String command = "file=\"" + pathFile + "\" " +
-//            "&& start=$(cat $file | grep -nF \"spdx:hasFile>\" | head -1 | cut -d \":\" -f1) " +
-//            "&& end=$(cat $file | grep -nF \"/spdx:hasFile>\" | tail -1 | cut -d \":\" -f1) " +
-//            "&& echo $start to $end " +
-//            "&& sed -i \"${start},${end}d\" $file ";
-//            Process process = Runtime.getRuntime().exec(new String[] { "/bin/bash", "-c", command });
-//            printResults(process);
-//        } catch (IOException e) {
-//            log.error("Error when cut File information");
-//            e.printStackTrace();
-//        }
-//    }
-
-//    public static void printResults(Process process) throws IOException {
-//        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-//        String line = "";
-//        while ((line = reader.readLine()) != null) {
-//            log.info(line);
-//        }
-//    }
-
-//    private File convertTagToRdf(File sourceFile, String targetFilePath) {
-//        FileInputStream spdxTagStream = null;
-//
-//        try {
-//            spdxTagStream = new FileInputStream(sourceFile);
-//        } catch (FileNotFoundException e2) {
-//            e2.printStackTrace();
-//        }
-//
-//        File spdxRDFFile = new File(targetFilePath);
-//        String outputFormat = "RDF/XML";
-//		FileOutputStream outStream = null;
-//		try {
-//			outStream = new FileOutputStream(spdxRDFFile);
-//		} catch (FileNotFoundException e1) {
-//			try {
-//				spdxTagStream.close();
-//			} catch (IOException e) {
-//                log.error("Warning: Unable to close input file on error.");
-//			}
-//			log.error("Could not write to the new SPDX RDF file " + spdxRDFFile.getPath() + "due to error " + e1.getMessage());
-//        }
-//
-//		List<String> warnings = new ArrayList<String>();
-//		try {
-//			TagToRDF.convertTagFileToRdf(spdxTagStream, outStream, outputFormat, warnings);
-//			if (!warnings.isEmpty()) {
-//				log.warn("The following warnings and or verification errors were found:");
-//				for (String warning:warnings) {
-//					log.warn("\t" + warning);
-//				}
-//            }
-//		} catch (Exception e) {
-//			log.error("Error creating SPDX Analysis: " + e.getMessage());
-//		} finally {
-//			if (outStream != null) {
-//				try {
-//					outStream.close();
-//				} catch (IOException e) {
-//					log.error("Error closing RDF file: " + e.getMessage());
-//				}
-//			}
-//			if (spdxTagStream != null) {
-//				try {
-//					spdxTagStream.close();
-//				} catch (IOException e) {
-//					log.error("Error closing Tag/Value file: " + e.getMessage());
-//				}
-//			}
-//		}
-//        return spdxRDFFile;
-//    }
 
     public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
@@ -2756,5 +2729,26 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         mailUtil.sendMail(recepient, MailConstants.SUBJECT_SPREADSHEET_EXPORT_SUCCESS,
                 MailConstants.TEXT_SPREADSHEET_EXPORT_SUCCESS, SW360Constants.NOTIFICATION_CLASS_COMPONENT, "", false,
                 "component", url);
+    }
+
+    public List<String> getComponentsName (String components){
+        components = components.substring(0, components.length() - 3);
+        List<String> componentsName= new ArrayList<>();
+        String[] parts = components.split(" , ");
+        for (int i = 0; i < parts.length; i++) {
+            componentsName.add(parts[i]);
+        }
+        return componentsName;
+    }
+
+    public Map<String, String> getReleasesName (String releases)  {
+        Map<String,String> releasesName= new HashMap<>();
+        releases = releases.replace(" , ", ",");
+        String[] parts = releases.split(",");
+        for (int i = 0; i < parts.length; i++) {
+            String[] parts1 = parts[i].split(" ");
+            releasesName.put(parts1[0],parts1[1]);
+        }
+        return releasesName;
     }
 }

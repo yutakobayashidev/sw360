@@ -132,11 +132,10 @@
             });
         }
 
-        function importBomAsNewFromAttachment(attachmentContentId, newReleaseVersion, rdfFilePath) {
+        function importBomAsNewFromAttachment(attachmentContentId, rdfFilePath) {
             var data = {};
 
             data[portletNamespace + "<%=PortalConstants.ATTACHMENT_CONTENT_ID%>"] = attachmentContentId;
-            data[portletNamespace + "<%=PortalConstants.NEW_RELEASE_VERSION%>"] = newReleaseVersion;
             data[portletNamespace + "<%=PortalConstants.RDF_FILE_PATH%>"] = rdfFilePath;
 
             return $.ajax({
@@ -191,21 +190,18 @@
                 } else {
                     if (neededKeys.every(key => Object.keys(data).includes(key))) {
                         $('#importSBOM').css('display', 'block');
-
                         componentName = data.name;
-
-                        componentVersion = data.version;
-
+                        releases      = data.version;
                         actualComponentName = $('#import-spdx-bom').data().componentName;
-
                         if (actualComponentName) {
                             if (actualComponentName === componentName) {
                                 if (!data.isReleaseDuplicate) {
                                     statusDiv.html("<h3>The new Release will be created, do you want to import?</h3>");
-                                    statusDiv.append("<div>New Release: <b>"+componentVersion+"</b></div>");
+                                    statusDiv.append("<div>New Release: <b>"+ releases+"</b></div>");
                                 } else {
-                                    statusDiv.html("<h3>The Release existed !</h3>");
-                                    $('#importSBOM').hide();
+                                    statusDiv.html("<h3>The Release existed, do you want:</h3>");
+                                    statusDiv.append("<div>Update Release: <b>"+ releases+"</b> (please choose Import button)</div>");
+                                    statusDiv.append("<div>Create new Release: <b>"+componentName+" ("+ releases+"-sbom-"+attachmentContentId.substring(0,6)+")</b></div>");
                                 }
                             } else {
                                 $('#importSBOM').hide();
@@ -216,10 +212,10 @@
                             if (!data.isComponentDuplicate) {
                                 statusDiv.html("<h3>The new Component and new Release will be created, do you want to import?</h3>");
                                 statusDiv.append("<div>New Component: <b>"+componentName+"</b></div>");
-                                statusDiv.append("<div>New Release: <b> "+componentVersion+"</b></div>");
+                                statusDiv.append("<div>New Release: <b>"+ releases+"</b></div>");
                             } else if (!data.isReleaseDuplicate) {
                                 statusDiv.html("<h3>The new Release will be created, do you want to import?</h3>");
-                                statusDiv.append("<div>New Release: <b>"+componentVersion+"</b></div>");
+                                statusDiv.append("<div>New Release: <b>"+ releases+"</b></div>");
                             } else {
                                 statusDiv.html("<h3>The Component and Release existed !</h3>");
                                 $('#importSBOM').hide();
@@ -242,7 +238,6 @@
                 }
             }).catch(function (err) {
                 $('#importSBOM').hide();
-                $('#importSBOMAsNew').hide();
                 $('#cancelImportSBOM').show();
                 statusDiv.html("<h2>Failed :(</h2>");
                 statusDiv.append("<div>" + JSON.stringify(err) + "</div>");
@@ -269,7 +264,6 @@
                     contentDiv.show();
 
                     $('#importSBOM').hide();
-
                     $('#importSBOM').on('click', function() {
                         if (attachmentContentId === "") return;
                         importBomFromAttachment(attachmentContentId, rdfFilePath).then(function (data) {

@@ -24,7 +24,6 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.spdx.annotations.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
-import org.eclipse.sw360.datahandler.thrift.spdx.fileinformation.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.*;
@@ -44,7 +43,6 @@ import org.spdx.tools.SpdxToolsHelper;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -66,7 +64,7 @@ public class SpdxBOMImporter {
         this.sink = sink;
     }
 
-    public ImportBomRequestPreparation prepareImportSpdxBOMAsRelease(File targetFile) {
+    public ImportBomRequestPreparation prepareImportSpdxBOMAsRelease(File targetFile) throws InvalidSPDXAnalysisException {
         final ImportBomRequestPreparation requestPreparation = new ImportBomRequestPreparation();
         final SpdxDocument spdxDocument = openAsSpdx(targetFile);
         if (spdxDocument == null) {
@@ -74,6 +72,20 @@ public class SpdxBOMImporter {
             requestPreparation.setMessage("error-read-file");
             return requestPreparation;
         }
+        String componentsName="";
+        String releasesName="";
+        String version="";
+        List<SpdxPackage> listPackages = getPackages(spdxDocument);
+        for (SpdxPackage spdxPackage: listPackages){
+            componentsName += spdxPackage.getName() +" , ";
+            if (!spdxPackage.getVersionInfo().toString().equals("Optional.empty"))
+                releasesName += spdxPackage.getName() + " " +spdxPackage.getVersionInfo() +" , ";
+            version += spdxPackage.getVersionInfo() +" , ";
+        }
+
+        componentsName = componentsName.replace("Optional[", "").replace("]","");
+        releasesName = releasesName.replace("Optional[", "").replace("]","");
+
         try {
             final List<SpdxElement> describedPackages = spdxDocument.getDocumentDescribes().stream().collect(Collectors.toList());
             final List<SpdxElement> packages =  describedPackages.stream()
@@ -90,9 +102,9 @@ public class SpdxBOMImporter {
             }
             final SpdxElement spdxElement = packages.get(0);
             if (spdxElement instanceof SpdxPackage) {
-                final SpdxPackage spdxPackage = (SpdxPackage) spdxElement;
-                requestPreparation.setName(getValue(spdxPackage.getName()));
-                requestPreparation.setVersion(getValue(spdxPackage.getVersionInfo()));
+                requestPreparation.setComponentsName(componentsName);
+                requestPreparation.setReleasesName(releasesName);
+                requestPreparation.setVersion(version);
                 requestPreparation.setRequestStatus(RequestStatus.SUCCESS);
             } else {
                 requestPreparation.setMessage("Failed to get spdx package from the provided BOM file.");

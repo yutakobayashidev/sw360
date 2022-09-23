@@ -503,7 +503,6 @@ public class PortalConstants {
     public static final String PREPARE_IMPORT_BOM = "prepareImportBom";
     public static final String IMPORT_BOM = "importBom";
     public static final String IMPORT_BOM_AS_NEW = "importBomAsNew";
-    public static final String NEW_RELEASE_VERSION = "newRleaseVersion";
     public static final String RDF_FILE_PATH = "rdfFilePath";
 
     // project actions
