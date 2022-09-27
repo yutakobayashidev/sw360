@@ -59,6 +59,8 @@ import org.eclipse.sw360.mail.MailUtil;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.spdx.SpdxBOMExporter;
+import org.eclipse.sw360.spdx.SpdxBOMExporterSink;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.jetbrains.annotations.NotNull;
@@ -2570,6 +2572,19 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
+        }
+    }
+
+    public RequestSummary exportSPDX(User user, String releaseId, String outputFormat) throws SW360Exception {
+        RequestSummary requestSummary = new RequestSummary();
+        SpdxBOMExporterSink spdxBOMExporterSink;
+        try {
+            spdxBOMExporterSink = new SpdxBOMExporterSink(user, null, this);
+            final SpdxBOMExporter spdxBOMExporter = new SpdxBOMExporter(spdxBOMExporterSink);
+            return spdxBOMExporter.exportSPDXFile(releaseId, outputFormat);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            return requestSummary.setRequestStatus(RequestStatus.FAILURE);
         }
     }
 
