@@ -27,14 +27,14 @@
 </portlet:resourceURL>
 
 <h4 class="mt-4"><liferay-ui:message key="linked.releases" /></h4>
-<div class="alert alert-danger show-alert" role="alert" style="display:none">
+<div class="alert alert-danger show-alert" role="alert" style="display:none; position:sticky; top:0; z-index:999">
     <span class="alert-indicator">
         <svg class="lexicon-icon lexicon-icon-exclamation-full" focusable="false" role="presentation">
             <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#exclamation-full"></use>
         </svg>
     </span>
     <strong class="lead">Warning: </strong><span class='alert-message'></span>
-    <button aria-label="Close" class="close" type="button" style="float:right">
+    <button aria-label="Close" class="close" type="button" style="float:right;margin-top: -5px;">
         <svg class="lexicon-icon lexicon-icon-times" focusable="false" role="presentation">
             <use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#times'/>
         </svg>
@@ -386,7 +386,7 @@
                let parentNode = $(this).closest('tr').attr('parent-node');
                let currentIndex = $(this).closest('tr').attr('data-index');
                let version = $(this).closest('tr').find('select').eq(0).find('option:selected').text();
-               let componentName = $(this).closest('tr').find('td').eq(0).text().trim();
+               let componentName = $(this).closest('tr').find('td').eq(0).find('div').eq(0).text().trim();
                let i=0;
                let trace = [];
                trace.unshift(currentIndex);
@@ -508,8 +508,6 @@
                     addChildNode(releasesLinked[index].releaseLink, i, trace, newNodes);
                 }
             }
-
-
 
             function releaseRelationFromAjax(what, where, parentIds, layers, mainLineState, releaseRelation, indexes, comments) {
                 return new Promise(function(resolve, reject) {
@@ -664,7 +662,7 @@
                     selectedElement.after(releaseRows);
                     $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
                     if (releaseDuplicates.length > 0) {
-                        displayAlert('Releases ' + releaseDuplicates.join(', ') + ' duplicated');
+                        displayAlert('Releases duplicated: ' + releaseDuplicates.join(', '));
                     }
                     callback(true);
                 }, function() {
@@ -784,7 +782,7 @@
                     $('#LinkedReleasesNetwork tbody').append(releaseRows);
                     $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
                     if (releaseDuplicates.length > 0) {
-                        displayAlert('Releases ' + releaseDuplicates.join(', ') + ' duplicated');
+                        displayAlert('Releases duplicated: ' + releaseDuplicates.join(', '));
                     }
                     callback(true);
                 }, function() {
