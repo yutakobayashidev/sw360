@@ -793,4 +793,46 @@ public class SW360Utils {
         }
         return Collections.emptyList();
     }
+
+    public static Map<String, ProjectReleaseRelationship> getProjectRelationShipWithReleaseInNetwork(Project project) {
+        Map<String, ProjectReleaseRelationship> projectReleaseRelationshipMap = new HashMap<>();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
+        if (project.getReleaseRelationNetwork() != null) {
+            try {
+                releaseLinkJSONS = objectMapper.readValue(project.getReleaseRelationNetwork(), new TypeReference<>() {
+                });
+                for (ReleaseLinkJSON release : releaseLinkJSONS) {
+                    projectReleaseRelationshipMap.putAll(flattenNetwork(release));
+                }
+                return projectReleaseRelationshipMap;
+            } catch (JsonProcessingException e) {
+                return Collections.emptyMap();
+            }
+        }
+        return Collections.emptyMap();
+    }
+
+    private static Map<String, ProjectReleaseRelationship> flattenNetwork(ReleaseLinkJSON node) {
+        Map<String, ProjectReleaseRelationship> projectReleaseRelationshipMap = new HashMap<>();
+        if (node != null) {
+            ProjectReleaseRelationship prr = new ProjectReleaseRelationship();
+            prr.setComment(node.getComment());
+            prr.setCreatedOn(node.getCreateOn());
+            prr.setMainlineState(MainlineState.valueOf(node.getMainlineState()));
+            prr.setReleaseRelation(ReleaseRelationship.valueOf(node.getReleaseRelationship()));
+            projectReleaseRelationshipMap.put(node.getReleaseId(), prr);
+        }
+        if (!node.getReleaseLink().isEmpty()) {
+            List<ReleaseLinkJSON> children = node.getReleaseLink();
+            for (ReleaseLinkJSON child : children) {
+                if (child.getReleaseLink() != null || !child.getReleaseLink().isEmpty()) {
+                    projectReleaseRelationshipMap.putAll(flattenNetwork(child));
+                }
+            }
+        }
+        return projectReleaseRelationshipMap;
+    }
 }
