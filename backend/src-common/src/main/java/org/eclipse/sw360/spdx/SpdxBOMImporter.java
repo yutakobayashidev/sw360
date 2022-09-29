@@ -82,10 +82,8 @@ public class SpdxBOMImporter {
                 releasesName += spdxPackage.getName() + " " +spdxPackage.getVersionInfo() +" , ";
             version += spdxPackage.getVersionInfo() +" , ";
         }
-
         componentsName = componentsName.replace("Optional[", "").replace("]","");
         releasesName = releasesName.replace("Optional[", "").replace("]","");
-
         try {
             final List<SpdxElement> describedPackages = spdxDocument.getDocumentDescribes().stream().collect(Collectors.toList());
             final List<SpdxElement> packages =  describedPackages.stream()
@@ -256,7 +254,6 @@ public class SpdxBOMImporter {
     private Set<Annotations> createAnnotationsFromSpdxAnnotations(List<Annotation> spdxAnnotations) throws InvalidSPDXAnalysisException {
         Set<Annotations> annotations = new HashSet<>();
         int index = 0;
-
         for(Annotation spdxAnn : spdxAnnotations) {
             String annotator = spdxAnn.getAnnotator();
             String date = spdxAnn.getAnnotationDate();
@@ -273,14 +270,12 @@ public class SpdxBOMImporter {
             annotations.add(ann);
             index++;
         }
-
         return annotations;
     }
 
     private Set<SnippetInformation> createSnippetsFromSpdxSnippets(List<SpdxSnippet> spdxSnippets) {
         Set<SnippetInformation> snippets = new HashSet<>();
         int index = 0;
-
         try {
             for (SpdxSnippet spdxSnippet : spdxSnippets) {
                 String id = spdxSnippet.getId();
@@ -315,7 +310,6 @@ public class SpdxBOMImporter {
         } catch (InvalidSPDXAnalysisException e) {
             log.error(e);
         }
-
         return snippets;
     }
 
@@ -734,7 +728,6 @@ public class SpdxBOMImporter {
             final SpdxPackage spdxPackage = (SpdxPackage) relatedSpdxElement;
             final Release release;
             SpdxBOMImporterSink.Response component;
-
             component = importAsComponent(spdxPackage);
             final String componentId = component.getId();
 
@@ -782,20 +775,26 @@ public class SpdxBOMImporter {
     private  void importAsReleaseFromSpdxDocument(List<SpdxPackage> packages, AttachmentContent attachmentContent) throws SW360Exception, InvalidSPDXAnalysisException {
         for (SpdxPackage spdxElement: packages){
             final Release release = createReleaseFromSpdxPackage(spdxElement);
+            String name = spdxElement.getName().toString().replace("Optional[", "").replace("]","");
+            Component component = sink.searchComponent(name);
             if(isNullEmptyOrWhitespace(release.getVersion())){
-                release.setComponentId(importAsComponent(spdxElement).getId());
+                if (component == null) release.setComponentId(importAsComponent(spdxElement).getId());
+                else release.setComponentId(component.getId());
                 continue;
             } else {
-                release.setComponentId(importAsComponent(spdxElement).getId());
-                final Relationship[] relationships = spdxElement.getRelationships().toArray(new Relationship[0]);
-                List<SpdxBOMImporterSink.Response> releases = importAsReleases(relationships);
-                Map<String, ReleaseRelationship> releaseIdToRelationship = makeReleaseIdToRelationship(releases);
-                release.setReleaseIdToRelationship(releaseIdToRelationship);
-                if (attachmentContent != null) {
-                    Attachment attachment = makeAttachmentFromContent(attachmentContent);
-                    release.setAttachments(Collections.singleton(attachment));
+                if (component == null) release.setComponentId(importAsComponent(spdxElement).getId());
+                else release.setComponentId(component.getId());
+                if (sink.searchRelease(release.getName()) == null) {
+                    final Relationship[] relationships = spdxElement.getRelationships().toArray(new Relationship[0]);
+                    List<SpdxBOMImporterSink.Response> releases = importAsReleases(relationships);
+                    Map<String, ReleaseRelationship> releaseIdToRelationship = makeReleaseIdToRelationship(releases);
+                    release.setReleaseIdToRelationship(releaseIdToRelationship);
+                    if (attachmentContent != null) {
+                        Attachment attachment = makeAttachmentFromContent(attachmentContent);
+                        release.setAttachments(Collections.singleton(attachment));
+                    }
+                    final SpdxBOMImporterSink.Response response = sink.addRelease(release);
                 }
-                final SpdxBOMImporterSink.Response response = sink.addRelease(release);
             }
         }
     }

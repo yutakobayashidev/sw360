@@ -64,7 +64,6 @@ public class SpdxBOMImporterSink {
         }
         final AddDocumentRequestSummary addDocumentRequestSummary = componentDatabaseHandler.addComponent(component,
                 user.getEmail());
-
         final String componentId = addDocumentRequestSummary.getId();
         if (componentId == null || componentId.isEmpty()) {
             throw new SW360Exception("Id of added component should not be empty. " + addDocumentRequestSummary.toString());
@@ -86,7 +85,6 @@ public class SpdxBOMImporterSink {
 
     public Response addOrUpdateSpdxDocument(SPDXDocument spdxDocument) throws SW360Exception {
         log.debug("create or update SPDXDocument");
-        // SpdxDocumentDatabaseHandler handler = new SpdxDocumentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
         RequestStatus requestStatus;
         String spdxDocId;
         if (spdxDocument.isSetId()) {
@@ -98,7 +96,6 @@ public class SpdxBOMImporterSink {
             spdxDocId = addDocumentRequestSummary.getId();
         }
 
-        // final String spdxDocId = addDocumentRequestSummary.getId();
         if(spdxDocId == null || spdxDocId.isEmpty()) {
             throw new SW360Exception("Id of spdx document should not be empty. " + requestStatus.toString());
         }
@@ -107,7 +104,6 @@ public class SpdxBOMImporterSink {
 
     public Response addOrUpdateDocumentCreationInformation(DocumentCreationInformation documentCreationInfo) throws SW360Exception {
         log.debug("create or update DocumentCreationInformation { name='" + documentCreationInfo.getName() + "' }");
-        // SpdxDocumentCreationInfoDatabaseHandler handler = new SpdxDocumentCreationInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
         RequestStatus requestStatus;
         String docCreationInfoId;
         if (documentCreationInfo.isSetId()) {
@@ -118,9 +114,7 @@ public class SpdxBOMImporterSink {
             requestStatus = RequestStatus.findByValue(addDocumentRequestSummary.getRequestStatus().getValue());
             docCreationInfoId = addDocumentRequestSummary.getId();
         }
-        // final AddDocumentRequestSummary addDocumentRequestSummary = handler.addDocumentCreationInformation(documentCreationInfo, user);
 
-        // final String docCreationInfoId = addDocumentRequestSummary.getId();
         if(docCreationInfoId == null || docCreationInfoId.isEmpty()) {
             throw new SW360Exception("Id of added document creation information should not be empty. " + requestStatus.toString());
         }
@@ -172,18 +166,41 @@ public class SpdxBOMImporterSink {
         return componentDatabaseHandler.getRelease(id, user);
     }
 
+    public Component searchComponent(String name)throws SW360Exception {
+        List<Component> components = componentDatabaseHandler.searchComponentByNameForExport(name, true);
+        if (components.size() == 0)
+            return null;
+        else {
+            for (Component component : components) {
+                if (component.getName().equals(name))
+                    return component;
+            }
+        }
+        return null;
+    }
+
+    public Release searchRelease(String name)throws SW360Exception {
+        List<Release> releases = componentDatabaseHandler.searchReleaseByNamePrefix(name);
+        if (releases.size() == 0)
+            return null;
+        else {
+            for (Release release : releases) {
+                if (release.getName().equals(name))
+                    return release;
+            }
+        }
+        return null;
+    }
+
     public SPDXDocument getSPDXDocument(String id)  throws SW360Exception {
-        // SpdxDocumentDatabaseHandler handler = new SpdxDocumentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
         return spdxDocumentDatabaseHandler.getSPDXDocumentById(id, user);
     }
 
     public DocumentCreationInformation getDocumentCreationInfo(String id)  throws SW360Exception {
-        // SpdxDocumentCreationInfoDatabaseHandler handler = new SpdxDocumentCreationInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
         return creationInfoDatabaseHandler.getDocumentCreationInformationById(id, user);
     }
 
     public PackageInformation getPackageInfo(String id)  throws SW360Exception {
-        // SpdxPackageInfoDatabaseHandler handler = new SpdxPackageInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
         return packageInfoDatabaseHandler.getPackageInformationById(id, user);
     }
 
