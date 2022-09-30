@@ -25,6 +25,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ProjectProjectRelationshipMixin;
+import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -834,5 +835,33 @@ public class SW360Utils {
             }
         }
         return projectReleaseRelationshipMap;
+    }
+
+    public static List<Project> getUsingProjectByReleaseIds(Set<String> releaseIds, User user) {
+        ProjectService.Iface projectClient = new ThriftClients().makeProjectClient();
+        Map<String, Set<String>> filterMap = getFilterMapForSetReleaseIds(releaseIds);
+        List<Project> projectsUsings;
+        try {
+            if (user == null) {
+                projectsUsings = projectClient.refineSearchWithoutUser(null, filterMap);
+            } else {
+                projectsUsings = projectClient.refineSearch(null, filterMap, user);
+            }
+        } catch (TException e) {
+            log.error("Could not fetch projects");
+            projectsUsings = Collections.emptyList();
+        }
+        return projectsUsings;
+    }
+
+    private static Map<String, Set<String>> getFilterMapForSetReleaseIds(Set<String> releaseIds) {
+        Map<String, Set<String>> filterMap = new HashMap<>();
+        Set<String> values = new HashSet<>();
+        for(String releaseId : releaseIds) {
+            values.add("\"releaseId\":\"" + releaseId + "\"");
+        }
+        values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
+        filterMap.put(Project._Fields.RELEASE_RELATION_NETWORK.getFieldName(), values);
+        return filterMap;
     }
 }

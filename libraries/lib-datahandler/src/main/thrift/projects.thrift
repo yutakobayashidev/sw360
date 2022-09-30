@@ -369,6 +369,11 @@ service ProjectService {
     list<Project> refineSearch(1: string text, 2: map<string,set<string>>  subQueryRestrictions, 3: User user);
 
     /**
+     * returns a list of projects which match `text` and the `subQueryRestrictions`
+     */
+    list<Project> refineSearchWithoutUser(1: string text, 2: map<string,set<string>>  subQueryRestrictions);
+
+    /**
      * list of projects which are visible to the `user` and match the `name`
      */
     list<Project> searchByName(1: string name, 2: User user);

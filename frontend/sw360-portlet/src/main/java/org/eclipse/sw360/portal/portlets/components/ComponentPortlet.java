@@ -544,7 +544,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         } catch (TException e) {
             log.error(e.getMessage());
         }
-        if (getUsingProjectByReleaseIds(releaseIdToSet, allProjects).size() > 0) {
+        if (SW360Utils.getUsingProjectByReleaseIds(releaseIdToSet, null).size() > 0) {
             serveRequestStatus(request, response, RequestStatus.IN_USE, "Problem removing release", log);
         } else {
             final RequestStatus requestStatus = ComponentPortletUtils.deleteRelease(request, log);
@@ -1608,12 +1608,10 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
         if (releaseIds != null && releaseIds.size() > 0) {
             try {
-                Set<Project> setProjectsWithAccessible = projectClient.getAccessibleProjects(user);
-                Set<Project> allProjects = projectClient.getAll().stream().collect(Collectors.toSet());
                 usingComponentsForComponent = client.getUsingComponentsWithAccessibilityForComponent(releaseIds, user);
-                usingProjectInDependencyNetwork = getUsingProjectByReleaseIds(releaseIds, setProjectsWithAccessible);
+                usingProjectInDependencyNetwork = SW360Utils.getUsingProjectByReleaseIds(releaseIds, user);
                 request.setAttribute(USING_PROJECTS, new HashSet<>(usingProjectInDependencyNetwork));
-                request.setAttribute(ALL_USING_PROJECTS_COUNT, getUsingProjectByReleaseIds(releaseIds, allProjects).size());
+                request.setAttribute(ALL_USING_PROJECTS_COUNT, SW360Utils.getUsingProjectByReleaseIds(releaseIds, null).size());
             } catch (TException e) {
                 log.error("Problem filling using docs", e);
             }
@@ -1853,17 +1851,14 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
 
     private void setUsingDocs(RenderRequest request, String releaseId, User user, ComponentService.Iface client) throws TException {
-        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
         if (releaseId != null) {
-            Set<Project> setProjectsWithAccessible = projectClient.getAccessibleProjects(user);
-            Set<Project> allProjects = projectClient.getAll().stream().collect(Collectors.toSet());
             final Set<Component> usingComponentsForRelease = client.getUsingComponentsWithAccessibilityForRelease(releaseId, user);
             Set<String> releaseIdSet = new HashSet<>();
             releaseIdSet.add(releaseId);
-            List<Project> usingProjectInDependencyNetwork = getUsingProjectByReleaseIds(releaseIdSet, setProjectsWithAccessible);
+            List<Project> usingProjectInDependencyNetwork = SW360Utils.getUsingProjectByReleaseIds(releaseIdSet, user);
             request.setAttribute(USING_COMPONENTS, nullToEmptySet(usingComponentsForRelease));
             request.setAttribute(USING_PROJECTS, new HashSet<>(usingProjectInDependencyNetwork));
-            request.setAttribute(ALL_USING_PROJECTS_COUNT, getUsingProjectByReleaseIds(releaseIdSet, allProjects).size());
+            request.setAttribute(ALL_USING_PROJECTS_COUNT, SW360Utils.getUsingProjectByReleaseIds(releaseIdSet, null).size());
         } else {
             request.setAttribute(USING_PROJECTS,  Collections.emptySet());
             request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
@@ -2546,25 +2541,5 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         } else {
             return CommonUtils.COMMA_JOINER.join(strings.stream().sorted().collect(Collectors.toList()));
         }
-    }
-
-    private List<Project> getUsingProjectByReleaseIds(Set<String> releaseIds, Set<Project> projects) {
-        List<Project> projectsUsing = new ArrayList<>();
-        projects.forEach(p -> {
-            boolean contain = false;
-            for (String releaseId : releaseIds) {
-                if (p.getReleaseRelationNetwork() == null) {
-                    return;
-                }
-                if (p.getReleaseRelationNetwork().contains("\"releaseId\":\"" + releaseId + "\"")) {
-                    contain = true;
-                    break;
-                }
-            }
-            if (contain == true) {
-                projectsUsing.add(p);
-            }
-        });
-        return projectsUsing;
     }
 }

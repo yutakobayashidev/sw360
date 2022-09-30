@@ -91,6 +91,11 @@ public class ProjectHandler implements ProjectService.Iface {
     }
 
     @Override
+    public List<Project> refineSearchWithoutUser(String text, Map<String, Set<String>> subQueryRestrictions) throws TException {
+        return searchHandler.search(text, subQueryRestrictions);
+    }
+
+    @Override
     public List<Project> getMyProjects(User user, Map<String, Boolean> userRoles) throws TException {
         assertNotNull(user);
         assertNotEmpty(user.getEmail());

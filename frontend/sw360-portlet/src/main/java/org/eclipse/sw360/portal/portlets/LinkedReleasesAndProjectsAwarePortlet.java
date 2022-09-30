@@ -297,42 +297,6 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         }
     }
 
-    protected List<ReleaseLinkJSON> getNetworkLinkedRelease(List<Release> releases, User user){
-        List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
-        releases.forEach(release -> releaseLinkJSONS.add(getReleaseLinkJSONS(new ReleaseLinkJSON(release.getId()), user)));
-        return releaseLinkJSONS;
-    }
-
-    public ReleaseLinkJSON getReleaseLinkJSONS(ReleaseLinkJSON releaseLinkJSON, User user) {
-        ComponentService.Iface client = thriftClients.makeComponentClient();
-        Release releaseById = null;
-        try {
-            releaseById = client.getAccessibleReleaseById(releaseLinkJSON.getReleaseId(), user);
-            List<Release> releaseList = new ArrayList<>();
-            if(releaseById.getReleaseIdToRelationship() != null ) {
-                releaseList = client.getReleasesById(releaseById.getReleaseIdToRelationship().keySet().stream().collect(Collectors.toSet()), user);
-            }
-            List<ReleaseLinkJSON> linkedReleasesJSON = new ArrayList<>();
-            releaseLinkJSON.setMainlineState(MainlineState.OPEN.toString());
-            releaseLinkJSON.setReleaseRelationship(ReleaseRelationship.CONTAINED.toString());
-            releaseLinkJSON.setComment("");
-            for (Release release : releaseList) {
-                ReleaseLinkJSON rj = new ReleaseLinkJSON(release.getId());
-                rj.setMainlineState(MainlineState.OPEN.toString());
-                rj.setReleaseRelationship(ReleaseRelationship.CONTAINED.toString());
-                rj.setComment("");
-                rj.setCreateOn(SW360Utils.getCreatedOn());
-                rj.setCreateBy(user.getEmail());
-                linkedReleasesJSON.add(getReleaseLinkJSONS(rj, user));
-            }
-            releaseLinkJSON.setReleaseLink(linkedReleasesJSON);
-
-        } catch (TException e) {
-            log.error("Error when get Release: " + releaseLinkJSON.getReleaseId());
-        }
-        return releaseLinkJSON;
-    }
-
     protected List<ProjectLink> createLinkedProjectsWithAllReleases(Project project, User user) {
         return createLinkedProjectsWithAllReleases(project, Function.identity(), user);
     }

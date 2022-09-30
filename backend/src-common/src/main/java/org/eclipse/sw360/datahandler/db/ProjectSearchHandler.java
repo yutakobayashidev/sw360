@@ -75,6 +75,9 @@ public class ProjectSearchHandler {
                     "    for(var [key, value] in doc.additionalData) {" +
                     "      ret.add(doc.additionalData[key], {\"field\": \"additionalData\"} );" +
                     "    }" +
+                    "    if(doc.releaseRelationNetwork !== undefined && doc.releaseRelationNetwork != null && doc.releaseRelationNetwork.length >0) {  "+
+                    "      ret.add(doc.releaseRelationNetwork, {\"field\": \"releaseRelationNetwork\"} );" +
+                    "    }" +
                     "    return ret;" +
                     "}");
 
@@ -95,4 +98,7 @@ public class ProjectSearchHandler {
         return connector.searchView(Project.class, luceneSearchView, prepareWildcardQuery(searchText));
     }
 
+    public List<Project> search(String text, final Map<String , Set<String > > subQueryRestrictions){
+        return connector.searchViewWithRestrictions(Project.class, luceneSearchView, text, subQueryRestrictions);
+    }
 }

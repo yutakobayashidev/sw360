@@ -16,10 +16,7 @@ import org.eclipse.sw360.datahandler.db.ComponentSearchHandler;
 import org.eclipse.sw360.datahandler.db.ReleaseSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.ektorp.http.HttpClient;
 
@@ -656,5 +653,10 @@ public class ComponentHandler implements ComponentService.Iface {
         assertUser(user);
         assertNotNull(ids);
         return handler.getReleaseByIds(ids);
+    }
+
+    @Override
+    public List<ReleaseLinkJSON> getReleaseRelationNetworkOfRelease(Release release, User user) {
+        return handler.getReleaseRelationNetworkOfRelease(release, user);
     }
 }

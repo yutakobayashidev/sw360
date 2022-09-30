@@ -3314,9 +3314,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         User user = UserCacheHolder.getUserFromRequest(request);
         JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
         Release release = releaseClient.getAccessibleReleaseById(releaseId,user);
-        List<Release> releases = new ArrayList<>();
-        releases.add(release);
-        List<ReleaseLinkJSON> releaseLinkJSONS = getNetworkLinkedRelease(releases, user);
+        List<ReleaseLinkJSON> releaseLinkJSONS = releaseClient.getReleaseRelationNetworkOfRelease(release, user);
         jsonObject.put(PortalConstants.RESULT, releaseLinkJSONS);
         try {
             writeJSON(request, response, jsonObject);

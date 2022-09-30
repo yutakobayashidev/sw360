@@ -283,4 +283,14 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
             return input.replaceAll("\\s+", " ").trim();
         }
     }
+
+    public List<Project> searchProjectByReleaseIdForUser(LuceneSearchView luceneSearchView, String text,
+                                                        final Map<String, Set<String>> subQueryRestrictions, User user) {
+        List<Project> projectList = searchViewWithRestrictions(Project.class, luceneSearchView, text,
+                subQueryRestrictions);
+        if(user == null) {
+            return projectList;
+        }
+        return projectList.stream().filter(ProjectPermissions.isVisible(user)).collect(Collectors.toList());
+    }
 }

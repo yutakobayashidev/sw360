@@ -869,4 +869,9 @@ service ComponentService {
     * Gets list releases with list release id
     */
     list<Release> getReleasesByListIds(1: list<string> ids, 2:User user)
+
+    /**
+    * Get releases dependency network of release
+    */
+    list<ReleaseLinkJSON> getReleaseRelationNetworkOfRelease(1: Release release, 2:User user)
 }
