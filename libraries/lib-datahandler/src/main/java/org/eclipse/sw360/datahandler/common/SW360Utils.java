@@ -859,6 +859,7 @@ public class SW360Utils {
         Set<String> values = new HashSet<>();
         for(String releaseId : releaseIds) {
             values.add("\"releaseId\":\"" + releaseId + "\"");
+            values.add("\"releaseId\": \"" + releaseId + "\"");
         }
         values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
         filterMap.put(Project._Fields.RELEASE_RELATION_NETWORK.getFieldName(), values);

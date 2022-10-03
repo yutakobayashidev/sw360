@@ -84,7 +84,8 @@ Import-Package: \
 Conditional-Package: \
 	org.apache.http.*, \
 	org.apache.taglibs.*, \
-	org.springframework.security.crypto.bcrypt
+	org.springframework.security.crypto.bcrypt, \
+	com.google.gson.*
 
 Include-Resource: \
 	@requirejs-bower-[0-9]*.jar, \

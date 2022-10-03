@@ -12,12 +12,14 @@ package org.eclipse.sw360.portal.portlets.components;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.gson.Gson;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -2358,22 +2360,41 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         User user = UserCacheHolder.getUserFromRequest(request);
         String projectId = request.getParameter(PortalConstants.PROJECT_ID);
         String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
-
+        ObjectMapper objectMapper = new ObjectMapper();
 
         try {
             log.debug("Link release [" + releaseId + "] to project [" + projectId + "]");
 
             ProjectService.Iface client = thriftClients.makeProjectClient();
+            ComponentService.Iface releaseClient = thriftClients.makeComponentClient();
             Project project = client.getProjectByIdForEdit(projectId, user);
 
-            project.putToReleaseIdToUsage(releaseId,
-                    new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.OPEN));
+            Release releaseById = releaseClient.getAccessibleReleaseById(releaseId, user);
+            ReleaseLinkJSON dependencyOfRelease = releaseClient.getReleaseRelationNetworkOfRelease(releaseById, user).get(0);
+
+            List<ReleaseLinkJSON> currentDependencyNetwork = new ArrayList<>();
+            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+            if (project.getReleaseRelationNetwork() != null) {
+                currentDependencyNetwork = objectMapper.readValue(project.getReleaseRelationNetwork(), new TypeReference<List<ReleaseLinkJSON>>() {
+                });
+                if (currentDependencyNetwork.stream().map(ReleaseLinkJSON::getReleaseId).collect(Collectors.toList()).contains(releaseId)) {
+                    jsonObject.put("success", false);
+                } else {
+                    jsonObject.put("success", true);
+                    jsonObject.put("releaseId", releaseId);
+                    jsonObject.put("projectId", projectId);
+                    currentDependencyNetwork.add(dependencyOfRelease);
+                }
+            } else {
+                jsonObject.put("success", true);
+                jsonObject.put("releaseId", releaseId);
+                jsonObject.put("projectId", projectId);
+                currentDependencyNetwork = Collections.singletonList(dependencyOfRelease);
+            }
+
+            project.setReleaseRelationNetwork(new Gson().toJson(currentDependencyNetwork));
             client.updateProject(project, user);
 
-            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
-            jsonObject.put("success", true);
-            jsonObject.put("releaseId", releaseId);
-            jsonObject.put("projectId", projectId);
             writeJSON(request, response, jsonObject);
         } catch (TException exception) {
             log.error("Cannot link release [" + releaseId + "] to project [" + projectId + "].");
