@@ -441,7 +441,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         // Save creating user
         component.setCreatedBy(user);
         component.setCreatedOn(SW360Utils.getCreatedOn());
-
         // Add the component to the database and return ID
         componentRepository.add(component);
         sendMailNotificationsForNewComponent(component, user);

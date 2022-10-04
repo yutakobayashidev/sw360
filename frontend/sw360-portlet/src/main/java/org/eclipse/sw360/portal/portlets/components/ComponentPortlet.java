@@ -261,6 +261,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             JSONObject dataForChangeLogs = changeLogsPortletUtilsPortletUtils.serveResourceForChangeLogs(request,
                     response, action);
             writeJSON(request, response, dataForChangeLogs);
+        } else if (PortalConstants.EVALUATE_CLI_ATTACHMENTS.equals(action)){
+            evaluateCLIAttachments(request,response);
         }
     }
 

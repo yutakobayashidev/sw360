@@ -13,7 +13,6 @@
 	<button id="spdxFullMode" class="btn btn-info">SPDX Full</button>
 	<button id="spdxLiteMode" class="btn btn-secondary">SPDX Lite</button>
 </div>
-
 <table class="table label-value-table spdx-table" id="DocumentCreationInformation">
 	<thead class="spdx-thead">
 		<tr>
@@ -160,7 +159,7 @@
 	</thead>
 	<tbody class="section" data-size="23">
 		<tr>
-			<td class="spdx-flex-row">
+			<td class="spdx-flex-row" style="display:none;">
 					<div class="spdx-col-1 spdx-label-index">Index</div>
                      <select id="packageInfoSelect" class="spdx-col-2" onchange="changePackageIndex(this)"></select>
 			</td>
