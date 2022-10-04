@@ -11,6 +11,7 @@ package org.eclipse.sw360.datahandler.db;
 
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneSearchView;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -90,6 +91,13 @@ public class ProjectSearchHandler {
         connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
     }
 
+    public ProjectSearchHandler(DatabaseConnector databaseConnector, Supplier<CloudantClient> cClient) throws IOException {
+        // Creates the database connector and adds the lucene search view
+        connector = new LuceneAwareDatabaseConnector(databaseConnector, cClient);
+        connector.addView(luceneSearchView);
+        connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
+    }
+
     public List<Project> search(String text, final Map<String , Set<String > > subQueryRestrictions, User user ){
         return connector.searchProjectViewWithRestrictionsAndFilter(luceneSearchView, text, subQueryRestrictions, user);
     }
@@ -108,7 +116,12 @@ public class ProjectSearchHandler {
 
     public Set<Project> searchByReleaseIds(Set<String> ids, User user) {
         Map<String, Set<String>> filterMap = getFilterMapForSetReleaseIds(ids);
-        List<Project> projectsByReleaseIds = connector.searchProjectViewWithRestrictionsAndFilter(luceneSearchView, null, filterMap, user);
+        List<Project> projectsByReleaseIds;
+        if (user != null) {
+            projectsByReleaseIds = connector.searchProjectViewWithRestrictionsAndFilter(luceneSearchView, null, filterMap, user);
+        } else {
+            projectsByReleaseIds = connector.searchViewWithRestrictions(Project.class, luceneSearchView, null, filterMap);
+        }
         return new HashSet<>(projectsByReleaseIds);
     }
 
@@ -128,5 +141,9 @@ public class ProjectSearchHandler {
         values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
         filterMap.put(Project._Fields.RELEASE_RELATION_NETWORK.getFieldName(), values);
         return filterMap;
+    }
+
+    public Set<Project> searchByReleaseId(String id) {
+        return searchByReleaseId(id, null);
     }
 }

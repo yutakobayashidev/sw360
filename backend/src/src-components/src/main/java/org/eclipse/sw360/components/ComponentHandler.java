@@ -47,7 +47,7 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     public ComponentHandler(Supplier<CloudantClient> cClient, Supplier<HttpClient> hclient, String dbName, String changeLogsDBName, String attachmentDbName) throws IOException {
-        handler = new ComponentDatabaseHandler(cClient, dbName, changeLogsDBName, attachmentDbName);
+        handler = new ComponentDatabaseHandler(hclient, cClient, dbName, changeLogsDBName, attachmentDbName);
         componentSearchHandler = new ComponentSearchHandler(hclient, cClient, dbName);
         releaseSearchHandler = new ReleaseSearchHandler(hclient, cClient, dbName);
     }
@@ -58,7 +58,7 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     public ComponentHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> client, String dbName, String changeLogsDBName, String attachmentDbName, ThriftClients thriftClients) throws IOException {
-        handler = new ComponentDatabaseHandler(client, dbName, changeLogsDBName, attachmentDbName, thriftClients);
+        handler = new ComponentDatabaseHandler(httpClient, client, dbName, changeLogsDBName, attachmentDbName, thriftClients);
         componentSearchHandler = new ComponentSearchHandler(httpClient, client, dbName);
         releaseSearchHandler = new ReleaseSearchHandler(httpClient, client, dbName);
     }

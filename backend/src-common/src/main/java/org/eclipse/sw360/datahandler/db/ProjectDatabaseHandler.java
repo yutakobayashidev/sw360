@@ -47,6 +47,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
+import org.ektorp.http.HttpClient;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
 
 import java.io.IOException;
@@ -126,15 +127,15 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private Map<String, Project> cachedAllProjectsIdMap;
     private Instant cachedAllProjectsIdMapLoadingInstant;
 
-    public ProjectDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
+    public ProjectDatabaseHandler(Supplier<HttpClient> client, Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName) throws IOException {
         this(httpClient, dbName, attachmentDbName, new ProjectModerator(),
-                new ComponentDatabaseHandler(httpClient,dbName,attachmentDbName),
+                new ComponentDatabaseHandler(client, httpClient,dbName,attachmentDbName),
                 new AttachmentDatabaseHandler(httpClient, dbName, attachmentDbName));
     }
 
-    public ProjectDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String changeLogDbName, String attachmentDbName) throws MalformedURLException {
+    public ProjectDatabaseHandler(Supplier<HttpClient> client, Supplier<CloudantClient> httpClient, String dbName, String changeLogDbName, String attachmentDbName) throws IOException {
         this(httpClient, dbName, changeLogDbName, attachmentDbName, new ProjectModerator(),
-                new ComponentDatabaseHandler(httpClient,dbName,attachmentDbName),
+                new ComponentDatabaseHandler(client, httpClient,dbName,attachmentDbName),
                 new AttachmentDatabaseHandler(httpClient, dbName, attachmentDbName));
     }
 
@@ -808,14 +809,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return id == null ? null : id + "_" + UUID.randomUUID();
     }
 
-    public Set<Project> searchByReleaseId(String id, User user) {
-        return repository.searchByReleaseId(id, user);
-    }
-
-    public Set<Project> searchByReleaseId(Set<String> ids, User user) {
-        return repository.searchByReleaseId(ids, user);
-    }
-
     public Set<Project> searchLinkingProjects(String id, User user) {
         return repository.searchByLinkingProjectId(id, user);
     }
@@ -868,10 +861,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
 
         return output;
-    }
-
-    public int getCountByReleaseIds(Set<String> ids) {
-        return repository.getCountByReleaseIds(ids);
     }
 
     public int getCountByProjectId(String id) {

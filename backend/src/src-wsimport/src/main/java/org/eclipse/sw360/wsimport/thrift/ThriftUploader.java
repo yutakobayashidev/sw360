@@ -99,19 +99,19 @@ public class ThriftUploader {
         /*
          * TODO: Improve duplicate handling
          */
-        Map<String, ProjectReleaseRelationship> releaseIdToUsage =
-                releases.stream()
-                    .collect(Collectors.toMap(
-                            ReleaseRelation::getReleaseId,
-                            ReleaseRelation::getProjectReleaseRelationship,
-                            (projectReleaseRelationship1, projectReleaseRelationship2) -> {
-                                LOGGER.info("--- Duplicate key found!");
-                                LOGGER.info("--- 1: " + projectReleaseRelationship1.getReleaseRelation());
-                                LOGGER.info("--- 2: " + projectReleaseRelationship2.getReleaseRelation());
-                                return projectReleaseRelationship1;
-                            }
-                    ));
-        sw360Project.setReleaseIdToUsage(releaseIdToUsage);
+//        Map<String, ProjectReleaseRelationship> releaseIdToUsage =
+//                releases.stream()
+//                    .collect(Collectors.toMap(
+//                            ReleaseRelation::getReleaseId,
+//                            ReleaseRelation::getProjectReleaseRelationship,
+//                            (projectReleaseRelationship1, projectReleaseRelationship2) -> {
+//                                LOGGER.info("--- Duplicate key found!");
+//                                LOGGER.info("--- 1: " + projectReleaseRelationship1.getReleaseRelation());
+//                                LOGGER.info("--- 2: " + projectReleaseRelationship2.getReleaseRelation());
+//                                return projectReleaseRelationship1;
+//                            }
+//                    ));
+//        sw360Project.setReleaseIdToUsage(releaseIdToUsage);
         String projectId = thriftExchange.addProject(sw360Project, sw360User);
 
         if(isNullOrEmpty(projectId)) {

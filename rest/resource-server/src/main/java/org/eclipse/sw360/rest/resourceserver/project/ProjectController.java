@@ -132,8 +132,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             .put(Project._Fields.CONTRIBUTORS,"sw360:contributors")
             .put(Project._Fields.ATTACHMENTS,"sw360:attachments").build();
     private static final ImmutableMap<Project._Fields, String> mapOfProjectFieldsToRequestBody = ImmutableMap.<Project._Fields, String>builder()
-            .put(Project._Fields.VISBILITY, "visibility")
-            .put(Project._Fields.RELEASE_ID_TO_USAGE, "linkedReleases").build();
+            .put(Project._Fields.VISBILITY, "visibility").build();
     private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST = ImmutableMap.<String, String>builder()
             .put("message", "Moderation request is created").build();
     private static final ImmutableMap<ProjectDTO._Fields, String> mapOfFieldsTobeEmbeddedDTO = ImmutableMap.<ProjectDTO._Fields, String>builder()
@@ -562,25 +561,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
         }
         return new ResponseEntity<>(resources, status);
-    }
-
-    @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = PROJECTS_URL + "/{id}/release/{releaseId}", method = RequestMethod.PATCH)
-    public ResponseEntity<EntityModel<ProjectReleaseRelationship>> patchProjectReleaseUsage(
-            @PathVariable("id") String id, @PathVariable("releaseId") String releaseId,
-            @RequestBody ProjectReleaseRelationship requestBodyProjectReleaseRelationship) throws TException {
-        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
-        Map<String, ProjectReleaseRelationship> releaseIdToUsage = sw360Project.getReleaseIdToUsage();
-        ProjectReleaseRelationship updatedProjectReleaseRelationship = projectService
-                .updateProjectReleaseRelationship(releaseIdToUsage, requestBodyProjectReleaseRelationship, releaseId);
-        RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, sw360User);
-        if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        }
-        EntityModel<ProjectReleaseRelationship> updatedProjectReleaseRelationshipResource = EntityModel.of(
-                updatedProjectReleaseRelationship);
-        return new ResponseEntity<>(updatedProjectReleaseRelationshipResource, HttpStatus.OK);
     }
 
     public ProjectVulnerabilityRating updateProjectVulnerabilityRatingFromRequest(Optional<ProjectVulnerabilityRating> projectVulnerabilityRatings, List<VulnerabilityDTO> vulDtoList, String projectId, User sw360User) {
@@ -1027,7 +1007,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             throws URISyntaxException, TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project project = projectService.getProjectForUserById(id, sw360User);
-        Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.registerModule(sw360Module);

@@ -217,8 +217,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project.setSpecialRisks3rdParty("Lorem Ipsum");
         project.setDeliveryChannels("Lorem Ipsum");
         project.setRemarksAdditionalRequirements("Lorem Ipsum");
-        linkedReleases.put("3765276512", projectReleaseRelationship);
-        project.setReleaseIdToUsage(linkedReleases);
         linkedProjects.put("376570", new ProjectProjectRelationship(ProjectRelationship.CONTAINED).setEnableSvm(true));
         project.setLinkedProjects(linkedProjects);
         project.setReleaseRelationNetwork("[{\"comment\":\"\",\"releaseLink\":[],\"createBy\":\"admin@sw360.org\",\"createOn\":\"2022-08-15\",\"mainlineState\":\"OPEN\",\"releaseId\":\"3765276512\",\"releaseRelationship\":\"CONTAINED\"}]");
@@ -269,9 +267,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         projExtKeys.put("mainline-id-project", "7657");
         projExtKeys.put("portal-id", "13319-XX3");
         project2.setExternalIds(projExtKeys);
-        linkedReleases = new HashMap<>();
-        linkedReleases.put("5578999", projectReleaseRelationship);
-        project2.setReleaseIdToUsage(linkedReleases);
         project2.setExternalIds(externalIds2);
         Map<String, String> externalURLs = new HashMap<>();
         externalURLs.put("homepage", "http://test_wiki_url.com");
@@ -298,9 +293,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.searchProjectByType(any(), any())).willReturn(new ArrayList<Project>(projectList));
         given(this.projectServiceMock.searchProjectByGroup(any(), any())).willReturn(new ArrayList<Project>(projectList));
         given(this.projectServiceMock.refineSearch(any(), any())).willReturn(projectListByName);
-        given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq("false"))).willReturn(releaseIds);
-        given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq("true"))).willReturn(releaseIdsTransitive);
-        given(this.projectServiceMock.updateProjectReleaseRelationship(any(), any(), any())).willReturn(projectReleaseRelationshipResponseBody);
         given(this.projectClientMock.getProjectById(eq(project.getId()), any())).willReturn(project);
         given(this.sw360ProjectService.getProjectForUserById(eq(project.getId()), any())).willReturn(project);
         given(this.projectServiceMock.convertToEmbeddedWithExternalIds(eq(project))).willReturn(
@@ -1403,25 +1395,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_link_releases() throws Exception {
         MockHttpServletRequestBuilder requestBuilder = post("/api/projects/" + project.getId() + "/releases");
-        add_patch_releases(requestBuilder);
-    }
-
-    @Test
-    public void should_document_link_releases_with_project_release_relation() throws Exception {
-        MockHttpServletRequestBuilder requestBuilder = post("/api/projects/" + project.getId() + "/releases");
-        add_patch_releases_with_project_release_relation(requestBuilder);
-    }
-
-    @Test
-    public void should_document_patch_releases() throws Exception {
-        MockHttpServletRequestBuilder requestBuilder = patch("/api/projects/" + project.getId() + "/releases");
-        add_patch_releases(requestBuilder);
-    }
-
-    @Test
-    public void should_document_patch_releases_with_project_release_relation() throws Exception {
-        MockHttpServletRequestBuilder requestBuilder = patch("/api/projects/" + project.getId() + "/releases");
-        add_patch_releases_with_project_release_relation(requestBuilder);
+        add_releases(requestBuilder);
     }
 
     @Test
@@ -1542,41 +1516,12 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         )
         ));
     }
-    private void add_patch_releases(MockHttpServletRequestBuilder requestBuilder) throws Exception {
+    private void add_releases(MockHttpServletRequestBuilder requestBuilder) throws Exception {
         List<String> releaseIds = Arrays.asList("3765276512", "5578999", "3765276513");
 
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(requestBuilder.contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(releaseIds))
                 .header("Authorization", "Bearer " + accessToken)).andExpect(status().isCreated());
-    }
-
-    private void add_patch_releases_with_project_release_relation(MockHttpServletRequestBuilder requestBuilder)
-            throws Exception {
-        ProjectReleaseRelationship projectReleaseRelationship1 = new ProjectReleaseRelationship(
-                ReleaseRelationship.REFERRED, MAINLINE);
-        ProjectReleaseRelationship projectReleaseRelationship2 = new ProjectReleaseRelationship(
-                ReleaseRelationship.STANDALONE, MainlineState.SPECIFIC).setComment("Test Comment 2");
-
-        ImmutableMap<String, ProjectReleaseRelationship> releaseIdToUsage = ImmutableMap
-                .<String, ProjectReleaseRelationship>builder().put("12345", projectReleaseRelationship1)
-                .put("54321", projectReleaseRelationship2).build();
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        this.mockMvc.perform(requestBuilder.contentType(MediaTypes.HAL_JSON)
-                .content(this.objectMapper.writeValueAsString(releaseIdToUsage))
-                .header("Authorization", "Bearer " + accessToken)).andExpect(status().isCreated());
-    }
-
-    private String getAPIBaseUrl() throws URISyntaxException {
-        URI uri = ServletUriComponentsBuilder.fromCurrentRequest().build().toUri();
-        return new URI(uri.getScheme(),
-                uri.getAuthority(),
-                uri.getPath(),
-                null,
-                uri.getFragment()).toString();
-    }
-
-    private String createPaginationLink(String baseUrl, int page, int pageSize) {
-        return baseUrl + "?" + "page" + "=" + page + "&" + "page_entries" + "=" + pageSize;
     }
 }

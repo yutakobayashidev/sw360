@@ -45,6 +45,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.Map.Entry;
@@ -81,10 +82,10 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
     protected Cache<String, List<ObligationParsingResult>> obligationCacheForEvaluation;
     protected Cache<String, LicenseInfoParsingResult> licenseObligationMappingCache;
 
-    public LicenseInfoHandler() throws MalformedURLException {
+    public LicenseInfoHandler() throws IOException {
         this(new AttachmentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS),
-                new ComponentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS),
-                new ProjectDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS));
+                new ComponentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS),
+                new ProjectDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS));
     }
 
     @VisibleForTesting

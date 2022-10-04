@@ -125,7 +125,7 @@ struct Project {
 
     // Linked objects
     30: optional map<string, ProjectProjectRelationship> linkedProjects,
-    31: optional map<string, ProjectReleaseRelationship> releaseIdToUsage,
+//    31: optional map<string, ProjectReleaseRelationship> releaseIdToUsage,
 
     // Admin data
     40: optional string clearingTeam;
@@ -394,12 +394,12 @@ service ProjectService {
     ProjectData searchByType(1: string type, 2: User user) throws (1: SW360Exception exp);
 
     /**
-     * list of short project summaries which are visible to the `user` and have `id` in releaseIdToUsage
+     * list of short project summaries which are visible to the `user` and have `id` in dependency network
      */
     set<Project> searchByReleaseId(1: string id, 2: User user);
 
     /**
-     * list of short project summaries which are visible to the `user` and have one of the `ids` in releaseIdToUsage
+     * list of short project summaries which are visible to the `user` and have one of the `ids` in dependency network
      */
     set<Project> searchByReleaseIds(1: set<string> ids, 2: User user);
 
@@ -515,7 +515,7 @@ service ProjectService {
     list<ReleaseClearingStatusData> getReleaseClearingStatusesWithAccessibility(1: string projectId, 2: User user) throws (1: SW360Exception exp);
 
     /**
-     * get the count value of projects which have `id` in releaseIdToUsage
+     * get the count value of projects which have `id` in dependency network
      */
     i32 getCountByReleaseIds(1: set<string> ids);
 

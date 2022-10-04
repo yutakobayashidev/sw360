@@ -53,8 +53,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.ektorp.http.HttpClient;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.Map.Entry;
@@ -94,7 +96,7 @@ public class ModerationDatabaseHandler {
 
     private final MailUtil mailUtil = new MailUtil();
 
-    public ModerationDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
+    public ModerationDatabaseHandler(Supplier<HttpClient> client, Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName) throws IOException {
         db = new DatabaseConnectorCloudant(httpClient, dbName);
 
         // Create the repository
@@ -102,14 +104,14 @@ public class ModerationDatabaseHandler {
         clearingRequestRepository = new ClearingRequestRepository(db);
 
         licenseDatabaseHandler = new LicenseDatabaseHandler(httpClient, dbName);
-        projectDatabaseHandler = new ProjectDatabaseHandler(httpClient, dbName, attachmentDbName);
-        componentDatabaseHandler = new ComponentDatabaseHandler(httpClient, dbName, attachmentDbName);
+        projectDatabaseHandler = new ProjectDatabaseHandler(client, httpClient, dbName, attachmentDbName);
+        componentDatabaseHandler = new ComponentDatabaseHandler(client, httpClient, dbName, attachmentDbName);
         DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
     }
 
-    public ModerationDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String changeLogsDbName, String attachmentDbName) throws MalformedURLException {
-        this(httpClient, dbName, attachmentDbName);
+    public ModerationDatabaseHandler(Supplier<HttpClient> client, Supplier<CloudantClient> httpClient, String dbName, String changeLogsDbName, String attachmentDbName) throws IOException {
+        this(client, httpClient, dbName, attachmentDbName);
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(httpClient, changeLogsDbName);
         this.dbHandlerUtil = new DatabaseHandlerUtil(db);
 

@@ -60,17 +60,17 @@ public class ProjectHandler implements ProjectService.Iface {
     private final ProjectSearchHandler searchHandler;
 
     ProjectHandler() throws IOException {
-        handler = new ProjectDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
+        handler = new ProjectDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
         searchHandler = new ProjectSearchHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
     }
 
-    ProjectHandler(Supplier<CloudantClient> httpClient, String dbName, String attchmntDbName) throws IOException {
-        handler = new ProjectDatabaseHandler(httpClient, dbName, attchmntDbName);
+    ProjectHandler(Supplier<CloudantClient> cClient, Supplier<HttpClient> hClient, String dbName, String attchmntDbName) throws IOException {
+        handler = new ProjectDatabaseHandler(hClient, cClient, dbName, attchmntDbName);
         searchHandler = new ProjectSearchHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), dbName);
     }
 
-    ProjectHandler(Supplier<CloudantClient> cClient,Supplier<HttpClient> hClient, String dbName, String changeLogsDbName, String attchmntDbName) throws IOException {
-        handler = new ProjectDatabaseHandler(cClient, dbName, changeLogsDbName, attchmntDbName);
+    ProjectHandler(Supplier<CloudantClient> cClient, Supplier<HttpClient> hClient, String dbName, String changeLogsDbName, String attchmntDbName) throws IOException {
+        handler = new ProjectDatabaseHandler(hClient, cClient, dbName, changeLogsDbName, attchmntDbName);
         searchHandler = new ProjectSearchHandler(hClient, cClient, dbName);
     }
 
