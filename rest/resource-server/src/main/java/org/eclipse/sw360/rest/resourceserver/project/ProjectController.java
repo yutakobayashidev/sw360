@@ -352,10 +352,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     public ResponseEntity linkReleases(
             @PathVariable("id") String id,
             @RequestBody Object releasesInRequestBody) throws URISyntaxException, TException {
-        RequestStatus linkReleasesStatus = addReleasesToProject(id, releasesInRequestBody);
-        HttpStatus status = HttpStatus.CREATED;
-        if (linkReleasesStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        try {
+            RequestStatus linkReleasesStatus = addReleasesToProject(id, releasesInRequestBody);
+            HttpStatus status = HttpStatus.CREATED;
+            if (linkReleasesStatus == RequestStatus.SENT_TO_MODERATOR) {
+                return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+            }
+        } catch (SW360Exception sw360Exception) {
+            throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
         }
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
@@ -1022,8 +1026,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         if (releasesInRequestBody instanceof List) {
-            Set<String> releasesAsSet = new HashSet<>((List<String>) releasesInRequestBody);
-            Set<ReleaseLinkJSON> releaseDependenciesFromIds = releaseService.getReleaseDependencies(releasesAsSet, sw360User);
+            Set<String> releaseIdsAsSet = new HashSet<>((List<String>) releasesInRequestBody);
+            Set<ReleaseLinkJSON> releaseDependenciesFromIds = releaseService.getReleaseDependencies(releaseIdsAsSet, sw360User);
             releaseDependencyNetwork.addAll(releaseDependenciesFromIds);
         } else {
             throw new HttpMessageNotReadableException(

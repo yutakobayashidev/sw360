@@ -101,7 +101,7 @@ public class ProjectDatabaseHandlerTest {
         components.add(component2);
 
         projects = new ArrayList<>();
-        Project project1 = new Project().setId("P1").setName("project1").setVisbility(Visibility.EVERYONE);
+        Project project1 = new Project().setId("P1").setName("project1").setVisbility(Visibility.EVERYONE).setLinkedProjects(ImmutableMap.of("P2", new ProjectProjectRelationship(ProjectRelationship.CONTAINED)));
         projects.add(project1);
         Project project2 = new Project().setId("P2").setName("project2").setLinkedProjects(ImmutableMap.of("P3", new ProjectProjectRelationship(ProjectRelationship.REFERRED), "P4", new ProjectProjectRelationship(ProjectRelationship.CONTAINED))).setVisbility(Visibility.EVERYONE);
         projects.add(project2);

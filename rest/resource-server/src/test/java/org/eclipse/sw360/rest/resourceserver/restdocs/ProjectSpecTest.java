@@ -163,7 +163,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         Mockito.doNothing().when(projectServiceMock).copyLinkedObligationsForClonedProject(any(), any(),
                 any());
 
-        Map<String, ProjectReleaseRelationship> linkedReleases = new HashMap<>();
         Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
         ProjectReleaseRelationship projectReleaseRelationship = new ProjectReleaseRelationship(CONTAINED, MAINLINE)
                 .setComment("Test Comment").setCreatedOn("2020-08-05").setCreatedBy("admin@sw360.org");
@@ -1371,8 +1370,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("phaseOutSince").description("The project phase-out date"),
                         subsectionWithPath("linkedProjects")
                                 .description("The `linked project id` - metadata of linked projects (`enableSvm` - whether linked projects will be part of SVM, `projectRelationship` - relationship between linked project and the project. Possible values: " + Arrays.asList(ProjectRelationship.values())),
-                        subsectionWithPath("linkedReleases")
-                                .description("The relationship between linked releases of the project"),
                         fieldWithPath("securityResponsibles").description("An array of users responsible for security of the project."),
                         fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
                         fieldWithPath("clearingRequestId").description("Clearing Request id associated with project."),
@@ -1396,31 +1393,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     public void should_document_link_releases() throws Exception {
         MockHttpServletRequestBuilder requestBuilder = post("/api/projects/" + project.getId() + "/releases");
         add_releases(requestBuilder);
-    }
-
-    @Test
-    public void should_document_update_project_release_relationship() throws Exception {
-        ProjectReleaseRelationship updateProjectReleaseRelationship = new ProjectReleaseRelationship()
-                .setComment("Test Comment").setMainlineState(MainlineState.SPECIFIC)
-                .setReleaseRelation(ReleaseRelationship.STANDALONE);
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        this.mockMvc
-                .perform(patch("/api/projects/376576/release/3765276512").contentType(MediaTypes.HAL_JSON)
-                        .content(this.objectMapper.writeValueAsString(updateProjectReleaseRelationship))
-                        .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
-                .andExpect(status().isOk())
-                .andDo(this.documentationHandler.document(
-                requestFields(
-                        fieldWithPath("releaseRelation").description("The relation of linked release. Possible Values are: "+Arrays.asList(ReleaseRelationship.values())),
-                        fieldWithPath("mainlineState").description("The mainlineState of linked release. Possible Values are: "+Arrays.asList(MainlineState.values())),
-                        fieldWithPath("comment").description("The Comment for linked release")),
-                responseFields(
-                        fieldWithPath("releaseRelation").description("The relation of linked release. Possible Values are: "+Arrays.asList(ReleaseRelationship.values())),
-                        fieldWithPath("mainlineState").description("The mainlineState of linked release. Possible Values are: "+Arrays.asList(MainlineState.values())),
-                        fieldWithPath("comment").description("The Comment for linked release"),
-                        fieldWithPath("createdOn").description("The date when release was linked to project"),
-                        fieldWithPath("createdBy").description("The email of user who linked release to project")
-                )));
     }
 
     @Test
