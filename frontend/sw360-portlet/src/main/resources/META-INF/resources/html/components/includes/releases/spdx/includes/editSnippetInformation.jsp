@@ -34,7 +34,7 @@
         <tr>
             <td style="display: flex">
                 <div class="form-group" style="flex: 1">
-                    <label class="mandatory" for="snippetSpdxIdentifier">9.1 Snippet SPDX identifier</label>
+                    <label for="snippetSpdxIdentifier">9.1 Snippet SPDX identifier</label>
                     <div style="display: flex">
                         <label class="sub-label">SPDXRef-</label>
                         <input id="snippetSpdxIdentifier" class="form-control"
@@ -43,7 +43,7 @@
                     </div>
                 </div>
                 <div class="form-group" style="flex: 1">
-                    <label class="mandatory" for="snippetFromFile">9.2 Snippet from file SPDX identifier</label>
+                    <label  for="snippetFromFile">9.2 Snippet from file SPDX identifier</label>
                     <div style="display: flex">
                         <select id="snippetFromFile" class="form-control" style="flex: 1;">
                             <option>SPDXRef</option>
@@ -60,7 +60,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory">9.3 & 9.4 Snippet ranges</label>
+                    <label >9.3 & 9.4 Snippet ranges</label>
                     <div style="display: flex; flex-direction: column; padding-left: 1rem;">
                         <div style="display: none; margin-bottom: 0.75rem;" name="snippetRange">
                             <select style="flex: 1; margin-right: 1rem;" type="text" class="form-control range-type" placeholder="Enter type">
@@ -86,7 +86,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory">9.5 Snippet concluded license</label>
+                    <label >9.5 Snippet concluded license</label>
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="spdxConcludedLicenseExist" type="radio"
@@ -149,7 +149,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory">9.8 Snippet copyright text</label>
+                    <label >9.8 Snippet copyright text</label>
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="snippetCopyrightText" type="radio" name="_sw360_portlet_components_SNIPPET_COPYRIGHT_TEXT" value="EXIST">

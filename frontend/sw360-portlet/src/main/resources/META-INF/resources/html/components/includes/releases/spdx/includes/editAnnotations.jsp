@@ -40,7 +40,7 @@
         <tr>
             <td style="display: flex">
                 <div class="form-group" style="flex: 3">
-                    <label class="mandatory" for="annotator">12.1 Annotator</label>
+                    <label for="annotator">12.1 Annotator</label>
                     <div style="display: flex">
                         <select id="annotatorType" style="flex: 2; margin-right: 1rem;" type="text" class="form-control" placeholder="Enter type">
                             <option value="Organization" selected="">Organization</option>
@@ -52,25 +52,15 @@
                     </div>
                 </div>
                 <div class="form-group" style="flex: 1">
-                    <label class="mandatory" for="annotationCreatedDate">12.2 Annotation date </label>
+                    <label  for="annotationCreatedDate">12.2 Annotation date </label>
                     <div style="display: flex">
                         <div>
                             <input id="annotationCreatedDate" style="width: 12rem; text-align: center;" type="date"
-                                class="form-control needs-validation" rule="required" placeholder="creation.date.yyyy.mm.dd" >
-                            <div id="annotationCreatedDate-error-messages">
-                                <div class="invalid-feedback" rule="required">
-                                    <liferay-ui:message key="invalid.format" />
-                                </div>
-                            </div>
+                                class="form-control needs-validation" placeholder="creation.date.yyyy.mm.dd" >
                         </div>
                         <div>
                             <input id="annotationCreatedTime" style="width: 12rem; text-align: center; margin-left: 10px;"
-                                type="time" step="1" class="form-control needs-validation" rule="required" placeholder="creation.time.hh.mm.ss" >
-                            <div id="annotationCreatedTime-error-messages">
-                                <div class="invalid-feedback" rule="required">
-                                    <liferay-ui:message key="invalid.format" />
-                                </div>
-                            </div>
+                                type="time" step="1" class="form-control needs-validation" placeholder="creation.time.hh.mm.ss" >
                         </div>
                     </div>
                 </div>
@@ -79,11 +69,11 @@
         <tr>
             <td style="display: flex">
                 <div class="form-group" style="flex: 1">
-                    <label class="mandatory" for="annotationType">12.3 Annotation type</label>
+                    <label  for="annotationType">12.3 Annotation type</label>
                     <input id="annotationType" class="form-control" type="text" placeholder="Enter annotation type" >
                 </div>
                 <div class="form-group" style="flex: 1">
-                    <label class="mandatory" for="spdxIdRef">12.4 SPDX identifier reference</label>
+                    <label  for="spdxIdRef">12.4 SPDX identifier reference</label>
                     <input id="spdxIdRef" class="form-control" type="text"
                         placeholder="Enter SPDX identifier reference" >
                 </div>
@@ -92,7 +82,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory" for="annotationComment">12.5 Annotation comment</label>
+                    <label for="annotationComment">12.5 Annotation comment</label>
                     <textarea class="form-control" id="annotationComment" rows="5"
                         placeholder="Enter annotation comment"></textarea>
                 </div>

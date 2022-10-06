@@ -828,7 +828,7 @@ public class SpdxBOMImporter {
         }
         List<SpdxPackage> spdxPackages =new ArrayList<>();
         for (SpdxPackage spdxPackageCheck : allPackages) {
-            if (spdxPackage.getName().equals(spdxPackage.getName()))
+            if (spdxPackageCheck.getName().equals(spdxPackage.getName()))
                 spdxPackages.add(spdxPackageCheck);
         }
         int index = 1;

@@ -34,16 +34,11 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory" for="licenseId">10.1 License identifier</label>
+                    <label  for="licenseId">10.1 License identifier</label>
                     <div style="display: flex">
                         <label class="sub-label">LicenseRef-</label>
-                        <input id="licenseId" class="form-control needs-validation" rule="required"
+                        <input id="licenseId" class="form-control needs-validation"
                             type="text" placeholder="Enter license identifier">
-                    </div>
-                    <div id="licenseId-error-messages">
-                        <div class="invalid-feedback" rule="required">
-                            <liferay-ui:message key="this.field.must.be.not.empty" />
-                        </div>
                     </div>
                 </div>
             </td>
@@ -51,36 +46,26 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory" for="extractedText">10.2 Extracted text</label>
-                    <textarea class="form-control needs-validation" rule="required" id="extractedText" rows="5"
+                    <label  for="extractedText">10.2 Extracted text</label>
+                    <textarea class="form-control needs-validation" id="extractedText" rows="5"
                         name="_sw360_portlet_components_EXTRACTED_TEXT" placeholder="Enter extracted text"></textarea>
-                </div>
-                <div id="extractedText-error-messages">
-                    <div class="invalid-feedback" rule="required">
-                        <liferay-ui:message key="this.field.must.be.not.empty" />
-                    </div>
                 </div>
             </td>
         </tr>
         <tr>
             <td style="display: flex; flex-direction: column;">
                 <div class="form-group">
-                    <label class="mandatory">10.3 License name</label>
+                    <label >10.3 License name</label>
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="licenseNameExist" type="radio" name="_sw360_portlet_components_LICENSE_NAME" value="EXIST">
                             <input style="flex: 6; margin-right: 1rem;" id="licenseName"
                                 class="form-control needs-validation" type="text"
-                                placeholder="Enter license name"  rule="required">
+                                placeholder="Enter license name">
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="licenseNameNoAssertion" type="radio" name="_sw360_portlet_components_LICENSE_NAME" value="NOASSERTION">
                             <label class="form-check-label radio-label" for="licenseNameNoAssertion">NOASSERTION</label>
-                        </div>
-                    </div>
-                    <div id="licenseName-error-messages">
-                        <div class="invalid-feedback" rule="required">
-                            <liferay-ui:message key="this.field.must.be.not.empty" />
                         </div>
                     </div>
                 </div>

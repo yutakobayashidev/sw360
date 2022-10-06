@@ -159,7 +159,7 @@
 	</thead>
 	<tbody class="section" data-size="23">
 		<tr>
-			<td class="spdx-flex-row" style="display:none;">
+			<td class="spdx-flex-row">
 					<div class="spdx-col-1 spdx-label-index">Index</div>
                      <select id="packageInfoSelect" class="spdx-col-2" onchange="changePackageIndex(this)"></select>
 			</td>
@@ -910,11 +910,11 @@
 	}
 
 	$(function () {
-		let spdxDocumentObj = jQuery.parseJSON(JSON.stringify(${ spdxDocumentJson }));
-		let documentCreationInformationObj = jQuery.parseJSON(JSON.stringify(${ documentCreationInfoJson }));
-		let packagesInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
+		var spdxDocumentObj = jQuery.parseJSON(JSON.stringify(${ spdxDocumentJson }));
+		var documentCreationInformationObj = jQuery.parseJSON(JSON.stringify(${ documentCreationInfoJson }));
+		var packagesInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
 		packagesInformationObj.sort(dynamicSort('index', 'int'));
-		let packageInformationObj = packagesInformationObj[0];
+		var packageInformationObj = packagesInformationObj[0];
 		formatArrayParagraph('#excludedFiles');
 		formatArrayParagraph('#licenseInfoFromFile');
 		formatArrayParagraph('#attributionText');
@@ -1027,7 +1027,7 @@
 
 		sortElements('#creators', $('.creator').toArray());
 		sortElements('#checksums', $('.checksum').toArray());
-		let snippetIndex = $('#snippetInfoSelect').val() - 1;
+		var snippetIndex = $('#snippetInfoSelect').val() - 1;
 		sortElements('#snippetRanges-' + snippetIndex, $('.snippetRange-' + snippetIndex).toArray());
 
 		$('.spdx-table select').change();
@@ -1086,7 +1086,7 @@
 
 			var packagesInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
 			packagesInformationObj.sort(dynamicSort('index', 'int'));
-			let packageIndex =  $('#packageInfoSelect')[0].selectedIndex;
+			var packageIndex =  $('#packageInfoSelect')[0].selectedIndex;
 			generateSelecterOption('externalReferenceSelect'+(index-1), packagesInformationObj[packageIndex].externalRefs.length);
 			$('#externalReferenceSelect'+(index-1)).change();
 		}

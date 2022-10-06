@@ -19,72 +19,47 @@
         <tr>
             <td style="display: flex">
                 <div class="form-group" style="flex: 1">
-                    <label class="mandatory" for="spdxVersion">6.1 SPDX version</label>
+                    <label  for="spdxVersion">6.1 SPDX version</label>
                     <div style="display: flex">
                         <label class="sub-label">SPDX-</label>
-                        <input id="spdxVersion" class="form-control needs-validation" rule="required"
+                        <input id="spdxVersion" class="form-control needs-validation"
                           type="text" placeholder="Enter SPDX version"
                           value="<sw360:out value="${spdxDocumentCreationInfo.spdxVersion}" />">
                     </div>
-                    <div id="spdxVersion-error-messages">
-                        <div class="invalid-feedback" rule="required">
-                            <liferay-ui:message key="this.field.must.be.not.empty" />
-                        </div>
-                    </div>
                 </div>
                 <div class="form-group" style="flex: 1">
-                    <label class="mandatory" for="dataLicense">6.2 Data license</label>
-                    <input id="dataLicense" class="form-control needs-validation" rule="required" type="text"
+                    <label for="dataLicense">6.2 Data license</label>
+                    <input id="dataLicense" class="form-control needs-validation" type="text"
                         placeholder="Enter data license"
                         value="<sw360:out value="${spdxDocumentCreationInfo.dataLicense}" />">
-                    <div id="dataLicense-error-messages">
-                        <div class="invalid-feedback" rule="required">
-                            <liferay-ui:message key="this.field.must.be.not.empty" />
-                        </div>
-                    </div>
                 </div>
                 <div class="form-group" style="flex: 1">
-                    <label class="mandatory" for="spdxIdentifier">6.3 SPDX identifier</label>
+                    <label for="spdxIdentifier">6.3 SPDX identifier</label>
                         <div style="display: flex">
                             <label class="sub-label">SPDXRef-</label>
-                            <input id="spdxIdentifier" class="form-control needs-validation" rule="required" type="text"
+                            <input id="spdxIdentifier" class="form-control needs-validation" type="text"
                             placeholder="Enter SPDX identifier" value="<sw360:out value="${spdxDocumentCreationInfo.SPDXID}" />">
                         </div>
-                    <div id="spdxIdentifier-error-messages">
-                        <div class="invalid-feedback" rule="required">
-                            <liferay-ui:message key="this.field.must.be.not.empty" />
-                        </div>
-                    </div>
                 </div>
             </td>
         </tr>
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory" for="documentName">6.4 Document name</label>
+                    <label for="documentName">6.4 Document name</label>
                     <input id="documentName" type="text"
-                    class="form-control needs-validation" rule="required"
+                    class="form-control needs-validation"
                     placeholder="Enter document name" value="<sw360:out value="${spdxDocumentCreationInfo.name}" />">
                 </div>
-                <div id="documentName-error-messages">
-                    <div class="invalid-feedback" rule="required">
-                        <liferay-ui:message key="this.field.must.be.not.empty" />
-                    </div>
-                </div>
             </td>
         </tr>
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory" for="documentNamespace">6.5 SPDX document namespace</label>
-                    <input id="documentNamespace" class="form-control needs-validation" rule="required" type="text"
+                    <label for="documentNamespace">6.5 SPDX document namespace</label>
+                    <input id="documentNamespace" class="form-control needs-validation" type="text"
                         placeholder="Enter SPDX document namespace"
                         value="<sw360:out value="${spdxDocumentCreationInfo.documentNamespace}" />">
-                </div>
-                <div id="documentNamespace-error-messages">
-                    <div class="invalid-feedback" rule="required">
-                        <liferay-ui:message key="this.field.must.be.not.empty" />
-                    </div>
                 </div>
             </td>
         </tr>
@@ -139,7 +114,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory" for="creator">6.8 Creators</label>
+                    <label for="creator">6.8 Creators</label>
                     <div style="display: flex; flex-direction: column;">
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label class="sub-title" for="creator-anonymous">Anonymous</label>
@@ -183,25 +158,15 @@
         <tr>
             <td style="display: flex; flex-direction: column;">
                 <div class="form-group">
-                    <label class="mandatory" for="createdDate">6.9 Created</label>
+                    <label for="createdDate">6.9 Created</label>
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                         <div>
                             <input id="createdDate" type="date" class="form-control spdx-date needs-validation"
-                                rule="required" placeholder="created.date.yyyy.mm.dd">
-                            <div id="createdDate-error-messages">
-                                <div class="invalid-feedback" rule="required">
-                                    <liferay-ui:message key="invalid.format" />
-                                </div>
-                            </div>
+                                placeholder="created.date.yyyy.mm.dd">
                         </div>
                         <div>
                             <input id="createdTime" type="time" step="1" class="form-control spdx-time needs-validation"
-                                rule="required" placeholder="created.time.hh.mm.ss">
-                            <div id="createdTime-error-messages">
-                                <div class="invalid-feedback" rule="required">
-                                    <liferay-ui:message key="invalid.format" />
-                                </div>
-                            </div>
+                               placeholder="created.time.hh.mm.ss">
                         </div>
                     </div>
                 </div>

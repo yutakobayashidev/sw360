@@ -417,18 +417,18 @@ define('components/includes/releases/spdxjs', ['jquery',"components/includes/rel
     function initDocumentCreation(userDisplay) {
         if (documentCreationInformationObj['spdxVersion'].startsWith('SPDX-')) {
             $('#spdxVersion').val(documentCreationInformationObj['spdxVersion'].substr(5).trim());
-        } else {
-            $('#spdxVersion').val('2.2');
         }
-
+        else {
+              $('#spdxVersion').val('');
+        }
         if (documentCreationInformationObj['dataLicense'] == '') {
-            $('#dataLicense').val('CC0-1.0');
+                $('#dataLicense').val('');
         }
-
         if (documentCreationInformationObj['SPDXID'].startsWith('SPDXRef-')) {
             $('#spdxIdentifier').val(documentCreationInformationObj['SPDXID'].substr(8).trim());
-        } else {
-            $('#spdxIdentifier').val('DOCUMENT');
+        }
+        else {
+             $('#spdxIdentifier').val('');
         }
 
         if (documentCreationInformationObj.externalDocumentRefs.length == 0) {
@@ -467,19 +467,19 @@ define('components/includes/releases/spdxjs', ['jquery',"components/includes/rel
 
     function storeDocumentCreation() {
         if ($('#spdxVersion').val().trim() == '') {
-            documentCreationInformationObj['spdxVersion'] = 'SPDX-2.2';
+              documentCreationInformationObj['spdxVersion'] = '';
         } else {
             documentCreationInformationObj['spdxVersion'] = 'SPDX-' + $('#spdxVersion').val().trim();
         }
 
         if ($('#dataLicense').val().trim() == '') {
-            documentCreationInformationObj['dataLicense'] = 'CC0-1.0';
+            documentCreationInformationObj['dataLicense'] = '';
         } else {
             documentCreationInformationObj['dataLicense'] = $('#dataLicense').val().trim();
         }
 
         if ($('#spdxIdentifier').val().trim() == '') {
-            documentCreationInformationObj['SPDXID'] = 'SPDXRef-DOCUMENT';
+            documentCreationInformationObj['SPDXID'] = '';
         } else {
             documentCreationInformationObj['SPDXID'] = 'SPDXRef-' + $('#spdxIdentifier').val().trim();
         }
@@ -499,7 +499,7 @@ define('components/includes/releases/spdxjs', ['jquery',"components/includes/rel
         documentCreationInformationObj['documentComment'] = $('#documentComment').val().trim();
 
         if (documentCreationInformationObj['created'] == '') {
-            documentCreationInformationObj['created'] = (new Date()).toISOString();
+            documentCreationInformationObj['created'] = '';
         }
     }
 

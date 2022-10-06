@@ -108,9 +108,9 @@
     }
 </style>
 <script>
-    let spdxDocumentObj = jQuery.parseJSON(JSON.stringify(${ spdxDocumentJson }));
-    let documentCreationInformationObj = jQuery.parseJSON(JSON.stringify(${ documentCreationInfoJson }));
-    let packagesInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
+    var spdxDocumentObj = jQuery.parseJSON(JSON.stringify(${ spdxDocumentJson }));
+    var documentCreationInformationObj = jQuery.parseJSON(JSON.stringify(${ documentCreationInfoJson }));
+    var packagesInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
 </script>
 <%@include file="/html/utils/includes/requirejs.jspf" %>
 <core_rt:set var="setRelationshipType" value='<%=PortalConstants.SET_RELATIONSHIP_TYPE%>'/>
@@ -162,13 +162,13 @@
     $('.spdx-add-button-sub').on('click', function (e) {
         e.preventDefault();
     })
-    let middleName = '<%=themeDisplay.getUser().getMiddleName()%>';
+    var middleName = '<%=themeDisplay.getUser().getMiddleName()%>';
     if (middleName == '') {
         middleName = ' ';
     } else {
         middleName = ' ' + middleName + ' ';
     }
-    let userDisplay = "<%=themeDisplay.getUser().getFirstName()%>" + middleName + "<%=themeDisplay.getUser().getLastName()%>" + " (<%=themeDisplay.getUser().getEmailAddress()%>)";
+    var userDisplay = "<%=themeDisplay.getUser().getFirstName()%>" + middleName + "<%=themeDisplay.getUser().getLastName()%>" + " (<%=themeDisplay.getUser().getEmailAddress()%>)";
     require(['jquery', 'components/includes/releases/spdxjs', 'components/includes/releases/validateLib', 'utils/array'], function ($, spdxjs, validateLib) {
         // Sort data based on index
         spdxDocumentObj.snippets.sort(dynamicSort('index', 'int'));
@@ -204,13 +204,13 @@
         });
         // 6.6 External Document Reference - Delete
         $('[name=delete-externalDocRef]').on('click', function (e) {
-            let selectedIndex = $('#externalDocumentRefs')[0].selectedIndex;
+            var selectedIndex = $('#externalDocumentRefs')[0].selectedIndex;
             documentCreationInformationObj.externalDocumentRefs.splice(selectedIndex, 1);
             spdxjs.deleteMain($(this));
         });
         // 6.6 External Document Reference - Change
         $('#externalDocumentRefs').on('change', function (e) {
-            let selectedIndex = $('#externalDocumentRefs')[0].selectedIndex;
+            var selectedIndex = $('#externalDocumentRefs')[0].selectedIndex;
             spdxjs.fillExternalDocRef(selectedIndex);
         });
         // 6.8 SPDX Document creator - Add
@@ -227,7 +227,7 @@
         // 7.10 Checksum - Add
         $('#addNewAlgorithm').on('click', function() {
             spdxjs.addSub($(this));
-            let selectedPackage = $('#selectPackage')[0].selectedIndex;
+            var selectedPackage = $('#selectPackage')[0].selectedIndex;
             $('.checksum-delete').last().bind('click', function() {
                 spdxjs.deleteSub($(this));
                 spdxjs.storePackageInfo(selectedPackage);
@@ -284,13 +284,13 @@
         });
         // 7 Package - Delete
         $('[name=delete-package]').on('click', function(e) {
-            let selectedIndex = $('#selectPackage')[0].selectedIndex;
+            var selectedIndex = $('#selectPackage')[0].selectedIndex;
             packagesInformationObj.splice(selectedIndex, 1);
             spdxjs.deleteMain($(this));
         });
         // 7 Package - Change
         $('#selectPackage').on('change', function(e) {
-            let selectedIndex = $('#selectPackage')[0].selectedIndex;
+            var selectedIndex = $('#selectPackage')[0].selectedIndex;
             validateLib.setFormId('sectionPackageInformation');
             if (newPackageInfo) {
                 validateLib.hideAllErrors();
@@ -313,7 +313,7 @@
         $('[name=add-externalRef]').on('click', function(e) {
             e.preventDefault();
             let index = 0;
-            let selectedPackage = $('#selectPackage')[0].selectedIndex;
+            var selectedPackage = $('#selectPackage')[0].selectedIndex;
             if (packagesInformationObj[selectedPackage].externalRefs.length > 0) {
                 index = parseInt(packagesInformationObj[selectedPackage].externalRefs[packagesInformationObj[selectedPackage].externalRefs.length - 1].index) + 1;
             }
@@ -328,15 +328,15 @@
         });
         // 7.21 External Reference - Delete
         $('[name=delete-externalRef]').on('click', function(e) {
-            let selectedIndex = $('#externalReferences')[0].selectedIndex;
-            let selectedPackage = $('#selectPackage')[0].selectedIndex;
+            var selectedIndex = $('#externalReferences')[0].selectedIndex;
+            var selectedPackage = $('#selectPackage')[0].selectedIndex;
             packagesInformationObj[selectedPackage].externalRefs.splice(selectedIndex, 1);
             spdxjs.deleteMain($(this));
         });
         // 7.21 External Reference - Change
         $('#externalReferences').on('change', function(e) {
-            let selectedIndex = $('#externalReferences')[0].selectedIndex;
-            let selectedPackage = $('#selectPackage')[0].selectedIndex;
+            var selectedIndex = $('#externalReferences')[0].selectedIndex;
+            var selectedPackage = $('#selectPackage')[0].selectedIndex;
             spdxjs.fillExternalRef(packagesInformationObj[selectedPackage], selectedIndex);
         });
         // 7.21 External Reference Category
@@ -392,13 +392,13 @@
         });
         // 9 Snippet - Delete
         $('[name=delete-snippet]').on('click', function(e) {
-            let selectedIndex = $('#selectSnippet')[0].selectedIndex;
+            var selectedIndex = $('#selectSnippet')[0].selectedIndex;
             spdxDocumentObj.snippets.splice(selectedIndex, 1);
             spdxjs.deleteMain($(this));
         });
         // 9 Snippet - Change
         $('#selectSnippet').on('change', function(e) {
-            let selectedIndex = $('#selectSnippet')[0].selectedIndex;
+            var selectedIndex = $('#selectSnippet')[0].selectedIndex;
             spdxjs.fillSnippet(selectedIndex);
         });
         // 9.3 & 9.4 Snippet Range - Add
@@ -443,13 +443,13 @@
         // 10 Other Licensing - Delete
         $('[name=delete-otherLicensing]').on('click', function(e) {
             newOtherLicensing = true;
-            let selectedIndex = $('#selectOtherLicensing')[0].selectedIndex;
+            var selectedIndex = $('#selectOtherLicensing')[0].selectedIndex;
             spdxDocumentObj.otherLicensingInformationDetecteds.splice(selectedIndex, 1);
             spdxjs.deleteMain($(this));
         });
         // 10 Other Licensing - Change
         $('#selectOtherLicensing').on('change', function(e) {
-            let selectedIndex = $('#selectOtherLicensing')[0].selectedIndex;
+            var selectedIndex = $('#selectOtherLicensing')[0].selectedIndex;
             validateLib.setFormId('sectionOtherLicensing');
             if (newOtherLicensing) {
                 validateLib.hideAllErrors();
@@ -491,14 +491,14 @@
         });
         // 11 Relationship - Delete
         $('[name=delete-relationship]').on('click', function(e) {
-            let selectedIndex = $('#selectRelationship')[0].selectedIndex;
+            var selectedIndex = $('#selectRelationship')[0].selectedIndex;
             let source = spdxjs.getRelationshipsSource();
             source.splice(selectedIndex, 1);
             spdxjs.deleteMain($(this));
         });
         // 11 Relationship - Change
         $('#selectRelationship').on('change', function(e) {
-            let selectedIndex = $('#selectRelationship')[0].selectedIndex;
+            var selectedIndex = $('#selectRelationship')[0].selectedIndex;
             let source = spdxjs.getRelationshipsSource();
             spdxjs.fillRelationship(source, selectedIndex);
         });
@@ -527,14 +527,14 @@
         // 12 Annotation - Delete
         $('[name=delete-annotation]').on('click', function(e) {
             let source = spdxjs.getAnnotationsSource();
-            let selectedIndex = $('#selectAnnotation')[0].selectedIndex;
+            var selectedIndex = $('#selectAnnotation')[0].selectedIndex;
             source.splice(selectedIndex, 1);
             spdxjs.deleteMain($(this));
         });
         // 12 Annotation - Change
         $('#selectAnnotation').on('change', function(e) {
             let source = spdxjs.getAnnotationsSource();
-            let selectedIndex = $('#selectAnnotation')[0].selectedIndex;
+            var selectedIndex = $('#selectAnnotation')[0].selectedIndex;
             spdxjs.fillAnnotation(source, selectedIndex);
         });
         $(function () {
@@ -549,10 +549,10 @@
                 if (!$(this).is(":focus")) {
                     return;
                 }
-                let index = $('#externalDocumentRefs')[0].selectedIndex;
+                var index = $('#externalDocumentRefs')[0].selectedIndex;
                 spdxjs.storeExternalDocRef(index);
 
-                let selectedPackage = $('#selectPackage')[0].selectedIndex;
+                var selectedPackage = $('#selectPackage')[0].selectedIndex;
                 index = $('#externalReferences')[0].selectedIndex;
                 spdxjs.storeExternalRef(packagesInformationObj[selectedPackage], index);
 

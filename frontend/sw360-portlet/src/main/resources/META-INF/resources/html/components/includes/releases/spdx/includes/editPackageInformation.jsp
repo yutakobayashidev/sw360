@@ -23,7 +23,7 @@
     </thead>
     <tbody id="sectionPackageInformation" class="section section-package">
         <tr>
-            <td style="display:none;">
+            <td>
                 <div style="display: flex; flex-direction: column; padding-left: 1rem;">
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                         <label for="selectPackage" style="text-decoration: underline;" class="sub-title">Select Package</label>
@@ -41,30 +41,20 @@
         <tr>
             <td style="display: flex">
                 <div class="form-group" style="flex: 1">
-                    <label class="mandatory" for="packageName">7.1 Package name</label>
+                    <label for="packageName">7.1 Package name</label>
                     <div style="display: flex">
-                        <input id="packageName" class="form-control needs-validation" rule="required" type="text"
+                        <input id="packageName" class="form-control needs-validation" type="text"
                             placeholder="Enter package name" name="_sw360_portlet_components_PACKAGE_NAME"
                             value="<sw360:out value="${package.name}" />">
                     </div>
-                    <div id="packageName-error-messages">
-                        <div class="invalid-feedback" rule="required">
-                            <liferay-ui:message key="this.field.must.be.not.empty" />
-                        </div>
-                    </div>
                 </div>
                 <div class="form-group" style="flex: 1">
-                    <label class="mandatory" for="packageSPDXId">7.2 Package SPDX identifier</label>
+                    <label for="packageSPDXId">7.2 Package SPDX identifier</label>
                     <div style="display: flex">
                         <label class="sub-label">SPDXRef-</label>
-                        <input id="packageSPDXId" class="form-control needs-validation" rule="required" type="text"
+                        <input id="packageSPDXId" class="form-control needs-validation" type="text"
                             placeholder="Enter package SPDX identifier" name="_sw360_portlet_components_PACKAGE_SPDX_ID"
                             value="<sw360:out value="${package.SPDXID}" />">
-                    </div>
-                    <div id="packageSPDXId-error-messages">
-                        <div class="invalid-feedback" rule="required">
-                            <liferay-ui:message key="this.field.must.be.not.empty" />
-                        </div>
                     </div>
                 </div>
             </td>
@@ -141,13 +131,13 @@
         <tr>
             <td style="display: flex; flex-direction: column;">
                 <div class="form-group">
-                    <label class="mandatory">7.7 Package download location</label>
+                    <label>7.7 Package download location</label>
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" type="radio" id="downloadLocationExist"
                                 name="_sw360_portlet_components_DOWNLOAD_LOCATION" value="EXIST">
                             <input style="flex: 6; margin-right: 1rem;" class="form-control needs-validation"
-                                id="downloadLocationValue" rule="required" type="text"
+                                id="downloadLocationValue" type="text"
                                 name="_sw360_portlet_components_DOWNLOAD_LOCATION_VALUE"
                                 placeholder="Enter package download location">
                         </div>
@@ -160,11 +150,6 @@
                                 name="_sw360_portlet_components_DOWNLOAD_LOCATION" value="NOASSERTION">
                             <label class="form-check-label radio-label"
                                 for="downloadLocationNoAssertion">NOASSERTION</label>
-                        </div>
-                    </div>
-                    <div id="downloadLocationValue-error-messages">
-                        <div class="invalid-feedback" rule="required">
-                            <liferay-ui:message key="this.field.must.be.not.empty" />
                         </div>
                     </div>
                 </div>
@@ -191,7 +176,7 @@
         <tr class="spdx-full">
             <td>
                 <div class="form-group">
-                    <label for="verificationCodeValue" class="mandatory">7.9 Package verification code</label>
+                    <label for="verificationCodeValue" >7.9 Package verification code</label>
                     <div>
                         <input style="margin-bottom: 0.75rem;" class="form-control" id="verificationCodeValue"
                             name="_sw360_portlet_components_VERIFICATION_CODE_VALUE"
@@ -270,13 +255,13 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory">7.13 Concluded license</label>
+                    <label >7.13 Concluded license</label>
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="licenseConcludedExist" type="radio"
                                 name="_sw360_portlet_components_LICENSE_CONCLUDED" value="EXIST">
                             <input style="flex: 6; margin-right: 1rem;" class="form-control needs-validation"
-                                rule="required" id="licenseConcludedValue" type="text"
+                                id="licenseConcludedValue" type="text"
                                 name="_sw360_portlet_components_LICENSE_CONCLUDED_VALUE"
                                 placeholder="Enter concluded license">
                         </div>
@@ -291,18 +276,13 @@
                                 for="licenseConcludedNoAssertion">NOASSERTION</label>
                         </div>
                     </div>
-                    <div id="licenseConcludedValue-error-messages">
-                        <div class="invalid-feedback" rule="required">
-                            <liferay-ui:message key="this.field.must.be.not.empty" />
-                        </div>
-                    </div>
                 </div>
             </td>
         </tr>
         <tr class="spdx-full">
             <td>
                 <div class="form-group">
-                    <label class="mandatory">7.14 All licenses information from files</label>
+                    <label>7.14 All licenses information from files</label>
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="licenseInfoFromFilesExist" type="radio"
@@ -329,13 +309,13 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory">7.15 Declared license</label>
+                    <label >7.15 Declared license</label>
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="licenseDeclaredExist" type="radio"
                                 name="_sw360_portlet_components_DECLARED_LICENSE" value="EXIST">
                             <input style="flex: 6; margin-right: 1rem;" id="licenseDeclaredValue"
-                                class="form-control needs-validation" type="text" rule="required"
+                                class="form-control needs-validation" type="text"
                                 name="_sw360_portlet_components_DECLARED_LICENSE_VALUE"
                                 placeholder="Enter declared license">
                         </div>
@@ -348,11 +328,6 @@
                                 name="_sw360_portlet_components_DECLARED_LICENSE" value="NOASSERTION">
                             <label class="form-check-label radio-label"
                                 for="licenseDeclaredNoAssertion">NOASSERTION</label>
-                        </div>
-                    </div>
-                    <div id="licenseDeclaredValue-error-messages">
-                        <div class="invalid-feedback" rule="required">
-                            <liferay-ui:message key="this.field.must.be.not.empty" />
                         </div>
                     </div>
                 </div>
@@ -371,13 +346,13 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory">7.17 Copyright text</label>
+                    <label>7.17 Copyright text</label>
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="copyrightTextExist" type="radio"
                                 name="_sw360_portlet_components_COPYRIGHT_TEXT" value="EXIST">
                             <textarea style="flex: 6; margin-right: 1rem;" id="copyrightTextValue" rows="5"
-                                class="form-control needs-validation" rule="required" type="text"
+                                class="form-control needs-validation" type="text"
                                 name="_sw360_portlet_components_COPYRIGHT_TEXT_VALUE"
                                 placeholder="Enter copyright text">${package.copyrightText}</textarea>
                         </div>
@@ -390,11 +365,6 @@
                                 name="_sw360_portlet_components_COPYRIGHT_TEXT" value="NOASSERTION">
                             <label class="form-check-label radio-label"
                                 for="copyrightTextNoAssertion">NOASSERTION</label>
-                        </div>
-                    </div>
-                    <div id="copyrightTextValue-error-messages">
-                        <div class="invalid-feedback" rule="required">
-                            <liferay-ui:message key="this.field.must.be.not.empty" />
                         </div>
                     </div>
                 </div>
