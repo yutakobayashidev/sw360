@@ -109,7 +109,7 @@ def run():
                             'releaseLink': get_children_node(release_id, createBy, createOn)
                         }
                         dependency_network.append(node)
-                    project['releaseRelationNetwork'] = json.dumps(dependency_network)
+                    project['releaseRelationNetwork'] = json.dumps(dependency_network, separators=(',', ':'))
 
                     del project['releaseIdToUsage']
 
