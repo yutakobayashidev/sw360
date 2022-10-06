@@ -541,3 +541,27 @@ include::{snippets}/should_document_get_project_network/http-response.adoc[]
 
 ===== Links
 include::{snippets}/should_document_get_project_network/links.adoc[]
+
+==== Create a project with a readable format.
+A `POST` request is used to create a project with readable format.
+
+===== Response structure
+include::{snippets}/should_document_create_project_with_readable_format/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_project_with_readable_format/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_project_with_readable_format/http-response.adoc[]
+
+==== Update a project with a readable format.
+A `PATCH` request is used to update a project with readable format.
+
+===== Response structure
+include::{snippets}/should_document_update_project_with_readable_format/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_project_with_readable_format/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_project_with_readable_format/http-response.adoc[]

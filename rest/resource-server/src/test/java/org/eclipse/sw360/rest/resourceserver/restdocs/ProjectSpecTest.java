@@ -308,17 +308,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         .setDescription("Orange Web provides a suite of components for documentation.")
                         .setExternalIds(projExtKeys)
                         .setProjectType(ProjectType.PRODUCT));
-        when(this.projectServiceMock.createProject(any(), any())).then(invocation ->
-                new Project("Test Project")
-                        .setId("1234567890")
-                        .setDescription("This is the description of my Test Project")
-                        .setProjectType(ProjectType.PRODUCT)
-                        .setVersion("1.0")
-                        .setCreatedBy("admin@sw360.org")
-                        .setPhaseOutSince("2020-06-25")
-                        .setState(ProjectState.ACTIVE)
-                        .setReleaseRelationNetwork("[{\"comment\":\"\",\"releaseLink\":[],\"createBy\":\"admin@sw360.org\",\"createOn\":\"2022-08-15\",\"mainlineState\":\"OPEN\",\"releaseId\":\"3765276512\",\"releaseRelationship\":\"CONTAINED\"}]")
-                        .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date())));
 
         Release release = new Release();
         release.setId("3765276512");
@@ -1178,6 +1167,19 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_create_project() throws Exception {
+        String currentDate = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        when(this.projectServiceMock.createProject(any(), any())).
+                thenReturn(
+                        new Project("Test Project")
+                                .setId("1234567890")
+                                .setDescription("This is the description of my Test Project")
+                                .setProjectType(ProjectType.PRODUCT)
+                                .setVersion("1.0")
+                                .setCreatedBy("admin@sw360.org")
+                                .setPhaseOutSince("2020-06-25")
+                                .setState(ProjectState.ACTIVE)
+                                .setReleaseRelationNetwork("[{\"comment\":\"Test Comment\",\"releaseLink\":[],\"createBy\":\"admin@sw360.org\",\"createOn\":\"" + currentDate + "\",\"mainlineState\":\"OPEN\",\"releaseId\":\"3765276512\",\"releaseRelationship\":\"CONTAINED\"}]")
+                                .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date())));
         Map<String, Object> project = new HashMap<>();
         project.put("name", "Test Project");
         project.put("version", "1.0");
@@ -1190,8 +1192,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         releaseLinkJson.put("comment", "Test Comment");
         releaseLinkJson.put("releaseRelationship", "CONTAINED");
         releaseLinkJson.put("mainlineState", "MAINLINE");
-        releaseLinkJson.put("releaseId", "3765276512");
         releaseLinkJson.put("createBy", "admin@sw360.org");
+
         dependencyNetwork.add(releaseLinkJson);
         project.put("dependencyNetwork", dependencyNetwork);
         Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
@@ -1242,8 +1244,22 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.createdBy").description("The user who created this project")
                         )));
     }
+
     @Test
     public void should_document_create_duplicate_project() throws Exception {
+        when(this.projectServiceMock.createProject(any(), any())).
+                thenReturn(
+                        new Project("Test Project")
+                                .setId("1234567890")
+                                .setDescription("This is the description of my Test Project")
+                                .setProjectType(ProjectType.PRODUCT)
+                                .setVersion("1.0")
+                                .setCreatedBy("admin@sw360.org")
+                                .setPhaseOutSince("2020-06-25")
+                                .setState(ProjectState.ACTIVE)
+                                .setReleaseRelationNetwork("[{\"comment\":\"\",\"releaseLink\":[],\"createBy\":\"admin@sw360.org\",\"createOn\":\"2022-08-15\",\"mainlineState\":\"OPEN\",\"releaseId\":\"3765276512\",\"releaseRelationship\":\"CONTAINED\"}]")
+                                .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date())));
+
         Map<String, Object> projectReqs = new HashMap<>();
         projectReqs.put("name", "Test Project");
         projectReqs.put("version", "1.0");
@@ -1487,6 +1503,234 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )
         ));
+    }
+
+    @Test
+    public void should_document_create_project_with_readable_format() throws Exception {
+        String currentDate = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        when(this.projectServiceMock.createProject(any(), any())).
+                thenReturn(
+                        new Project("Test Project")
+                                .setId("111111111")
+                                .setDescription("This is the description of my Test Project")
+                                .setProjectType(ProjectType.PRODUCT)
+                                .setVersion("1.0")
+                                .setCreatedBy("admin@sw360.org")
+                                .setPhaseOutSince("2020-06-25")
+                                .setState(ProjectState.ACTIVE)
+                                .setReleaseRelationNetwork("[\n" +
+                                        "  {\n" +
+                                        "    \"releaseId\": \"3765276512\",\n" +
+                                        "    \"releaseLink\": [\n" +
+                                        "      {\n" +
+                                        "        \"releaseId\": \"5578999\",\n" +
+                                        "        \"releaseLink\": [],\n" +
+                                        "        \"releaseRelationship\": \"CONTAINED\",\n" +
+                                        "        \"mainlineState\": \"MAINLINE\",\n" +
+                                        "        \"comment\": \"Test Comment\",\n" +
+                                        "        \"createOn\": \"" + currentDate + "\",\n" +
+                                        "        \"createBy\": \"admin@sw360.org\"\n" +
+                                        "      }\n" +
+                                        "    ],\n" +
+                                        "    \"releaseRelationship\": \"CONTAINED\",\n" +
+                                        "    \"mainlineState\": \"MAINLINE\",\n" +
+                                        "    \"comment\": \"Test Comment\",\n" +
+                                        "    \"createOn\": \"" + currentDate + "\",\n" +
+                                        "    \"createBy\": \"admin@sw360.org\"\n" +
+                                        "  }\n" +
+                                        "]")
+                                .setCreatedOn(currentDate));
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        Map<String, Object> project = new HashMap<>();
+        project.put("name", "Test Project");
+        project.put("version", "1.0");
+        project.put("visibility", "PRIVATE");
+        project.put("description", "This is the description of my Test Project");
+        project.put("projectType", ProjectType.PRODUCT.toString());
+
+        List<Map<String, Object>> dependencyNetwork = new ArrayList<>();
+
+        List<Map<String, String>> subLinkedRelease = new ArrayList<>();
+        subLinkedRelease.add(Collections.singletonMap("releaseId", "5578999"));
+
+        Map<String, Object> releaseLinkJson = new HashMap<>();
+        releaseLinkJson.put("releaseId", "3765276512");
+        releaseLinkJson.put("comment", "Test Comment");
+        releaseLinkJson.put("releaseRelationship", "CONTAINED");
+        releaseLinkJson.put("mainlineState", "MAINLINE");
+        releaseLinkJson.put("createBy", "admin@sw360.org");
+        releaseLinkJson.put("createOn", "2022-09-12");
+        releaseLinkJson.put("releaseLink", subLinkedRelease);
+
+        Map<String, Object> subReleaseLinkJson = new HashMap<>();
+        subReleaseLinkJson.put("releaseId", "5578999");
+        subReleaseLinkJson.put("comment", "Test Comment");
+        subReleaseLinkJson.put("releaseRelationship", "CONTAINED");
+        subReleaseLinkJson.put("mainlineState", "MAINLINE");
+        subReleaseLinkJson.put("createBy", "admin@sw360.org");
+        subReleaseLinkJson.put("createOn", "2022-09-12");
+        subReleaseLinkJson.put("releaseLink", Collections.emptyList());
+
+
+        dependencyNetwork.add(releaseLinkJson);
+        dependencyNetwork.add(subReleaseLinkJson);
+        project.put("dependencyNetwork", dependencyNetwork);
+
+        Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
+        linkedProjects.put("376576", new ProjectProjectRelationship(ProjectRelationship.CONTAINED).setEnableSvm(true));
+        project.put("linkedProjects", linkedProjects);
+        project.put("leadArchitect", "lead@sw360.org");
+        project.put("moderators", new HashSet<>(Arrays.asList("moderator1@sw360.org", "moderator2@sw360.org")));
+        project.put("contributors", new HashSet<>(Arrays.asList("contributor1@sw360.org", "contributor2@sw360.org")));
+        project.put("state", ProjectState.ACTIVE.toString());
+        project.put("phaseOutSince", "2020-06-24");
+
+        this.mockMvc.perform(post("/api/projects/readableFormat")
+                        .contentType(MediaTypes.HAL_JSON)
+                        .content(this.objectMapper.writeValueAsString(project))
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("_embedded.createdBy.email", Matchers.is("admin@sw360.org")))
+                .andDo(this.documentationHandler.document(
+                        requestFields(
+                                fieldWithPath("name").description("The name of the project"),
+                                fieldWithPath("description").description("The project description"),
+                                fieldWithPath("version").description("The version of the new project"),
+                                fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
+                                fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                subsectionWithPath("linkedProjects").description("The `linked project id` - metadata of linked projects (`enableSvm` - whether linked projects will be part of SVM, `projectRelationship` - relationship between linked project and the project. Possible values: " + Arrays.asList(ProjectRelationship.values())),
+                                fieldWithPath("leadArchitect").description("The lead architect of the project"),
+                                fieldWithPath("contributors").description("An array of contributors to the project"),
+                                fieldWithPath("moderators").description("An array of moderators"),
+                                fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
+                                fieldWithPath("phaseOutSince").description("The project phase-out date"),
+                                subsectionWithPath("dependencyNetwork").description("Dependency network")
+                        ),
+                        responseFields(
+                                fieldWithPath("name").description("The name of the project"),
+                                fieldWithPath("version").description("The project version"),
+                                fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
+                                fieldWithPath("createdOn").description("The date the project was created"),
+                                fieldWithPath("description").description("The project description"),
+                                fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                fieldWithPath("securityResponsibles").description("An array of users responsible for security of the project."),
+                                fieldWithPath("enableSvm").description("Security vulnerability monitoring flag"),
+                                fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
+                                fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
+                                fieldWithPath("phaseOutSince").description("The project phase-out date"),
+                                subsectionWithPath("dependencyNetwork").description("Release and project dependency network"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                subsectionWithPath("_embedded.createdBy").description("The user who created this project")
+                        )));
+    }
+
+    @Test
+    public void should_document_update_project_with_readable_format() throws Exception {
+        String currentDate = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        given(this.projectServiceMock.getProjectForUserById(eq("111111111"), any())).willReturn(
+                new Project("Test Project")
+                        .setId("111111111")
+                        .setDescription("This is the description of my Test Project")
+                        .setProjectType(ProjectType.PRODUCT)
+                        .setVersion("1.0")
+                        .setCreatedBy("admin@sw360.org")
+                        .setPhaseOutSince("2020-06-25")
+                        .setCreatedOn("2020-06-25")
+                        .setState(ProjectState.ACTIVE)
+                        .setReleaseRelationNetwork("[\n" +
+                                "  {\n" +
+                                "    \"releaseId\": \"3765276512\",\n" +
+                                "    \"releaseLink\": [\n" +
+                                "      {\n" +
+                                "        \"releaseId\": \"5578999\",\n" +
+                                "        \"releaseLink\": [],\n" +
+                                "        \"releaseRelationship\": \"CONTAINED\",\n" +
+                                "        \"mainlineState\": \"MAINLINE\",\n" +
+                                "        \"comment\": \"Test Comment\",\n" +
+                                "        \"createOn\": \"" + currentDate + "\",\n" +
+                                "        \"createBy\": \"admin@sw360.org\"\n" +
+                                "      }\n" +
+                                "    ],\n" +
+                                "    \"releaseRelationship\": \"CONTAINED\",\n" +
+                                "    \"mainlineState\": \"MAINLINE\",\n" +
+                                "    \"comment\": \"Test Comment\",\n" +
+                                "    \"createOn\": \"" + currentDate + "\",\n" +
+                                "    \"createBy\": \"admin@sw360.org\"\n" +
+                                "  }\n" +
+                                "]"));
+        given(this.projectServiceMock.updateProject(any(), any())).willReturn(RequestStatus.SUCCESS);
+
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        Map<String, Object> project = new HashMap<>();
+        project.put("name", "Test Project Updated");
+        project.put("version", "1.0");
+        project.put("visibility", "PRIVATE");
+        project.put("description", "This is the description of my Test Project");
+        project.put("projectType", ProjectType.PRODUCT.toString());
+
+        List<Map<String, Object>> dependencyNetwork = new ArrayList<>();
+
+        List<Map<String, String>> subLinkedRelease = new ArrayList<>();
+        subLinkedRelease.add(Collections.singletonMap("releaseId", "3765276512"));
+
+        Map<String, Object> releaseLinkJson = new HashMap<>();
+        releaseLinkJson.put("releaseId", "5578999");
+        releaseLinkJson.put("comment", "Test Comment");
+        releaseLinkJson.put("releaseRelationship", "CONTAINED");
+        releaseLinkJson.put("mainlineState", "MAINLINE");
+        releaseLinkJson.put("createBy", "admin@sw360.org");
+        releaseLinkJson.put("createOn", "2022-09-12");
+        releaseLinkJson.put("releaseLink", subLinkedRelease);
+
+        Map<String, Object> subReleaseLinkJson = new HashMap<>();
+        subReleaseLinkJson.put("releaseId", "3765276512");
+        subReleaseLinkJson.put("comment", "Test Comment");
+        subReleaseLinkJson.put("releaseRelationship", "CONTAINED");
+        subReleaseLinkJson.put("mainlineState", "MAINLINE");
+        subReleaseLinkJson.put("createBy", "admin@sw360.org");
+        subReleaseLinkJson.put("createOn", "2022-09-12");
+        subReleaseLinkJson.put("releaseLink", Collections.emptyList());
+
+
+        dependencyNetwork.add(releaseLinkJson);
+        dependencyNetwork.add(subReleaseLinkJson);
+        project.put("dependencyNetwork", dependencyNetwork);
+        project.put("state", ProjectState.ACTIVE.toString());
+        project.put("phaseOutSince", "2020-06-24");
+
+        this.mockMvc.perform(patch("/api/projects/readableFormat/111111111")
+                        .contentType(MediaTypes.HAL_JSON)
+                        .content(this.objectMapper.writeValueAsString(project))
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("_embedded.createdBy.email", Matchers.is("admin@sw360.org")))
+                .andDo(this.documentationHandler.document(
+                        requestFields(
+                                fieldWithPath("name").description("The name of the project"),
+                                fieldWithPath("description").description("The project description"),
+                                fieldWithPath("version").description("The version of the new project"),
+                                fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
+                                fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
+                                fieldWithPath("phaseOutSince").description("The project phase-out date"),
+                                subsectionWithPath("dependencyNetwork").description("Dependency network")
+                        ),
+                        responseFields(
+                                fieldWithPath("name").description("The name of the project"),
+                                fieldWithPath("version").description("The project version"),
+                                fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
+                                fieldWithPath("description").description("The project description"),
+                                fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                fieldWithPath("securityResponsibles").description("An array of users responsible for security of the project."),
+                                fieldWithPath("enableSvm").description("Security vulnerability monitoring flag"),
+                                fieldWithPath("createdOn").description("Created date of project"),
+                                fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
+                                fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
+                                fieldWithPath("phaseOutSince").description("The project phase-out date"),
+                                subsectionWithPath("dependencyNetwork").description("Release and project dependency network"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                subsectionWithPath("_embedded.createdBy").description("The user who created this project")
+                        )));
     }
     private void add_releases(MockHttpServletRequestBuilder requestBuilder) throws Exception {
         List<String> releaseIds = Arrays.asList("3765276512", "5578999", "3765276513");
