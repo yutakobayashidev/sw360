@@ -39,6 +39,11 @@
                     <a href="<sw360:DisplayReleaseLink releaseId="${releaseLink.id}" bare="true" scopeGroupId="${concludedScopeGroupId}" />">
                         <sw360:out value="${releaseLink.name} ${releaseLink.version}" maxChar="60" />
                     </a>
+                    <core_rt:if test="${releaseLink.clearingState eq 'SCAN_AVAILABLE'}">
+                        <span class="actions" >
+                            <svg class="cursor lexicon-icon m-2 isr" data-doc-id="${releaseLink.id}"><title><liferay-ui:message key='view.scanner.findings.license' /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle"/></svg>
+                        </span>
+                    </core_rt:if>
                 </td>
                 <td>
                     <sw360:DisplayEnum value="${releaseLink.componentType}" />
