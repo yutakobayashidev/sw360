@@ -1647,14 +1647,14 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 "        \"releaseRelationship\": \"CONTAINED\",\n" +
                                 "        \"mainlineState\": \"MAINLINE\",\n" +
                                 "        \"comment\": \"Test Comment\",\n" +
-                                "        \"createOn\": \"" + currentDate + "\",\n" +
+                                "        \"createOn\": \"2022-09-12\",\n" +
                                 "        \"createBy\": \"admin@sw360.org\"\n" +
                                 "      }\n" +
                                 "    ],\n" +
                                 "    \"releaseRelationship\": \"CONTAINED\",\n" +
                                 "    \"mainlineState\": \"MAINLINE\",\n" +
                                 "    \"comment\": \"Test Comment\",\n" +
-                                "    \"createOn\": \"" + currentDate + "\",\n" +
+                                "    \"createOn\": \"2022-09-12\",\n" +
                                 "    \"createBy\": \"admin@sw360.org\"\n" +
                                 "  }\n" +
                                 "]"));
