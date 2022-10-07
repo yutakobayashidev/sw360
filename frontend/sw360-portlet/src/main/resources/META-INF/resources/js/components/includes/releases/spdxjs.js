@@ -440,9 +440,11 @@ define('components/includes/releases/spdxjs', ['jquery',"components/includes/rel
         }
 
         if (documentCreationInformationObj.creator.length == 0) {
-            $('.spdx-add-button-sub-creator').first().click();
-            $('.creator-type').last().val('Person');
-            $('.creator-value').last().val(userDisplay);
+//            $('.spdx-add-button-sub-creator').first().click();
+//            $('.creator-type').last().val('Person');
+//            $('.creator-value').last().val(userDisplay);
+//            $('.creator-type').last().val('');
+//            $('.creator-value').last().val('');
         } else {
             for (let i = 0; i < documentCreationInformationObj.creator.length; i++) {
                 addSub($('.spdx-add-button-sub-creator').first());
@@ -456,7 +458,8 @@ define('components/includes/releases/spdxjs', ['jquery',"components/includes/rel
         });
 
         if (documentCreationInformationObj.created == '') {
-            fillDateTime('#createdDate', '#createdTime', (new Date().toISOString()));
+//            fillDateTime('#createdDate', '#createdTime', (new Date().toISOString()));
+             fillDateTime('#createdDate', '#createdTime', ' ');
         } else {
             fillDateTime('#createdDate', '#createdTime', documentCreationInformationObj.created);
         }
