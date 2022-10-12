@@ -1037,8 +1037,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                         PackageInformationService.Iface paClient = thriftClients.makeSPDXPackageInfoClient();
                         for (String spdxPackageInfoId : spdxPackageInfoIds) {
                             packageInfo = paClient.getPackageInformationForEdit(spdxPackageInfoId, user);
-                            if (release.getName().equals(packageInfo.getName()))
-                                packageInfos.add(packageInfo);
+                            packageInfos.add(packageInfo);
                         }
                     }
                 }
