@@ -346,7 +346,7 @@
             'OTHER': [] };
         $('#referenceCategory').on('change', function() {
             let category = $('#referenceCategory').val();
-            let types = referenceCategories[category];
+            let types = referenceCategories['SECURITY'];
             if (types.length > 0) {
                 $("#referenceType-1").css('display', 'block');
                 $("#referenceType-1").val(types[0]);
