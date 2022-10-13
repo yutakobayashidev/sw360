@@ -340,13 +340,13 @@
             spdxjs.fillExternalRef(packagesInformationObj[selectedPackage], selectedIndex);
         });
         // 7.21 External Reference Category
-        const referenceCategories = { 'SECURITY': ['cpe22Type', 'cpe23Type'],
+        const referenceCategories = { 'SECURITY': [],
             'PACKAGE-MANAGER': ['maven-central', 'npm', 'nuget', 'bower', 'purl'],
             'PERSISTENT-ID': [],
             'OTHER': [] };
         $('#referenceCategory').on('change', function() {
             let category = $('#referenceCategory').val();
-            let types = referenceCategories['SECURITY'];
+            let types = referenceCategories[category];
             if (types.length > 0) {
                 $("#referenceType-1").css('display', 'block');
                 $("#referenceType-1").val(types[0]);

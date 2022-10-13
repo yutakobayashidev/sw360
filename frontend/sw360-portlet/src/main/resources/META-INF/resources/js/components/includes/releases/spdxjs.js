@@ -755,7 +755,7 @@ define('components/includes/releases/spdxjs', ['jquery',"components/includes/rel
         $('#referenceCategory').change();
         $('#referenceCategory').removeAttr('disabled');
 
-        if (obj['referenceCategory'] == 'SECURITY' || obj['referenceCategory'] == 'PACKAGE-MANAGER') {
+        if (obj['referenceCategory'] == 'PACKAGE-MANAGER') {
             $('#referenceType-1').val(obj['referenceType']);
             $('#referenceType-1').removeAttr('disabled');
 
@@ -782,7 +782,7 @@ define('components/includes/releases/spdxjs', ['jquery',"components/includes/rel
 
         obj['referenceCategory'] = $('#referenceCategory').val().trim();
 
-        if (obj['referenceCategory'] == 'SECURITY' || obj['referenceCategory'] == 'PACKAGE-MANAGER') {
+        if (obj['referenceCategory'] == 'PACKAGE-MANAGER') {
             obj['referenceType'] = $('#referenceType-1').val().trim();
         } else {
             obj['referenceType'] = $('#referenceType-2').val().trim();
