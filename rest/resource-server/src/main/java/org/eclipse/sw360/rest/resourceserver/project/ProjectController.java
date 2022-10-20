@@ -21,9 +21,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
-import org.eclipse.sw360.datahandler.thrift.*;
-import org.eclipse.sw360.datahandler.thrift.components.*;
-import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.springframework.data.domain.Pageable;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
@@ -33,18 +30,35 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.thrift.MainlineState;
+import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
+import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLinkJSON;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectNetwork;
+import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
@@ -132,8 +146,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             .put(Project._Fields.CONTRIBUTORS,"sw360:contributors")
             .put(Project._Fields.ATTACHMENTS,"sw360:attachments").build();
     private static final ImmutableMap<Project._Fields, String> mapOfProjectFieldsToRequestBody = ImmutableMap.<Project._Fields, String>builder()
-            .put(Project._Fields.VISBILITY, "visibility")
-            .put(Project._Fields.RELEASE_ID_TO_USAGE, "linkedReleases").build();
+            .put(Project._Fields.VISBILITY, "visibility").build();
     private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST = ImmutableMap.<String, String>builder()
             .put("message", "Moderation request is created").build();
     private static final ImmutableMap<ProjectDTO._Fields, String> mapOfFieldsTobeEmbeddedDTO = ImmutableMap.<ProjectDTO._Fields, String>builder()
@@ -353,21 +366,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     public ResponseEntity linkReleases(
             @PathVariable("id") String id,
             @RequestBody Object releasesInRequestBody) throws URISyntaxException, TException {
-        RequestStatus linkReleasesStatus = addOrPatchReleasesToProject(id, releasesInRequestBody, false);
-        HttpStatus status = HttpStatus.CREATED;
-        if (linkReleasesStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        }
-        return new ResponseEntity<>(HttpStatus.CREATED);
-    }
-
-    @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = PROJECTS_URL + "/{id}/releases", method = RequestMethod.PATCH)
-    public ResponseEntity patchReleases(@PathVariable("id") String id, @RequestBody Object releaseURIs)
-            throws URISyntaxException, TException {
-        RequestStatus patchReleasesStatus = addOrPatchReleasesToProject(id, releaseURIs, true);
-        if (patchReleasesStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        try {
+            RequestStatus linkReleasesStatus = addReleasesToProject(id, releasesInRequestBody);
+            HttpStatus status = HttpStatus.CREATED;
+            if (linkReleasesStatus == RequestStatus.SENT_TO_MODERATOR) {
+                return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+            }
+        } catch (SW360Exception sw360Exception) {
+            throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
         }
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
@@ -575,25 +581,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(resources, status);
     }
 
-    @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = PROJECTS_URL + "/{id}/release/{releaseId}", method = RequestMethod.PATCH)
-    public ResponseEntity<EntityModel<ProjectReleaseRelationship>> patchProjectReleaseUsage(
-            @PathVariable("id") String id, @PathVariable("releaseId") String releaseId,
-            @RequestBody ProjectReleaseRelationship requestBodyProjectReleaseRelationship) throws TException {
-        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
-        Map<String, ProjectReleaseRelationship> releaseIdToUsage = sw360Project.getReleaseIdToUsage();
-        ProjectReleaseRelationship updatedProjectReleaseRelationship = projectService
-                .updateProjectReleaseRelationship(releaseIdToUsage, requestBodyProjectReleaseRelationship, releaseId);
-        RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, sw360User);
-        if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        }
-        EntityModel<ProjectReleaseRelationship> updatedProjectReleaseRelationshipResource = EntityModel.of(
-                updatedProjectReleaseRelationship);
-        return new ResponseEntity<>(updatedProjectReleaseRelationshipResource, HttpStatus.OK);
-    }
-
     public ProjectVulnerabilityRating updateProjectVulnerabilityRatingFromRequest(Optional<ProjectVulnerabilityRating> projectVulnerabilityRatings, List<VulnerabilityDTO> vulDtoList, String projectId, User sw360User) {
         Function<VulnerabilityDTO, VulnerabilityCheckStatus> fillVulnerabilityCheckStatus = vulDto -> {
             return new VulnerabilityCheckStatus().setCheckedBy(sw360User.getEmail())
@@ -734,8 +721,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         String outputGeneratorClassNameWithVariant = generatorClassName+"::"+variant;
         final OutputFormatInfo outputFormatInfo = licenseInfoService.getOutputFormatInfoForGeneratorClass(generatorClassName);
         final String filename = String.format("%s-%s%s-%s.%s", Strings.nullToEmpty(variant).equals("DISCLOSURE") ? "LicenseInfo" : "ProjectClearingReport", projectName,
-                StringUtils.isBlank(projectVersion) ? "" : "-" + projectVersion, timestamp,
-                outputFormatInfo.getFileExtension());
+                        StringUtils.isBlank(projectVersion) ? "" : "-" + projectVersion, timestamp,
+                        outputFormatInfo.getFileExtension());
 
         String fileName = "";
         if (CommonUtils.isNotNullEmptyOrWhitespace(template) && CommonUtils.isNotNullEmptyOrWhitespace(REPORT_FILENAME_MAPPING)) {
@@ -1034,52 +1021,33 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return halProject;
     }
 
-    private RequestStatus addOrPatchReleasesToProject(String id, Object releasesInRequestBody, boolean patch)
+    private RequestStatus addReleasesToProject(String id, Object releasesInRequestBody)
             throws URISyntaxException, TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project project = projectService.getProjectForUserById(id, sw360User);
-        Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
-        if (patch) {
-            releaseIdToUsage = project.getReleaseIdToUsage();
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.registerModule(sw360Module);
+
+        Set<ReleaseLinkJSON> releaseDependencyNetwork = new HashSet<>();
+        if (project.getReleaseRelationNetwork() != null) {
+            try {
+                releaseDependencyNetwork = mapper.readValue(project.getReleaseRelationNetwork(), new TypeReference<Set<ReleaseLinkJSON>>() {
+                });
+            } catch (JsonProcessingException e) {
+                log.error(e.getMessage());
+            }
         }
 
         if (releasesInRequestBody instanceof List) {
-            List<String> releasesAsList = (List<String>) releasesInRequestBody;
-            for (String release : releasesAsList) {
-                URI releaseURI = new URI(release.toString());
-                String path = releaseURI.getPath();
-                String releaseId = path.substring(path.lastIndexOf('/') + 1);
-                releaseIdToUsage.put(releaseId,
-                        new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.OPEN));
-            }
-        } else if (releasesInRequestBody instanceof Map) {
-            Map<String, Map> releaseAsMap = (Map<String, Map>) releasesInRequestBody;
-            for (Entry<String, Map> entry : releaseAsMap.entrySet()) {
-                String releaseId = entry.getKey();
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                mapper.registerModule(sw360Module);
-                ProjectReleaseRelationship requestBodyProjectReleaseRelationship = mapper.convertValue(entry.getValue(),
-                        ProjectReleaseRelationship.class);
-                ProjectReleaseRelationship actualProjectReleaseRelationship = null;
-
-                if (patch && releaseIdToUsage.containsKey(releaseId)) {
-                    actualProjectReleaseRelationship = releaseIdToUsage.get(releaseId);
-                } else {
-                    actualProjectReleaseRelationship = new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED,
-                            MainlineState.OPEN).setCreatedBy(sw360User.getEmail())
-                                    .setCreatedOn(SW360Utils.getCreatedOn());
-                }
-
-                restControllerHelper.updateProjectReleaseRelationship(actualProjectReleaseRelationship,
-                        requestBodyProjectReleaseRelationship);
-                releaseIdToUsage.put(releaseId, actualProjectReleaseRelationship);
-            }
+            Set<String> releaseIdsAsSet = new HashSet<>((List<String>) releasesInRequestBody);
+            Set<ReleaseLinkJSON> releaseDependenciesFromIds = releaseService.getReleaseDependencies(releaseIdsAsSet, sw360User);
+            releaseDependencyNetwork.addAll(releaseDependenciesFromIds);
         } else {
             throw new HttpMessageNotReadableException(
-                    "Request body should be List of valid release id or map of release id to usage");
+                    "Request body should be List of valid release id");
         }
-        project.setReleaseIdToUsage(releaseIdToUsage);
+        project.setReleaseRelationNetwork(new Gson().toJson(releaseDependencyNetwork));
         return projectService.updateProject(project, sw360User);
     }
 

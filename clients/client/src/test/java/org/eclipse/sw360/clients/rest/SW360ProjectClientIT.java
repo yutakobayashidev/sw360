@@ -11,7 +11,6 @@
 package org.eclipse.sw360.clients.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.eclipse.sw360.clients.rest.resource.projects.*;
 import org.eclipse.sw360.http.utils.FailedRequestException;
 import org.eclipse.sw360.http.utils.HttpConstants;
 import org.eclipse.sw360.clients.adapter.SW360ComponentClientAdapterAsync;
@@ -20,13 +19,22 @@ import org.eclipse.sw360.clients.adapter.SW360ProjectClientAdapterAsync;
 import org.eclipse.sw360.clients.adapter.SW360ReleaseClientAdapterAsync;
 import org.eclipse.sw360.clients.rest.resource.components.SW360Component;
 import org.eclipse.sw360.clients.rest.resource.licenses.SW360License;
+import org.eclipse.sw360.clients.rest.resource.projects.ProjectSearchParams;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360Project;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectType;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectDTO;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360ReleaseLinkJSON;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;

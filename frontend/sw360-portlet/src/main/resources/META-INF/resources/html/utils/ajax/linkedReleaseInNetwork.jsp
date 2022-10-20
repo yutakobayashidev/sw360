@@ -109,7 +109,7 @@
                 <td>
                     <liferay-ui:message key="inaccessible.release" />
                     <div class="form-group">
-                        <input type="hidden" value="${releaseLink.id}" name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>">
+                        <input type="hidden" value="${releaseLink.id}" name="<portlet:namespace/><%=PortalConstants.RELEASE_USAGE%><%=ReleaseLink._Fields.ID%>">
                     </div>
                 </td>
                 <td>
@@ -117,7 +117,7 @@
                 <td>
                     <div class="form-group">
                         <input id="releaseRelation" type="hidden"
-                                name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>"
+                                name="<portlet:namespace/><%=PortalConstants.RELEASE_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>"
                                 value="${releaseLink.releaseRelationship.getValue()}"
                                 >
                     </div>
@@ -125,7 +125,7 @@
                 <td>
                     <div class="form-group">
                         <input id="mainlineState" type="hidden"
-                                name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.MAINLINE_STATE%>"
+                                name="<portlet:namespace/><%=PortalConstants.RELEASE_USAGE%><%=ProjectReleaseRelationship._Fields.MAINLINE_STATE%>"
                                 value="${releaseLink.mainlineState.getValue()}"
                                 >
                     </div>
@@ -133,7 +133,7 @@
                 <td>
                     <div class="form-group">
                         <input id="releaseComment" type="hidden"
-                                name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.COMMENT%>"
+                                name="<portlet:namespace/><%=PortalConstants.RELEASE_USAGE%><%=ProjectReleaseRelationship._Fields.COMMENT%>"
                                 value="<sw360:out value="${releaseLink.comment}"/>"
                                 >
                     </div>

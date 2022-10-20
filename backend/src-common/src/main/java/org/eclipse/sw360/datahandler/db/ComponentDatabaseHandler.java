@@ -25,6 +25,7 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
+import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
@@ -60,11 +61,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
+import org.ektorp.http.HttpClient;
 import org.jetbrains.annotations.NotNull;
-import org.spdx.rdfparser.InvalidSPDXAnalysisException;
+import org.spdx.library.InvalidSPDXAnalysisException;
 
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -118,6 +123,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private final ReleaseModerator releaseModerator;
     private final ProjectModerator projectModerator;
 
+    private DatabaseConnector dbConnector;
+
+    private ProjectSearchHandler projectSearchHandler;
+
     public static final List<EccInformation._Fields> ECC_FIELDS = Arrays.asList(EccInformation._Fields.ECC_STATUS, EccInformation._Fields.AL, EccInformation._Fields.ECCN, EccInformation._Fields.MATERIAL_INDEX_NUMBER, EccInformation._Fields.ECC_COMMENT);
 
     private final MailUtil mailUtil = new MailUtil();
@@ -140,7 +149,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     ClearingInformation._Fields.REQUEST_ID, ClearingInformation._Fields.ADDITIONAL_REQUEST_INFO,
                     ClearingInformation._Fields.EXTERNAL_SUPPLIER_ID, ClearingInformation._Fields.EVALUATED,
                     ClearingInformation._Fields.PROC_START);
-    public ComponentDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName, ComponentModerator moderator, ReleaseModerator releaseModerator, ProjectModerator projectModerator) throws MalformedURLException {
+    public ComponentDatabaseHandler(Supplier<HttpClient> client, Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName, ComponentModerator moderator, ReleaseModerator releaseModerator, ProjectModerator projectModerator) throws IOException {
         super(httpClient, dbName, attachmentDbName);
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(httpClient, dbName);
 
@@ -155,31 +164,32 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         this.moderator = moderator;
         this.releaseModerator = releaseModerator;
         this.projectModerator = projectModerator;
-
+        dbConnector = new DatabaseConnector(client, dbName);
+        projectSearchHandler = new ProjectSearchHandler(this.dbConnector, httpClient);
         // Create the attachment connector
         attachmentConnector = new AttachmentConnector(httpClient, attachmentDbName, durationOf(30, TimeUnit.SECONDS));
         DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
     }
 
-    public ComponentDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String changeLogsDbName, String attachmentDbName, ComponentModerator moderator, ReleaseModerator releaseModerator, ProjectModerator projectModerator) throws MalformedURLException {
-        this(httpClient, dbName, attachmentDbName, moderator, releaseModerator, projectModerator);
+    public ComponentDatabaseHandler(Supplier<HttpClient> client, Supplier<CloudantClient> httpClient, String dbName, String changeLogsDbName, String attachmentDbName, ComponentModerator moderator, ReleaseModerator releaseModerator, ProjectModerator projectModerator) throws IOException {
+        this(client, httpClient, dbName, attachmentDbName, moderator, releaseModerator, projectModerator);
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(httpClient, changeLogsDbName);
         this.dbHandlerUtil = new DatabaseHandlerUtil(db);
     }
 
 
-    public ComponentDatabaseHandler(Supplier<CloudantClient> supplier, String dbName, String attachmentDbName) throws MalformedURLException {
-        this(supplier, dbName, attachmentDbName, new ComponentModerator(), new ReleaseModerator(), new ProjectModerator());
+    public ComponentDatabaseHandler(Supplier<HttpClient> client, Supplier<CloudantClient> supplier, String dbName, String attachmentDbName) throws IOException {
+        this(client, supplier, dbName, attachmentDbName, new ComponentModerator(), new ReleaseModerator(), new ProjectModerator());
     }
-    public ComponentDatabaseHandler(Supplier<CloudantClient> supplier, String dbName, String changelogsDbName, String attachmentDbName) throws MalformedURLException {
-        this(supplier, dbName, attachmentDbName, new ComponentModerator(), new ReleaseModerator(), new ProjectModerator());
+    public ComponentDatabaseHandler(Supplier<HttpClient> client, Supplier<CloudantClient> supplier, String dbName, String changelogsDbName, String attachmentDbName) throws IOException {
+        this(client, supplier, dbName, attachmentDbName, new ComponentModerator(), new ReleaseModerator(), new ProjectModerator());
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(supplier, changelogsDbName);
         this.dbHandlerUtil = new DatabaseHandlerUtil(db);
     }
 
-    public ComponentDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String changeLogsDbName, String attachmentDbName, ThriftClients thriftClients) throws MalformedURLException {
-        this(httpClient, dbName, attachmentDbName, new ComponentModerator(thriftClients), new ReleaseModerator(thriftClients), new ProjectModerator(thriftClients));
+    public ComponentDatabaseHandler(Supplier<HttpClient> client, Supplier<CloudantClient> httpClient, String dbName, String changeLogsDbName, String attachmentDbName, ThriftClients thriftClients) throws IOException {
+        this(client, httpClient, dbName, attachmentDbName, new ComponentModerator(thriftClients), new ReleaseModerator(thriftClients), new ProjectModerator(thriftClients));
     }
 
     private void autosetReleaseClearingState(Release releaseAfter, Release releaseBefore) {
@@ -513,12 +523,26 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private boolean isDuplicate(Component component, boolean caseInsenstive){
-        Set<String> duplicates = componentRepository.getComponentIdsByName(component.getName(), caseInsenstive);
-        return duplicates.size()>0;
+        return isDuplicate(component.getName(), caseInsenstive);
     }
 
     private boolean isDuplicate(Release release){
-        List<Release> duplicates = releaseRepository.searchByNameAndVersion(release.getName(), release.getVersion());
+        return isDuplicate(release.getName(), release.getVersion());
+    }
+
+    private boolean isDuplicate(String componentName, boolean caseInsenstive) {
+        if (isNullEmptyOrWhitespace(componentName)) {
+            return false;
+        }
+        Set<String> duplicates = componentRepository.getComponentIdsByName(componentName, caseInsenstive);
+        return duplicates.size()>0;
+    }
+
+    private boolean isDuplicate(String releaseName, String releaseVersion) {
+        if (isNullEmptyOrWhitespace(releaseName)) {
+            return false;
+        }
+        List<Release> duplicates = releaseRepository.searchByNameAndVersion(releaseName, releaseVersion);
         return duplicates.size()>0;
     }
 
@@ -1049,7 +1073,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             // check if attachments are updated
             if (!originalAttachmentId.equals(updatedAttachmentId)) {
                 // fetch all the projects associated with this release and collect the Clearing request Ids
-                final Set<Project> usingProjects = projectRepository.searchByReleaseId(release.getId());
+                final Set<Project> usingProjects = projectSearchHandler.searchByReleaseId(release.getId());
                 final Set<String> crIds = CommonUtils.nullToEmptySet(usingProjects).stream()
                         .filter(proj -> CommonUtils.isNotNullEmptyOrWhitespace(proj.getClearingRequestId()))
                         .map(Project::getClearingRequestId).collect(Collectors.toSet());
@@ -1140,8 +1164,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public boolean hasEmptyEccFields(Release release) {
         EccInformation eccInformation = release.getEccInformation();
-        return isNullEmptyOrWhitespace(eccInformation.getAL()) &&
-                isNullEmptyOrWhitespace(eccInformation.getECCN()) &&
+        return isNullEmptyOrWhitespace(eccInformation.getAl()) &&
+                isNullEmptyOrWhitespace(eccInformation.getEccn()) &&
                 isNullEmptyOrWhitespace(eccInformation.getEccComment()) &&
                 (eccInformation.getEccStatus() == null || eccInformation.getEccStatus() == ECCStatus.OPEN);
     }
@@ -1164,8 +1188,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             if (CommonUtils.isValidUrl(url)) {
                 ensureEccInformationIsSet(release);
                 EccInformation eccInfo = release.getEccInformation();
-                eccInfo.setAL(ECC_AUTOSET_VALUE);
-                eccInfo.setECCN(ECC_AUTOSET_VALUE);
+                eccInfo.setAl(ECC_AUTOSET_VALUE);
+                eccInfo.setEccn(ECC_AUTOSET_VALUE);
                 eccInfo.setEccComment(ECC_AUTOSET_COMMENT);
                 if (DatabaseHandlerUtil.AUTO_SET_ECC_STATUS) {
                     eccInfo.setEccStatus(ECCStatus.APPROVED);
@@ -1493,11 +1517,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             // retrieve full document, other method only retrieves summary
             project = projectClient.getProjectById(project.getId(), sessionUser);
             Project projectBefore=project.deepCopy();
-            ProjectReleaseRelationship relationship = project.getReleaseIdToUsage().remove(mergeSourceId);
-            // if the target release is also linked, keep this one, do not overwrite
-            if(!project.getReleaseIdToUsage().containsKey(mergeTargetId)) {
-                project.putToReleaseIdToUsage(mergeTargetId, relationship);
-            }
+            String replaceNetwork = project.getReleaseRelationNetwork().replaceAll(mergeSourceId, mergeTargetId);
+            project.setReleaseRelationNetwork(replaceNetwork);
             updateModifiedFields(project, userEmail);
             projectClient.updateProject(project, sessionUser);
 
@@ -1638,8 +1659,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             if (usingComponents.size() > 0)
                 return true;
 
-            final Set<Project> usingProjects = projectRepository.searchByReleaseId(releaseIds);
-            if (usingProjects.size() > 0)
+            final int countUsingProject = projectSearchHandler.getCountProjectByReleaseIds(releaseIds);
+            if (countUsingProject > 0)
                 return true;
         }
         return false;
@@ -1651,7 +1672,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         if (usingComponents.size() > 0)
             return true;
 
-        final Set<Project> usingProjects = projectRepository.searchByReleaseId(releaseId);
+        final Set<Project> usingProjects = projectSearchHandler.searchByReleaseId(releaseId);
         return (usingProjects.size() > 0);
     }
 
@@ -1702,21 +1723,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     /////////////////////
     // HELPER SERVICES //
     /////////////////////
-
-    List<ReleaseLink> getLinkedReleases(Project project, Deque<String> visitedIds) {
-        return getLinkedReleases(project.getReleaseIdToUsage(), visitedIds);
-    }
-
-    List<ReleaseLink> getLinkedReleasesWithAccessibility(Project project, Deque<String> visitedIds, User user) {
-        List<ReleaseLink> releaseLinkList = getLinkedReleases(project.getReleaseIdToUsage(), visitedIds);
-        if (!CommonUtils.isNullOrEmptyCollection(releaseLinkList)) {
-            for (ReleaseLink releaseLink : releaseLinkList) {
-                Release release = releaseRepository.get(releaseLink.getId());
-                releaseLink.setAccessible(isReleaseActionAllowed(release, user, RequestedAction.READ));
-            }
-        }
-        return releaseLinkList;
-    }
 
     private List<ReleaseLink> getLinkedReleases(Map<String, ?> relations, Deque<String> visitedIds) {
         return iterateReleaseRelationShips(relations, null, visitedIds);
@@ -2363,6 +2369,43 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 release.getName(), release.getVersion());
     }
 
+    public ImportBomRequestPreparation prepareImportBom(User user, String attachmentContentId) throws SW360Exception {
+        final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
+        final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
+        try {
+            final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
+            try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
+                final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
+                final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
+
+                String fileType = getFileType(attachmentContent.getFilename());
+                final String ext = "." + fileType;
+                final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(inputStream, attachmentContentId, ext);
+
+                ImportBomRequestPreparation importBomRequestPreparation = spdxBOMImporter.prepareImportSpdxBOMAsRelease(sourceFile);
+                if (RequestStatus.SUCCESS.equals(importBomRequestPreparation.getRequestStatus())) {
+                    String name = importBomRequestPreparation.getName();
+                    String version = importBomRequestPreparation.getVersion();
+                    if (!isDuplicate(name, true)) {
+                        importBomRequestPreparation.setIsComponentDuplicate(false);
+                        importBomRequestPreparation.setIsReleaseDuplicate(false);
+                    } else if (!isDuplicate(name, version)) {
+                        importBomRequestPreparation.setIsComponentDuplicate(true);
+                        importBomRequestPreparation.setIsReleaseDuplicate(false);
+                    } else {
+                        importBomRequestPreparation.setIsComponentDuplicate(true);
+                        importBomRequestPreparation.setIsReleaseDuplicate(true);
+                    }
+                    importBomRequestPreparation.setMessage(sourceFile.getAbsolutePath());
+                }
+
+                return importBomRequestPreparation;
+            }
+        } catch (IOException e) {
+            throw new SW360Exception(e.getMessage());
+        }
+    }
+
     public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws TException {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
         final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
@@ -2373,9 +2416,23 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
                 return spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent, user);
             }
-        } catch (InvalidSPDXAnalysisException | IOException e) {
+        } catch (IOException | InvalidSPDXAnalysisException e) {
             throw new SW360Exception(e.getMessage());
         }
+    }
+
+    private String getFileType(String fileName) {
+        if (isNullEmptyOrWhitespace(fileName) || !fileName.contains(".")) {
+            log.error("Can not get file type from file name - no file extension");
+            return null;
+		}
+		String ext = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+		if ("xml".equals(ext)) {
+			if (fileName.endsWith("rdf.xml")) {
+				ext = "rdf";
+			}
+		}
+		return ext;
     }
 
     private void removeLeadingTrailingWhitespace(Release release) {
@@ -2524,5 +2581,40 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public List<Release> getReleaseByIds(List<String> ids) {
         return releaseRepository.getFullDocsByListIds(SummaryType.SHORT, ids);
+    }
+
+    public List<ReleaseLinkJSON> getReleaseRelationNetworkOfRelease(Release release, User user) {
+        ReleaseLinkJSON dependencyNetwork = new ReleaseLinkJSON(release.getId());
+        getReleaseLinkJSONS(dependencyNetwork, user);
+        return Collections.singletonList(dependencyNetwork);
+    }
+
+    private ReleaseLinkJSON getReleaseLinkJSONS(ReleaseLinkJSON releaseLinkJSON, User user) {
+        Release releaseById = null;
+        try {
+            releaseById = getAccessibleRelease(releaseLinkJSON.getReleaseId(), user);
+            List<Release> releaseList = new ArrayList<>();
+            if (releaseById.getReleaseIdToRelationship() != null) {
+                releaseList = getAccessibleReleases(releaseById.getReleaseIdToRelationship().keySet().stream().collect(Collectors.toSet()), user);
+            }
+            List<ReleaseLinkJSON> linkedReleasesJSON = new ArrayList<>();
+            releaseLinkJSON.setMainlineState(MainlineState.OPEN.toString());
+            releaseLinkJSON.setReleaseRelationship(ReleaseRelationship.CONTAINED.toString());
+            releaseLinkJSON.setComment("");
+            for (Release release : releaseList) {
+                ReleaseLinkJSON rj = new ReleaseLinkJSON(release.getId());
+                rj.setMainlineState(MainlineState.OPEN.toString());
+                rj.setReleaseRelationship(ReleaseRelationship.CONTAINED.toString());
+                rj.setComment("");
+                rj.setCreateOn(SW360Utils.getCreatedOn());
+                rj.setCreateBy(user.getEmail());
+                linkedReleasesJSON.add(getReleaseLinkJSONS(rj, user));
+            }
+            releaseLinkJSON.setReleaseLink(linkedReleasesJSON);
+
+        } catch (TException e) {
+            log.error("Error when get Release: " + releaseLinkJSON.getReleaseId());
+        }
+        return releaseLinkJSON;
     }
 }

@@ -28,13 +28,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalTool;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStatus;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStep;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -100,6 +94,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         Release releaseById = null;
         try {
             releaseById = sw360ComponentClient.getReleaseById(releaseId, sw360User);
+            setComponentDependentFieldsInRelease(releaseById, sw360User);
             Map<String, String> sortedAdditionalData = CommonUtils.getSortedMap(releaseById.getAdditionalData(), true);
             releaseById.setAdditionalData(sortedAdditionalData);
         } catch (SW360Exception sw360Exp) {
@@ -111,6 +106,23 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
 
         return releaseById;
+    }
+
+    public void setComponentDependentFieldsInRelease(Release releaseById, User sw360User) {
+
+        String componentId = releaseById.getComponentId();
+        if (CommonUtils.isNullEmptyOrWhitespace(componentId)) {
+            throw new HttpMessageNotReadableException("ComponentId must be present");
+        }
+        Component componentById = null;
+        try {
+            ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+            componentById = sw360ComponentClient.getComponentById(componentId, sw360User);
+        } catch (TException e) {
+            throw new HttpMessageNotReadableException("No Component found with Id - " + componentId);
+        }
+        releaseById.setComponentType(componentById.getComponentType());
+
     }
 
     @Override
@@ -635,5 +647,16 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         Set<String> releaseIds = new HashSet<>();
         releaseIds.add(releaseId);
         return componentService.getUsingProjectAccesibleByReleaseIds(releaseIds, sw360User);
+    }
+
+    public Set<ReleaseLinkJSON> getReleaseDependencies(Set<String> releaseIds, User user) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        Set<ReleaseLinkJSON> releaseDependenciesFromIds = new HashSet<>();
+        for (String releaseId : releaseIds) {
+            Release releaseById = sw360ComponentClient.getAccessibleReleaseById(releaseId, user);
+            List<ReleaseLinkJSON> releaseDependency = sw360ComponentClient.getReleaseRelationNetworkOfRelease(releaseById, user);
+            releaseDependenciesFromIds.addAll(releaseDependency);
+        }
+        return releaseDependenciesFromIds;
     }
 }

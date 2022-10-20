@@ -11,6 +11,7 @@
 
 <%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
 <%@include file="/html/init.jsp" %>
+<%@ taglib prefix="liferay-ui" uri="http://liferay.com/tld/ui" %>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.MainlineState" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.ReleaseRelationship" %>
@@ -26,6 +27,19 @@
 </portlet:resourceURL>
 
 <h4 class="mt-4"><liferay-ui:message key="linked.releases" /></h4>
+<div class="alert alert-danger show-alert" role="alert" style="display:none; position:sticky; top:0; z-index:999">
+    <span class="alert-indicator">
+        <svg class="lexicon-icon lexicon-icon-exclamation-full" focusable="false" role="presentation">
+            <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#exclamation-full"></use>
+        </svg>
+    </span>
+    <strong class="lead">Warning: </strong><span class='alert-message'></span>
+    <button aria-label="Close" class="close" type="button" style="float:right;margin-top: -5px;">
+        <svg class="lexicon-icon lexicon-icon-times" focusable="false" role="presentation">
+            <use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#times'/>
+        </svg>
+    </button>
+</div>
 <table class="table edit-table five-columns-with-actions" id="LinkedReleasesNetwork">
     <thead>
         <tr>
@@ -185,7 +199,7 @@
 <script>
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
-        require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard', /* jquery-plugins */ 'jquery-ui' ], function($, dialog, datatables, keyboard) {
+        require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard', 'modules/alert', /* jquery-plugins */ 'jquery-ui' ], function($, dialog, datatables, keyboard, alert) {
             var $dataTable,
                 $releaseDialog;
             let releaseId = "";
@@ -296,7 +310,9 @@
                 document.getElementById("tableBody").innerHTML = newRow;
                 $('.spinner').hide();
             }
-
+            $('.show-alert .close').on('click', function(event) {
+                $('.show-alert').css('display', 'none');
+            });
             $('#LinkedReleasesNetwork').on('click', 'svg[data-row-id]', function(event) {
                 let current = $(this).closest('tr').find('select').eq(0).val();
                 let currentLayer =  $(this).closest('tr').attr('data-layer');
@@ -354,7 +370,7 @@
             function replaceNode(releasesLinked, i, trace, newNode, newSelect, oldSelect){
                 let index = trace[i];
                 if(i === (trace.length - 1)) {
-                     releasesLinked[index] = newNode;
+                     releasesLinked[index].releaseLink = newNode.releaseLink;
                      return;
                 }
                 else{
@@ -370,7 +386,7 @@
                let parentNode = $(this).closest('tr').attr('parent-node');
                let currentIndex = $(this).closest('tr').attr('data-index');
                let version = $(this).closest('tr').find('select').eq(0).find('option:selected').text();
-               let componentName = $(this).closest('tr').find('td').eq(0).text().trim();
+               let componentName = $(this).closest('tr').find('td').eq(0).find('div').eq(0).text().trim();
                let i=0;
                let trace = [];
                trace.unshift(currentIndex);
@@ -378,6 +394,11 @@
                for(let layer = currentLayer - 1; layer >= 0; layer-- ) {
                     trace.unshift($(this).closest('tr').prevAll('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').first().attr('data-index'));
                     parentNode =  $(this).closest('tr').prevAll('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').first().attr('parent-node');
+               }
+               if (checkDuplicateReleaseWithSameLevel(trace, idValue)) {
+                   $(this).closest('tr').find('select').eq(0).val(oldSelect);
+                   displayAlert('Release ' + componentName + '(' + version + ')' + ' duplicated :(');
+                   return;
                }
                replaceValueOfNode(releaseWithRelations, i, trace, idValue, "", "releaseId");
                $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
@@ -435,7 +456,7 @@
                     } else if (type == "mainLineState") {
                         releasesLinked[index].mainlineState = idValue;
                     } else if (type == "comment") {
-                        releasesLinked[index].comment = textValue;
+                        releasesLinked[index].comment = textValue.trim();;
                     }
                     return;
                 }
@@ -476,19 +497,17 @@
                 }
             }
 
-            function addChildNode(releasesLinked, i, trace, newNode) {
+            function addChildNode(releasesLinked, i, trace, newNodes) {
                 let index = trace[i];
                 if (i === (trace.length - 1)) {
-                    releasesLinked[index].releaseLink.push(newNode);
+                    releasesLinked[index].releaseLink.push(...newNodes);
                     return;
                 }
                 else {
                     i++;
-                    addChildNode(releasesLinked[index].releaseLink, i, trace, newNode);
+                    addChildNode(releasesLinked[index].releaseLink, i, trace, newNodes);
                 }
             }
-
-
 
             function releaseRelationFromAjax(what, where, parentIds, layers, mainLineState, releaseRelation, indexes, comments) {
                 return new Promise(function(resolve, reject) {
@@ -581,7 +600,7 @@
                 }
 
                 $releaseDialog = dialog.open('#searchChildReleaseDialog', {
-                }, function(submit, callback) {
+                }, async function(submit, callback) {
                     var releaseIds = [];
                     var releaseNames = [];
 
@@ -599,27 +618,52 @@
                         releaseNames.push($(this).closest('tr').find('td').eq(2).find('a').html() + ' (' + $(this).closest('tr').find('td').eq(3).find('a').html() + ')');
                     });
                     let numberOfNodeSameLevel = $('tr[parent-node="'+parentId+'"][data-layer="'+(parentLayer+1)+'"]').length;
-                    for (let [index, releaseId] of releaseIds.entries()) {
-                        let i=0;
-                        let toArray = [];
-                        toArray.push(releaseId);
-                        let indexOfNode = numberOfNodeSameLevel + index;
-                        addReleaseToTable('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', toArray, [parentId], [(parentLayer+1)], ["OPEN"], ["CONTAINED"], [indexOfNode], [""], function(result){
-                            selectedElement.after(result);
-                        });
-                        let selectedRelease = {
-                              "releaseLink": [],
-                              "releaseId": releaseId,
-                              "releaseRelationship": "CONTAINED",
-                              "mainlineState": "OPEN",
-                              "comment": "",
-                              "createOn": "<%=SW360Utils.getCreatedOn()%>",
-                              "createBy": "${loginUser.email}"
-                        }
 
-                        addChildNode(releaseWithRelations, i, trace, selectedRelease);
+                    let canLinkReleases = [];
+                    let parentIds = [];
+                    let levels = [];
+                    let mainlineStates = [];
+                    let releaseRelationships = [];
+                    let indexOfNodes = [];
+                    let comments = [];
+                    let selectedReleases = [];
+                    let releaseDuplicates = [];
+                    let i=0;
+                    for (let [index, releaseId] of releaseIds.entries()) {
+                        let indexOfNode = numberOfNodeSameLevel + index;
+                        if (checkDuplicateSubRelease(trace, releaseId)) {
+                            releaseDuplicates.push(releaseNames[index]);
+                            continue;
+                        }
+                        let releaseWithIdExisted = await checkReleaseExist('<%=PortalConstants.CHECK_RELEASE_EXIST%>', releaseId);
+                        if (releaseWithIdExisted != null && releaseWithIdExisted == true) {
+                            canLinkReleases.push(releaseId);
+                            parentIds.push(parentId);
+                            levels.push((parentLayer+1));
+                            mainlineStates.push("OPEN");
+                            releaseRelationships.push("CONTAINED");
+                            indexOfNodes.push(indexOfNode);
+                            comments.push("");
+                            let selectedRelease = {
+                                  "releaseLink": [],
+                                  "releaseId": releaseId,
+                                  "releaseRelationship": "CONTAINED",
+                                  "mainlineState": "OPEN",
+                                  "comment": "",
+                                  "createOn": "<%=SW360Utils.getCreatedOn()%>",
+                                  "createBy": "${loginUser.email}"
+                            }
+                            selectedReleases.push(selectedRelease);
+                        }
                     }
+
+                    addChildNode(releaseWithRelations, i, trace, selectedReleases);
+                    let releaseRows = await addReleaseToTable('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', canLinkReleases, parentIds, levels, mainlineStates, releaseRelationships, indexOfNodes, comments);
+                    selectedElement.after(releaseRows);
                     $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
+                    if (releaseDuplicates.length > 0) {
+                        displayAlert('Releases duplicated: ' + releaseDuplicates.join(', '));
+                    }
                     callback(true);
                 }, function() {
                     $('#searchChildResultsTable').hide();
@@ -688,7 +732,7 @@
                 }
 
                 $releaseDialog = dialog.open('#searchReleasesDialogOfNetwork', {
-                }, function(submit, callback) {
+                }, async function(submit, callback) {
                     var releaseIds = [];
                     var releaseNames = [];
 
@@ -696,26 +740,50 @@
                         releaseIds.push(this.value);
                         releaseNames.push($(this).closest('tr').find('td').eq(2).find('a').html() + ' (' + $(this).closest('tr').find('td').eq(3).find('a').html() + ')');
                     });
+
                     let numberOfRootExisted = $('tr[parent-node=""]').length;
+                    let canLinkReleases = [];
+                    let parentIds = [];
+                    let levels = [];
+                    let mainlineStates = [];
+                    let releaseRelationships = [];
+                    let indexOfNodes = [];
+                    let comments = [];
+                    let releaseDuplicates = [];
                     for (let [index, releaseId] of releaseIds.entries()) {
-                        let toArray = [];
-                        toArray.push(releaseId);
                         let indexOfNode = numberOfRootExisted + index;
-                        addReleaseToTable('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', toArray, [""], [0], ["OPEN"], ["CONTAINED"], [indexOfNode], [""], function(result){
-                            $('#LinkedReleasesNetwork tbody').append(result);
-                        });
-                        let selectedRelease = {
-                              "releaseLink": [],
-                              "releaseId": releaseId,
-                              "releaseRelationship": "CONTAINED",
-                              "mainlineState": "OPEN",
-                              "comment": "",
-                              "createOn": "<%=SW360Utils.getCreatedOn()%>",
-                              "createBy": "${loginUser.email}"
+                        let numberOfReleaseWithSameId = $('tr[parent-node=""][id="releaseLinkRow' + releaseId + '"]').length;
+                        if (numberOfReleaseWithSameId > 0) {
+                            releaseDuplicates.push(releaseNames[index]);
+                            continue;
                         }
-                        releaseWithRelations.push(selectedRelease);
+                        let releaseWithIdExisted = await checkReleaseExist('<%=PortalConstants.CHECK_RELEASE_EXIST%>', releaseId);
+                        if (releaseWithIdExisted != null && releaseWithIdExisted == true) {
+                            canLinkReleases.push(releaseId);
+                            parentIds.push("");
+                            levels.push(0);
+                            mainlineStates.push("OPEN");
+                            releaseRelationships.push("CONTAINED");
+                            indexOfNodes.push(indexOfNode);
+                            comments.push("");
+                            let selectedRelease = {
+                                  "releaseLink": [],
+                                  "releaseId": releaseId,
+                                  "releaseRelationship": "CONTAINED",
+                                  "mainlineState": "OPEN",
+                                  "comment": "",
+                                  "createOn": "<%=SW360Utils.getCreatedOn()%>",
+                                  "createBy": "${loginUser.email}"
+                            }
+                            releaseWithRelations.push(selectedRelease);
+                        }
                     }
+                    let releaseRows = await addReleaseToTable('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', canLinkReleases, parentIds, levels, mainlineStates, releaseRelationships, indexOfNodes, comments);
+                    $('#LinkedReleasesNetwork tbody').append(releaseRows);
                     $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
+                    if (releaseDuplicates.length > 0) {
+                        displayAlert('Releases duplicated: ' + releaseDuplicates.join(', '));
+                    }
                     callback(true);
                 }, function() {
                     this.$.find('#releaseResultsTable').hide();
@@ -769,26 +837,29 @@
                 });
              }
 
-            function addReleaseToTable(what, where, parentIds, layers, mainLineState, releaseRelation, indexes, comments, callback){
-                jQuery.ajax({
-                    type: 'POST',
-                    url: '<%=viewReleaseURL%>',
-                    data: {
-                        '<portlet:namespace/><%=PortalConstants.WHAT%>': what,
-                        '<portlet:namespace/><%=PortalConstants.WHERE%>': where,
-                        '<portlet:namespace/><%=PortalConstants.PARENT_NODE_ID%>': parentIds,
-                        '<portlet:namespace/><%=PortalConstants.LAYER%>': layers,
-                        '<portlet:namespace/><%=PortalConstants.MAINLINE_STATE%>': mainLineState,
-                        '<portlet:namespace/><%=PortalConstants.RELEASE_RELATION_SHIP%>': releaseRelation,
-                        '<portlet:namespace/><%=PortalConstants.INDEXES%>': indexes,
-                        '<portlet:namespace/><%=PortalConstants.COMMENTS%>': comments
-                    },
-                    success: function (data) {
-                        callback(data);
-                    },
-                    error: function() {
-                        $releaseDialog.alert('<liferay-ui:message key="cannot.link.to.release" />');
-                    }
+            function addReleaseToTable(what, where, parentIds, layers, mainLineState, releaseRelation, indexes, comments){
+                return new Promise(function(resolve, reject) {
+                    jQuery.ajax({
+                        type: 'POST',
+                        url: '<%=viewReleaseURL%>',
+                        data: {
+                            '<portlet:namespace/><%=PortalConstants.WHAT%>': what,
+                            '<portlet:namespace/><%=PortalConstants.WHERE%>': where,
+                            '<portlet:namespace/><%=PortalConstants.PARENT_NODE_ID%>': parentIds,
+                            '<portlet:namespace/><%=PortalConstants.LAYER%>': layers,
+                            '<portlet:namespace/><%=PortalConstants.MAINLINE_STATE%>': mainLineState,
+                            '<portlet:namespace/><%=PortalConstants.RELEASE_RELATION_SHIP%>': releaseRelation,
+                            '<portlet:namespace/><%=PortalConstants.INDEXES%>': indexes,
+                            '<portlet:namespace/><%=PortalConstants.COMMENTS%>': comments
+                        },
+                        success: function (data) {
+                            resolve(data);
+                        },
+                        error: function() {
+                            reject("");
+                            $releaseDialog.alert('<liferay-ui:message key="cannot.link.to.release" />');
+                        }
+                    });
                 });
             }
 
@@ -806,7 +877,6 @@
                 return viewUrl[0].outerHTML;
             }
 
-
             function addLinkToReleaseNameAndVersion(tableId) {
                 $('#'+tableId+' > tbody  > tr').each(function() {
                     let $releasId = $('td:eq(0)', this).find("input[type='checkbox']").val();
@@ -818,6 +888,68 @@
                     $relName.html(linkOnRelName);
                     $relVersion.html(linkOnRelVersion);
              });
+            }
+
+            function checkReleaseExist(what, releaseId){
+                return new Promise(function(resolve, reject) {
+                    jQuery.ajax({
+                        type: 'POST',
+                        url: '<%=viewReleaseURL%>',
+                        data: {
+                            '<portlet:namespace/><%=PortalConstants.WHAT%>': what,
+                            '<portlet:namespace/><%=PortalConstants.RELEASE_ID%>': releaseId
+                        },
+                        success: function (data) {
+                            resolve(data.result);
+                        },
+                        error: function() {
+                            reject(null);
+                        }
+                    });
+                });
+            }
+
+            function checkDuplicateSubRelease(trace, releaseId) {
+                let node = releaseWithRelations;
+                for (let i = 0; i < trace.length; i++) {
+                    node = node[trace[i]];
+                    let releasesWithSameRoot = node.releaseLink.map((subNode) => subNode.releaseId);
+                    if (releasesWithSameRoot.includes(releaseId)) {
+                        return true;
+                    }
+                    node = node.releaseLink;
+                }
+                return false;
+            }
+
+            function checkDuplicateReleaseWithSameLevel(trace, releaseId) {
+                let node = releaseWithRelations;
+                if (trace.length == 1) {
+                    let releasesWithSameRoot = node.map((subNode) => subNode.releaseId);
+                    if (releasesWithSameRoot.includes(releaseId)) {
+                        return true;
+                    }
+                }
+                else {
+                    for (let i = 0; i < trace.length - 1; i++) {
+                        node = node[trace[i]];
+                        let releasesWithSameRoot = node.releaseLink.map((subNode) => subNode.releaseId);
+                        if (releasesWithSameRoot.includes(releaseId)) {
+                            return true;
+                        }
+                        node = node.releaseLink;
+                    }
+                }
+                return false;
+            }
+
+            function displayAlert(text) {
+                $('.show-alert .alert-message').text(text);
+                $('.show-alert').css('display','block');
+                setTimeout(() => {
+                    $('.show-alert .alert-message').text('');
+                    $('.show-alert').css('display','none');
+                }, 5000);
             }
         });
     });

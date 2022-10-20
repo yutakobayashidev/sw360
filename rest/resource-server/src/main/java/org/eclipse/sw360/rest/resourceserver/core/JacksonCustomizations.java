@@ -143,8 +143,6 @@ public class JacksonCustomizations {
                 "setContributors",
                 "linkedProjectsSize",
                 "setLinkedProjects",
-                "releaseIdToUsageSize",
-                "setReleaseIdToUsage",
                 "setClearingTeam",
                 "setPreevaluationDeadline",
                 "setSystemTestStart",
@@ -206,9 +204,8 @@ public class JacksonCustomizations {
             abstract public Map<String, ProjectProjectRelationship> getLinkedProjects();
 
             @Override
-            @JsonSerialize(using = JsonReleaseRelationSerializer.class)
-            @JsonProperty("linkedReleases")
-            abstract public Map<String, ProjectReleaseRelationship> getReleaseIdToUsage();
+            @JsonProperty("releaseRelationNetwork")
+            abstract public String getReleaseRelationNetwork();
 
             @Override
             @JsonProperty("visibility")
@@ -467,7 +464,8 @@ public class JacksonCustomizations {
                 "setModifiedOn",
                 "modifiedOn",
                 "setModifiedBy",
-                "modifiedBy"
+                "modifiedBy",
+                "setComponentType"
         })
         static abstract class ReleaseMixin extends Release {
             @Override
@@ -780,9 +778,9 @@ public class JacksonCustomizations {
                 "materialIndexNumber",
                 "assessmentDate",
                 "setEccComment",
-                "setECCN",
+                "setEccn",
                 "setEccStatus",
-                "setAL",
+                "setAl",
                 "setAssessorContactPerson",
                 "setAssessmentDate",
                 "setAssessorDepartment",

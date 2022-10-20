@@ -502,7 +502,11 @@ public class PortalConstants {
     public static final String PARENT_SCOPE_GROUP_ID = "parentScopeGroupId";
 
     // bom import
+    public static final String PREPARE_IMPORT_BOM = "prepareImportBom";
     public static final String IMPORT_BOM = "importBom";
+    public static final String IMPORT_BOM_AS_NEW = "importBomAsNew";
+    public static final String NEW_RELEASE_VERSION = "newReleaseVersion";
+    public static final String RDF_FILE_PATH = "rdfFilePath";
 
     // project actions
     public static final String VIEW_LINKED_PROJECTS = "view_linked_projects";
@@ -651,6 +655,7 @@ public class PortalConstants {
     // Rest API constants
     public static final UserGroup API_WRITE_ACCESS_USERGROUP;
     public static final Boolean API_TOKEN_ENABLE_GENERATOR;
+    public static final Boolean REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES;
     public static final String API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
     public static final String API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS;
     public static final String API_TOKEN_HASH_SALT;
@@ -678,7 +683,8 @@ public class PortalConstants {
     public static final String RELEASES_IN_NETWORK = "releasesInNetwork";
     public static final String NUMBER_LINKED_RELEASE = "numberLinkedRelease";
     public static final String TOTAL_RELEASE_COUNT = "totalReleaseCount";
-
+    public static final String CHECK_RELEASE_EXIST = "checkReleaseExist";
+    public static final String RELEASE_USAGE = "releaseUsage";
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 
@@ -708,6 +714,7 @@ public class PortalConstants {
         CUSTOM_WELCOME_PAGE_GUIDELINE = Boolean.parseBoolean(props.getProperty("custom.welcome.page.guideline", "false"));
         // SW360 REST API Constants
         API_TOKEN_ENABLE_GENERATOR = Boolean.parseBoolean(props.getProperty("rest.apitoken.generator.enable", "false"));
+        REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES = Boolean.parseBoolean(props.getProperty("rest.api.write.access.token.in.preferences", "false"));
         API_TOKEN_MAX_VALIDITY_READ_IN_DAYS = props.getProperty("rest.apitoken.read.validity.days", "90");
         API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS = props.getProperty("rest.apitoken.write.validity.days", "30");
         API_TOKEN_HASH_SALT = props.getProperty("rest.apitoken.hash.salt", "$2a$04$Software360RestApiSalt");

@@ -13,13 +13,17 @@
 
 package org.eclipse.sw360.clients.rest;
 
-import org.eclipse.sw360.clients.rest.resource.projects.*;
 import org.eclipse.sw360.http.RequestBuilder;
 import org.eclipse.sw360.http.utils.HttpConstants;
 import org.eclipse.sw360.http.utils.HttpUtils;
 import org.eclipse.sw360.clients.auth.AccessTokenProvider;
 import org.eclipse.sw360.clients.config.SW360ClientConfig;
 import org.eclipse.sw360.clients.rest.resource.SW360Attributes;
+import org.eclipse.sw360.clients.rest.resource.projects.ProjectSearchParams;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360Project;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectList;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectDTO;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectDTOList;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360ReleaseList;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
 import org.eclipse.sw360.clients.utils.SW360ResourceUtils;

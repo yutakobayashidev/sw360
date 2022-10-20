@@ -12,12 +12,14 @@ package org.eclipse.sw360.portal.portlets.components;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.gson.Gson;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -240,6 +242,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             importBom(request, response);
         } else if (PortalConstants.LICENSE_TO_SOURCE_FILE.equals(action)) {
             serveLicenseToSourceFileMapping(request, response);
+        }  else if (PortalConstants.PREPARE_IMPORT_BOM.equals(action)) {
+            prepareImportBom(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
         } else if (PortalConstants.LOAD_CHANGE_LOGS.equals(action) || PortalConstants.VIEW_CHANGE_LOGS.equals(action)) {
@@ -422,6 +426,19 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         include("/html/components/ajax/departmentSearch.jsp", request, response, PortletRequest.RESOURCE_PHASE);
     }
 
+    private void prepareImportBom(ResourceRequest request, ResourceResponse response) {
+        final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        User user = UserCacheHolder.getUserFromRequest(request);
+        String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
+        try {
+            final ImportBomRequestPreparation importBomRequestPreparation = componentClient.prepareImportBom(user, attachmentContentId);
+            renderRequestPreparation(request, response, importBomRequestPreparation);
+        } catch (TException e) {
+            log.error("Failed to import BOM.", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+        }
+    }
+
     private void serveCheckComponentName(ResourceRequest request, ResourceResponse response) throws IOException {
         List<Component> resultComponents = new ArrayList<>();
         List<String> errors = new ArrayList<>();
@@ -544,7 +561,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         } catch (TException e) {
             log.error(e.getMessage());
         }
-        if (getUsingProjectByReleaseIds(releaseIdToSet, allProjects).size() > 0) {
+        if (SW360Utils.getUsingProjectByReleaseIds(releaseIdToSet, null).size() > 0) {
             serveRequestStatus(request, response, RequestStatus.IN_USE, "Problem removing release", log);
         } else {
             final RequestStatus requestStatus = ComponentPortletUtils.deleteRelease(request, log);
@@ -1091,6 +1108,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             request.setAttribute(RELEASE_LIST, Collections.emptyList());
             request.setAttribute(TOTAL_INACCESSIBLE_ROWS, 0);
             setUsingDocs(request, null, user, client);
+            release.unsetExternalIds();
             request.setAttribute(RELEASE, release);
             request.setAttribute(PortalConstants.ATTACHMENTS, Collections.emptySet());
 
@@ -1608,12 +1626,10 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
         if (releaseIds != null && releaseIds.size() > 0) {
             try {
-                Set<Project> setProjectsWithAccessible = projectClient.getAccessibleProjects(user);
-                Set<Project> allProjects = projectClient.getAll().stream().collect(Collectors.toSet());
                 usingComponentsForComponent = client.getUsingComponentsWithAccessibilityForComponent(releaseIds, user);
-                usingProjectInDependencyNetwork = getUsingProjectByReleaseIds(releaseIds, setProjectsWithAccessible);
+                usingProjectInDependencyNetwork = SW360Utils.getUsingProjectByReleaseIds(releaseIds, user);
                 request.setAttribute(USING_PROJECTS, new HashSet<>(usingProjectInDependencyNetwork));
-                request.setAttribute(ALL_USING_PROJECTS_COUNT, getUsingProjectByReleaseIds(releaseIds, allProjects).size());
+                request.setAttribute(ALL_USING_PROJECTS_COUNT, SW360Utils.getUsingProjectByReleaseIds(releaseIds, null).size());
             } catch (TException e) {
                 log.error("Problem filling using docs", e);
             }
@@ -1853,17 +1869,14 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
 
     private void setUsingDocs(RenderRequest request, String releaseId, User user, ComponentService.Iface client) throws TException {
-        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
         if (releaseId != null) {
-            Set<Project> setProjectsWithAccessible = projectClient.getAccessibleProjects(user);
-            Set<Project> allProjects = projectClient.getAll().stream().collect(Collectors.toSet());
             final Set<Component> usingComponentsForRelease = client.getUsingComponentsWithAccessibilityForRelease(releaseId, user);
             Set<String> releaseIdSet = new HashSet<>();
             releaseIdSet.add(releaseId);
-            List<Project> usingProjectInDependencyNetwork = getUsingProjectByReleaseIds(releaseIdSet, setProjectsWithAccessible);
+            List<Project> usingProjectInDependencyNetwork = SW360Utils.getUsingProjectByReleaseIds(releaseIdSet, user);
             request.setAttribute(USING_COMPONENTS, nullToEmptySet(usingComponentsForRelease));
             request.setAttribute(USING_PROJECTS, new HashSet<>(usingProjectInDependencyNetwork));
-            request.setAttribute(ALL_USING_PROJECTS_COUNT, getUsingProjectByReleaseIds(releaseIdSet, allProjects).size());
+            request.setAttribute(ALL_USING_PROJECTS_COUNT, SW360Utils.getUsingProjectByReleaseIds(releaseIdSet, null).size());
         } else {
             request.setAttribute(USING_PROJECTS,  Collections.emptySet());
             request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
@@ -2364,21 +2377,41 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         String projectId = request.getParameter(PortalConstants.PROJECT_ID);
         String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
 
+        ObjectMapper objectMapper = new ObjectMapper();
 
         try {
             log.debug("Link release [" + releaseId + "] to project [" + projectId + "]");
 
             ProjectService.Iface client = thriftClients.makeProjectClient();
+            ComponentService.Iface releaseClient = thriftClients.makeComponentClient();
             Project project = client.getProjectByIdForEdit(projectId, user);
 
-            project.putToReleaseIdToUsage(releaseId,
-                    new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.OPEN));
+            Release releaseById = releaseClient.getAccessibleReleaseById(releaseId, user);
+            ReleaseLinkJSON dependencyOfRelease = releaseClient.getReleaseRelationNetworkOfRelease(releaseById, user).get(0);
+
+            List<ReleaseLinkJSON> currentDependencyNetwork = new ArrayList<>();
+            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+            if (project.getReleaseRelationNetwork() != null) {
+                currentDependencyNetwork = objectMapper.readValue(project.getReleaseRelationNetwork(), new TypeReference<List<ReleaseLinkJSON>>() {
+                });
+                if (currentDependencyNetwork.stream().map(ReleaseLinkJSON::getReleaseId).collect(Collectors.toList()).contains(releaseId)) {
+                    jsonObject.put("success", false);
+                } else {
+                    jsonObject.put("success", true);
+                    jsonObject.put("releaseId", releaseId);
+                    jsonObject.put("projectId", projectId);
+                    currentDependencyNetwork.add(dependencyOfRelease);
+                }
+            } else {
+                jsonObject.put("success", true);
+                jsonObject.put("releaseId", releaseId);
+                jsonObject.put("projectId", projectId);
+                currentDependencyNetwork = Collections.singletonList(dependencyOfRelease);
+            }
+
+            project.setReleaseRelationNetwork(new Gson().toJson(currentDependencyNetwork));
             client.updateProject(project, user);
 
-            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
-            jsonObject.put("success", true);
-            jsonObject.put("releaseId", releaseId);
-            jsonObject.put("projectId", projectId);
             writeJSON(request, response, jsonObject);
         } catch (TException exception) {
             log.error("Cannot link release [" + releaseId + "] to project [" + projectId + "].");
@@ -2546,25 +2579,5 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         } else {
             return CommonUtils.COMMA_JOINER.join(strings.stream().sorted().collect(Collectors.toList()));
         }
-    }
-
-    private List<Project> getUsingProjectByReleaseIds(Set<String> releaseIds, Set<Project> projects) {
-        List<Project> projectsUsing = new ArrayList<>();
-        projects.forEach(p -> {
-            boolean contain = false;
-            for (String releaseId : releaseIds) {
-                if (p.getReleaseRelationNetwork() == null) {
-                    return;
-                }
-                if (p.getReleaseRelationNetwork().contains("\"releaseId\":\"" + releaseId + "\"")) {
-                    contain = true;
-                    break;
-                }
-            }
-            if (contain == true) {
-                projectsUsing.add(p);
-            }
-        });
-        return projectsUsing;
     }
 }

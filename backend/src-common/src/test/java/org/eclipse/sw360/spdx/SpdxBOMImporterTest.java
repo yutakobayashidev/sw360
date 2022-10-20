@@ -62,7 +62,7 @@ public class SpdxBOMImporterTest {
         });
 
         attachmentContent = new AttachmentContent();
-        attachmentContent.setFilename("attchmentContentFilename");
+        attachmentContent.setFilename("attchmentContentFilename.rdf");
         attachmentContent.setContentType("contentType");
         attachmentContent.setId("attachmentContentId");
     }

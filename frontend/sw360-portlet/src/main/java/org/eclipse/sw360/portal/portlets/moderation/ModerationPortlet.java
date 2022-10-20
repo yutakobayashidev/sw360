@@ -44,7 +44,11 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RemoveModeratorRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.components.*;
+import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLinkJSON;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
@@ -505,7 +509,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
                 request.setAttribute(TOTAL_RELEASE_COUNT, SW360Utils.getReleaseIdsLinkedWithProject(project).size());
             }
             if (clearingRequest.getTimestampOfDecision() > 1) {
-                Integer criticalCount = client.getCriticalClearingRequestCount();
+                Integer criticalCount = client.getOpenCriticalCrCountByGroup(user.getDepartment());
                 request.setAttribute(CRITICAL_CR_COUNT, criticalCount);
             }
             String dateLimit = CommonUtils.nullToEmptyString(ModerationPortletUtils.loadPreferredClearingDateLimit(request, user));
@@ -948,7 +952,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_PROJECT);
             setAttachmentsInRequest(request, actual_project);
             ModerationService.Iface modClient = thriftClients.makeModerationClient();
-            Integer criticalCount = modClient.getCriticalClearingRequestCount();
+            Integer criticalCount = modClient.getOpenCriticalCrCountByGroup(user.getDepartment());
             request.setAttribute(CRITICAL_CR_COUNT, criticalCount);
             if (actual_project.getReleaseRelationNetwork() == null) {
                 request.setAttribute(NUMBER_LINKED_RELEASE, 0);

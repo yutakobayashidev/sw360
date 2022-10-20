@@ -50,7 +50,6 @@ public class ProjectExporter extends ExcelExporter<Project, ProjectHelper> {
         nameToDisplayName.put(VISBILITY.getFieldName(), "visibility");
         nameToDisplayName.put(PROJECT_TYPE.getFieldName(), "project type");
         nameToDisplayName.put(LINKED_PROJECTS.getFieldName(), "linked projects with relationship");
-        nameToDisplayName.put(RELEASE_ID_TO_USAGE.getFieldName(), "releases with usage");
         nameToDisplayName.put(CLEARING_TEAM.getFieldName(), "clearing team");
         nameToDisplayName.put(PREEVALUATION_DEADLINE.getFieldName(), "pre-evaluation deadline");
         nameToDisplayName.put(SYSTEM_TEST_START.getFieldName(), "system test start");

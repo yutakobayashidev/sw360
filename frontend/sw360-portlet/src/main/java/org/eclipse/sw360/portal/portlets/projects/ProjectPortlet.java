@@ -470,7 +470,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             clearingRequest.setRequestingUser(user.getEmail());
             clearingRequest.setClearingState(ClearingRequestState.NEW);
             ModerationService.Iface modClient = thriftClients.makeModerationClient();
-            Integer criticalCount = modClient.getCriticalClearingRequestCount();
+            Integer criticalCount = modClient.getOpenCriticalCrCountByGroup(user.getDepartment());
             clearingRequest.setPriority(criticalCount > 1 ? null : clearingRequest.getPriority());
             LiferayPortletURL projectUrl = createDetailLinkTemplate(request);
             projectUrl.setParameter(PROJECT_ID, clearingRequest.getProjectId());
@@ -1255,6 +1255,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             } catch (TException e) {
                 throw new RuntimeException(e);
             }
+        } else if (PortalConstants.CHECK_RELEASE_EXIST.equals(what)) {
+            String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
+            severCheckReleaseExistOrAccessibleToLink(request, response, releaseId);
         }
     }
 
@@ -1500,7 +1503,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             request.setAttribute(PortalConstants.ORGANIZATIONS, organizations);
             String dateLimit = CommonUtils.nullToEmptyString(ModerationPortletUtils.loadPreferredClearingDateLimit(request, UserCacheHolder.getUserFromRequest(request)));
             request.setAttribute(CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT, dateLimit);
-            Integer criticalCount = modClient.getCriticalClearingRequestCount();
+            Integer criticalCount = modClient.getOpenCriticalCrCountByGroup(user.getDepartment());
             request.setAttribute(CRITICAL_CR_COUNT, criticalCount);
         } catch(TException e) {
             log.error("Error in getting the projectList from backend ", e);
@@ -1651,7 +1654,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 String dateLimit = CommonUtils.nullToEmptyString(ModerationPortletUtils.loadPreferredClearingDateLimit(request, UserCacheHolder.getUserFromRequest(request)));
                 request.setAttribute(CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT, dateLimit);
                 ModerationService.Iface modClient = thriftClients.makeModerationClient();
-                Integer criticalCount = modClient.getCriticalClearingRequestCount();
+                Integer criticalCount = modClient.getOpenCriticalCrCountByGroup(user.getDepartment());
                 request.setAttribute(IS_CLEARING_REQUEST_DISABLED_FOR_PROJECT_BU, false);
                 Set<String> groupsWithCrDisabled = Stream.of(PortalConstants.DISABLE_CLEARING_REQUEST_FOR_PROJECT_WITH_GROUPS.toLowerCase().split(",")).collect(Collectors.toSet());
                 if (CommonUtils.isNotEmpty(groupsWithCrDisabled) && groupsWithCrDisabled.contains(project.getBusinessUnit().toLowerCase())
@@ -2440,7 +2443,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 AddDocumentRequestStatus status = summary.getRequestStatus();
 
                 if (null != sourceProjectId && AddDocumentRequestStatus.SUCCESS.equals(status)) {
-                    if (project.getReleaseIdToUsageSize() > 0) {
+                    if (SW360Utils.getReleaseIdsLinkedWithProject(project).size() > 0) {
                         Project sourceProject = client.getProjectById(sourceProjectId, user);
                         if (CommonUtils.isNotNullEmptyOrWhitespace(sourceProject.getLinkedObligationId())) {
                             project.setId(newProjectId);
@@ -3311,10 +3314,25 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         User user = UserCacheHolder.getUserFromRequest(request);
         JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
         Release release = releaseClient.getAccessibleReleaseById(releaseId,user);
-        List<Release> releases = new ArrayList<>();
-        releases.add(release);
-        List<ReleaseLinkJSON> releaseLinkJSONS = getNetworkLinkedRelease(releases, user);
+        List<ReleaseLinkJSON> releaseLinkJSONS = releaseClient.getReleaseRelationNetworkOfRelease(release, user);
         jsonObject.put(PortalConstants.RESULT, releaseLinkJSONS);
+        try {
+            writeJSON(request, response, jsonObject);
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void severCheckReleaseExistOrAccessibleToLink(ResourceRequest request, ResourceResponse response, String releaseId) {
+        ComponentService.Iface releaseClient = thriftClients.makeComponentClient();
+        User user = UserCacheHolder.getUserFromRequest(request);
+        JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+        try {
+            releaseClient.getAccessibleReleaseById(releaseId, user);
+            jsonObject.put(PortalConstants.RESULT, true);
+        } catch (TException e) {
+            jsonObject.put(PortalConstants.RESULT, false);
+        }
         try {
             writeJSON(request, response, jsonObject);
         } catch (IOException e) {

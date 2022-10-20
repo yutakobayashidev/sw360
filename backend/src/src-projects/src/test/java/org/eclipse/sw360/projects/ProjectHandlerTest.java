@@ -223,7 +223,7 @@ public class ProjectHandlerTest {
         ProjectModerator moderator = Mockito.mock(ProjectModerator.class);
 
         ProjectDatabaseHandler handler = new ProjectDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogDbName, attachmentDbName, moderator,
-                new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentDbName),
+                new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentDbName),
                 new AttachmentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentDbName));
         Project project2 = handler.getProjectById("P2", user1);
         project2.setName("Project2new");

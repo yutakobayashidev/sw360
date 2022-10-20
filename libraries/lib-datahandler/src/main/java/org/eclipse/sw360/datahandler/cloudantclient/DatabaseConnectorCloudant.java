@@ -12,7 +12,14 @@ package org.eclipse.sw360.datahandler.cloudantclient;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.ArrayList;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 

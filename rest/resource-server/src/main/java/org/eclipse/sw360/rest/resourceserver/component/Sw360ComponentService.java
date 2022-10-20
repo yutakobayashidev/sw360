@@ -42,6 +42,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.getSortedMap;
 
@@ -162,28 +163,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         return new ProjectService.Client(protocol);
     }
 
-    public Set<Project> getUsingProjectAccesibleByReleaseIds(Set<String> releaseIds, User user) throws TException {
-        ProjectService.Iface projectClient = getThriftProjectClient();
-        Set<Project> projects = null;
-        Set<Project> projectsUsing = new HashSet<>();
-
-        projects = projectClient.getAccessibleProjects(user);
-        projects.forEach(p -> {
-            boolean contain = false;
-            for (String releaseId : releaseIds) {
-                if (p.getReleaseRelationNetwork() == null) {
-                    return;
-                }
-                if (p.getReleaseRelationNetwork().contains("\"releaseId\":\"" + releaseId + "\"")) {
-                    contain = true;
-                    break;
-                }
-            }
-            if (contain == true) {
-                projectsUsing.add(p);
-            }
-        });
-
-        return projectsUsing;
+    public Set<Project> getUsingProjectAccesibleByReleaseIds(Set<String> releaseIds, User user) {
+        return SW360Utils.getUsingProjectByReleaseIds(releaseIds, user).stream().collect(Collectors.toSet());
     }
 }
