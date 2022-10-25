@@ -45,6 +45,13 @@
         <tr>
             <th><liferay-ui:message key="release.name" /></th>
             <th><liferay-ui:message key="release.version" /></th>
+            <th><liferay-ui:message key="reload.info" />
+                <span class="sw360-tt sw360-tt-ReloadInfo" data-content="<liferay-ui:message key='load.default.child.releases' />">
+                    <svg class='lexicon-icon'>
+                        <use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open' />
+                    </svg>
+                </span>
+            </th>
             <th><liferay-ui:message key="release.relation" /> <sw360:DisplayEnumInfo type="<%=ReleaseRelationship.class%>"/></th>
             <th><liferay-ui:message key="project.mainline.state" /> <sw360:DisplayEnumInfo type="<%=MainlineState.class%>"/></th>
             <th><liferay-ui:message key="comments" /></th>

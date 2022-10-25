@@ -30,25 +30,23 @@
 
             <core_rt:set var="uuid" value="${releaseLink.id}"/>
             <tr id="releaseLinkRow${uuid}" parent-node="${releaseLink.parentNodeId}" data-layer="${releaseLink.layer}" data-index="${releaseLink.index}">
-                <td style="vertical-align:middle;font-size:1rem; width: 38%" style="display:flex">
-                    <div style="width:85%; display:inline-block">
+                <td style="vertical-align:middle;font-size:1rem;display:flex;width:100%" class="content-middle">
+                    <div style="display:block">
                         <core_rt:forEach begin="0" end="${releaseLink.layer}" var="val">
                               &nbsp;&nbsp;&nbsp;&nbsp;
                         </core_rt:forEach>
-                        <sw360:out value="${releaseLink.name}"/>
                     </div>
-                    <div style="width:13%; display:inline-block">
-                        <button type="button" class="btn btn-secondary add-child" style="width:64%">
-                            <svg class="action lexicon-icon" style="width:15px">
-                                <title><liferay-ui:message key="add.child.releases" /></title>
-                                <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#plus"/>
-                            </svg>
-                        </button>
-                    </div>
+                    <span style="width:max-content;"><sw360:out value="${releaseLink.name}"/></span>
+                    <button type="button" class="btn btn-secondary add-child float-right" style="margin-left: auto; margin-right: 0px;">
+                        <svg class="action lexicon-icon" style="width:15px">
+                            <title><liferay-ui:message key="add.child.releases" /></title>
+                            <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#plus"/>
+                        </svg>
+                    </button>
                 </td>
-                <td style="width: 15%">
+                <td>
                     <div class="form-group">
-                        <select id="projectReleaseVersion" class="form-control releaseVersion" style="width:80%;display:inline-block"
+                        <select id="projectReleaseVersion" class="form-control releaseVersion" style="display:inline-block"
                              data-old="<sw360:out value="${releaseLink.id}"/>">
                             <core_rt:forEach items="${releaseLink.releaseWithSameComponent}" var="release">
                                 <core_rt:if test = "${releaseLink.id == release.id}">
@@ -63,20 +61,24 @@
                                 </core_rt:if>
                             </core_rt:forEach>
                         </select>
-                        <svg class="action lexicon-icon load-release" style="width:10%;">
+                    </div>
+                </td>
+                <td style="width: 2%" class="content-middle">
+                    <div class="form-group" style="text-align:center">
+                        <svg class="action load-release">
                             <title><liferay-ui:message key="load.default.child.releases" /></title>
-                            <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#check-circle-full"/>
+                            <use href="<%=request.getContextPath()%>/images/icons.svg#spinner"/>
                         </svg>
                     </div>
                 </td>
-                <td style="width: 15%">
+                <td>
                     <div class="form-group">
                         <select id="projectReleaseRelation" class="form-control projectReleaseRelation">
                             <sw360:DisplayEnumOptions type="<%=ReleaseRelationship.class%>" useStringValues="true" selected="${releaseLink.releaseRelationship}"/>
                         </select>
                     </div>
                 </td>
-                <td style="width: 15%">
+                <td>
                     <div class="form-group">
                         <select class="form-control mainlineState" id="mainlineState"
                                 <core_rt:if test="${not isUserAtLeastClearingAdmin and not mainlineStateEnabledForUserRole}" >
@@ -87,7 +89,7 @@
                         </select>
                     </div>
                 </td>
-                <td style="width: 15%">
+                <td>
                     <div class="form-group">
                         <input id="releaseComment"
                         type="text" placeholder="<liferay-ui:message key="enter.comment" />" class="form-control releaseComment"
