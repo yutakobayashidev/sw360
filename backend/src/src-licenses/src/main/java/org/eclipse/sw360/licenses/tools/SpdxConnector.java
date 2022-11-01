@@ -15,14 +15,11 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.Quadratic;
-
-import org.spdx.library.model.*;
 import org.spdx.library.InvalidSPDXAnalysisException;
 import org.spdx.library.model.license.LicenseInfoFactory;
 import org.spdx.library.model.license.SpdxListedLicense;
 import org.spdx.utility.compare.LicenseCompareHelper;
 import org.spdx.utility.compare.SpdxCompareException;
-
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -71,7 +68,7 @@ public class SpdxConnector {
                     .setExternalIds(Collections.singletonMap("SPDX-License-Identifier", spdxListedLicense.getLicenseId()));
             return Optional.of(license);
         } catch (InvalidSPDXAnalysisException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error get spdx license: "+e.getMessage());
         }
     }
 

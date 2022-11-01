@@ -884,7 +884,7 @@ public class LicenseDatabaseHandler {
                 try {
                     matches = SpdxConnector.matchesSpdxLicenseText(sw360license,spdxId);
                 } catch (InvalidSPDXAnalysisException e) {
-                    throw new RuntimeException(e);
+                    throw new RuntimeException("the license which does not match the SPDX licensee"+ e.getMessage());
                 }
                 if (matches) {
                     log.info("The SPDX license with id=" + spdxId + " is already in the DB");
