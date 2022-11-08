@@ -31,12 +31,12 @@
             <core_rt:set var="uuid" value="${releaseLink.id}"/>
             <tr id="releaseLinkRow${uuid}" parent-node="${releaseLink.parentNodeId}" data-layer="${releaseLink.layer}" data-index="${releaseLink.index}">
                 <td style="vertical-align:middle;font-size:1rem;display:flex;width:100%" class="content-middle">
-                    <div style="display:block">
+                    <div style="display:block;width:max-content;">
                         <core_rt:forEach begin="0" end="${releaseLink.layer}" var="val">
                               &nbsp;&nbsp;&nbsp;&nbsp;
                         </core_rt:forEach>
+                        <sw360:out value="${releaseLink.name}"/>
                     </div>
-                    <span style="width:max-content;"><sw360:out value="${releaseLink.name}"/></span>
                     <button type="button" class="btn btn-secondary add-child float-right" style="margin-left: auto; margin-right: 0px;">
                         <svg class="action lexicon-icon" style="width:15px">
                             <title><liferay-ui:message key="add.child.releases" /></title>
